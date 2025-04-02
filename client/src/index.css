@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    --primary: 216 69% 57%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 120 48% 57%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 210 20% 92%;
+    --muted-foreground: 215 16% 47%;
+    
+    --accent: 40 91% 54%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 216 69% 57%;
+    
+    --chart-1: 216 69% 57%;
+    --chart-2: 219 71% 51%;
+    --chart-3: 120 48% 57%;
+    --chart-4: 40 91% 54%;
+    --chart-5: 0 84% 60%;
+
+    --radius: 0.375rem;
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 20% 98%;
+    
+    --card: 224 71% 4%;
+    --card-foreground: 210 20% 98%;
+    
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 20% 98%;
+    
+    --primary: 216 69% 57%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 120 48% 57%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 215 27% 16%;
+    --muted-foreground: 215 20% 65%;
+    
+    --accent: 40 91% 54%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 215 27% 16%;
+    --input: 215 27% 16%;
+    --ring: 216 69% 57%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+.sidebar-nav-item.active {
+  @apply border-l-[3px] border-primary bg-primary/10;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-neutral-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-neutral-400 rounded-sm;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-500;
+}
