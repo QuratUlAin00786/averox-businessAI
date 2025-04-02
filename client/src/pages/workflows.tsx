@@ -177,10 +177,35 @@ export default function Workflows() {
   const [activeTab, setActiveTab] = useState("active");
   const [selectedWorkflow, setSelectedWorkflow] = useState<number | null>(null);
   const [isWorkflowDetailOpen, setIsWorkflowDetailOpen] = useState(false);
+  const [showNewWorkflowModal, setShowNewWorkflowModal] = useState(false);
+  const [activeWorkflowsList, setActiveWorkflowsList] = useState(activeWorkflows);
+  const [expandedRunDetails, setExpandedRunDetails] = useState<number | null>(null);
 
   const openWorkflowDetail = (id: number) => {
     setSelectedWorkflow(id);
     setIsWorkflowDetailOpen(true);
+  };
+  
+  const toggleWorkflowStatus = (id: number) => {
+    setActiveWorkflowsList(prevList => 
+      prevList.map(workflow => 
+        workflow.id === id 
+          ? { ...workflow, status: workflow.status === 'active' ? 'paused' : 'active' } 
+          : workflow
+      )
+    );
+  };
+  
+  const deleteWorkflow = (id: number) => {
+    if (confirm('Are you sure you want to delete this workflow?')) {
+      setActiveWorkflowsList(prevList => 
+        prevList.filter(workflow => workflow.id !== id)
+      );
+    }
+  };
+  
+  const viewRunDetails = (id: number) => {
+    setExpandedRunDetails(expandedRunDetails === id ? null : id);
   };
 
   const getStatusIcon = (status: string) => {
@@ -212,7 +237,13 @@ export default function Workflows() {
         title="Workflows"
         description="Automate your processes and save time with workflows"
         actions={
-          <Button className="flex items-center gap-2">
+          <Button 
+            className="flex items-center gap-2"
+            onClick={() => {
+              alert('New workflow creation wizard will be shown here');
+              setShowNewWorkflowModal(true);
+            }}
+          >
             <Plus className="h-4 w-4" />
             Create Workflow
           </Button>
@@ -250,7 +281,7 @@ export default function Workflows() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activeWorkflows.map((workflow) => (
+                {activeWorkflowsList.map((workflow) => (
                   <TableRow key={workflow.id}>
                     <TableCell className="font-medium">{workflow.name}</TableCell>
                     <TableCell>{workflow.description}</TableCell>
@@ -277,17 +308,17 @@ export default function Workflows() {
                           <Settings className="h-4 w-4" />
                           <span className="sr-only">Settings</span>
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => alert(`Editing workflow: ${workflow.name}`)}>
                           <Edit2 className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
                         </Button>
                         {workflow.status === "active" ? (
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" onClick={() => toggleWorkflowStatus(workflow.id)}>
                             <PauseCircle className="h-4 w-4" />
                             <span className="sr-only">Pause</span>
                           </Button>
                         ) : (
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" onClick={() => toggleWorkflowStatus(workflow.id)}>
                             <PlayCircle className="h-4 w-4" />
                             <span className="sr-only">Resume</span>
                           </Button>
@@ -330,8 +361,21 @@ export default function Workflows() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button variant="ghost" size="sm">Preview</Button>
-                  <Button className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => alert(`Previewing template: ${template.name}`)}
+                  >
+                    Preview
+                  </Button>
+                  <Button 
+                    className="flex items-center gap-1"
+                    onClick={() => {
+                      alert(`Using template: ${template.name}`);
+                      // This would typically start a workflow creation process with the template
+                      setShowNewWorkflowModal(true);
+                    }}
+                  >
                     Use Template
                     <ArrowRight className="h-4 w-4" />
                   </Button>
@@ -380,7 +424,11 @@ export default function Workflows() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => viewRunDetails(run.id)}
+                      >
                         View Steps
                       </Button>
                     </TableCell>
@@ -456,12 +504,23 @@ export default function Workflows() {
                       
                       <div className="mt-4 flex justify-end gap-2">
                         {run.status === "failed" && (
-                          <Button variant="outline" size="sm" className="flex items-center gap-1">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex items-center gap-1"
+                            onClick={() => alert(`Retrying workflow run: ${run.id}`)}
+                          >
                             <RotateCcw className="h-3 w-3" />
                             Retry
                           </Button>
                         )}
-                        <Button variant="outline" size="sm">View Full Log</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => alert(`Viewing full log for run: ${run.id}`)}
+                        >
+                          View Full Log
+                        </Button>
                       </div>
                     </div>
                   </AccordionContent>
@@ -484,7 +543,11 @@ export default function Workflows() {
               <div className="bg-white p-4 rounded-md shadow-sm border border-blue-100">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-medium">Workflow Designer</h3>
-                  <Button variant="outline" size="sm">Preview Mode</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => alert('Switching to workflow preview mode')}
+                  >Preview Mode</Button>
                 </div>
                 <div className="flex items-center justify-center h-[200px] border-2 border-dashed border-blue-200 rounded-md">
                   <div className="text-center text-blue-500">
@@ -517,7 +580,15 @@ export default function Workflows() {
                   <span>Third-party integrations</span>
                 </li>
               </ul>
-              <Button className="mt-4">Open Workflow Builder</Button>
+              <Button 
+                className="mt-4"
+                onClick={() => {
+                  alert('Opening the workflow builder interface');
+                  // This would typically navigate to the builder or open a modal
+                }}
+              >
+                Open Workflow Builder
+              </Button>
             </div>
           </div>
         </CardContent>
