@@ -8,12 +8,15 @@ import {
   Download, 
   Plus 
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { SalesPipeline } from "@/components/dashboard/sales-pipeline";
 import { RecentActivities } from "@/components/dashboard/recent-activities";
 import { MyTasks } from "@/components/dashboard/my-tasks";
 import { UpcomingEvents } from "@/components/dashboard/upcoming-events";
+import { getDashboardData } from "@/lib/data";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const [currentDate, setCurrentDate] = useState<string>("");
@@ -21,6 +24,12 @@ export default function Dashboard() {
   useEffect(() => {
     setCurrentDate(format(new Date(), "MMMM d, yyyy"));
   }, []);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['/api/dashboard'],
+    queryFn: getDashboardData,
+    staleTime: 60000, // 1 minute
+  });
 
   return (
     <div className="py-6">
@@ -54,49 +63,85 @@ export default function Dashboard() {
       </div>
       
       <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 gap-5 mt-2 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="New Leads"
-            value="34"
-            change={{ value: "+12%", trend: "up", text: "from last week" }}
-            icon={UserPlus}
-            iconColor="primary"
-          />
-          <StatCard
-            title="Conversion Rate"
-            value="28.5%"
-            change={{ value: "+5.4%", trend: "up", text: "from last month" }}
-            icon={TrendingUp}
-            iconColor="secondary"
-          />
-          <StatCard
-            title="Revenue"
-            value="$24,563"
-            change={{ value: "-2.3%", trend: "down", text: "from last month" }}
-            icon={DollarSign}
-            iconColor="accent"
-          />
-          <StatCard
-            title="Open Deals"
-            value="18"
-            change={{ value: "+4", trend: "up", text: "from last week" }}
-            icon={Briefcase}
-            iconColor="info"
-          />
-        </div>
-        
-        {/* Charts & Tables Section */}
-        <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
-          <SalesPipeline />
-          <RecentActivities />
-        </div>
-        
-        {/* Tasks and Upcoming Events */}
-        <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
-          <MyTasks />
-          <UpcomingEvents />
-        </div>
+        {error ? (
+          <div className="p-4 mt-4 text-red-800 bg-red-100 border border-red-200 rounded-lg">
+            <h3 className="text-lg font-medium">Error loading dashboard data</h3>
+            <p className="mt-1">{error instanceof Error ? error.message : 'An unknown error occurred'}</p>
+          </div>
+        ) : isLoading ? (
+          // Loading state with skeletons
+          <>
+            {/* Stats Card Skeletons */}
+            <div className="grid grid-cols-1 gap-5 mt-2 sm:grid-cols-2 lg:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-6 bg-white rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                  </div>
+                  <Skeleton className="h-8 w-20 mt-4" />
+                  <Skeleton className="h-4 w-24 mt-2" />
+                </div>
+              ))}
+            </div>
+            
+            {/* Charts & Tables Skeletons */}
+            <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
+              <div className="p-6 bg-white rounded-lg shadow">
+                <Skeleton className="h-6 w-40 mb-4" />
+                <Skeleton className="h-[250px] w-full rounded-md" />
+              </div>
+              <div className="p-6 bg-white rounded-lg shadow">
+                <Skeleton className="h-6 w-40 mb-4" />
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex-1">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-3 w-1/2 mt-2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          // Loaded state with actual data
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 gap-5 mt-2 sm:grid-cols-2 lg:grid-cols-4">
+              {data?.stats.map((stat, index) => {
+                const icons = [UserPlus, TrendingUp, DollarSign, Briefcase];
+                const colors = ["primary", "secondary", "accent", "info"] as const;
+                
+                return (
+                  <StatCard
+                    key={stat.id}
+                    title={stat.title}
+                    value={stat.value}
+                    change={stat.change}
+                    icon={icons[index % icons.length]}
+                    iconColor={colors[index % colors.length]}
+                  />
+                );
+              })}
+            </div>
+            
+            {/* Charts & Tables Section */}
+            <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
+              <SalesPipeline stages={data?.pipelineStages || []} />
+              <RecentActivities activities={data?.recentActivities || []} />
+            </div>
+            
+            {/* Tasks and Upcoming Events */}
+            <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
+              <MyTasks tasks={data?.myTasks || []} />
+              <UpcomingEvents events={data?.upcomingEvents || []} />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
