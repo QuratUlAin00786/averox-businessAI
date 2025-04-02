@@ -16,14 +16,14 @@ export function DashboardButton({
   href,
   ...props 
 }: DashboardButtonProps) {
-  const handleClick = (e: React.MouseEvent) => {
-    // Stop default event propagation if needed
-    if (actionText) {
-      e.stopPropagation();
-    }
+  // Create a click handler function that shows action text and calls onClick if provided
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Always stop propagation for consistent behavior
+    e.stopPropagation();
     
     // Show action text if provided
     if (actionText) {
+      console.log(actionText); // Log to console for debugging
       window.alert(actionText);
     }
     
@@ -33,11 +33,15 @@ export function DashboardButton({
     }
   };
 
-  // If href is provided, render as a Link
+  // If href is provided, render as a Link with a Button child
   if (href) {
     return (
       <Link href={href}>
-        <Button {...props} onClick={handleClick}>
+        <Button 
+          type="button" 
+          {...props} 
+          onClick={handleClick}
+        >
           {children}
         </Button>
       </Link>
@@ -47,6 +51,7 @@ export function DashboardButton({
   // Otherwise render as a regular button
   return (
     <Button
+      type="button"
       {...props}
       onClick={handleClick}
     >
