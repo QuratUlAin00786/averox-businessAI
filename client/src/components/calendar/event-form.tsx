@@ -149,8 +149,8 @@ export function EventForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-2">
           <DialogTitle>{isEditing ? "Edit Event" : "Add New Event"}</DialogTitle>
           <DialogDescription>
             {isEditing
@@ -160,7 +160,7 @@ export function EventForm({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
             <FormField
               control={form.control}
               name="title"
@@ -184,7 +184,7 @@ export function EventForm({
                   <FormControl>
                     <Textarea
                       placeholder="Add details about this event..."
-                      className="min-h-[80px]"
+                      className="min-h-[60px] resize-none"
                       {...field}
                       value={field.value || ""}
                     />
@@ -276,7 +276,7 @@ export function EventForm({
               control={form.control}
               name="isAllDay"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-2">
                   <div className="space-y-0.5">
                     <FormLabel>All Day Event</FormLabel>
                   </div>
@@ -340,47 +340,49 @@ export function EventForm({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Event location" {...field} value={field.value || ""} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="locationType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location Type</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select location type" />
-                      </SelectTrigger>
+                      <Input placeholder="Event location" {...field} value={field.value || ""} />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="physical">In-Person</SelectItem>
-                      <SelectItem value="virtual">Virtual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="locationType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location Type</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="physical">In-Person</SelectItem>
+                        <SelectItem value="virtual">Virtual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
               name="isRecurring"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-2">
                   <div className="space-y-0.5">
                     <FormLabel>Recurring Event</FormLabel>
                   </div>
@@ -419,7 +421,7 @@ export function EventForm({
               />
             )}
 
-            <DialogFooter className="mt-6">
+            <DialogFooter className="mt-4 sticky bottom-0 bg-white pb-1 pt-2">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
