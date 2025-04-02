@@ -31,9 +31,10 @@ export default function Contacts() {
     data: contacts = [],
     isLoading,
     error,
-  } = useQuery({
+  } = useQuery<Contact[], Error>({
     queryKey: ["/api/contacts"],
     select: (data: Contact[]) => {
+      console.log("Processing contacts data:", data);
       return data.sort((a, b) => {
         // Sort by creation date, newest first
         return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
