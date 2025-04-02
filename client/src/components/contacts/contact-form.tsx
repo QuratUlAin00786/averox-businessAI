@@ -119,6 +119,7 @@ export function ContactForm({
 
   const handleSubmit = async (values: FormValues) => {
     try {
+      console.log("Submitting form with values:", values); // Log form values for debugging
       onSubmit(values);
     } catch (error) {
       console.error("Form submission error:", error);

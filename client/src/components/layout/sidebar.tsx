@@ -57,8 +57,8 @@ export default function Sidebar({ className }: SidebarProps) {
           <div className="px-2 space-y-1">
             {navItems.slice(0, 7).map((item) => (
               <Link key={item.path} href={item.path}>
-                <a 
-                  className={`sidebar-nav-item flex items-center px-3 py-2 text-sm font-medium rounded-md group
+                <div 
+                  className={`sidebar-nav-item flex items-center px-3 py-2 text-sm font-medium rounded-md group cursor-pointer
                     ${isActive(item.path) 
                       ? 'text-primary' 
                       : 'text-neutral-600 hover:bg-neutral-50'}`}
@@ -67,7 +67,7 @@ export default function Sidebar({ className }: SidebarProps) {
                     {item.icon}
                   </span>
                   {item.name}
-                </a>
+                </div>
               </Link>
             ))}
           </div>
@@ -77,8 +77,8 @@ export default function Sidebar({ className }: SidebarProps) {
           <div className="px-2 space-y-1">
             {navItems.slice(7).map((item) => (
               <Link key={item.path} href={item.path}>
-                <a 
-                  className={`sidebar-nav-item flex items-center px-3 py-2 text-sm font-medium rounded-md group
+                <div 
+                  className={`sidebar-nav-item flex items-center px-3 py-2 text-sm font-medium rounded-md group cursor-pointer
                     ${isActive(item.path) 
                       ? 'text-primary' 
                       : 'text-neutral-600 hover:bg-neutral-50'}`}
@@ -87,7 +87,7 @@ export default function Sidebar({ className }: SidebarProps) {
                     {item.icon}
                   </span>
                   {item.name}
-                </a>
+                </div>
               </Link>
             ))}
           </div>
