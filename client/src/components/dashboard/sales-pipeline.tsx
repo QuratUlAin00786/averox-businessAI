@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { DashboardButton } from "@/components/ui/dashboard-button";
 import { Settings } from "lucide-react";
 import { useMemo } from "react";
 import { PipelineStage } from "@/lib/data";
@@ -54,18 +55,14 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
           <h3 className="text-lg font-medium leading-6 text-neutral-700">Sales Pipeline</h3>
           <div className="flex items-center">
             <span className="text-sm text-neutral-500">Last 30 days</span>
-            <Button 
+            <DashboardButton 
               variant="ghost" 
               size="icon" 
               className="ml-2 text-neutral-400 hover:text-neutral-500"
-              onClick={() => {
-                const message = "Opening pipeline settings...";
-                console.log(message);
-                window.alert(message);
-              }}
+              actionText="Opening pipeline settings..."
             >
               <Settings className="w-5 h-5" />
-            </Button>
+            </DashboardButton>
           </div>
         </div>
         
@@ -74,12 +71,7 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
             formattedStages.map((stage, index) => (
               <div 
                 key={index} 
-                className="relative pt-1 cursor-pointer"
-                onClick={() => {
-                  const message = `Viewing details for ${stage.name} stage: ${stage.value}`;
-                  console.log(message);
-                  window.alert(message);
-                }}
+                className="relative pt-1"
               >
                 <div className="flex mb-2 items-center justify-between">
                   <div>
@@ -93,20 +85,26 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
                     </span>
                   </div>
                 </div>
-                <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-neutral-100">
-                  <div 
-                    style={{ 
-                      width: `${stage.percentage}%`,
-                      backgroundColor: stage.color.startsWith('bg-[') ? 
-                        stage.color.substring(4, stage.color.length - 1) : 
-                        undefined 
-                    }} 
-                    className={
-                      !stage.color.startsWith('bg-[') ? `shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${stage.color}` : 
-                      "shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center"
-                    }>
+                <DashboardButton
+                  variant="ghost"
+                  className="w-full p-0 block h-auto bg-transparent hover:bg-transparent focus:ring-0 shadow-none"
+                  actionText={`Viewing details for ${stage.name} stage: ${stage.value}`}
+                >
+                  <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-neutral-100">
+                    <div 
+                      style={{ 
+                        width: `${stage.percentage}%`,
+                        backgroundColor: stage.color.startsWith('bg-[') ? 
+                          stage.color.substring(4, stage.color.length - 1) : 
+                          undefined 
+                      }} 
+                      className={
+                        !stage.color.startsWith('bg-[') ? `shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${stage.color}` : 
+                        "shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center"
+                      }>
+                    </div>
                   </div>
-                </div>
+                </DashboardButton>
               </div>
             ))
           ) : (
@@ -116,16 +114,13 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
           )}
         </div>
         
-        <div 
-          className="mt-4 text-sm text-center text-neutral-500 cursor-pointer" 
-          onClick={() => {
-            const message = "Opening detailed pipeline analysis...";
-            console.log(message);
-            window.alert(message);
-          }}
+        <DashboardButton
+          variant="ghost"
+          className="mt-4 text-sm text-center text-neutral-500 w-full p-0 h-auto hover:bg-transparent focus:ring-0"
+          actionText="Opening detailed pipeline analysis..."
         >
           <span className="font-medium text-primary">{totalPipeline}</span> total pipeline value
-        </div>
+        </DashboardButton>
       </div>
     </div>
   );

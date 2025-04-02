@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { DashboardButton } from "@/components/ui/dashboard-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, ChevronRight, Plus } from "lucide-react";
 import { Link } from "wouter";
@@ -38,19 +39,15 @@ export function MyTasks({ tasks }: MyTasksProps) {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium leading-6 text-neutral-700">My Tasks</h3>
           <div>
-            <Button 
+            <DashboardButton 
               variant="ghost" 
               size="sm" 
               className="text-primary hover:bg-primary-light hover:bg-opacity-20"
-              onClick={() => {
-                const message = "Opening task creation form...";
-                console.log(message);
-                window.alert(message);
-              }}
+              actionText="Opening task creation form..."
             >
               <Plus className="w-4 h-4 mr-1" />
               Add Task
-            </Button>
+            </DashboardButton>
           </div>
         </div>
       </div>
@@ -60,14 +57,7 @@ export function MyTasks({ tasks }: MyTasksProps) {
           <ul className="divide-y divide-neutral-200">
             {tasks.map((task) => (
               <li key={task.id}>
-                <div 
-                  className="block hover:bg-neutral-50 cursor-pointer"
-                  onClick={() => {
-                    const message = `Viewing task details: ${task.title}`;
-                    console.log(message);
-                    window.alert(message);
-                  }}
-                >
+                <div className="block hover:bg-neutral-50 cursor-pointer">
                   <div className="flex items-center px-4 py-4 sm:px-6">
                     <div className="flex items-center flex-1 min-w-0">
                       <div className="flex-shrink-0">
@@ -82,7 +72,14 @@ export function MyTasks({ tasks }: MyTasksProps) {
                           }}
                         />
                       </div>
-                      <div className="flex-1 min-w-0 px-4">
+                      <div 
+                        className="flex-1 min-w-0 px-4 cursor-pointer"
+                        onClick={() => {
+                          const message = `Viewing task details: ${task.title}`;
+                          console.log(message);
+                          window.alert(message);
+                        }}
+                      >
                         <div>
                           <p className="text-sm font-medium text-neutral-700 truncate">{task.title}</p>
                           <div className="flex flex-wrap mt-1 gap-y-1">
@@ -108,29 +105,28 @@ export function MyTasks({ tasks }: MyTasksProps) {
             ))}
           </ul>
           <div className="px-4 py-3 bg-neutral-50 text-center sm:px-6">
-            <Link href="/tasks">
-              <Button variant="outline" className="text-neutral-700 border-neutral-200 shadow-sm">
-                View All Tasks
-                <ChevronRight className="w-5 h-5 ml-2 -mr-1" />
-              </Button>
-            </Link>
+            <DashboardButton 
+              variant="outline" 
+              className="text-neutral-700 border-neutral-200 shadow-sm"
+              href="/tasks"
+              actionText="Navigating to tasks page..."
+            >
+              View All Tasks
+              <ChevronRight className="w-5 h-5 ml-2 -mr-1" />
+            </DashboardButton>
           </div>
         </>
       ) : (
         <div className="px-4 py-10 text-center text-neutral-500">
           <p>No pending tasks</p>
-          <Button 
+          <DashboardButton 
             variant="outline" 
             className="mt-4 text-neutral-700 border-neutral-200 shadow-sm"
-            onClick={() => {
-              const message = "Opening task creation form...";
-              console.log(message);
-              window.alert(message);
-            }}
+            actionText="Opening task creation form..."
           >
             <Plus className="w-4 h-4 mr-2" />
             Create New Task
-          </Button>
+          </DashboardButton>
         </div>
       )}
     </div>
