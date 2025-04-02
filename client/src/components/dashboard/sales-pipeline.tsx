@@ -87,7 +87,7 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
                 </div>
                 <DashboardButton
                   variant="ghost"
-                  className="w-full p-0 block"
+                  className="w-full p-0 block h-auto hover:bg-neutral-50 focus:ring-0"
                   actionText={`Viewing details for ${stage.name} stage: ${stage.value}`}
                 >
                   <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-neutral-100">
@@ -116,7 +116,7 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
         
         <DashboardButton
           variant="ghost"
-          className="mt-4 text-sm text-center text-neutral-500 w-full p-2"
+          className="mt-4 text-sm text-center text-neutral-500 w-full p-2 h-auto hover:bg-neutral-50"
           actionText="Opening detailed pipeline analysis..."
         >
           <span className="font-medium text-primary">{totalPipeline}</span> total pipeline value

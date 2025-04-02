@@ -57,7 +57,7 @@ export function MyTasks({ tasks }: MyTasksProps) {
           <ul className="divide-y divide-neutral-200">
             {tasks.map((task) => (
               <li key={task.id}>
-                <div className="flex items-center">
+                <div className="flex items-center hover:bg-neutral-50">
                   <div className="flex-shrink-0 pl-4 py-4">
                     <Checkbox 
                       id={String(task.id)} 
@@ -72,7 +72,7 @@ export function MyTasks({ tasks }: MyTasksProps) {
                   </div>
                   <DashboardButton
                     variant="ghost"
-                    className="flex-1 p-0 text-left"
+                    className="flex-1 p-0 h-auto text-left"
                     actionText={`Viewing task details: ${task.title}`}
                   >
                     <div className="flex items-center px-4 py-4 sm:px-6">

@@ -16,12 +16,18 @@ export function DashboardButton({
   href,
   ...props 
 }: DashboardButtonProps) {
-  // Simple click handler
   const handleClick = (e: React.MouseEvent) => {
+    // Stop default event propagation if needed
+    if (actionText) {
+      e.stopPropagation();
+    }
+    
+    // Show action text if provided
     if (actionText) {
       window.alert(actionText);
     }
     
+    // Call custom onClick if provided
     if (onClick) {
       onClick();
     }

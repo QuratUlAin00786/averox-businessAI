@@ -48,7 +48,7 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
               <li key={event.id}>
                 <DashboardButton
                   variant="ghost"
-                  className="block w-full p-0 bg-transparent text-left"
+                  className="block hover:bg-neutral-50 w-full p-0 h-auto bg-transparent text-left"
                   actionText={`Viewing event details: ${event.title}`}
                 >
                   <div className="flex items-center px-4 py-4 sm:px-6">
