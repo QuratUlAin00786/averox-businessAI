@@ -193,25 +193,25 @@ export function ContactDetail({ contactId, onBack }: ContactDetailProps) {
                 <h3 className="text-sm font-medium text-neutral-500">Contact Information</h3>
                 <ul className="space-y-3">
                   <li className="flex items-start">
-                    <Mail className="h-5 w-5 text-neutral-400 mr-2 mt-0.5" />
-                    <div>
-                      <span className="block text-sm text-neutral-800">
+                    <Mail className="h-5 w-5 text-neutral-400 mr-2 mt-0.5 flex-shrink-0" />
+                    <div className="overflow-hidden">
+                      <span className="block text-sm text-neutral-800 break-words">
                         {contact.email || "No email address"}
                       </span>
                     </div>
                   </li>
                   <li className="flex items-start">
-                    <Phone className="h-5 w-5 text-neutral-400 mr-2 mt-0.5" />
+                    <Phone className="h-5 w-5 text-neutral-400 mr-2 mt-0.5 flex-shrink-0" />
                     <span className="block text-sm text-neutral-800">
                       {contact.phone || "No phone number"}
                     </span>
                   </li>
                   <li className="flex items-start">
-                    <MapPin className="h-5 w-5 text-neutral-400 mr-2 mt-0.5" />
-                    <div className="text-sm">
+                    <MapPin className="h-5 w-5 text-neutral-400 mr-2 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm overflow-hidden">
                       {contact.address ? (
                         <div className="space-y-1">
-                          <p>{contact.address}</p>
+                          <p className="break-words">{contact.address}</p>
                           {contact.city && <p>{contact.city}{contact.state ? `, ${contact.state}` : ''}</p>}
                           {contact.country && <p>{contact.country}</p>}
                         </div>
@@ -229,13 +229,13 @@ export function ContactDetail({ contactId, onBack }: ContactDetailProps) {
                 <h3 className="text-sm font-medium text-neutral-500">Additional Details</h3>
                 <ul className="space-y-3">
                   <li className="flex items-start">
-                    <UserRound className="h-5 w-5 text-neutral-400 mr-2 mt-0.5" />
+                    <UserRound className="h-5 w-5 text-neutral-400 mr-2 mt-0.5 flex-shrink-0" />
                     <span className="block text-sm text-neutral-800">
                       Created: {formatDate(contact.createdAt)}
                     </span>
                   </li>
                   <li className="flex items-start">
-                    <Tag className="h-5 w-5 text-neutral-400 mr-2 mt-0.5" />
+                    <Tag className="h-5 w-5 text-neutral-400 mr-2 mt-0.5 flex-shrink-0" />
                     <span className="block text-sm text-neutral-800">
                       ID: {contact.id}
                     </span>

@@ -9,6 +9,7 @@ import {
   User,
   CheckSquare,
   Mail,
+  Phone,
   UserCog,
   Eye
 } from "lucide-react";
@@ -241,7 +242,8 @@ export function ContactList({
         </div>
       )}
       
-      <div className="border rounded-md">
+      {/* Desktop view - table */}
+      <div className="border rounded-md hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -383,6 +385,134 @@ export function ContactList({
             )}
           </TableBody>
         </Table>
+      </div>
+      
+      {/* Mobile view - card list */}
+      <div className="md:hidden space-y-4">
+        {isLoading ? (
+          // Loading skeletons for mobile
+          Array(3).fill(0).map((_, i) => (
+            <div key={`loading-mobile-${i}`} className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-1 flex-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                <Skeleton className="h-8 w-8 rounded-md" />
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            </div>
+          ))
+        ) : filteredContacts.length > 0 ? (
+          filteredContacts.map((contact) => (
+            <div key={`mobile-${contact.id}`} className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary mr-3"
+                  checked={selectedContacts.includes(contact.id)}
+                  onChange={() => handleSelectContact(contact.id)}
+                />
+                <div className="flex items-center gap-3 flex-1">
+                  <Avatar>
+                    <AvatarFallback className="bg-primary text-white">
+                      {getInitials(contact.firstName, contact.lastName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="font-medium">
+                      {contact.firstName} {contact.lastName}
+                    </span>
+                    {contact.title && (
+                      <Badge variant="outline" className="font-normal mt-1">
+                        {contact.title}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="ml-2">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {onView && (
+                      <DropdownMenuItem onClick={() => onView(contact)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                    )}
+                    {onView && <DropdownMenuSeparator />}
+                    <DropdownMenuItem onClick={() => onEdit(contact)}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="text-red-600"
+                      onClick={() => onDelete(contact.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="grid grid-cols-1 gap-1 pt-1 text-sm">
+                {contact.email && (
+                  <div className="flex items-start">
+                    <Mail className="h-4 w-4 text-neutral-400 mr-2 mt-0.5" />
+                    <span className="text-neutral-700">{contact.email}</span>
+                  </div>
+                )}
+                {contact.phone && (
+                  <div className="flex items-start">
+                    <Phone className="h-4 w-4 text-neutral-400 mr-2 mt-0.5" />
+                    <span className="text-neutral-700">{contact.phone}</span>
+                  </div>
+                )}
+                <div className="flex items-start mt-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs w-full"
+                    onClick={() => onView && onView(contact)}
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View Details
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="py-8 text-center bg-white rounded-lg border">
+            {searchQuery ? (
+              <div className="flex flex-col items-center gap-2">
+                <User className="h-8 w-8 text-neutral-400" />
+                <p className="text-neutral-500">No contacts match your search</p>
+                <Button variant="link" onClick={() => setSearchQuery("")}>
+                  Clear search
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <User className="h-8 w-8 text-neutral-400" />
+                <p className="text-neutral-500">No contacts found</p>
+                <Button onClick={onAdd} variant="outline" className="mt-2">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add your first contact
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
