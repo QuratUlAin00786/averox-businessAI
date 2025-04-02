@@ -16,24 +16,11 @@ export function DashboardButton({
   href,
   ...props 
 }: DashboardButtonProps) {
-  // Simple click handler function
-  const handleClick = (e: React.MouseEvent) => {
-    // Show action text if provided
-    if (actionText) {
-      window.alert(actionText);
-    }
-    
-    // Call custom onClick if provided
-    if (onClick) {
-      onClick();
-    }
-  };
-
   // If href is provided, render as a Link
   if (href) {
     return (
       <Link href={href}>
-        <Button {...props} onClick={handleClick}>
+        <Button {...props}>
           {children}
         </Button>
       </Link>
@@ -42,10 +29,7 @@ export function DashboardButton({
 
   // Otherwise render as a regular button
   return (
-    <Button
-      {...props}
-      onClick={handleClick}
-    >
+    <Button {...props}>
       {children}
     </Button>
   );
