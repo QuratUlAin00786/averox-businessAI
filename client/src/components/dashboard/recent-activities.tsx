@@ -47,9 +47,10 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
             <Button 
               variant="outline" 
               className="border-primary text-primary hover:bg-primary hover:text-white"
-              onClick={(e) => {
-                e.preventDefault();
-                window.alert("Opening all activities history...");
+              onClick={() => {
+                const message = "Opening all activities history...";
+                console.log(message);
+                window.alert(message);
               }}
             >
               View All
@@ -65,9 +66,10 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
                 <li key={activity.id}>
                   <div 
                     className="relative pb-8 cursor-pointer" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.alert(`Viewing details for activity: ${activity.action}`);
+                    onClick={() => {
+                      const message = `Viewing details for activity: ${activity.action}`;
+                      console.log(message);
+                      window.alert(message);
                     }}
                   >
                     {!activity.isLast && (

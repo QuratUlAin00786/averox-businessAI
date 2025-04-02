@@ -53,9 +53,10 @@ export default function Dashboard() {
             <Button 
               variant="outline" 
               className="text-neutral-600"
-              onClick={(e) => {
-                e.preventDefault();
-                window.alert('Exporting dashboard data to CSV/Excel...');
+              onClick={() => {
+                const message = 'Exporting dashboard data to CSV/Excel...';
+                console.log(message);
+                window.alert(message);
                 // In a real implementation, this would trigger a download
               }}
             >
@@ -64,9 +65,10 @@ export default function Dashboard() {
             </Button>
             <Button 
               className="ml-3"
-              onClick={(e) => {
-                e.preventDefault();
-                window.alert('Opening new report creation form...');
+              onClick={() => {
+                const message = 'Opening new report creation form...';
+                console.log(message);
+                window.alert(message);
                 // This would typically open a modal or navigate to a report creation page
               }}
             >

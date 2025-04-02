@@ -42,9 +42,10 @@ export function MyTasks({ tasks }: MyTasksProps) {
               variant="ghost" 
               size="sm" 
               className="text-primary hover:bg-primary-light hover:bg-opacity-20"
-              onClick={(e) => {
-                e.preventDefault();
-                window.alert("Opening task creation form...");
+              onClick={() => {
+                const message = "Opening task creation form...";
+                console.log(message);
+                window.alert(message);
               }}
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -61,9 +62,10 @@ export function MyTasks({ tasks }: MyTasksProps) {
               <li key={task.id}>
                 <div 
                   className="block hover:bg-neutral-50 cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.alert(`Viewing task details: ${task.title}`);
+                  onClick={() => {
+                    const message = `Viewing task details: ${task.title}`;
+                    console.log(message);
+                    window.alert(message);
                   }}
                 >
                   <div className="flex items-center px-4 py-4 sm:px-6">
@@ -74,7 +76,9 @@ export function MyTasks({ tasks }: MyTasksProps) {
                           className="w-4 h-4 text-primary border-neutral-300"
                           onClick={(e) => {
                             e.stopPropagation();
-                            window.alert(`Task marked as complete: ${task.title}`);
+                            const message = `Task marked as complete: ${task.title}`;
+                            console.log(message);
+                            window.alert(message);
                           }}
                         />
                       </div>
@@ -118,9 +122,10 @@ export function MyTasks({ tasks }: MyTasksProps) {
           <Button 
             variant="outline" 
             className="mt-4 text-neutral-700 border-neutral-200 shadow-sm"
-            onClick={(e) => {
-              e.preventDefault();
-              window.alert("Opening task creation form...");
+            onClick={() => {
+              const message = "Opening task creation form...";
+              console.log(message);
+              window.alert(message);
             }}
           >
             <Plus className="w-4 h-4 mr-2" />
