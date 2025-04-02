@@ -38,7 +38,12 @@ export function MyTasks({ tasks }: MyTasksProps) {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium leading-6 text-neutral-700">My Tasks</h3>
           <div>
-            <Button variant="ghost" size="sm" className="text-primary hover:bg-primary-light hover:bg-opacity-20">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-primary hover:bg-primary-light hover:bg-opacity-20"
+              onClick={() => alert("Opening task creation form...")}
+            >
               <Plus className="w-4 h-4 mr-1" />
               Add Task
             </Button>
@@ -51,13 +56,17 @@ export function MyTasks({ tasks }: MyTasksProps) {
           <ul className="divide-y divide-neutral-200">
             {tasks.map((task) => (
               <li key={task.id}>
-                <div className="block hover:bg-neutral-50">
+                <div 
+                  className="block hover:bg-neutral-50 cursor-pointer"
+                  onClick={() => alert(`Viewing task details: ${task.title}`)}
+                >
                   <div className="flex items-center px-4 py-4 sm:px-6">
                     <div className="flex items-center flex-1 min-w-0">
                       <div className="flex-shrink-0">
                         <Checkbox 
                           id={String(task.id)} 
-                          className="w-4 h-4 text-primary border-neutral-300" 
+                          className="w-4 h-4 text-primary border-neutral-300"
+                          onClick={() => alert(`Task marked as complete: ${task.title}`)}
                         />
                       </div>
                       <div className="flex-1 min-w-0 px-4">
@@ -97,7 +106,11 @@ export function MyTasks({ tasks }: MyTasksProps) {
       ) : (
         <div className="px-4 py-10 text-center text-neutral-500">
           <p>No pending tasks</p>
-          <Button variant="outline" className="mt-4 text-neutral-700 border-neutral-200 shadow-sm">
+          <Button 
+            variant="outline" 
+            className="mt-4 text-neutral-700 border-neutral-200 shadow-sm"
+            onClick={() => alert("Opening task creation form...")}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create New Task
           </Button>

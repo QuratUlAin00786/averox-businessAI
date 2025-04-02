@@ -50,11 +50,24 @@ export default function Dashboard() {
           </div>
           
           <div className="flex mt-4 md:mt-0 md:ml-4">
-            <Button variant="outline" className="text-neutral-600">
+            <Button 
+              variant="outline" 
+              className="text-neutral-600"
+              onClick={() => {
+                alert('Exporting dashboard data to CSV/Excel...');
+                // In a real implementation, this would trigger a download
+              }}
+            >
               <Download className="-ml-1 mr-2 h-5 w-5 text-neutral-500" />
               Export
             </Button>
-            <Button className="ml-3">
+            <Button 
+              className="ml-3"
+              onClick={() => {
+                alert('Opening new report creation form...');
+                // This would typically open a modal or navigate to a report creation page
+              }}
+            >
               <Plus className="-ml-1 mr-2 h-5 w-5" />
               Add Report
             </Button>

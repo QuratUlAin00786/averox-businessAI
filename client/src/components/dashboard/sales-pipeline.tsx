@@ -54,7 +54,12 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
           <h3 className="text-lg font-medium leading-6 text-neutral-700">Sales Pipeline</h3>
           <div className="flex items-center">
             <span className="text-sm text-neutral-500">Last 30 days</span>
-            <Button variant="ghost" size="icon" className="ml-2 text-neutral-400 hover:text-neutral-500">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="ml-2 text-neutral-400 hover:text-neutral-500"
+              onClick={() => alert("Opening pipeline settings...")}
+            >
               <Settings className="w-5 h-5" />
             </Button>
           </div>
@@ -63,7 +68,11 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
         <div className="mt-6">
           {formattedStages.length > 0 ? (
             formattedStages.map((stage, index) => (
-              <div key={index} className="relative pt-1">
+              <div 
+                key={index} 
+                className="relative pt-1 cursor-pointer"
+                onClick={() => alert(`Viewing details for ${stage.name} stage: ${stage.value}`)}
+              >
                 <div className="flex mb-2 items-center justify-between">
                   <div>
                     <span className="text-xs font-semibold inline-block text-neutral-700">
@@ -99,7 +108,10 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
           )}
         </div>
         
-        <div className="mt-4 text-sm text-center text-neutral-500">
+        <div 
+          className="mt-4 text-sm text-center text-neutral-500 cursor-pointer" 
+          onClick={() => alert("Opening detailed pipeline analysis...")}
+        >
           <span className="font-medium text-primary">{totalPipeline}</span> total pipeline value
         </div>
       </div>

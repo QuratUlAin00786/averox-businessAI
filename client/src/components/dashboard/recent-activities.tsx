@@ -44,7 +44,11 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium leading-6 text-neutral-700">Recent Activities</h3>
           <div>
-            <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
+            <Button 
+              variant="outline" 
+              className="border-primary text-primary hover:bg-primary hover:text-white"
+              onClick={() => alert("Opening all activities history...")}
+            >
               View All
             </Button>
           </div>
@@ -56,7 +60,10 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
             <ul className="-mb-8">
               {activities.map((activity) => (
                 <li key={activity.id}>
-                  <div className="relative pb-8">
+                  <div 
+                    className="relative pb-8 cursor-pointer" 
+                    onClick={() => alert(`Viewing details for activity: ${activity.action}`)}
+                  >
                     {!activity.isLast && (
                       <span className="absolute top-5 left-5 -ml-px h-full w-0.5 bg-neutral-200" aria-hidden="true"></span>
                     )}

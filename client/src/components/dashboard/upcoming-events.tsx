@@ -27,7 +27,12 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium leading-6 text-neutral-700">Upcoming Events</h3>
           <div className="flex">
-            <Button variant="ghost" size="sm" className="text-primary hover:bg-primary-light hover:bg-opacity-20">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-primary hover:bg-primary-light hover:bg-opacity-20"
+              onClick={() => alert("Opening event creation form...")}
+            >
               <Plus className="w-4 h-4 mr-1" />
               Add Event
             </Button>
@@ -40,7 +45,10 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
           <ul className="divide-y divide-neutral-200">
             {events.map((event) => (
               <li key={event.id}>
-                <div className="block hover:bg-neutral-50">
+                <div 
+                  className="block hover:bg-neutral-50 cursor-pointer" 
+                  onClick={() => alert(`Viewing event details: ${event.title}`)}
+                >
                   <div className="flex items-center px-4 py-4 sm:px-6">
                     <div className="flex-shrink-0">
                       <div className="flex flex-col items-center justify-center w-12 h-16 bg-primary bg-opacity-10 rounded-md">
@@ -89,7 +97,11 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
       ) : (
         <div className="px-4 py-10 text-center text-neutral-500">
           <p>No upcoming events</p>
-          <Button variant="outline" className="mt-4 text-neutral-700 border-neutral-200 shadow-sm">
+          <Button 
+            variant="outline" 
+            className="mt-4 text-neutral-700 border-neutral-200 shadow-sm"
+            onClick={() => alert("Opening event scheduling form...")}
+          >
             <Calendar className="w-4 h-4 mr-2" />
             Schedule New Event
           </Button>

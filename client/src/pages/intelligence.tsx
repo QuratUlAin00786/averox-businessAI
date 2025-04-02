@@ -256,7 +256,11 @@ export default function Intelligence() {
         title="AI Intelligence"
         description="Leverage artificial intelligence to gain insights and automate tasks"
         actions={
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => alert("Exporting insights to CSV format...")}
+          >
             <DownloadCloud className="h-4 w-4" />
             Export Insights
           </Button>
@@ -315,11 +319,21 @@ export default function Intelligence() {
                 />
                 <div className="flex justify-between">
                   <div className="flex gap-2">
-                    <Button type="button" variant="outline" size="sm">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => alert("Opening data analysis tool...")}
+                    >
                       <Search className="h-4 w-4 mr-2" />
                       Analyze Data
                     </Button>
-                    <Button type="button" variant="outline" size="sm">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => alert("Generating AI report based on CRM data...")}
+                    >
                       <LineChart className="h-4 w-4 mr-2" />
                       Generate Report
                     </Button>
@@ -350,7 +364,11 @@ export default function Intelligence() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium">Automated Insights</h3>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => alert("Opening custom insight creation form...")}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Custom Insight
               </Button>
@@ -388,8 +406,20 @@ export default function Intelligence() {
                   <p>{insight.description}</p>
                 </CardContent>
                 <CardFooter className="pt-2 flex justify-between">
-                  <Button variant="ghost" size="sm">Dismiss</Button>
-                  <Button variant="outline" size="sm">Take Action</Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => alert(`Dismissing insight: ${insight.title}`)}
+                  >
+                    Dismiss
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => alert(`Taking action on insight: ${insight.title}`)}
+                  >
+                    Take Action
+                  </Button>
                 </CardFooter>
               </Card>
             ))}
@@ -410,12 +440,33 @@ export default function Intelligence() {
                 <div className="space-y-4">
                   <div className="flex gap-2">
                     <Input placeholder="Subject or purpose" className="flex-1" />
-                    <Button>Generate</Button>
+                    <Button onClick={() => alert("Generating email template...")}>Generate</Button>
                   </div>
                   <div className="flex gap-2 text-sm">
-                    <Button variant="outline" size="sm" className="flex-1">Follow-up</Button>
-                    <Button variant="outline" size="sm" className="flex-1">Proposal</Button>
-                    <Button variant="outline" size="sm" className="flex-1">Introduction</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => alert("Generating follow-up email template...")}
+                    >
+                      Follow-up
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => alert("Generating proposal email template...")}
+                    >
+                      Proposal
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => alert("Generating introduction email template...")}
+                    >
+                      Introduction
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -431,10 +482,18 @@ export default function Intelligence() {
               <CardContent>
                 <p className="text-sm text-gray-600 mb-4">Convert meeting recordings or notes into structured summaries</p>
                 <div className="space-y-4">
-                  <div className="border-2 border-dashed rounded-md p-8 text-center">
+                  <div 
+                    className="border-2 border-dashed rounded-md p-8 text-center cursor-pointer"
+                    onClick={() => alert("Opening file upload dialog...")}
+                  >
                     <p className="text-sm text-gray-500">Drop file or click to upload</p>
                   </div>
-                  <Button className="w-full">Summarize</Button>
+                  <Button 
+                    className="w-full"
+                    onClick={() => alert("Summarizing meeting recording...")}
+                  >
+                    Summarize
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -457,7 +516,12 @@ export default function Intelligence() {
                       <option>Trade Show</option>
                     </select>
                   </div>
-                  <Button className="w-full">Analyze Leads</Button>
+                  <Button 
+                    className="w-full"
+                    onClick={() => alert("Analyzing and scoring leads from selected source...")}
+                  >
+                    Analyze Leads
+                  </Button>
                 </div>
               </CardContent>
             </Card>
