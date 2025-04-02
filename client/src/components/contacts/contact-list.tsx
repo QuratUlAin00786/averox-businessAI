@@ -9,7 +9,8 @@ import {
   User,
   CheckSquare,
   Mail,
-  UserCog
+  UserCog,
+  Eye
 } from "lucide-react";
 import { Contact } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ interface ContactListProps {
   onEdit: (contact: Contact) => void;
   onDelete: (contactId: number) => void;
   onAdd: () => void;
+  onView?: (contact: Contact) => void;
 }
 
 export function ContactList({ 
@@ -55,7 +57,8 @@ export function ContactList({
   error, 
   onEdit, 
   onDelete, 
-  onAdd 
+  onAdd,
+  onView
 }: ContactListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showInactive, setShowInactive] = useState(false);
@@ -330,6 +333,13 @@ export function ContactList({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {onView && (
+                          <DropdownMenuItem onClick={() => onView(contact)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                        )}
+                        {onView && <DropdownMenuSeparator />}
                         <DropdownMenuItem onClick={() => onEdit(contact)}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit

@@ -215,6 +215,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update contact notes
+  app.patch('/api/contacts/:id/notes', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid contact ID" });
+      }
+      
+      const { notes } = req.body;
+      
+      if (typeof notes !== 'string') {
+        return res.status(400).json({ error: "Notes must be a string" });
+      }
+      
+      const updatedContact = await storage.updateContact(id, { notes });
+      
+      if (!updatedContact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      
+      return res.json(updatedContact);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  });
+  
   // Accounts endpoints
   app.get('/api/accounts', async (req, res) => {
     try {

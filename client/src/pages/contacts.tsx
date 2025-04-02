@@ -4,6 +4,7 @@ import { Contact, insertContactSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { ContactList } from "@/components/contacts/contact-list";
 import { ContactForm } from "@/components/contacts/contact-form";
+import { ContactDetail } from "@/components/contacts/contact-detail";
 import { DeleteContactDialog } from "@/components/contacts/delete-contact-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -20,6 +21,10 @@ export default function Contacts() {
   // State for delete dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
+  
+  // State for detail view
+  const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
+  const [contactToView, setContactToView] = useState<number | null>(null);
 
   // Fetch contacts query
   const {
@@ -140,30 +145,53 @@ export default function Contacts() {
       deleteContactMutation.mutate(contactToDelete.id);
     }
   };
+  
+  // Handle viewing contact details
+  const handleViewContact = (contact: Contact) => {
+    setContactToView(contact.id);
+    setIsDetailViewOpen(true);
+  };
+  
+  const handleCloseDetailView = () => {
+    setIsDetailViewOpen(false);
+    setContactToView(null);
+  };
 
   return (
     <div className="py-6">
-      <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-        <div className="mb-6 pb-5 border-b border-neutral-200">
-          <h1 className="text-2xl font-bold text-neutral-700">Contacts</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            Manage your contacts and keep track of your relationships.
-          </p>
-        </div>
-      </div>
-      
-      <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-100">
-          <ContactList
-            contacts={contacts}
-            isLoading={isLoading}
-            error={error as Error}
-            onEdit={handleEditContact}
-            onDelete={handleDeleteContact}
-            onAdd={handleAddContact}
+      {isDetailViewOpen && contactToView ? (
+        <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+          <ContactDetail 
+            contactId={contactToView}
+            onBack={handleCloseDetailView}
           />
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+            <div className="mb-6 pb-5 border-b border-neutral-200">
+              <h1 className="text-2xl font-bold text-neutral-700">Contacts</h1>
+              <p className="mt-1 text-sm text-neutral-500">
+                Manage your contacts and keep track of your relationships.
+              </p>
+            </div>
+          </div>
+          
+          <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-100">
+              <ContactList
+                contacts={contacts}
+                isLoading={isLoading}
+                error={error as Error}
+                onEdit={handleEditContact}
+                onDelete={handleDeleteContact}
+                onAdd={handleAddContact}
+                onView={handleViewContact}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Contact Form Dialog */}
       <ContactForm
