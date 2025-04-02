@@ -40,10 +40,7 @@ export default function Opportunities() {
   // Create opportunity mutation
   const createOpportunityMutation = useMutation({
     mutationFn: async (data: InsertOpportunity) => {
-      return apiRequestJson<Opportunity>("/api/opportunities", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequestJson<Opportunity>("POST", "/api/opportunities", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
@@ -67,10 +64,7 @@ export default function Opportunities() {
   // Update opportunity mutation
   const updateOpportunityMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertOpportunity> }) => {
-      return apiRequestJson<Opportunity>(`/api/opportunities/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
+      return apiRequestJson<Opportunity>("PATCH", `/api/opportunities/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
@@ -94,9 +88,7 @@ export default function Opportunities() {
   // Delete opportunity mutation
   const deleteOpportunityMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequestJson(`/api/opportunities/${id}`, {
-        method: "DELETE",
-      });
+      return apiRequestJson<Opportunity>("DELETE", `/api/opportunities/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
@@ -127,10 +119,7 @@ export default function Opportunities() {
       id: number; 
       data: { isClosed: boolean; isWon: boolean } 
     }) => {
-      return apiRequestJson<Opportunity>(`/api/opportunities/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
+      return apiRequestJson<Opportunity>("PATCH", `/api/opportunities/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/opportunities"] });
