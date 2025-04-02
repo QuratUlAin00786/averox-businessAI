@@ -38,14 +38,35 @@ export default function Calendar() {
     }
   });
   
-  // Create event mutation
+  // Create event mutation with direct fetch for debugging
   const createMutation = useMutation({
-    mutationFn: (eventData: InsertEvent) => {
+    mutationFn: async (eventData: InsertEvent) => {
       console.log('Creating event with data:', eventData);
-      return apiRequest('/api/events', {
-        method: 'POST',
-        body: JSON.stringify(eventData)
-      });
+      
+      try {
+        const response = await fetch('/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(eventData)
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+          throw new Error(`Failed to create event: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log('Response data:', result);
+        return result;
+      } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
@@ -155,16 +176,39 @@ export default function Calendar() {
     }
   };
   
+  // Basic event creation for debugging
+  const handleQuickEventCreate = () => {
+    const quickEvent = {
+      title: "Quick Test Event",
+      description: "Testing event creation",
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 3600000).toISOString(), // 1 hour later
+      location: "Test Location",
+      locationType: "physical",
+      eventType: "Meeting",
+      status: "Confirmed",
+      ownerId: 1
+    };
+    
+    console.log("Creating quick event:", quickEvent);
+    createMutation.mutate(quickEvent as InsertEvent);
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-8">
       <PageHeader
         title="Calendar"
         description="View and manage your events and appointments"
         actions={
-          <Button onClick={handleOpenCreateForm} className="flex items-center space-x-2">
-            <PlusCircle className="h-4 w-4" />
-            <span>Add Event</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleOpenCreateForm} className="flex items-center space-x-2">
+              <PlusCircle className="h-4 w-4" />
+              <span>Add Event</span>
+            </Button>
+            <Button onClick={handleQuickEventCreate} variant="secondary" className="flex items-center space-x-2">
+              <span>Quick Add (Debug)</span>
+            </Button>
+          </div>
         }
       />
       
@@ -192,6 +236,23 @@ export default function Calendar() {
           />
         )}
       </div>
+      
+      {/* Event Creation Status */}
+      {createMutation.isPending && (
+        <div className="bg-blue-50 p-4 rounded-lg flex items-center">
+          <div className="animate-spin h-5 w-5 mr-2 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+          <p>Creating event...</p>
+        </div>
+      )}
+      
+      {createMutation.isError && (
+        <div className="bg-red-50 p-4 rounded-lg">
+          <h3 className="font-medium text-red-800">Error creating event:</h3>
+          <pre className="mt-2 text-sm bg-white p-2 rounded overflow-auto max-h-40">
+            {JSON.stringify(createMutation.error, null, 2)}
+          </pre>
+        </div>
+      )}
       
       {/* Event Form */}
       <EventForm
