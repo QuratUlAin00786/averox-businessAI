@@ -135,13 +135,21 @@ export function EventForm({
   }, [isOpen, event, form]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    // Format dates as ISO strings for the API
-    const formattedValues: InsertEvent = {
-      ...values,
-      startDate: values.startDate.toISOString(),
-      endDate: values.endDate.toISOString(),
-    };
-    onSubmit(formattedValues);
+    try {
+      console.log("Form values before conversion:", values);
+      
+      // Format dates as ISO strings for the API
+      const formattedValues = {
+        ...values,
+        startDate: values.startDate.toISOString(),
+        endDate: values.endDate.toISOString(),
+      };
+      
+      console.log("Formatted values for submission:", formattedValues);
+      onSubmit(formattedValues as InsertEvent);
+    } catch (error) {
+      console.error("Error formatting event data:", error);
+    }
   };
 
   const isAllDay = form.watch("isAllDay");

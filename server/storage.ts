@@ -802,34 +802,63 @@ export class MemStorage implements IStorage {
   }
   
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
-    const id = this.eventIdCounter++;
-    const createdAt = new Date();
+    console.log("Creating event with data:", insertEvent);
     
-    // Process date fields if they are strings
-    const processedEvent = {...insertEvent};
-    if (typeof processedEvent.startDate === 'string') {
-      processedEvent.startDate = new Date(processedEvent.startDate);
+    try {
+      const id = this.eventIdCounter++;
+      const createdAt = new Date();
+      
+      // Process date fields if they are strings
+      let startDate = insertEvent.startDate;
+      let endDate = insertEvent.endDate;
+      
+      if (typeof startDate === 'string') {
+        startDate = new Date(startDate);
+      }
+      
+      if (typeof endDate === 'string') {
+        endDate = new Date(endDate);
+      }
+      
+      // Create a minimal valid event with the required properties
+      const event: Event = {
+        id,
+        createdAt,
+        title: insertEvent.title,
+        startDate,
+        endDate,
+        description: insertEvent.description ?? null,
+        location: insertEvent.location ?? null,
+        locationType: insertEvent.locationType ?? null,
+        eventType: insertEvent.eventType ?? null,
+        status: insertEvent.status ?? null,
+        ownerId: insertEvent.ownerId ?? null,
+        isAllDay: insertEvent.isAllDay ?? null,
+        isRecurring: insertEvent.isRecurring ?? null,
+        recurringRule: insertEvent.recurringRule ?? null
+      };
+      
+      console.log("Saving event:", event);
+      this.events.set(id, event);
+      
+      // Create activity for the new event
+      if (insertEvent.ownerId) {
+        this.createActivity({
+          userId: insertEvent.ownerId,
+          action: "scheduled a new event",
+          detail: insertEvent.title,
+          relatedToType: "event",
+          relatedToId: id,
+          icon: "scheduled",
+        });
+      }
+      
+      console.log("Event created successfully with ID:", id);
+      return event;
+    } catch (error) {
+      console.error("Error creating event:", error);
+      throw error;
     }
-    if (typeof processedEvent.endDate === 'string') {
-      processedEvent.endDate = new Date(processedEvent.endDate);
-    }
-    
-    const event: Event = { ...processedEvent, id, createdAt };
-    this.events.set(id, event);
-    
-    // Create activity for the new event
-    if (insertEvent.ownerId) {
-      this.createActivity({
-        userId: insertEvent.ownerId,
-        action: "scheduled a new event",
-        detail: insertEvent.title,
-        relatedToType: "event",
-        relatedToId: id,
-        icon: "scheduled",
-      });
-    }
-    
-    return event;
   }
   
   async updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined> {

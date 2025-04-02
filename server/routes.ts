@@ -610,28 +610,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Event creation request body:', req.body);
       
-      // Process date fields properly 
-      const data = {...req.body};
-      if (data.startDate && typeof data.startDate === 'string') {
-        console.log('startDate is a string:', data.startDate);
-        // Keep as string, storage layer will handle conversion
-      }
-      if (data.endDate && typeof data.endDate === 'string') {
-        console.log('endDate is a string:', data.endDate);
-        // Keep as string, storage layer will handle conversion
-      }
-      
+      // Simple approach - just pass the data directly to storage
+      // The storage layer will handle date conversion
       try {
-        const eventData = insertEventSchema.parse(data);
-        console.log('Parsed event data:', eventData);
+        const eventData = {
+          title: req.body.title,
+          description: req.body.description,
+          startDate: req.body.startDate,
+          endDate: req.body.endDate,
+          location: req.body.location,
+          locationType: req.body.locationType,
+          eventType: req.body.eventType,
+          status: req.body.status,
+          ownerId: req.body.ownerId,
+          isAllDay: req.body.isAllDay,
+          isRecurring: req.body.isRecurring,
+          recurringRule: req.body.recurringRule
+        };
+        
+        console.log('Simplified event data:', eventData);
         const newEvent = await storage.createEvent(eventData);
         console.log('New event created:', newEvent);
         return res.status(201).json(newEvent);
-      } catch (validationError) {
-        console.error('Validation error:', validationError);
-        throw validationError;
+      } catch (processingError) {
+        console.error('Processing error:', processingError);
+        throw processingError;
       }
     } catch (error) {
+      console.error('Event creation failed:', error);
       return handleError(res, error);
     }
   });
