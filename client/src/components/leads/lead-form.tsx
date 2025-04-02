@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Contact, insertContactSchema, User, Account } from "@shared/schema";
+import { Lead, insertLeadSchema, User } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,11 +31,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
-// Extend the contact schema for form validation
-const formSchema = insertContactSchema.extend({
+// Extend the lead schema for form validation
+const formSchema = insertLeadSchema.extend({
   // Add any additional validation rules here
   email: z.string().email().optional().nullable(),
   phone: z.string().optional().nullable(),
@@ -43,23 +42,23 @@ const formSchema = insertContactSchema.extend({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface ContactFormProps {
+interface LeadFormProps {
   isOpen: boolean;
   isEditing: boolean;
-  contact: Contact | null;
+  lead: Lead | null;
   isSubmitting: boolean;
   onClose: () => void;
   onSubmit: (values: FormValues) => void;
 }
 
-export function ContactForm({
+export function LeadForm({
   isOpen,
   isEditing,
-  contact,
+  lead,
   isSubmitting,
   onClose,
   onSubmit,
-}: ContactFormProps) {
+}: LeadFormProps) {
   const { toast } = useToast();
   
   // Fetch users for owner dropdown
@@ -68,64 +67,50 @@ export function ContactForm({
     enabled: isOpen,
   });
   
-  // Fetch accounts for account dropdown
-  const { data: accounts = [] } = useQuery<Account[]>({
-    queryKey: ["/api/accounts"],
-    enabled: isOpen,
-  });
-  
-  // Initialize the form with current contact data or empty values
+  // Initialize the form with current lead data or empty values
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: contact?.firstName || "",
-      lastName: contact?.lastName || "",
-      email: contact?.email || "",
-      phone: contact?.phone || "",
-      title: contact?.title || "",
-      accountId: contact?.accountId || null,
-      ownerId: contact?.ownerId || null,
-      notes: contact?.notes || "",
-      address: contact?.address || "",
-      city: contact?.city || "",
-      state: contact?.state || "",
-      zip: contact?.zip || "",
-      country: contact?.country || "",
-      isActive: contact?.isActive === false ? false : true,
+      firstName: lead?.firstName || "",
+      lastName: lead?.lastName || "",
+      email: lead?.email || "",
+      phone: lead?.phone || "",
+      title: lead?.title || "",
+      company: lead?.company || "",
+      ownerId: lead?.ownerId || null,
+      notes: lead?.notes || "",
+      source: lead?.source || "",
+      status: lead?.status || "New",
     },
   });
 
-  // Reset form when contact changes
+  // Reset form when lead changes
   useEffect(() => {
     if (isOpen) {
       form.reset({
-        firstName: contact?.firstName || "",
-        lastName: contact?.lastName || "",
-        email: contact?.email || "",
-        phone: contact?.phone || "",
-        title: contact?.title || "",
-        accountId: contact?.accountId || null,
-        ownerId: contact?.ownerId || null,
-        notes: contact?.notes || "",
-        address: contact?.address || "",
-        city: contact?.city || "",
-        state: contact?.state || "",
-        zip: contact?.zip || "",
-        country: contact?.country || "",
-        isActive: contact?.isActive === false ? false : true,
+        firstName: lead?.firstName || "",
+        lastName: lead?.lastName || "",
+        email: lead?.email || "",
+        phone: lead?.phone || "",
+        title: lead?.title || "",
+        company: lead?.company || "",
+        ownerId: lead?.ownerId || null,
+        notes: lead?.notes || "",
+        source: lead?.source || "",
+        status: lead?.status || "New",
       });
     }
-  }, [isOpen, contact, form]);
+  }, [isOpen, lead, form]);
 
   const handleSubmit = async (values: FormValues) => {
     try {
-      console.log("Submitting form with values:", values); // Log form values for debugging
+      console.log("Submitting lead form with values:", values);
       onSubmit(values);
     } catch (error) {
       console.error("Form submission error:", error);
       toast({
         title: "Error",
-        description: "Failed to save contact. Please try again.",
+        description: "Failed to save lead. Please try again.",
         variant: "destructive",
       });
     }
@@ -136,12 +121,12 @@ export function ContactForm({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edit Contact" : "Add New Contact"}
+            {isEditing ? "Edit Lead" : "Add New Lead"}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Update the contact information below."
-              : "Fill out the form below to create a new contact."}
+              ? "Update the lead information below."
+              : "Fill out the form below to create a new lead."}
           </DialogDescription>
         </DialogHeader>
 
@@ -233,28 +218,75 @@ export function ContactForm({
               />
               <FormField
                 control={form.control}
-                name="accountId"
+                name="company"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Account/Company</FormLabel>
+                    <FormLabel>Company</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Acme Inc." 
+                        {...field} 
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="source"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lead Source</FormLabel>
                     <Select
                       value={field.value?.toString() || "none"}
                       onValueChange={(value) => {
-                        field.onChange(value && value !== "none" ? parseInt(value) : null);
+                        field.onChange(value !== "none" ? value : null);
                       }}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select an account" />
+                          <SelectValue placeholder="Select a source" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="none">No Account</SelectItem>
-                        {accounts.map((account: Account) => (
-                          <SelectItem key={account.id} value={account.id.toString()}>
-                            {account.name}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="none">Unknown</SelectItem>
+                        <SelectItem value="Website">Website</SelectItem>
+                        <SelectItem value="Referral">Referral</SelectItem>
+                        <SelectItem value="Social Media">Social Media</SelectItem>
+                        <SelectItem value="Email Campaign">Email Campaign</SelectItem>
+                        <SelectItem value="Trade Show">Trade Show</SelectItem>
+                        <SelectItem value="Cold Call">Cold Call</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      value={field.value?.toString() || "New"}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="New">New</SelectItem>
+                        <SelectItem value="Contacted">Contacted</SelectItem>
+                        <SelectItem value="Qualified">Qualified</SelectItem>
+                        <SelectItem value="Not Interested">Not Interested</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -293,102 +325,6 @@ export function ContactForm({
               />
             </div>
 
-            {/* Address Information */}
-            <div className="space-y-4">
-              <h3 className="text-md font-medium">Address Information</h3>
-              <div className="grid grid-cols-1 gap-4">
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Street Address</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="123 Main St" 
-                          {...field} 
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="San Francisco" 
-                          {...field} 
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State/Province</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="CA" 
-                          {...field} 
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="zip"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Postal/Zip Code</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="94105" 
-                          {...field} 
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Country</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="United States" 
-                          {...field} 
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
             {/* Notes */}
             <FormField
               control={form.control}
@@ -408,37 +344,14 @@ export function ContactForm({
                 </FormItem>
               )}
             />
-            
-            {/* Active Status */}
-            <FormField
-              control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                  <FormControl>
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary"
-                      checked={field.value === false ? false : true}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Active Contact</FormLabel>
-                    <p className="text-sm text-neutral-500">
-                      Inactive contacts won't show in the default contacts view
-                    </p>
-                  </div>
-                </FormItem>
-              )}
-            />
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={onClose}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : isEditing ? "Save Changes" : "Create Contact"}
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEditing ? "Save Changes" : "Create Lead"}
               </Button>
             </DialogFooter>
           </form>
