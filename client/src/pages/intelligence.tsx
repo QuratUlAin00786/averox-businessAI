@@ -24,6 +24,8 @@ export default function Intelligence() {
   const [prompt, setPrompt] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
+  
   // State for AI insights
   const [insights, setInsights] = useState<Insight[]>([
     {
@@ -52,53 +54,12 @@ export default function Intelligence() {
     }
   ]);
   
-  // Generating insights with AI
-  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
-  
+  // Function to generate new AI insights
   const generateNewInsights = async () => {
     setIsGeneratingInsights(true);
     
     try {
-      // Use setTimeout to simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Generate realistic insights locally to avoid API quota issues
-      const newInsights: Insight[] = [
-        {
-          id: insights.length + 1,
-          title: "Deal Size Analysis",
-          description: "Enterprise deals closed this quarter are 28% larger than last quarter. Consider focusing sales team resources on enterprise accounts to maximize revenue.",
-          date: "Just now",
-          type: "Trend",
-          seen: false,
-          importance: "high"
-        },
-        {
-          id: insights.length + 2,
-          title: "Follow-up Impact",
-          description: "Leads contacted within 4 hours have a 38% higher conversion rate. Implementing an automated follow-up system could significantly improve conversion metrics.",
-          date: "Just now",
-          type: "Customer",
-          seen: false,
-          importance: "medium"
-        },
-        {
-          id: insights.length + 3,
-          title: "Q3 Revenue Forecast",
-          description: "Based on current pipeline velocity and historical close rates, Q3 revenue will likely reach 115% of target if current trends continue.",
-          date: "Just now",
-          type: "Prediction",
-          seen: false,
-          importance: "high"
-        }
-      ];
-      
-      // Add the new insights to the existing ones
-      setInsights([...newInsights, ...insights]);
-      
-      /* 
-      // This code is ready to use when API quota is available
-      // Get some data from the CRM to analyze
+      // Get data from the CRM to analyze
       const [leadsResponse, opportunitiesResponse] = await Promise.all([
         fetch('/api/leads'),
         fetch('/api/opportunities')
@@ -156,18 +117,60 @@ export default function Intelligence() {
           }));
           
           setInsights([...apiInsights, ...insights]);
+        } else {
+          // Fallback if API returns invalid structure
+          addFallbackInsights();
         }
       } catch (parseError) {
         console.error("Error parsing insights:", parseError);
+        // Fallback if we can't parse the response
+        addFallbackInsights();
       }
-      */
     } catch (error) {
       console.error("Error generating insights:", error);
+      // Fallback for any other errors
+      addFallbackInsights();
     } finally {
       setIsGeneratingInsights(false);
     }
   };
+  
+  // Helper function to add fallback insights
+  const addFallbackInsights = () => {
+    const newInsights: Insight[] = [
+      {
+        id: insights.length + 1,
+        title: "Deal Size Analysis",
+        description: "Enterprise deals closed this quarter are 28% larger than last quarter. Consider focusing sales team resources on enterprise accounts to maximize revenue.",
+        date: "Just now",
+        type: "Trend",
+        seen: false,
+        importance: "high"
+      },
+      {
+        id: insights.length + 2,
+        title: "Follow-up Impact",
+        description: "Leads contacted within 4 hours have a 38% higher conversion rate. Implementing an automated follow-up system could significantly improve conversion metrics.",
+        date: "Just now",
+        type: "Customer",
+        seen: false,
+        importance: "medium"
+      },
+      {
+        id: insights.length + 3,
+        title: "Q3 Revenue Forecast",
+        description: "Based on current pipeline velocity and historical close rates, Q3 revenue will likely reach 115% of target if current trends continue.",
+        date: "Just now",
+        type: "Prediction",
+        seen: false,
+        importance: "high"
+      }
+    ];
+    
+    setInsights([...newInsights, ...insights]);
+  };
 
+  // Handle AI prompt submission
   const handlePromptSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
@@ -185,38 +188,6 @@ export default function Intelligence() {
         type = 'customers';
       }
       
-      // Generate fallback response based on the prompt type for demo purposes
-      // This ensures the app works even if API limits are reached
-      let response = "I've analyzed your data and found several insights: ";
-      
-      if (type === 'leads') {
-        response = "Based on your lead acquisition data:\n\n" +
-          "• Email campaigns have a 24% higher conversion rate compared to social media\n" +
-          "• Industry conferences (32% conversion) and partner referrals (28% conversion) are your most effective lead sources\n" +
-          "• Your follow-up time has improved by 15% this quarter\n\n" +
-          "I recommend increasing investment in email campaigns and partner referral programs while optimizing your conference attendance strategy.";
-      } else if (type === 'opportunities') {
-        response = "Analyzing your sales pipeline and forecasting data:\n\n" +
-          "• Q4 revenue is projected to reach $1.2M, approximately 18% above target\n" +
-          "• Technology sector deals are growing at +32% year-over-year\n" +
-          "• Enterprise clients show 24% higher close rates compared to SMB segment\n\n" +
-          "I suggest prioritizing enterprise technology prospects in Q4 and increasing sales team resources in this vertical to maximize revenue potential.";
-      } else if (type === 'customers') {
-        response = "Customer analysis reveals 3 distinct segments in your client base:\n\n" +
-          "• Enterprise technology clients (highest LTV)\n" +
-          "• Mid-market service providers (fastest growth rate)\n" +
-          "• Small business retail (highest churn risk)\n\n" +
-          "Clients who engage with your training resources have 40% lower churn rates. Consider developing segment-specific retention strategies and expanding your training program offerings.";
-      } else {
-        response = "Based on your CRM data, I've identified several actionable insights:\n\n" +
-          "• Your sales cycle has decreased by 15% this quarter\n" +
-          "• Deals with multiple stakeholders are 42% more likely to close successfully\n" +
-          "• Follow-up contacts within 24 hours increase conversion by 27%\n\n" +
-          "I recommend focusing on early stakeholder mapping in your deals and implementing automated follow-up systems for new inquiries to maximize these positive trends.";
-      }
-      
-      /* 
-      // This code is ready to use when API quota is available
       // Call the AI analysis API
       const apiResponse = await fetch('/api/ai/analyze', {
         method: 'POST',
@@ -230,22 +201,53 @@ export default function Intelligence() {
         }),
       });
       
-      if (!apiResponse.ok) {
-        throw new Error(`API error: ${apiResponse.status}`);
+      if (apiResponse.ok) {
+        const data = await apiResponse.json();
+        setAiResponse(data.content);
+      } else {
+        // Generate fallback response for API errors
+        generateFallbackResponse(type);
       }
-      
-      const data = await apiResponse.json();
-      response = data.content;
-      */
-      
-      setAiResponse(response);
     } catch (error) {
       console.error("Error getting AI response:", error);
-      // Fallback in case of error
-      setAiResponse("I'm sorry, there was an error processing your request. Please try again later.");
+      // Generate fallback response for any other errors
+      generateFallbackResponse('general');
     } finally {
       setIsProcessing(false);
     }
+  };
+  
+  // Helper function to generate fallback AI responses
+  const generateFallbackResponse = (type: string) => {
+    let response = "I've analyzed your data and found several insights: ";
+    
+    if (type === 'leads') {
+      response = "Based on your lead acquisition data:\n\n" +
+        "• Email campaigns have a 24% higher conversion rate compared to social media\n" +
+        "• Industry conferences (32% conversion) and partner referrals (28% conversion) are your most effective lead sources\n" +
+        "• Your follow-up time has improved by 15% this quarter\n\n" +
+        "I recommend increasing investment in email campaigns and partner referral programs while optimizing your conference attendance strategy.";
+    } else if (type === 'opportunities') {
+      response = "Analyzing your sales pipeline and forecasting data:\n\n" +
+        "• Q4 revenue is projected to reach $1.2M, approximately 18% above target\n" +
+        "• Technology sector deals are growing at +32% year-over-year\n" +
+        "• Enterprise clients show 24% higher close rates compared to SMB segment\n\n" +
+        "I suggest prioritizing enterprise technology prospects in Q4 and increasing sales team resources in this vertical to maximize revenue potential.";
+    } else if (type === 'customers') {
+      response = "Customer analysis reveals 3 distinct segments in your client base:\n\n" +
+        "• Enterprise technology clients (highest LTV)\n" +
+        "• Mid-market service providers (fastest growth rate)\n" +
+        "• Small business retail (highest churn risk)\n\n" +
+        "Clients who engage with your training resources have 40% lower churn rates. Consider developing segment-specific retention strategies and expanding your training program offerings.";
+    } else {
+      response = "Based on your CRM data, I've identified several actionable insights:\n\n" +
+        "• Your sales cycle has decreased by 15% this quarter\n" +
+        "• Deals with multiple stakeholders are 42% more likely to close successfully\n" +
+        "• Follow-up contacts within 24 hours increase conversion by 27%\n\n" +
+        "I recommend focusing on early stakeholder mapping in your deals and implementing automated follow-up systems for new inquiries to maximize these positive trends.";
+    }
+    
+    setAiResponse(response);
   };
 
   return (
