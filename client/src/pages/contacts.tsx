@@ -1,30 +1,188 @@
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Contact, insertContactSchema } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import { ContactList } from "@/components/contacts/contact-list";
+import { ContactForm } from "@/components/contacts/contact-form";
+import { DeleteContactDialog } from "@/components/contacts/delete-contact-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
 
 export default function Contacts() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  // State for contact form
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  
+  // State for delete dialog
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
+
+  // Fetch contacts query
+  const {
+    data: contacts = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["/api/contacts"],
+    select: (data: Contact[]) => {
+      return data.sort((a, b) => {
+        // Sort by creation date, newest first
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      });
+    },
+  });
+
+  // Create contact mutation
+  const createContactMutation = useMutation({
+    mutationFn: async (contact: z.infer<typeof insertContactSchema>) => {
+      return apiRequest("POST", "/api/contacts", contact);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      setIsContactFormOpen(false);
+      setSelectedContact(null);
+      toast({
+        title: "Contact created",
+        description: "The contact has been successfully created.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to create contact: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update contact mutation
+  const updateContactMutation = useMutation({
+    mutationFn: async ({ id, contact }: { id: number; contact: z.infer<typeof insertContactSchema> }) => {
+      return apiRequest("PUT", `/api/contacts/${id}`, contact);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      setIsContactFormOpen(false);
+      setSelectedContact(null);
+      setIsEditing(false);
+      toast({
+        title: "Contact updated",
+        description: "The contact has been successfully updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update contact: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete contact mutation
+  const deleteContactMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest("DELETE", `/api/contacts/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      setIsDeleteDialogOpen(false);
+      setContactToDelete(null);
+      toast({
+        title: "Contact deleted",
+        description: "The contact has been successfully deleted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete contact: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Form handlers
+  const handleAddContact = () => {
+    setSelectedContact(null);
+    setIsEditing(false);
+    setIsContactFormOpen(true);
+  };
+
+  const handleEditContact = (contact: Contact) => {
+    setSelectedContact(contact);
+    setIsEditing(true);
+    setIsContactFormOpen(true);
+  };
+
+  const handleDeleteContact = (contactId: number) => {
+    const contact = contacts.find((c) => c.id === contactId);
+    if (contact) {
+      setContactToDelete(contact);
+      setIsDeleteDialogOpen(true);
+    }
+  };
+
+  const handleContactFormSubmit = (values: z.infer<typeof insertContactSchema>) => {
+    if (isEditing && selectedContact) {
+      updateContactMutation.mutate({ id: selectedContact.id, contact: values });
+    } else {
+      createContactMutation.mutate(values);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (contactToDelete) {
+      deleteContactMutation.mutate(contactToDelete.id);
+    }
+  };
+
   return (
     <div className="py-6">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
-              Contacts
-            </h2>
-          </div>
-          <div className="flex mt-4 md:mt-0 md:ml-4">
-            <Button>
-              <Plus className="-ml-1 mr-2 h-5 w-5" />
-              Add Contact
-            </Button>
-          </div>
+        <div className="mb-6 pb-5 border-b border-neutral-200">
+          <h1 className="text-2xl font-bold text-neutral-700">Contacts</h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            Manage your contacts and keep track of your relationships.
+          </p>
         </div>
       </div>
       
-      <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
-        <div className="flex items-center justify-center h-96 bg-white rounded-lg shadow">
-          <p className="text-neutral-600">Contacts management will be implemented here</p>
+      <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-100">
+          <ContactList
+            contacts={contacts}
+            isLoading={isLoading}
+            error={error as Error}
+            onEdit={handleEditContact}
+            onDelete={handleDeleteContact}
+            onAdd={handleAddContact}
+          />
         </div>
       </div>
+
+      {/* Contact Form Dialog */}
+      <ContactForm
+        isOpen={isContactFormOpen}
+        isEditing={isEditing}
+        contact={selectedContact}
+        isSubmitting={createContactMutation.isPending || updateContactMutation.isPending}
+        onClose={() => setIsContactFormOpen(false)}
+        onSubmit={handleContactFormSubmit}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteContactDialog
+        contact={contactToDelete}
+        isOpen={isDeleteDialogOpen}
+        isDeleting={deleteContactMutation.isPending}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }
