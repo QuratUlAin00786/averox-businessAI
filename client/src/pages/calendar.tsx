@@ -41,6 +41,7 @@ export default function Calendar() {
   // Create event mutation
   const createMutation = useMutation({
     mutationFn: (eventData: InsertEvent) => {
+      console.log('Creating event with data:', eventData);
       return apiRequest('/api/events', {
         method: 'POST',
         body: JSON.stringify(eventData)

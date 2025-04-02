@@ -608,18 +608,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/events', async (req, res) => {
     try {
+      console.log('Event creation request body:', req.body);
+      
       // Process date fields properly 
       const data = {...req.body};
       if (data.startDate && typeof data.startDate === 'string') {
+        console.log('startDate is a string:', data.startDate);
         // Keep as string, storage layer will handle conversion
       }
       if (data.endDate && typeof data.endDate === 'string') {
+        console.log('endDate is a string:', data.endDate);
         // Keep as string, storage layer will handle conversion
       }
       
-      const eventData = insertEventSchema.parse(data);
-      const newEvent = await storage.createEvent(eventData);
-      return res.status(201).json(newEvent);
+      try {
+        const eventData = insertEventSchema.parse(data);
+        console.log('Parsed event data:', eventData);
+        const newEvent = await storage.createEvent(eventData);
+        console.log('New event created:', newEvent);
+        return res.status(201).json(newEvent);
+      } catch (validationError) {
+        console.error('Validation error:', validationError);
+        throw validationError;
+      }
     } catch (error) {
       return handleError(res, error);
     }

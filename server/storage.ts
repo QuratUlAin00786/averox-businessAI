@@ -804,7 +804,17 @@ export class MemStorage implements IStorage {
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
     const id = this.eventIdCounter++;
     const createdAt = new Date();
-    const event: Event = { ...insertEvent, id, createdAt };
+    
+    // Process date fields if they are strings
+    const processedEvent = {...insertEvent};
+    if (typeof processedEvent.startDate === 'string') {
+      processedEvent.startDate = new Date(processedEvent.startDate);
+    }
+    if (typeof processedEvent.endDate === 'string') {
+      processedEvent.endDate = new Date(processedEvent.endDate);
+    }
+    
+    const event: Event = { ...processedEvent, id, createdAt };
     this.events.set(id, event);
     
     // Create activity for the new event
