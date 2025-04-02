@@ -16,6 +16,7 @@ import {
   Workflow,
   MoreVertical
 } from "lucide-react";
+import AveroxLogo from "../../assets/averox-logo.svg";
 
 interface SidebarProps {
   className?: string;
@@ -65,13 +66,13 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     <>
       <div className="flex items-center justify-center h-16 px-4 border-b border-neutral-200">
         <div className="flex items-center">
-          <svg className="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13.5 2C13.5 2 15.16 2.38 17.59 4.88C20.34 7.73 20.5 11 20.5 11C20.5 11 20.35 7.67 17.61 4.88C15.18 2.38 13.5 2 13.5 2Z" />
-            <path d="M19.5 13C19.5 13 19.13 14.66 16.63 17.09C13.78 19.84 10.5 20 10.5 20C10.5 20 13.83 19.85 16.62 17.11C19.12 14.68 19.5 13 19.5 13Z" />
-            <path d="M11 22.5C11 22.5 9.34 22.12 6.91 19.62C4.06 16.87 3.9 13.59 3.9 13.59C3.9 13.59 4.05 16.92 6.79 19.71C9.22 22.21 11 22.5 11 22.5Z" />
-            <path d="M4.5 11.5C4.5 11.5 4.87 9.84 7.37 7.41C10.22 4.66 13.5 4.5 13.5 4.5C13.5 4.5 10.17 4.65 7.38 7.39C4.88 9.82 4.5 11.5 4.5 11.5Z" />
-          </svg>
-          <span className="ml-2 text-xl font-semibold tracking-wider text-neutral-600">AVEROX CRM</span>
+          <Link href="/">
+            <img 
+              src={AveroxLogo} 
+              alt="Averox CRM Logo" 
+              className="h-10" 
+            />
+          </Link>
         </div>
       </div>
       
