@@ -1,30 +1,214 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PlusCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { apiRequest } from "@/lib/queryClient";
+import { Event, InsertEvent } from "@shared/schema";
+import { MonthlyCalendar } from "@/components/calendar/monthly-calendar";
+import { EventForm } from "@/components/calendar/event-form";
+import { EventDetail } from "@/components/calendar/event-detail";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Calendar() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+  
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  
+  // Fetch events
+  const { 
+    data: events = [], 
+    isLoading,
+    isError,
+    error 
+  } = useQuery({ 
+    queryKey: ['/api/events'], 
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to load events",
+        description: error.message
+      });
+    }
+  });
+  
+  // Create event mutation
+  const createMutation = useMutation({
+    mutationFn: (eventData: InsertEvent) => {
+      return apiRequest('/api/events', {
+        method: 'POST',
+        body: JSON.stringify(eventData)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      toast({
+        title: "Event created",
+        description: "Your event has been successfully created."
+      });
+      setIsFormOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to create event",
+        description: error.message
+      });
+    }
+  });
+  
+  // Update event mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: { id: number; event: Partial<InsertEvent> }) => {
+      return apiRequest(`/api/events/${data.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data.event)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      toast({
+        title: "Event updated",
+        description: "Your event has been successfully updated."
+      });
+      setIsFormOpen(false);
+      setIsDetailOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to update event",
+        description: error.message
+      });
+    }
+  });
+  
+  // Delete event mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => {
+      return apiRequest(`/api/events/${id}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      toast({
+        title: "Event deleted",
+        description: "Your event has been successfully deleted."
+      });
+      setIsDetailOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to delete event",
+        description: error.message
+      });
+    }
+  });
+  
+  const handleOpenCreateForm = () => {
+    setSelectedEvent(null);
+    setIsFormOpen(true);
+  };
+  
+  const handleOpenEditForm = (event: Event) => {
+    setSelectedEvent(event);
+    setIsDetailOpen(false);
+    setIsFormOpen(true);
+  };
+  
+  const handleEventClick = (event: Event) => {
+    setSelectedEvent(event);
+    setIsDetailOpen(true);
+  };
+  
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedEvent(null);
+    setIsFormOpen(true);
+  };
+  
+  const handleCreateEvent = (data: InsertEvent) => {
+    createMutation.mutate(data);
+  };
+  
+  const handleUpdateEvent = (data: InsertEvent) => {
+    if (selectedEvent) {
+      updateMutation.mutate({
+        id: selectedEvent.id,
+        event: data
+      });
+    }
+  };
+  
+  const handleDeleteEvent = (event: Event) => {
+    if (confirm("Are you sure you want to delete this event?")) {
+      deleteMutation.mutate(event.id);
+    }
+  };
+  
   return (
-    <div className="py-6">
-      <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
-              Calendar
-            </h2>
+    <div className="container mx-auto py-6 space-y-8">
+      <PageHeader
+        title="Calendar"
+        description="View and manage your events and appointments"
+        actions={
+          <Button onClick={handleOpenCreateForm} className="flex items-center space-x-2">
+            <PlusCircle className="h-4 w-4" />
+            <span>Add Event</span>
+          </Button>
+        }
+      />
+      
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 flex justify-center">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-opacity-50 rounded-full border-t-transparent"></div>
           </div>
-          <div className="flex mt-4 md:mt-0 md:ml-4">
-            <Button>
-              <Plus className="-ml-1 mr-2 h-5 w-5" />
-              Add Event
+        ) : isError ? (
+          <div className="p-8 text-center text-red-500">
+            <p>Failed to load calendar: {error?.message}</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/events'] })}
+            >
+              Retry
             </Button>
           </div>
-        </div>
+        ) : (
+          <MonthlyCalendar 
+            events={events}
+            onEventClick={handleEventClick}
+            onDateClick={handleDateClick}
+          />
+        )}
       </div>
       
-      <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
-        <div className="flex items-center justify-center h-96 bg-white rounded-lg shadow">
-          <p className="text-neutral-600">Calendar will be implemented here</p>
-        </div>
-      </div>
+      {/* Event Form */}
+      <EventForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={selectedEvent ? handleUpdateEvent : handleCreateEvent}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
+        event={selectedEvent}
+      />
+      
+      {/* Event Detail */}
+      <EventDetail
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        event={selectedEvent}
+        onEdit={handleOpenEditForm}
+        onDelete={handleDeleteEvent}
+      />
     </div>
   );
 }
