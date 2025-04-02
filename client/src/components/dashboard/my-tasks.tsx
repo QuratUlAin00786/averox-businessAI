@@ -57,12 +57,13 @@ export function MyTasks({ tasks }: MyTasksProps) {
           <ul className="divide-y divide-neutral-200">
             {tasks.map((task) => (
               <li key={task.id}>
-                <div className="flex items-center hover:bg-neutral-50">
+                <div className="flex items-center">
                   <div className="flex-shrink-0 pl-4 py-4">
                     <Checkbox 
                       id={String(task.id)} 
                       className="w-4 h-4 text-primary border-neutral-300"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         const message = `Task marked as complete: ${task.title}`;
                         console.log(message);
                         window.alert(message);
@@ -71,7 +72,7 @@ export function MyTasks({ tasks }: MyTasksProps) {
                   </div>
                   <DashboardButton
                     variant="ghost"
-                    className="flex-1 p-0 h-auto text-left"
+                    className="flex-1 p-0 text-left"
                     actionText={`Viewing task details: ${task.title}`}
                   >
                     <div className="flex items-center px-4 py-4 sm:px-6">
