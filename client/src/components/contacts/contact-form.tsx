@@ -408,6 +408,30 @@ export function ContactForm({
                 </FormItem>
               )}
             />
+            
+            {/* Active Status */}
+            <FormField
+              control={form.control}
+              name="isActive"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-neutral-300 text-primary focus:ring-primary"
+                      checked={field.value === false ? false : true}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Active Contact</FormLabel>
+                    <p className="text-sm text-neutral-500">
+                      Inactive contacts won't show in the default contacts view
+                    </p>
+                  </div>
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={onClose}>
