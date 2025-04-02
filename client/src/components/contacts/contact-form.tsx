@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Contact, insertContactSchema } from "@shared/schema";
+import { Contact, insertContactSchema, User, Account } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,9 +21,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Extend the contact schema for form validation
 const formSchema = insertContactSchema.extend({
@@ -51,6 +61,18 @@ export function ContactForm({
   onSubmit,
 }: ContactFormProps) {
   const { toast } = useToast();
+  
+  // Fetch users for owner dropdown
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+    enabled: isOpen,
+  });
+  
+  // Fetch accounts for account dropdown
+  const { data: accounts = [] } = useQuery<Account[]>({
+    queryKey: ["/api/accounts"],
+    enabled: isOpen,
+  });
   
   // Initialize the form with current contact data or empty values
   const form = useForm<FormValues>({
@@ -189,8 +211,8 @@ export function ContactForm({
               />
             </div>
 
+            {/* Professional Information */}
             <div className="grid grid-cols-2 gap-4">
-              {/* Professional Information */}
               <FormField
                 control={form.control}
                 name="title"
@@ -214,18 +236,56 @@ export function ContactForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Account/Company</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number"
-                        placeholder="Associate with account ID" 
-                        {...field} 
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          const value = e.target.value ? parseInt(e.target.value) : null;
-                          field.onChange(value);
-                        }}
-                      />
-                    </FormControl>
+                    <Select
+                      value={field.value?.toString() || ""}
+                      onValueChange={(value) => {
+                        field.onChange(value ? parseInt(value) : null);
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an account" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No Account</SelectItem>
+                        {accounts.map((account: Account) => (
+                          <SelectItem key={account.id} value={account.id.toString()}>
+                            {account.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ownerId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Owner</FormLabel>
+                    <Select
+                      value={field.value?.toString() || ""}
+                      onValueChange={(value) => {
+                        field.onChange(value ? parseInt(value) : null);
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an owner" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No Owner</SelectItem>
+                        {users.map((user: User) => (
+                          <SelectItem key={user.id} value={user.id.toString()}>
+                            {user.firstName} {user.lastName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
