@@ -176,23 +176,7 @@ export default function Calendar() {
     }
   };
   
-  // Basic event creation for debugging
-  const handleQuickEventCreate = () => {
-    const quickEvent = {
-      title: "Quick Test Event",
-      description: "Testing event creation",
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 3600000).toISOString(), // 1 hour later
-      location: "Test Location",
-      locationType: "physical",
-      eventType: "Meeting",
-      status: "Confirmed",
-      ownerId: 1
-    };
-    
-    console.log("Creating quick event:", quickEvent);
-    createMutation.mutate(quickEvent as InsertEvent);
-  };
+
 
   return (
     <div className="container mx-auto py-6 space-y-8">
@@ -204,9 +188,6 @@ export default function Calendar() {
             <Button onClick={handleOpenCreateForm} className="flex items-center space-x-2">
               <PlusCircle className="h-4 w-4" />
               <span>Add Event</span>
-            </Button>
-            <Button onClick={handleQuickEventCreate} variant="secondary" className="flex items-center space-x-2">
-              <span>Quick Add (Debug)</span>
             </Button>
           </div>
         }
