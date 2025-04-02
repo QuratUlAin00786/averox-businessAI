@@ -219,7 +219,7 @@ export default function Workflows() {
         }
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue="active" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="active" className="flex items-center gap-2">
             <PlayCircle className="h-4 w-4" />

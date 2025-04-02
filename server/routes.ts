@@ -89,7 +89,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch user details for each activity
       const activitiesWithUserDetails = await Promise.all(
         recentActivities.map(async (activity) => {
-          const user = await storage.getUser(activity.userId);
+          // Make sure userId is a valid number before calling getUser
+          const user = activity.userId !== null ? await storage.getUser(activity.userId) : null;
           return {
             ...activity,
             user: user ? {
