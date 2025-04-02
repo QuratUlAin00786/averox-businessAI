@@ -36,13 +36,13 @@ export function MyTasks({ tasks }: MyTasksProps) {
   return (
     <div className="overflow-hidden bg-white rounded-lg shadow">
       <div className="px-4 py-5 border-b border-neutral-200 sm:px-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium leading-6 text-neutral-700">My Tasks</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+          <h3 className="text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">My Tasks</h3>
           <div>
             <SimpleButton 
               variant="ghost" 
               size="sm" 
-              className="text-primary hover:bg-primary-light hover:bg-opacity-20"
+              className="text-primary hover:bg-primary-light hover:bg-opacity-20 w-full sm:w-auto"
               onClick={() => window.alert("Opening task creation form...")}
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -75,26 +75,22 @@ export function MyTasks({ tasks }: MyTasksProps) {
                     className="flex-1 p-0 h-auto text-left"
                     onClick={() => window.alert(`Viewing task details: ${task.title}`)}
                   >
-                    <div className="flex items-center px-4 py-4 sm:px-6">
-                      <div className="flex items-center flex-1 min-w-0">
-                        <div className="flex-1 min-w-0">
-                          <div>
-                            <p className="text-sm font-medium text-neutral-700 truncate">{task.title}</p>
-                            <div className="flex flex-wrap mt-1 gap-y-1">
-                              <div className="flex items-center text-sm text-neutral-500">
-                                <Calendar className="flex-shrink-0 mr-1.5 h-5 w-5 text-neutral-400" />
-                                <span>{formatDueDate(task.dueDate)}</span>
-                              </div>
-                              <div className="flex items-center ml-4 text-sm text-neutral-500">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityClass(task.priority)}`}>
-                                  {task.priority} Priority
-                                </span>
-                              </div>
-                            </div>
+                    <div className="flex flex-col md:flex-row md:items-center px-4 py-4 sm:px-6">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <p className="text-sm font-medium text-neutral-700 truncate">{task.title}</p>
+                        <div className="flex flex-wrap mt-1 gap-2">
+                          <div className="flex items-center text-sm text-neutral-500">
+                            <Calendar className="flex-shrink-0 mr-1.5 h-5 w-5 text-neutral-400" />
+                            <span>{formatDueDate(task.dueDate)}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-neutral-500">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityClass(task.priority)}`}>
+                              {task.priority} Priority
+                            </span>
                           </div>
                         </div>
                       </div>
-                      <div>
+                      <div className="mt-2 md:mt-0 self-end md:self-center">
                         <ChevronRight className="w-5 h-5 text-neutral-400" />
                       </div>
                     </div>

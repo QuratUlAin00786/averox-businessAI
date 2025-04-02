@@ -50,23 +50,23 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="flex mt-4 md:mt-0 md:ml-4">
+          <div className="flex flex-col sm:flex-row mt-4 gap-2 sm:gap-3 md:mt-0 md:ml-4">
             <SimpleButton 
               variant="outline" 
-              className="text-neutral-600"
+              className="text-neutral-600 w-full sm:w-auto"
               onClick={() => window.alert("Exporting dashboard data to CSV/Excel...")}
               type="button"
             >
               <Download className="-ml-1 mr-2 h-5 w-5 text-neutral-500" />
-              Export
+              <span>Export</span>
             </SimpleButton>
             <SimpleButton 
-              className="ml-3"
+              className="w-full sm:w-auto"
               onClick={() => window.alert("Opening new report creation form...")}
               type="button"
             >
               <Plus className="-ml-1 mr-2 h-5 w-5" />
-              Add Report
+              <span>Add Report</span>
             </SimpleButton>
           </div>
         </div>
