@@ -95,7 +95,12 @@ export function TaskForm({
   }, [isOpen, task, form]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit(values);
+    // Convert reminderDate to string format before submission
+    const formattedValues = {
+      ...values,
+      reminderDate: values.reminderDate ? values.reminderDate.toString() : null
+    };
+    onSubmit(formattedValues);
   };
 
   const isReminderEnabled = form.watch("isReminder");

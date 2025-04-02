@@ -526,7 +526,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/tasks', async (req, res) => {
     try {
-      const taskData = insertTaskSchema.parse(req.body);
+      // Convert Date strings to proper format for timestamps
+      const data = {...req.body};
+      if (data.reminderDate && typeof data.reminderDate === 'string') {
+        // Keep as string, storage layer will handle conversion
+      }
+      
+      const taskData = insertTaskSchema.parse(data);
       const newTask = await storage.createTask(taskData);
       return res.status(201).json(newTask);
     } catch (error) {

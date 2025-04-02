@@ -725,7 +725,14 @@ export class MemStorage implements IStorage {
   async createTask(insertTask: InsertTask): Promise<Task> {
     const id = this.taskIdCounter++;
     const createdAt = new Date();
-    const task: Task = { ...insertTask, id, createdAt };
+    
+    // Convert reminderDate from string to Date if it exists
+    let processedTask: any = { ...insertTask };
+    if (insertTask.reminderDate && typeof insertTask.reminderDate === 'string') {
+      processedTask.reminderDate = new Date(insertTask.reminderDate);
+    }
+    
+    const task: Task = { ...processedTask, id, createdAt };
     this.tasks.set(id, task);
     
     // Create activity for the new task
@@ -747,7 +754,13 @@ export class MemStorage implements IStorage {
     const task = await this.getTask(id);
     if (!task) return undefined;
     
-    const updatedTask = { ...task, ...taskData };
+    // Convert reminderDate from string to Date if it exists
+    let processedTaskData: any = { ...taskData };
+    if (taskData.reminderDate && typeof taskData.reminderDate === 'string') {
+      processedTaskData.reminderDate = new Date(taskData.reminderDate);
+    }
+    
+    const updatedTask = { ...task, ...processedTaskData };
     this.tasks.set(id, updatedTask);
     
     // If the task status changed to completed, create an activity

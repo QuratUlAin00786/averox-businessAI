@@ -184,6 +184,8 @@ export const insertOpportunitySchema = createInsertSchema(opportunities).omit({
 export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
+}).extend({
+  reminderDate: z.string().nullable().optional()
 });
 
 export const insertEventSchema = createInsertSchema(events).omit({
