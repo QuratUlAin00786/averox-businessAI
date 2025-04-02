@@ -608,7 +608,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/events', async (req, res) => {
     try {
-      const eventData = insertEventSchema.parse(req.body);
+      // Process date fields properly 
+      const data = {...req.body};
+      if (data.startDate && typeof data.startDate === 'string') {
+        // Keep as string, storage layer will handle conversion
+      }
+      if (data.endDate && typeof data.endDate === 'string') {
+        // Keep as string, storage layer will handle conversion
+      }
+      
+      const eventData = insertEventSchema.parse(data);
       const newEvent = await storage.createEvent(eventData);
       return res.status(201).json(newEvent);
     } catch (error) {
@@ -616,14 +625,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put('/api/events/:id', async (req, res) => {
+  app.patch('/api/events/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid event ID" });
       }
       
-      const eventData = insertEventSchema.partial().parse(req.body);
+      // Process date fields properly
+      const data = {...req.body};
+      if (data.startDate && typeof data.startDate === 'string') {
+        // Keep as string, storage layer will handle conversion
+      }
+      if (data.endDate && typeof data.endDate === 'string') {
+        // Keep as string, storage layer will handle conversion
+      }
+      
+      const eventData = insertEventSchema.partial().parse(data);
       const updatedEvent = await storage.updateEvent(id, eventData);
       
       if (!updatedEvent) {

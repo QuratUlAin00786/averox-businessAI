@@ -135,11 +135,11 @@ export function EventForm({
   }, [isOpen, event, form]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    // Convert dates to string format before submission
+    // Format dates as ISO strings for the API
     const formattedValues: InsertEvent = {
       ...values,
-      startDate: values.startDate,
-      endDate: values.endDate,
+      startDate: values.startDate.toISOString(),
+      endDate: values.endDate.toISOString(),
     };
     onSubmit(formattedValues);
   };

@@ -191,6 +191,9 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
 export const insertEventSchema = createInsertSchema(events).omit({
   id: true,
   createdAt: true,
+}).extend({
+  startDate: z.string().or(z.date()),
+  endDate: z.string().or(z.date())
 });
 
 export const insertActivitySchema = createInsertSchema(activities).omit({
