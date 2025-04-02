@@ -58,7 +58,10 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
               variant="ghost" 
               size="icon" 
               className="ml-2 text-neutral-400 hover:text-neutral-500"
-              onClick={() => alert("Opening pipeline settings...")}
+              onClick={(e) => {
+                e.preventDefault();
+                window.alert("Opening pipeline settings...");
+              }}
             >
               <Settings className="w-5 h-5" />
             </Button>
@@ -71,7 +74,10 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
               <div 
                 key={index} 
                 className="relative pt-1 cursor-pointer"
-                onClick={() => alert(`Viewing details for ${stage.name} stage: ${stage.value}`)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.alert(`Viewing details for ${stage.name} stage: ${stage.value}`);
+                }}
               >
                 <div className="flex mb-2 items-center justify-between">
                   <div>
@@ -110,7 +116,10 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
         
         <div 
           className="mt-4 text-sm text-center text-neutral-500 cursor-pointer" 
-          onClick={() => alert("Opening detailed pipeline analysis...")}
+          onClick={(e) => {
+            e.preventDefault();
+            window.alert("Opening detailed pipeline analysis...");
+          }}
         >
           <span className="font-medium text-primary">{totalPipeline}</span> total pipeline value
         </div>

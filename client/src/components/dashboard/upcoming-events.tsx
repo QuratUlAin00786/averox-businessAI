@@ -31,7 +31,10 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
               variant="ghost" 
               size="sm" 
               className="text-primary hover:bg-primary-light hover:bg-opacity-20"
-              onClick={() => alert("Opening event creation form...")}
+              onClick={(e) => {
+                e.preventDefault();
+                window.alert("Opening event creation form...");
+              }}
             >
               <Plus className="w-4 h-4 mr-1" />
               Add Event
@@ -47,7 +50,10 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
               <li key={event.id}>
                 <div 
                   className="block hover:bg-neutral-50 cursor-pointer" 
-                  onClick={() => alert(`Viewing event details: ${event.title}`)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.alert(`Viewing event details: ${event.title}`);
+                  }}
                 >
                   <div className="flex items-center px-4 py-4 sm:px-6">
                     <div className="flex-shrink-0">
@@ -100,7 +106,10 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
           <Button 
             variant="outline" 
             className="mt-4 text-neutral-700 border-neutral-200 shadow-sm"
-            onClick={() => alert("Opening event scheduling form...")}
+            onClick={(e) => {
+              e.preventDefault();
+              window.alert("Opening event scheduling form...");
+            }}
           >
             <Calendar className="w-4 h-4 mr-2" />
             Schedule New Event
