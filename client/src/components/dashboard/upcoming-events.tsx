@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { DashboardButton } from "@/components/ui/dashboard-button";
 import { MoreVertical, Clock, MapPin, Video, ChevronRight, Calendar, Plus } from "lucide-react";
 import { Link } from "wouter";
 import { UpcomingEvent } from "@/lib/data";
@@ -27,19 +28,15 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium leading-6 text-neutral-700">Upcoming Events</h3>
           <div className="flex">
-            <Button 
+            <DashboardButton 
               variant="ghost" 
               size="sm" 
               className="text-primary hover:bg-primary-light hover:bg-opacity-20"
-              onClick={() => {
-                const message = "Opening event creation form...";
-                console.log(message);
-                window.alert(message);
-              }}
+              actionText="Opening event creation form..."
             >
               <Plus className="w-4 h-4 mr-1" />
               Add Event
-            </Button>
+            </DashboardButton>
           </div>
         </div>
       </div>
@@ -49,13 +46,10 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
           <ul className="divide-y divide-neutral-200">
             {events.map((event) => (
               <li key={event.id}>
-                <div 
-                  className="block hover:bg-neutral-50 cursor-pointer" 
-                  onClick={() => {
-                    const message = `Viewing event details: ${event.title}`;
-                    console.log(message);
-                    window.alert(message);
-                  }}
+                <DashboardButton
+                  variant="ghost"
+                  className="block hover:bg-neutral-50 w-full p-0 h-auto bg-transparent text-left"
+                  actionText={`Viewing event details: ${event.title}`}
                 >
                   <div className="flex items-center px-4 py-4 sm:px-6">
                     <div className="flex-shrink-0">
@@ -89,34 +83,33 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
                       </span>
                     </div>
                   </div>
-                </div>
+                </DashboardButton>
               </li>
             ))}
           </ul>
           <div className="px-4 py-3 bg-neutral-50 text-center sm:px-6">
-            <Link href="/calendar">
-              <Button variant="outline" className="text-neutral-700 border-neutral-200 shadow-sm">
-                View Calendar
-                <ChevronRight className="w-5 h-5 ml-2 -mr-1" />
-              </Button>
-            </Link>
+            <DashboardButton 
+              variant="outline" 
+              className="text-neutral-700 border-neutral-200 shadow-sm"
+              href="/calendar"
+              actionText="Navigating to calendar page..."
+            >
+              View Calendar
+              <ChevronRight className="w-5 h-5 ml-2 -mr-1" />
+            </DashboardButton>
           </div>
         </>
       ) : (
         <div className="px-4 py-10 text-center text-neutral-500">
           <p>No upcoming events</p>
-          <Button 
+          <DashboardButton 
             variant="outline" 
             className="mt-4 text-neutral-700 border-neutral-200 shadow-sm"
-            onClick={() => {
-              const message = "Opening event scheduling form...";
-              console.log(message);
-              window.alert(message);
-            }}
+            actionText="Opening event scheduling form..."
           >
             <Calendar className="w-4 h-4 mr-2" />
             Schedule New Event
-          </Button>
+          </DashboardButton>
         </div>
       )}
     </div>
