@@ -11,7 +11,6 @@ import {
   HelpCircle,
   Globe
 } from "lucide-react";
-import AveroxLogo from "../../assets/averox-logo.svg";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import AveroxLogo from "@/assets/AveroxLogo";
 
 interface TopBarProps {
   onToggleSidebar: () => void;
@@ -45,11 +45,7 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
         <div className="flex flex-1 items-center">
           {/* Mobile logo visible in topbar when sidebar is closed */}
           <div className="flex md:hidden mr-3">
-            <img 
-              src={AveroxLogo} 
-              alt="Averox CRM Logo" 
-              className="h-8" 
-            />
+            <AveroxLogo />
           </div>
           <div className="flex items-center w-full max-w-2xl px-2 ml-4 md:ml-0">
             <div className="w-full">
