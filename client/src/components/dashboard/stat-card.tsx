@@ -1,6 +1,6 @@
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DashboardButton } from "@/components/ui/dashboard-button";
+import { SimpleButton } from "@/components/ui/simple-button";
 
 interface StatCardProps {
   title: string;
@@ -43,9 +43,9 @@ export function StatCard({ title, value, change, icon: Icon, iconColor }: StatCa
 
   return (
     <div className="overflow-hidden bg-white rounded-lg shadow">
-      <DashboardButton 
+      <SimpleButton 
         className="w-full text-left p-0 h-auto hover:bg-neutral-50"
-        actionText={`Viewing detailed analytics for ${title}...`}
+        onClick={() => window.alert(`Viewing detailed analytics for ${title}...`)}
         variant="ghost"
       >
         <div className="p-5">
@@ -71,7 +71,7 @@ export function StatCard({ title, value, change, icon: Icon, iconColor }: StatCa
             </div>
           </div>
         </div>
-      </DashboardButton>
+      </SimpleButton>
     </div>
   );
 }

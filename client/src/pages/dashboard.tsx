@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { DashboardButton } from "@/components/ui/dashboard-button";
+import { SimpleButton } from "@/components/ui/simple-button";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { SalesPipeline } from "@/components/dashboard/sales-pipeline";
 import { RecentActivities } from "@/components/dashboard/recent-activities";
@@ -51,23 +51,23 @@ export default function Dashboard() {
           </div>
           
           <div className="flex mt-4 md:mt-0 md:ml-4">
-            <DashboardButton 
+            <SimpleButton 
               variant="outline" 
               className="text-neutral-600"
-              actionText="Exporting dashboard data to CSV/Excel..."
+              onClick={() => window.alert("Exporting dashboard data to CSV/Excel...")}
               type="button"
             >
               <Download className="-ml-1 mr-2 h-5 w-5 text-neutral-500" />
               Export
-            </DashboardButton>
-            <DashboardButton 
+            </SimpleButton>
+            <SimpleButton 
               className="ml-3"
-              actionText="Opening new report creation form..."
+              onClick={() => window.alert("Opening new report creation form...")}
               type="button"
             >
               <Plus className="-ml-1 mr-2 h-5 w-5" />
               Add Report
-            </DashboardButton>
+            </SimpleButton>
           </div>
         </div>
       </div>

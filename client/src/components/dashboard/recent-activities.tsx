@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { DashboardButton } from "@/components/ui/dashboard-button";
+import { SimpleButton } from "@/components/ui/simple-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlusCircle, CheckCircle, MessageCircle, UserPlus, Calendar } from "lucide-react";
 import { DashboardActivity } from "@/lib/data";
@@ -47,13 +47,13 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium leading-6 text-neutral-700">Recent Activities</h3>
           <div>
-            <DashboardButton 
+            <SimpleButton 
               variant="outline" 
               className="border-primary text-primary hover:bg-primary hover:text-white"
-              actionText="Opening all activities history..."
+              onClick={() => window.alert("Opening all activities history...")}
             >
               View All
-            </DashboardButton>
+            </SimpleButton>
           </div>
         </div>
       </div>
@@ -67,10 +67,10 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
                     {!activity.isLast && (
                       <span className="absolute top-5 left-5 -ml-px h-full w-0.5 bg-neutral-200" aria-hidden="true"></span>
                     )}
-                    <DashboardButton
+                    <SimpleButton
                       variant="ghost"
                       className="relative w-full p-0 h-auto hover:bg-neutral-50 focus:ring-0 text-left"
-                      actionText={`Viewing details for activity: ${activity.action}`}
+                      onClick={() => window.alert(`Viewing details for activity: ${activity.action}`)}
                     >
                       <div className="relative flex items-start space-x-3">
                         <div className="relative">
@@ -92,7 +92,7 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
                           </div>
                         </div>
                       </div>
-                    </DashboardButton>
+                    </SimpleButton>
                   </div>
                 </li>
               ))}
