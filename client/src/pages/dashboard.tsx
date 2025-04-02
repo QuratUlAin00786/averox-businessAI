@@ -55,6 +55,7 @@ export default function Dashboard() {
               variant="outline" 
               className="text-neutral-600"
               actionText="Exporting dashboard data to CSV/Excel..."
+              type="button"
             >
               <Download className="-ml-1 mr-2 h-5 w-5 text-neutral-500" />
               Export
@@ -62,6 +63,7 @@ export default function Dashboard() {
             <DashboardButton 
               className="ml-3"
               actionText="Opening new report creation form..."
+              type="button"
             >
               <Plus className="-ml-1 mr-2 h-5 w-5" />
               Add Report

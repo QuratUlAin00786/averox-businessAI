@@ -69,7 +69,7 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
                     )}
                     <DashboardButton
                       variant="ghost"
-                      className="relative w-full p-0 h-auto hover:bg-transparent focus:ring-0 text-left bg-transparent"
+                      className="relative w-full p-0 h-auto hover:bg-neutral-50 focus:ring-0 text-left"
                       actionText={`Viewing details for activity: ${activity.action}`}
                     >
                       <div className="relative flex items-start space-x-3">

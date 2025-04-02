@@ -7,6 +7,7 @@ export interface DashboardButtonProps extends ButtonProps {
   actionText?: string;
   onClick?: () => void;
   href?: string;
+  asChild?: boolean;
 }
 
 export function DashboardButton({ 
@@ -14,10 +15,15 @@ export function DashboardButton({
   actionText,
   onClick, 
   href,
+  asChild = undefined,
   ...props 
 }: DashboardButtonProps) {
-  const handleClick = () => {
-    // Add this console log to track button clicks
+  // Define the click handler directly, don't use a function reference
+  const handleClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent parent handlers from firing
+    e.stopPropagation();
+    
+    // Track button clicks in console
     if (actionText) {
       console.log('Dashboard button clicked:', actionText);
     }
@@ -25,10 +31,11 @@ export function DashboardButton({
     // If there's a custom click handler, call it
     if (onClick) {
       onClick();
+      return;
     }
     
-    // If actionText is provided but no onClick, use it as a default alert
-    if (actionText && !onClick) {
+    // Always show the action text as an alert if provided
+    if (actionText) {
       window.alert(actionText);
     }
   };
@@ -37,7 +44,12 @@ export function DashboardButton({
   if (href) {
     return (
       <Link href={href}>
-        <Button {...props} onClick={handleClick}>
+        <Button 
+          {...props} 
+          onClick={handleClick}
+          asChild={asChild}
+          type="button"
+        >
           {children}
         </Button>
       </Link>
@@ -49,6 +61,8 @@ export function DashboardButton({
     <Button
       {...props}
       onClick={handleClick}
+      asChild={asChild}
+      type="button"
     >
       {children}
     </Button>
