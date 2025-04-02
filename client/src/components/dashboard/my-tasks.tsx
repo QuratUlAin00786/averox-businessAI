@@ -57,49 +57,47 @@ export function MyTasks({ tasks }: MyTasksProps) {
           <ul className="divide-y divide-neutral-200">
             {tasks.map((task) => (
               <li key={task.id}>
-                <div className="block hover:bg-neutral-50 cursor-pointer">
-                  <div className="flex items-center px-4 py-4 sm:px-6">
-                    <div className="flex items-center flex-1 min-w-0">
-                      <div className="flex-shrink-0">
-                        <Checkbox 
-                          id={String(task.id)} 
-                          className="w-4 h-4 text-primary border-neutral-300"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const message = `Task marked as complete: ${task.title}`;
-                            console.log(message);
-                            window.alert(message);
-                          }}
-                        />
-                      </div>
-                      <div 
-                        className="flex-1 min-w-0 px-4 cursor-pointer"
-                        onClick={() => {
-                          const message = `Viewing task details: ${task.title}`;
-                          console.log(message);
-                          window.alert(message);
-                        }}
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-neutral-700 truncate">{task.title}</p>
-                          <div className="flex flex-wrap mt-1 gap-y-1">
-                            <div className="flex items-center text-sm text-neutral-500">
-                              <Calendar className="flex-shrink-0 mr-1.5 h-5 w-5 text-neutral-400" />
-                              <span>{formatDueDate(task.dueDate)}</span>
-                            </div>
-                            <div className="flex items-center ml-4 text-sm text-neutral-500">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityClass(task.priority)}`}>
-                                {task.priority} Priority
-                              </span>
+                <div className="flex items-center hover:bg-neutral-50">
+                  <div className="flex-shrink-0 pl-4 py-4">
+                    <Checkbox 
+                      id={String(task.id)} 
+                      className="w-4 h-4 text-primary border-neutral-300"
+                      onClick={() => {
+                        const message = `Task marked as complete: ${task.title}`;
+                        console.log(message);
+                        window.alert(message);
+                      }}
+                    />
+                  </div>
+                  <DashboardButton
+                    variant="ghost"
+                    className="flex-1 p-0 h-auto text-left"
+                    actionText={`Viewing task details: ${task.title}`}
+                  >
+                    <div className="flex items-center px-4 py-4 sm:px-6">
+                      <div className="flex items-center flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <div>
+                            <p className="text-sm font-medium text-neutral-700 truncate">{task.title}</p>
+                            <div className="flex flex-wrap mt-1 gap-y-1">
+                              <div className="flex items-center text-sm text-neutral-500">
+                                <Calendar className="flex-shrink-0 mr-1.5 h-5 w-5 text-neutral-400" />
+                                <span>{formatDueDate(task.dueDate)}</span>
+                              </div>
+                              <div className="flex items-center ml-4 text-sm text-neutral-500">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityClass(task.priority)}`}>
+                                  {task.priority} Priority
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
+                      <div>
+                        <ChevronRight className="w-5 h-5 text-neutral-400" />
+                      </div>
                     </div>
-                    <div>
-                      <ChevronRight className="w-5 h-5 text-neutral-400" />
-                    </div>
-                  </div>
+                  </DashboardButton>
                 </div>
               </li>
             ))}

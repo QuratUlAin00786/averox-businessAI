@@ -39,12 +39,7 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
     }
   };
 
-  // Handler for activity item clicks
-  const handleActivityClick = (activity: DashboardActivity) => {
-    const message = `Viewing details for activity: ${activity.action}`;
-    console.log(message);
-    window.alert(message);
-  };
+  // This function is replaced by DashboardButton's actionText
 
   return (
     <div className="overflow-hidden bg-white rounded-lg shadow">
