@@ -44,12 +44,12 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
   return (
     <div className="overflow-hidden bg-white rounded-lg shadow">
       <div className="px-4 py-5 sm:px-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium leading-6 text-neutral-700">Recent Activities</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+          <h3 className="text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">Recent Activities</h3>
           <div>
             <SimpleButton 
               variant="outline" 
-              className="border-primary text-primary hover:bg-primary hover:text-white"
+              className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto"
               onClick={() => window.alert("Opening all activities history...")}
             >
               View All
@@ -73,17 +73,18 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
                       onClick={() => window.alert(`Viewing details for activity: ${activity.action}`)}
                     >
                       <div className="relative flex items-start space-x-3">
-                        <div className="relative">
+                        <div className="relative flex-shrink-0">
                           <div className={`flex items-center justify-center w-10 h-10 rounded-full ${getIconBgByType(activity.icon)}`}>
                             {getIconByType(activity.icon)}
                           </div>
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 break-words">
                           <div>
-                            <div className="text-sm">
-                              <span className="font-medium text-neutral-700">{activity.user.name}</span> {activity.action}
+                            <div className="text-sm break-words">
+                              <span className="font-medium text-neutral-700">{activity.user.name}</span>{" "}
+                              <span className="inline-block">{activity.action}</span>
                             </div>
-                            <p className="mt-0.5 text-sm text-neutral-500">
+                            <p className="mt-0.5 text-sm text-neutral-500 break-words">
                               {activity.detail}
                             </p>
                           </div>

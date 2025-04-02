@@ -57,8 +57,8 @@ export function MyTasks({ tasks }: MyTasksProps) {
           <ul className="divide-y divide-neutral-200">
             {tasks.map((task) => (
               <li key={task.id}>
-                <div className="flex items-center hover:bg-neutral-50">
-                  <div className="flex-shrink-0 pl-4 py-4">
+                <div className="flex hover:bg-neutral-50">
+                  <div className="flex-shrink-0 pl-4 pt-4">
                     <Checkbox 
                       id={String(task.id)} 
                       className="w-4 h-4 text-primary border-neutral-300"
@@ -75,23 +75,23 @@ export function MyTasks({ tasks }: MyTasksProps) {
                     className="flex-1 p-0 h-auto text-left"
                     onClick={() => window.alert(`Viewing task details: ${task.title}`)}
                   >
-                    <div className="flex flex-col md:flex-row md:items-center px-4 py-4 sm:px-6">
-                      <div className="flex-1 min-w-0 pr-2">
-                        <p className="text-sm font-medium text-neutral-700 truncate">{task.title}</p>
-                        <div className="flex flex-wrap mt-1 gap-2">
-                          <div className="flex items-center text-sm text-neutral-500">
-                            <Calendar className="flex-shrink-0 mr-1.5 h-5 w-5 text-neutral-400" />
-                            <span>{formatDueDate(task.dueDate)}</span>
-                          </div>
-                          <div className="flex items-center text-sm text-neutral-500">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityClass(task.priority)}`}>
-                              {task.priority} Priority
-                            </span>
-                          </div>
+                    <div className="flex flex-col px-4 py-4 sm:px-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+                        <p className="text-sm font-medium text-neutral-700 truncate pr-4">{task.title}</p>
+                        <div className="flex justify-end mt-1 sm:mt-0">
+                          <ChevronRight className="w-5 h-5 text-neutral-400" />
                         </div>
                       </div>
-                      <div className="mt-2 md:mt-0 self-end md:self-center">
-                        <ChevronRight className="w-5 h-5 text-neutral-400" />
+                      <div className="flex flex-wrap mt-1 gap-2">
+                        <div className="flex items-center text-sm text-neutral-500">
+                          <Calendar className="flex-shrink-0 mr-1.5 h-5 w-5 text-neutral-400" />
+                          <span>{formatDueDate(task.dueDate)}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-neutral-500">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityClass(task.priority)}`}>
+                            {task.priority} Priority
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </SimpleButton>
@@ -102,7 +102,7 @@ export function MyTasks({ tasks }: MyTasksProps) {
           <div className="px-4 py-3 bg-neutral-50 text-center sm:px-6">
             <SimpleButton 
               variant="outline" 
-              className="text-neutral-700 border-neutral-200 shadow-sm"
+              className="text-neutral-700 border-neutral-200 shadow-sm w-full sm:w-auto"
               href="/tasks"
               onClick={() => window.alert("Navigating to tasks page...")}
             >
@@ -116,7 +116,7 @@ export function MyTasks({ tasks }: MyTasksProps) {
           <p>No pending tasks</p>
           <SimpleButton 
             variant="outline" 
-            className="mt-4 text-neutral-700 border-neutral-200 shadow-sm"
+            className="mt-4 text-neutral-700 border-neutral-200 shadow-sm w-full sm:w-auto"
             onClick={() => window.alert("Opening task creation form...")}
           >
             <Plus className="w-4 h-4 mr-2" />
