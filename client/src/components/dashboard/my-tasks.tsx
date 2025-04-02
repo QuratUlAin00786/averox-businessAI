@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { DashboardButton } from "@/components/ui/dashboard-button";
+import { SimpleButton } from "@/components/ui/simple-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, ChevronRight, Plus } from "lucide-react";
 import { Link } from "wouter";
@@ -39,15 +39,15 @@ export function MyTasks({ tasks }: MyTasksProps) {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium leading-6 text-neutral-700">My Tasks</h3>
           <div>
-            <DashboardButton 
+            <SimpleButton 
               variant="ghost" 
               size="sm" 
               className="text-primary hover:bg-primary-light hover:bg-opacity-20"
-              actionText="Opening task creation form..."
+              onClick={() => window.alert("Opening task creation form...")}
             >
               <Plus className="w-4 h-4 mr-1" />
               Add Task
-            </DashboardButton>
+            </SimpleButton>
           </div>
         </div>
       </div>
@@ -70,10 +70,10 @@ export function MyTasks({ tasks }: MyTasksProps) {
                       }}
                     />
                   </div>
-                  <DashboardButton
+                  <SimpleButton
                     variant="ghost"
                     className="flex-1 p-0 h-auto text-left"
-                    actionText={`Viewing task details: ${task.title}`}
+                    onClick={() => window.alert(`Viewing task details: ${task.title}`)}
                   >
                     <div className="flex items-center px-4 py-4 sm:px-6">
                       <div className="flex items-center flex-1 min-w-0">
@@ -98,34 +98,34 @@ export function MyTasks({ tasks }: MyTasksProps) {
                         <ChevronRight className="w-5 h-5 text-neutral-400" />
                       </div>
                     </div>
-                  </DashboardButton>
+                  </SimpleButton>
                 </div>
               </li>
             ))}
           </ul>
           <div className="px-4 py-3 bg-neutral-50 text-center sm:px-6">
-            <DashboardButton 
+            <SimpleButton 
               variant="outline" 
               className="text-neutral-700 border-neutral-200 shadow-sm"
               href="/tasks"
-              actionText="Navigating to tasks page..."
+              onClick={() => window.alert("Navigating to tasks page...")}
             >
               View All Tasks
               <ChevronRight className="w-5 h-5 ml-2 -mr-1" />
-            </DashboardButton>
+            </SimpleButton>
           </div>
         </>
       ) : (
         <div className="px-4 py-10 text-center text-neutral-500">
           <p>No pending tasks</p>
-          <DashboardButton 
+          <SimpleButton 
             variant="outline" 
             className="mt-4 text-neutral-700 border-neutral-200 shadow-sm"
-            actionText="Opening task creation form..."
+            onClick={() => window.alert("Opening task creation form...")}
           >
             <Plus className="w-4 h-4 mr-2" />
             Create New Task
-          </DashboardButton>
+          </SimpleButton>
         </div>
       )}
     </div>

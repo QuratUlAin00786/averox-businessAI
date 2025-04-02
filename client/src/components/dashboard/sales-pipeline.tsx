@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { DashboardButton } from "@/components/ui/dashboard-button";
+import { SimpleButton } from "@/components/ui/simple-button";
 import { Settings } from "lucide-react";
 import { useMemo } from "react";
 import { PipelineStage } from "@/lib/data";
@@ -55,14 +55,14 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
           <h3 className="text-lg font-medium leading-6 text-neutral-700">Sales Pipeline</h3>
           <div className="flex items-center">
             <span className="text-sm text-neutral-500">Last 30 days</span>
-            <DashboardButton 
+            <SimpleButton 
               variant="ghost" 
               size="icon" 
               className="ml-2 text-neutral-400 hover:text-neutral-500"
-              actionText="Opening pipeline settings..."
+              onClick={() => window.alert("Opening pipeline settings...")}
             >
               <Settings className="w-5 h-5" />
-            </DashboardButton>
+            </SimpleButton>
           </div>
         </div>
         
@@ -85,10 +85,10 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
                     </span>
                   </div>
                 </div>
-                <DashboardButton
+                <SimpleButton
                   variant="ghost"
                   className="w-full p-0 block h-auto hover:bg-neutral-50 focus:ring-0"
-                  actionText={`Viewing details for ${stage.name} stage: ${stage.value}`}
+                  onClick={() => window.alert(`Viewing details for ${stage.name} stage: ${stage.value}`)}
                 >
                   <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-neutral-100">
                     <div 
@@ -104,7 +104,7 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
                       }>
                     </div>
                   </div>
-                </DashboardButton>
+                </SimpleButton>
               </div>
             ))
           ) : (
@@ -114,13 +114,13 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
           )}
         </div>
         
-        <DashboardButton
+        <SimpleButton
           variant="ghost"
           className="mt-4 text-sm text-center text-neutral-500 w-full p-2 h-auto hover:bg-neutral-50"
-          actionText="Opening detailed pipeline analysis..."
+          onClick={() => window.alert("Opening detailed pipeline analysis...")}
         >
           <span className="font-medium text-primary">{totalPipeline}</span> total pipeline value
-        </DashboardButton>
+        </SimpleButton>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { DashboardButton } from "@/components/ui/dashboard-button";
+import { SimpleButton } from "@/components/ui/simple-button";
 import { MoreVertical, Clock, MapPin, Video, ChevronRight, Calendar, Plus } from "lucide-react";
 import { Link } from "wouter";
 import { UpcomingEvent } from "@/lib/data";
@@ -28,15 +28,15 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium leading-6 text-neutral-700">Upcoming Events</h3>
           <div className="flex">
-            <DashboardButton 
+            <SimpleButton 
               variant="ghost" 
               size="sm" 
               className="text-primary hover:bg-primary-light hover:bg-opacity-20"
-              actionText="Opening event creation form..."
+              onClick={() => window.alert("Opening event creation form...")}
             >
               <Plus className="w-4 h-4 mr-1" />
               Add Event
-            </DashboardButton>
+            </SimpleButton>
           </div>
         </div>
       </div>
@@ -46,10 +46,10 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
           <ul className="divide-y divide-neutral-200">
             {events.map((event) => (
               <li key={event.id}>
-                <DashboardButton
+                <SimpleButton
                   variant="ghost"
                   className="block hover:bg-neutral-50 w-full p-0 h-auto bg-transparent text-left"
-                  actionText={`Viewing event details: ${event.title}`}
+                  onClick={() => window.alert(`Viewing event details: ${event.title}`)}
                 >
                   <div className="flex items-center px-4 py-4 sm:px-6">
                     <div className="flex-shrink-0">
@@ -83,33 +83,33 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
                       </span>
                     </div>
                   </div>
-                </DashboardButton>
+                </SimpleButton>
               </li>
             ))}
           </ul>
           <div className="px-4 py-3 bg-neutral-50 text-center sm:px-6">
-            <DashboardButton 
+            <SimpleButton 
               variant="outline" 
               className="text-neutral-700 border-neutral-200 shadow-sm"
               href="/calendar"
-              actionText="Navigating to calendar page..."
+              onClick={() => window.alert("Navigating to calendar page...")}
             >
               View Calendar
               <ChevronRight className="w-5 h-5 ml-2 -mr-1" />
-            </DashboardButton>
+            </SimpleButton>
           </div>
         </>
       ) : (
         <div className="px-4 py-10 text-center text-neutral-500">
           <p>No upcoming events</p>
-          <DashboardButton 
+          <SimpleButton 
             variant="outline" 
             className="mt-4 text-neutral-700 border-neutral-200 shadow-sm"
-            actionText="Opening event scheduling form..."
+            onClick={() => window.alert("Opening event scheduling form...")}
           >
             <Calendar className="w-4 h-4 mr-2" />
             Schedule New Event
-          </DashboardButton>
+          </SimpleButton>
         </div>
       )}
     </div>
