@@ -12,6 +12,8 @@ import {
   CheckSquare, 
   BarChart2, 
   Settings,
+  BrainCircuit,
+  Workflow,
   MoreVertical
 } from "lucide-react";
 
@@ -31,6 +33,8 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: 'Calendar', path: '/calendar', icon: <Calendar className="w-5 h-5" /> },
     { name: 'Tasks', path: '/tasks', icon: <CheckSquare className="w-5 h-5" /> },
     { name: 'Reports', path: '/reports', icon: <BarChart2 className="w-5 h-5" /> },
+    { name: 'Intelligence', path: '/intelligence', icon: <BrainCircuit className="w-5 h-5" /> },
+    { name: 'Workflows', path: '/workflows', icon: <Workflow className="w-5 h-5" /> },
     { name: 'Settings', path: '/settings', icon: <Settings className="w-5 h-5" /> }
   ];
 
@@ -72,14 +76,29 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       </div>
       
       <ScrollArea className="flex-1 pt-3 pb-4">
+        <div className="px-4 mb-2">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Core</p>
+        </div>
         <div className="px-2 space-y-1">
           {renderNavItems(navItems.slice(0, 7))}
         </div>
         
         <hr className="my-4 border-neutral-200" />
         
+        <div className="px-4 mb-2">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Analytics & Automation</p>
+        </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(7))}
+          {renderNavItems(navItems.slice(7, 10))}
+        </div>
+        
+        <hr className="my-4 border-neutral-200" />
+        
+        <div className="px-4 mb-2">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">System</p>
+        </div>
+        <div className="px-2 space-y-1">
+          {renderNavItems(navItems.slice(10))}
         </div>
       </ScrollArea>
       

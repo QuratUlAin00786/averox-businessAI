@@ -4,11 +4,25 @@ import {
   Menu, 
   Bell, 
   MessageCircle, 
-  Plus
+  Plus,
+  User,
+  Settings,
+  LogOut,
+  HelpCircle,
+  Globe
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TopBarProps {
   onToggleSidebar: () => void;
@@ -47,11 +61,36 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
         </div>
         
         <div className="flex items-center ml-4 md:ml-6">
-          {/* Create New Button */}
-          <Button className="inline-flex items-center mr-3">
-            <Plus className="w-4 h-4 mr-1 -ml-1" />
-            Create New
-          </Button>
+          {/* Create New Button with Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="inline-flex items-center mr-3">
+                <Plus className="w-4 h-4 mr-1 -ml-1" />
+                Create New
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem>
+                <span>Contact</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <span>Account</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <span>Lead</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <span>Opportunity</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <span>Task</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <span>Event</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           {/* Notification button */}
           <Button variant="ghost" size="icon" className="p-1 ml-3 text-neutral-400 hover:text-neutral-500">
@@ -73,15 +112,52 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
           
           {/* Profile dropdown */}
           <div className="relative ml-3">
-            <div>
-              <Button variant="ghost" size="icon" className="flex items-center max-w-xs text-sm bg-white rounded-full focus:ring-primary" id="user-menu-button">
-                <span className="sr-only">Open user menu</span>
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src="https://images.unsplash.com/photo-1506863530036-1efeddceb993?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Sarah Johnson" />
-                  <AvatarFallback>SJ</AvatarFallback>
-                </Avatar>
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="flex items-center max-w-xs text-sm bg-white rounded-full focus:ring-primary" id="user-menu-button">
+                  <span className="sr-only">Open user menu</span>
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src="https://images.unsplash.com/photo-1506863530036-1efeddceb993?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Sarah Johnson" />
+                    <AvatarFallback>SJ</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">Sarah Johnson</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      s.johnson@example.com
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem>
+                    <User className="w-4 h-4 mr-2" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Settings className="w-4 h-4 mr-2" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Globe className="w-4 h-4 mr-2" />
+                    <span>Language</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <HelpCircle className="w-4 h-4 mr-2" />
+                  <span>Help & Documentation</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

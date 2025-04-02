@@ -12,6 +12,7 @@ import {
   insertActivitySchema
 } from "@shared/schema";
 import { z } from "zod";
+import OpenAI from "openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Base API route
@@ -704,6 +705,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activityData = insertActivitySchema.parse(req.body);
       const newActivity = await storage.createActivity(activityData);
       return res.status(201).json(newActivity);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  });
+
+  // AI Intelligence endpoints
+  // Initialize OpenAI client
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  // Analyze data with AI
+  app.post('/api/ai/analyze', async (req, res) => {
+    try {
+      const { prompt, context, type = 'general' } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+      
+      // Construct the system message based on the type of analysis
+      let systemContent = "You are an AI assistant for AVEROX CRM, providing business analysis and insights.";
+      
+      switch(type) {
+        case 'leads':
+          systemContent += " Focus on lead generation, qualification and conversion strategies.";
+          break;
+        case 'opportunities':
+          systemContent += " Focus on sales pipeline, forecasting, and deal closure strategies.";
+          break;
+        case 'customers':
+          systemContent += " Focus on customer retention, satisfaction, and relationship management.";
+          break;
+        default:
+          systemContent += " Provide general business analysis and actionable insights.";
+      }
+      
+      // Format the response with clear sections, bullet points, and recommendations
+      systemContent += " Format your response with clear sections, bullet points for key insights, and actionable recommendations.";
+      
+      // Construct messages for OpenAI
+      const messages = [
+        { role: "system", content: systemContent },
+        { role: "user", content: `${context ? context + '\n\n' : ''}${prompt}` }
+      ];
+      
+      // Call OpenAI API
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        messages: messages as any,
+        temperature: 0.7,
+        max_tokens: 1000,
+      });
+      
+      // Return the AI response
+      return res.json({
+        content: response.choices[0].message.content,
+        type: type
+      });
+    } catch (error) {
+      return handleError(res, error);
+    }
+  });
+  
+  // Generate insights from CRM data
+  app.post('/api/ai/insights', async (req, res) => {
+    try {
+      const { data, type = 'all' } = req.body;
+      
+      if (!data || Object.keys(data).length === 0) {
+        return res.status(400).json({ error: "Data is required for insight generation" });
+      }
+      
+      // Construct system message
+      const systemContent = `You are an AI analyst for AVEROX CRM. Generate structured business insights in JSON format. 
+        Each insight should have a title, description, category, and importance level (high, medium, low).
+        ${type !== 'all' ? `Focus specifically on ${type} data and trends.` : ''}`;
+      
+      // Create prompt for insights
+      const prompt = `Analyze the following CRM data and generate 3-5 key business insights:\n\n${JSON.stringify(data, null, 2)}`;
+      
+      // Call OpenAI API with JSON response format
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        messages: [
+          { role: "system", content: systemContent },
+          { role: "user", content: prompt }
+        ] as any,
+        temperature: 0.5,
+        response_format: { type: "json_object" }
+      });
+      
+      // Return structured insights
+      return res.json({
+        content: response.choices[0].message.content,
+        type: type
+      });
+    } catch (error) {
+      return handleError(res, error);
+    }
+  });
+  
+  // Generate entity-specific recommendations
+  app.post('/api/ai/recommendations', async (req, res) => {
+    try {
+      const { entityType, entityData } = req.body;
+      
+      if (!entityType || !entityData) {
+        return res.status(400).json({ error: "Entity type and data are required" });
+      }
+      
+      // Define system message for recommendations
+      const systemContent = `You are an AI assistant for AVEROX CRM. Generate actionable recommendations for a ${entityType} in JSON format. Include at least 3 specific actions, each with a title, description, priority (high, medium, low), and expected outcome.`;
+      
+      // Create prompt for recommendation generation
+      const prompt = `Generate recommendations for the following ${entityType}:\n\n${JSON.stringify(entityData, null, 2)}`;
+      
+      // Call OpenAI API with JSON response format
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        messages: [
+          { role: "system", content: systemContent },
+          { role: "user", content: prompt }
+        ] as any,
+        temperature: 0.5,
+        response_format: { type: "json_object" }
+      });
+      
+      // Return structured recommendations
+      return res.json({
+        content: response.choices[0].message.content,
+        type: entityType
+      });
     } catch (error) {
       return handleError(res, error);
     }
