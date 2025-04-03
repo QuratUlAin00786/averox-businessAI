@@ -52,15 +52,15 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
     <div className="overflow-hidden bg-white rounded-lg shadow">
       <div className="px-4 py-5 border-b border-neutral-200 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-          <h3 className="text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">Sales Pipeline</h3>
+          <h3 className="text-xl sm:text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">Sales Pipeline</h3>
           <div className="flex items-center">
-            <span className="text-sm text-neutral-500">Last 30 days</span>
+            <span className="text-base sm:text-sm text-neutral-500">Last 30 days</span>
             <SimpleButton 
               variant="outline" 
-              className="ml-2 border-primary text-primary hover:bg-primary hover:text-white"
+              className="ml-2 border-primary text-primary hover:bg-primary hover:text-white p-1 sm:p-2"
               onClick={() => window.alert("Opening pipeline settings...")}
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-6 h-6 sm:w-5 sm:h-5" />
             </SimpleButton>
           </div>
         </div>
@@ -75,12 +75,12 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
               >
                 <div className="flex mb-2 items-center justify-between">
                   <div>
-                    <span className="text-xs font-semibold inline-block text-neutral-700">
+                    <span className="text-sm sm:text-xs font-semibold inline-block text-neutral-700">
                       {stage.name}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs font-semibold inline-block text-neutral-700">
+                    <span className="text-sm sm:text-xs font-semibold inline-block text-neutral-700">
                       {stage.value}
                     </span>
                   </div>
@@ -90,7 +90,7 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
                   className="w-full p-0 block h-auto hover:bg-neutral-50 focus:ring-0"
                   onClick={() => window.alert(`Viewing details for ${stage.name} stage: ${stage.value}`)}
                 >
-                  <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-neutral-100">
+                  <div className="overflow-hidden h-3 sm:h-2 mb-4 text-xs flex rounded bg-neutral-100">
                     <div 
                       style={{ 
                         width: `${stage.percentage}%`,
@@ -116,10 +116,10 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
         
         <SimpleButton
           variant="ghost"
-          className="mt-4 text-sm text-center text-neutral-500 w-full p-2 h-auto hover:bg-neutral-50"
+          className="mt-4 text-base sm:text-sm text-center text-neutral-500 w-full p-3 sm:p-2 h-auto hover:bg-neutral-50"
           onClick={() => window.alert("Opening detailed pipeline analysis...")}
         >
-          <span className="font-medium text-primary">{totalPipeline}</span> total pipeline value
+          <span className="font-medium text-primary text-lg sm:text-base">{totalPipeline}</span> total pipeline value
         </SimpleButton>
       </div>
     </div>
