@@ -1,7 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { SimpleButton } from "@/components/ui/simple-button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, CheckCircle, MessageCircle, UserPlus, Calendar } from "lucide-react";
+import { PlusCircle, CheckCircle, MessageCircle, Calendar } from "lucide-react";
 import { DashboardActivity } from "@/lib/data";
 
 interface RecentActivitiesProps {
@@ -14,11 +12,11 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
       case "added":
         return <PlusCircle className="w-5 h-5 text-primary" />;
       case "completed":
-        return <CheckCircle className="w-5 h-5 text-secondary" />;
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
       case "commented":
-        return <MessageCircle className="w-5 h-5 text-accent" />;
+        return <MessageCircle className="w-5 h-5 text-blue-500" />;
       case "scheduled":
-        return <Calendar className="w-5 h-5 text-info" />;
+        return <Calendar className="w-5 h-5 text-purple-500" />;
       default:
         return <PlusCircle className="w-5 h-5 text-primary" />;
     }
@@ -27,79 +25,72 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
   const getIconBgByType = (type: string | null = "added") => {
     switch (type) {
       case "added":
-        return "bg-primary bg-opacity-10";
+        return "bg-primary/10";
       case "completed":
-        return "bg-secondary bg-opacity-10";
+        return "bg-green-500/10";
       case "commented":
-        return "bg-accent bg-opacity-10";
+        return "bg-blue-500/10";
       case "scheduled":
-        return "bg-info bg-opacity-10";
+        return "bg-purple-500/10";
       default:
-        return "bg-primary bg-opacity-10";
+        return "bg-primary/10";
     }
   };
 
-  // This function is replaced by DashboardButton's actionText
-
   return (
-    <div className="overflow-hidden bg-white rounded-lg shadow">
-      <div className="px-4 py-5 border-b border-neutral-200 sm:px-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-          <h3 className="text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">Recent Activities</h3>
-          <div>
-            <SimpleButton 
-              variant="outline" 
-              className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto"
-              onClick={() => window.alert("Opening all activities history...")}
-            >
-              View All
-            </SimpleButton>
-          </div>
+    <div className="h-full overflow-hidden bg-white rounded-lg shadow">
+      <div className="px-4 py-3 border-b border-neutral-200 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-lg font-medium leading-6 text-neutral-700">Recent Activities</h3>
+          <SimpleButton 
+            variant="outline" 
+            className="border-primary text-primary hover:bg-primary hover:text-white"
+            onClick={() => window.alert("Opening all activities history...")}
+          >
+            View All
+          </SimpleButton>
         </div>
       </div>
-      <div className="px-4 py-5 sm:p-6">
+      <div className="px-4 py-3 sm:px-6">
         <div className="flow-root">
           {activities.length > 0 ? (
             <ul className="-mb-8">
-              {activities.map((activity) => (
+              {activities.map((activity, index) => {
+                const isLast = index === activities.length - 1;
+                return (
                 <li key={activity.id}>
-                  <div className="relative pb-8">
-                    {!activity.isLast && (
+                  <div className="relative pb-6">
+                    {!isLast && (
                       <span className="absolute top-5 left-5 -ml-px h-full w-0.5 bg-neutral-200" aria-hidden="true"></span>
                     )}
-                    <SimpleButton
-                      variant="ghost"
-                      className="relative w-full p-0 h-auto hover:bg-neutral-50 focus:ring-0 text-left"
-                      onClick={() => window.alert(`Viewing details for activity: ${activity.action}`)}
-                    >
-                      <div className="relative flex items-start space-x-3">
-                        <div className="relative flex-shrink-0">
-                          <div className={`flex items-center justify-center w-10 h-10 rounded-full ${getIconBgByType(activity.icon)}`}>
-                            {getIconByType(activity.icon)}
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0 break-words">
-                          <div>
-                            <div className="text-sm break-words">
-                              <span className="font-medium text-neutral-700">{activity.user.name}</span>{" "}
-                              <span className="inline-block">{activity.action}</span>
-                            </div>
-                            <p className="mt-0.5 text-sm text-neutral-500 break-words">
-                              {activity.detail}
-                            </p>
-                          </div>
-                          <div className="mt-2 text-sm text-neutral-500">
-                            <span>{activity.time}</span>
-                          </div>
+                    <div className="relative flex items-start space-x-3 group cursor-pointer" 
+                         onClick={() => window.alert(`Viewing details for activity: ${activity.action}`)}>
+                      <div className="relative flex-shrink-0">
+                        <div className={`flex items-center justify-center w-10 h-10 rounded-full ${getIconBgByType(activity.icon)}`}>
+                          {getIconByType(activity.icon)}
                         </div>
                       </div>
-                    </SimpleButton>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm">
+                          <span className="font-medium text-neutral-700">{activity.user.name}</span>{" "}
+                          <span>{activity.action}</span>
+                        </div>
+                        {activity.detail && (
+                          <p className="mt-0.5 text-sm text-neutral-500">
+                            {activity.detail}
+                          </p>
+                        )}
+                        <div className="mt-1 text-xs text-neutral-500">
+                          <span>{activity.time}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </li>
-              ))}
+              )})}
             </ul>
           ) : (
-            <div className="py-10 text-center text-neutral-500">
+            <div className="py-6 text-center text-neutral-500">
               <p>No recent activities</p>
             </div>
           )}
