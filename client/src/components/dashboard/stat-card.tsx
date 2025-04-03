@@ -51,8 +51,8 @@ export function StatCard({ title, value, change, icon: Icon, iconColor }: StatCa
         <div className="p-8 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center">
             <div className="flex-shrink-0 mb-3 sm:mb-0">
-              <div className={cn("flex items-center justify-center w-32 h-32 sm:w-14 sm:h-14 rounded-md mx-auto sm:mx-0", colorClasses[iconColor].bg)}>
-                <Icon className={cn("w-20 h-20 sm:w-7 sm:h-7", colorClasses[iconColor].text)} />
+              <div className={cn("flex items-center justify-center w-28 h-28 sm:w-14 sm:h-14 rounded-md mx-auto sm:mx-0", colorClasses[iconColor].bg)}>
+                <Icon className={cn("w-16 h-16 sm:w-7 sm:h-7", colorClasses[iconColor].text)} />
               </div>
             </div>
             <div className="flex-1 w-full sm:w-0 sm:ml-5 text-center sm:text-left mt-2 sm:mt-0">
