@@ -823,7 +823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'Authorization': `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: "gpt-4-turbo", // Use a more standard model name to avoid issues
+            model: "gpt-3.5-turbo", // Use the most widely available model
             messages: messages,
             temperature: 0.7,
             max_tokens: 1000
@@ -890,7 +890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'Authorization': `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: "gpt-4-turbo", // Use a more standard model name to avoid issues
+            model: "gpt-3.5-turbo", // Use the most widely available model
             messages: [
               { role: "system", content: systemContent },
               { role: "user", content: prompt }
@@ -958,7 +958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'Authorization': `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: "gpt-4-turbo", // Use a more standard model name to avoid issues
+            model: "gpt-3.5-turbo", // Use the most widely available model
             messages: [
               { role: "system", content: systemContent },
               { role: "user", content: prompt }
