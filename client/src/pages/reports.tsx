@@ -77,41 +77,25 @@ export default function Reports() {
 
   // Fetch sales report data
   const { data: salesReport, isLoading: isSalesLoading } = useQuery<SalesReport, Error>({
-    queryKey: ['/api/reports/sales', selectedTimeRange],
-    queryFn: async () => {
-      const response = await apiRequest(`/api/reports/sales?timeRange=${selectedTimeRange}`);
-      return response as SalesReport;
-    },
+    queryKey: [`/api/reports/sales?timeRange=${selectedTimeRange}`],
     enabled: true,
   });
 
   // Fetch leads report data
   const { data: leadsReport, isLoading: isLeadsLoading } = useQuery<LeadsReport, Error>({
-    queryKey: ['/api/reports/leads', selectedTimeRange],
-    queryFn: async () => {
-      const response = await apiRequest(`/api/reports/leads?timeRange=${selectedTimeRange}`);
-      return response as LeadsReport;
-    },
+    queryKey: [`/api/reports/leads?timeRange=${selectedTimeRange}`],
     enabled: true,
   });
   
   // Fetch conversion report data
   const { data: conversionReport, isLoading: isConversionLoading } = useQuery<ConversionReport, Error>({
-    queryKey: ['/api/reports/conversion', selectedTimeRange],
-    queryFn: async () => {
-      const response = await apiRequest(`/api/reports/conversion?timeRange=${selectedTimeRange}`);
-      return response as ConversionReport;
-    },
+    queryKey: [`/api/reports/conversion?timeRange=${selectedTimeRange}`],
     enabled: true,
   });
   
   // Fetch team performance report data
   const { data: teamReport, isLoading: isTeamLoading } = useQuery<TeamReport, Error>({
-    queryKey: ['/api/reports/team-performance', selectedTimeRange],
-    queryFn: async () => {
-      const response = await apiRequest(`/api/reports/team-performance?timeRange=${selectedTimeRange}`);
-      return response as TeamReport;
-    },
+    queryKey: [`/api/reports/team-performance?timeRange=${selectedTimeRange}`],
     enabled: true,
   });
 
