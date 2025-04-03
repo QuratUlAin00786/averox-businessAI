@@ -753,10 +753,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Intelligence endpoints
-  // Initialize OpenAI client
-  const openai = new OpenAI({
-    apiKey: process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
-  });
+  // Initialize OpenAI client with debug info
+  const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+  console.log("Using API key:", apiKey ? "Defined (length: " + apiKey.length + ", starts with: " + apiKey.substring(0, 7) + ")" : "Undefined");
+
+  // Configure OpenAI with project key support
+  const config: any = { 
+    apiKey: apiKey as string,
+  };
+  
+  // Add project config if it's a project key
+  if (apiKey?.startsWith('sk-proj-')) {
+    console.log("Detected project key format, configuring accordingly");
+    config.project = 'default'; // Most project keys use 'default' as the project name
+  }
+
+  const openai = new OpenAI(config);
   
   // The newest OpenAI model is "gpt-4o"
   const AI_MODEL = "gpt-4o";
@@ -769,6 +781,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!prompt) {
         return res.status(400).json({ error: "Prompt is required" });
       }
+      
+      // Log environment variables for debugging
+      console.log("OpenAI API Key:", process.env.OPENAI_API_KEY ? "Defined" : "Undefined");
+      console.log("VITE_OPENAI_API_KEY:", process.env.VITE_OPENAI_API_KEY ? "Defined" : "Undefined");
       
       // Construct the system message based on the type of analysis
       let systemContent = "You are an AI assistant for AVEROX CRM, providing business analysis and insights.";
@@ -796,19 +812,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { role: "user", content: `${context ? context + '\n\n' : ''}${prompt}` }
       ];
       
-      // Call OpenAI API
-      const response = await openai.chat.completions.create({
-        model: AI_MODEL, // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-        messages: messages as any,
-        temperature: 0.7,
-        max_tokens: 1000,
-      });
-      
-      // Return the AI response
-      return res.json({
-        content: response.choices[0].message.content,
-        type: type
-      });
+      try {
+        // Use direct fetch API instead of OpenAI client library
+        const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+        
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4-turbo", // Use a more standard model name to avoid issues
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 1000
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("OpenAI API Error Response:", errorData);
+          return res.status(response.status).json({
+            error: "OpenAI API Error",
+            details: errorData.error?.message || "Unknown error",
+            apiError: errorData
+          });
+        }
+        
+        const data = await response.json();
+        
+        // Return the AI response
+        return res.json({
+          content: data.choices[0].message.content,
+          type: type
+        });
+      } catch (openaiError: any) {
+        console.error("OpenAI API Error Details:", openaiError);
+        
+        // Return a more detailed error for debugging
+        return res.status(500).json({
+          error: "OpenAI API Error",
+          details: openaiError.message || "Unknown error",
+          apiError: openaiError
+        });
+      }
     } catch (error) {
       return handleError(res, error);
     }
@@ -831,22 +879,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create prompt for insights
       const prompt = `Analyze the following CRM data and generate 3-5 key business insights:\n\n${JSON.stringify(data, null, 2)}`;
       
-      // Call OpenAI API with JSON response format
-      const response = await openai.chat.completions.create({
-        model: AI_MODEL, // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-        messages: [
-          { role: "system", content: systemContent },
-          { role: "user", content: prompt }
-        ] as any,
-        temperature: 0.5,
-        response_format: { type: "json_object" }
-      });
-      
-      // Return structured insights
-      return res.json({
-        content: response.choices[0].message.content,
-        type: type
-      });
+      try {
+        // Use direct fetch API instead of OpenAI client library
+        const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+        
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4-turbo", // Use a more standard model name to avoid issues
+            messages: [
+              { role: "system", content: systemContent },
+              { role: "user", content: prompt }
+            ],
+            temperature: 0.5,
+            response_format: { type: "json_object" }
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("OpenAI API Error Response:", errorData);
+          return res.status(response.status).json({
+            error: "OpenAI API Error",
+            details: errorData.error?.message || "Unknown error",
+            apiError: errorData
+          });
+        }
+        
+        const data = await response.json();
+        
+        // Return the AI response
+        return res.json({
+          content: data.choices[0].message.content,
+          type: type
+        });
+      } catch (openaiError: any) {
+        console.error("OpenAI API Error Details:", openaiError);
+        
+        // Return a more detailed error for debugging
+        return res.status(500).json({
+          error: "OpenAI API Error",
+          details: openaiError.message || "Unknown error",
+          apiError: openaiError
+        });
+      }
     } catch (error) {
       return handleError(res, error);
     }
@@ -867,22 +947,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create prompt for recommendation generation
       const prompt = `Generate recommendations for the following ${entityType}:\n\n${JSON.stringify(entityData, null, 2)}`;
       
-      // Call OpenAI API with JSON response format
-      const response = await openai.chat.completions.create({
-        model: AI_MODEL, // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-        messages: [
-          { role: "system", content: systemContent },
-          { role: "user", content: prompt }
-        ] as any,
-        temperature: 0.5,
-        response_format: { type: "json_object" }
-      });
-      
-      // Return structured recommendations
-      return res.json({
-        content: response.choices[0].message.content,
-        type: entityType
-      });
+      try {
+        // Use direct fetch API instead of OpenAI client library
+        const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+        
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4-turbo", // Use a more standard model name to avoid issues
+            messages: [
+              { role: "system", content: systemContent },
+              { role: "user", content: prompt }
+            ],
+            temperature: 0.5,
+            response_format: { type: "json_object" }
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("OpenAI API Error Response:", errorData);
+          return res.status(response.status).json({
+            error: "OpenAI API Error",
+            details: errorData.error?.message || "Unknown error",
+            apiError: errorData
+          });
+        }
+        
+        const data = await response.json();
+        
+        // Return the AI response
+        return res.json({
+          content: data.choices[0].message.content,
+          type: entityType
+        });
+      } catch (openaiError: any) {
+        console.error("OpenAI API Error Details:", openaiError);
+        
+        // Return a more detailed error for debugging
+        return res.status(500).json({
+          error: "OpenAI API Error",
+          details: openaiError.message || "Unknown error",
+          apiError: openaiError
+        });
+      }
     } catch (error) {
       return handleError(res, error);
     }
