@@ -48,23 +48,23 @@ export function StatCard({ title, value, change, icon: Icon, iconColor }: StatCa
         onClick={() => window.alert(`Viewing detailed analytics for ${title}...`)}
         variant="ghost"
       >
-        <div className="p-10 sm:p-5">
+        <div className="p-8 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center">
-            <div className="flex-shrink-0 mb-6 sm:mb-0">
-              <div className={cn("flex items-center justify-center w-40 h-40 sm:w-14 sm:h-14 rounded-xl mx-auto sm:mx-0", colorClasses[iconColor].bg)}>
+            <div className="flex-shrink-0 mb-3 sm:mb-0">
+              <div className={cn("flex items-center justify-center w-32 h-32 sm:w-14 sm:h-14 rounded-md mx-auto sm:mx-0", colorClasses[iconColor].bg)}>
                 <Icon className={cn("w-20 h-20 sm:w-7 sm:h-7", colorClasses[iconColor].text)} />
               </div>
             </div>
             <div className="flex-1 w-full sm:w-0 sm:ml-5 text-center sm:text-left mt-2 sm:mt-0">
               <dl>
-                <dt className="text-3xl sm:text-sm font-medium text-neutral-500 truncate">{title}</dt>
-                <dd className="mt-5 sm:mt-0">
-                  <div className="text-5xl sm:text-lg font-bold text-neutral-700">{value}</div>
-                  <div className="flex flex-wrap items-baseline justify-center sm:justify-start mt-5 sm:mt-2">
-                    <div className={cn("text-3xl sm:text-sm font-semibold", trendClasses[change.trend])}>
+                <dt className="text-xl sm:text-sm font-medium text-neutral-500 truncate">{title}</dt>
+                <dd className="mt-2 sm:mt-0">
+                  <div className="text-3xl sm:text-lg font-semibold text-neutral-700">{value}</div>
+                  <div className="flex flex-wrap items-baseline justify-center sm:justify-start mt-2">
+                    <div className={cn("text-xl sm:text-sm font-semibold", trendClasses[change.trend])}>
                       {change.value}
                     </div>
-                    <div className="ml-2 text-2xl sm:text-xs text-neutral-500">{change.text}</div>
+                    <div className="ml-1 text-lg sm:text-xs text-neutral-500">{change.text}</div>
                   </div>
                 </dd>
               </dl>
