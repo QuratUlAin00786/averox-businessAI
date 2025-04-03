@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { SimpleButton } from "@/components/ui/simple-button";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { LeadsStatCard } from "@/components/dashboard/leads-stat-card";
 import { SalesPipeline } from "@/components/dashboard/sales-pipeline";
 import { RecentActivities } from "@/components/dashboard/recent-activities";
 import { MyTasks } from "@/components/dashboard/my-tasks";
@@ -234,6 +235,18 @@ export default function Dashboard() {
                 const icons = [UserPlus, TrendingUp, DollarSign, Briefcase];
                 const colors = ["primary", "secondary", "accent", "info"] as const;
                 
+                // Use special card for New Leads (typically first card)
+                if (index === 0 && stat.title === "New Leads") {
+                  return (
+                    <LeadsStatCard
+                      key={stat.id}
+                      value={stat.value}
+                      change={stat.change}
+                    />
+                  );
+                }
+                
+                // Use standard card for all other stats
                 return (
                   <StatCard
                     key={stat.id}
