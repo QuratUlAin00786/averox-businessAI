@@ -69,29 +69,34 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
           {/* Create New Button with Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="inline-flex items-center mr-3">
-                <Plus className="w-4 h-4 mr-1 -ml-1" />
+              <Button 
+                variant="default" 
+                className="inline-flex items-center mr-3 bg-primary hover:bg-primary/90"
+              >
+                <Plus className="w-4 h-4 mr-1" />
                 Create New
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem>
+              <DropdownMenuLabel>Records</DropdownMenuLabel>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new contact...")}>
                 <span>Contact</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new account...")}>
                 <span>Account</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new lead...")}>
                 <span>Lead</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new opportunity...")}>
                 <span>Opportunity</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuLabel>Activities</DropdownMenuLabel>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new task...")}>
                 <span>Task</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new event...")}>
                 <span>Event</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
