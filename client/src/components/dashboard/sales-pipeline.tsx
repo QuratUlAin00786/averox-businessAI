@@ -75,12 +75,12 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
               >
                 <div className="flex mb-2 items-center justify-between">
                   <div>
-                    <span className="text-sm sm:text-xs font-semibold inline-block text-neutral-700">
+                    <span className="text-base sm:text-xs font-semibold inline-block text-neutral-700">
                       {stage.name}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-sm sm:text-xs font-semibold inline-block text-neutral-700">
+                    <span className="text-base sm:text-xs font-semibold inline-block text-neutral-700">
                       {stage.value}
                     </span>
                   </div>
@@ -90,7 +90,7 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
                   className="w-full p-0 block h-auto hover:bg-neutral-50 focus:ring-0"
                   onClick={() => window.alert(`Viewing details for ${stage.name} stage: ${stage.value}`)}
                 >
-                  <div className="overflow-hidden h-3 sm:h-2 mb-4 text-xs flex rounded bg-neutral-100">
+                  <div className="overflow-hidden h-4 sm:h-2 mb-4 text-xs flex rounded bg-neutral-100">
                     <div 
                       style={{ 
                         width: `${stage.percentage}%`,
@@ -119,7 +119,7 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
           className="mt-4 text-base sm:text-sm text-center text-neutral-500 w-full p-3 sm:p-2 h-auto hover:bg-neutral-50"
           onClick={() => window.alert("Opening detailed pipeline analysis...")}
         >
-          <span className="font-medium text-primary text-lg sm:text-base">{totalPipeline}</span> total pipeline value
+          <span className="font-medium text-primary text-xl sm:text-base">{totalPipeline}</span> <span className="text-lg sm:text-sm">total pipeline value</span>
         </SimpleButton>
       </div>
     </div>

@@ -186,15 +186,19 @@ export default function Dashboard() {
           // Loading state with skeletons
           <>
             {/* Stats Card Skeletons */}
-            <div className="grid grid-cols-1 gap-5 mt-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 mt-4 sm:gap-5 sm:mt-2 sm:grid-cols-2 lg:grid-cols-4">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="p-6 bg-white rounded-lg shadow">
-                  <div className="flex items-center justify-between">
-                    <Skeleton className="h-10 w-32" />
-                    <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex flex-col sm:flex-row sm:items-center">
+                    <div className="flex-shrink-0 mb-3 sm:mb-0">
+                      <Skeleton className="h-20 w-20 sm:h-14 sm:w-14 rounded-md mx-auto sm:mx-0" />
+                    </div>
+                    <div className="flex-1 w-full sm:w-0 sm:ml-5 text-center sm:text-left">
+                      <Skeleton className="h-8 w-32 mx-auto sm:mx-0" />
+                      <Skeleton className="h-6 w-20 mt-2 mx-auto sm:mx-0" />
+                      <Skeleton className="h-4 w-24 mt-2 mx-auto sm:mx-0" />
+                    </div>
                   </div>
-                  <Skeleton className="h-8 w-20 mt-4" />
-                  <Skeleton className="h-4 w-24 mt-2" />
                 </div>
               ))}
             </div>
@@ -225,7 +229,7 @@ export default function Dashboard() {
           // Loaded state with actual data
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 gap-5 mt-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 mt-4 sm:gap-5 sm:mt-2 sm:grid-cols-2 lg:grid-cols-4">
               {data?.stats.map((stat, index) => {
                 const icons = [UserPlus, TrendingUp, DollarSign, Briefcase];
                 const colors = ["primary", "secondary", "accent", "info"] as const;
