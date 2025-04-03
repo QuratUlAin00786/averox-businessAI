@@ -48,23 +48,23 @@ export function StatCard({ title, value, change, icon: Icon, iconColor }: StatCa
         onClick={() => window.alert(`Viewing detailed analytics for ${title}...`)}
         variant="ghost"
       >
-        <div className="p-4 sm:p-5">
+        <div className="p-5 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center">
             <div className="flex-shrink-0 mb-3 sm:mb-0">
-              <div className={cn("flex items-center justify-center w-12 h-12 rounded-md mx-auto sm:mx-0", colorClasses[iconColor].bg)}>
-                <Icon className={cn("w-6 h-6", colorClasses[iconColor].text)} />
+              <div className={cn("flex items-center justify-center w-16 h-16 sm:w-14 sm:h-14 rounded-md mx-auto sm:mx-0", colorClasses[iconColor].bg)}>
+                <Icon className={cn("w-8 h-8 sm:w-7 sm:h-7", colorClasses[iconColor].text)} />
               </div>
             </div>
             <div className="flex-1 w-full sm:w-0 sm:ml-5 text-center sm:text-left">
               <dl>
-                <dt className="text-sm font-medium text-neutral-500 truncate">{title}</dt>
+                <dt className="text-base sm:text-sm font-medium text-neutral-500 truncate">{title}</dt>
                 <dd>
-                  <div className="text-lg font-semibold text-neutral-700">{value}</div>
+                  <div className="text-xl sm:text-lg font-semibold text-neutral-700">{value}</div>
                   <div className="flex flex-wrap items-baseline justify-center sm:justify-start">
-                    <div className={cn("text-sm font-semibold", trendClasses[change.trend])}>
+                    <div className={cn("text-base sm:text-sm font-semibold", trendClasses[change.trend])}>
                       {change.value}
                     </div>
-                    <div className="ml-1 text-xs text-neutral-500">{change.text}</div>
+                    <div className="ml-1 text-sm sm:text-xs text-neutral-500">{change.text}</div>
                   </div>
                 </dd>
               </dl>
