@@ -29,9 +29,8 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
           <h3 className="text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">Upcoming Events</h3>
           <div className="flex">
             <SimpleButton 
-              variant="ghost" 
-              size="sm" 
-              className="text-primary hover:bg-primary-light hover:bg-opacity-20 w-full sm:w-auto"
+              variant="outline" 
+              className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto"
               onClick={() => window.alert("Opening event creation form...")}
             >
               <Plus className="w-4 h-4 mr-1" />

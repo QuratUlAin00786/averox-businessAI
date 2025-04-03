@@ -50,23 +50,23 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
 
   return (
     <div className="overflow-hidden bg-white rounded-lg shadow">
-      <div className="px-4 py-5 sm:p-6">
+      <div className="px-4 py-5 border-b border-neutral-200 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <h3 className="text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">Sales Pipeline</h3>
           <div className="flex items-center">
             <span className="text-sm text-neutral-500">Last 30 days</span>
             <SimpleButton 
-              variant="ghost" 
-              size="icon" 
-              className="ml-2 text-neutral-400 hover:text-neutral-500"
+              variant="outline" 
+              className="ml-2 border-primary text-primary hover:bg-primary hover:text-white"
               onClick={() => window.alert("Opening pipeline settings...")}
             >
               <Settings className="w-5 h-5" />
             </SimpleButton>
           </div>
         </div>
-        
-        <div className="mt-6">
+      </div>
+      <div className="px-4 py-5 sm:p-6">
+        <div className="mt-1">
           {formattedStages.length > 0 ? (
             formattedStages.map((stage, index) => (
               <div 
