@@ -5,9 +5,17 @@ async function throwIfResNotOk(res: Response) {
     let json: Record<string, any> = {};
     try {
       json = await res.json();
-      throw new Error(json.error || `${res.status}: API error`);
+      
+      // Special handling for OpenAI API errors
+      if (json.details && json.details.includes('quota')) {
+        throw new Error('OpenAI API quota exceeded. Please check your plan and billing details.');
+      } else if (json.details && json.details.includes('API Error')) {
+        throw new Error(`OpenAI API Error: ${json.details}`);
+      }
+      
+      throw new Error(json.error || json.details || `${res.status}: API error`);
     } catch (e) {
-      if (e instanceof Error && json.error) {
+      if (e instanceof Error && (json.error || json.details)) {
         throw e;
       }
       const text = await res.text() || res.statusText;

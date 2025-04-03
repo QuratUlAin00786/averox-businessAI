@@ -94,6 +94,29 @@ export default function Intelligence() {
       });
       
       if (!insightResponse.ok) {
+        try {
+          const errorResponse = await insightResponse.json();
+          
+          if (errorResponse.details && errorResponse.details.includes('quota')) {
+            // Handle quota exceeded errors
+            const quotaError: Insight = {
+              id: insights.length + 1,
+              title: "AI Service Unavailable",
+              description: "OpenAI API quota exceeded. The API key has reached its usage limit. Please contact your administrator to update the plan or wait until the quota resets.",
+              date: "Just now",
+              type: "Trend", 
+              seen: false,
+              importance: "high"
+            };
+            
+            setInsights([quotaError, ...insights]);
+            return; // Exit early since we've handled the error
+          }
+        } catch (parseError) {
+          // If we can't parse the error response, continue with the regular error handler
+          console.error("Error parsing error response:", parseError);
+        }
+        
         throw new Error(`API error: ${insightResponse.status}`);
       }
       
@@ -205,8 +228,23 @@ export default function Intelligence() {
         const data = await apiResponse.json();
         setAiResponse(data.content);
       } else {
-        // Generate fallback response for API errors
-        generateFallbackResponse(type);
+        // Handle API errors with more detail
+        try {
+          const errorData = await apiResponse.json();
+          if (errorData.details && errorData.details.includes('quota')) {
+            // Specific handling for quota errors
+            setAiResponse("⚠️ OpenAI API quota exceeded. The API key has reached its usage limit. Please contact your administrator to update the plan or wait until the quota resets. ⚠️");
+          } else if (errorData.details) {
+            // Show specific error from API
+            setAiResponse(`⚠️ AI Analysis Error: ${errorData.details} ⚠️`);
+          } else {
+            // Generate fallback response for other API errors
+            generateFallbackResponse(type);
+          }
+        } catch (parseError) {
+          // Generate fallback response if we can't parse the error
+          generateFallbackResponse(type);
+        }
       }
     } catch (error) {
       console.error("Error getting AI response:", error);
