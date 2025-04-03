@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { useLocation } from "wouter";
 import { 
   UserPlus, 
   TrendingUp, 
@@ -21,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const [currentDate, setCurrentDate] = useState<string>("");
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     setCurrentDate(format(new Date(), "MMMM d, yyyy"));
@@ -53,16 +55,84 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row mt-4 gap-2 sm:gap-3 md:mt-0 md:ml-4">
             <SimpleButton 
               variant="outline" 
-              className="text-neutral-600 w-full sm:w-auto"
-              onClick={() => window.alert("Exporting dashboard data to CSV/Excel...")}
+              className="text-primary border-primary hover:bg-primary/10 w-full sm:w-auto"
+              onClick={() => {
+                // Create CSV content from dashboard data
+                if (!data) {
+                  window.alert("No data available to export");
+                  return;
+                }
+                
+                // Create CSV header row
+                const headers = ["Metric", "Value", "Change"];
+                
+                // Create data rows
+                const rows = data.stats.map(stat => [
+                  stat.title,
+                  stat.value,
+                  `${stat.change.value} (${stat.change.trend})`
+                ]);
+                
+                // Add pipeline data
+                if (data.pipelineStages && data.pipelineStages.length > 0) {
+                  rows.push([]);
+                  rows.push(["Pipeline Stage", "Value", "Percentage"]);
+                  data.pipelineStages.forEach(stage => {
+                    rows.push([stage.name, stage.value, `${stage.percentage}%`]);
+                  });
+                }
+                
+                // Convert to CSV
+                const csvContent = [
+                  headers.join(","),
+                  ...rows.map(row => row.join(","))
+                ].join("\n");
+                
+                // Create download link
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `dashboard_export_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                
+                // Trigger download and clean up
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+              }}
               type="button"
             >
-              <Download className="-ml-1 mr-2 h-5 w-5 text-neutral-500" />
+              <Download className="-ml-1 mr-2 h-5 w-5 text-primary" />
               <span>Export</span>
             </SimpleButton>
             <SimpleButton 
-              className="w-full sm:w-auto"
-              onClick={() => window.alert("Opening new report creation form...")}
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white"
+              onClick={() => {
+                const reportTypes = [
+                  "Sales Performance", 
+                  "Lead Conversion", 
+                  "Customer Engagement", 
+                  "Team Activity"
+                ];
+                
+                const reportType = window.prompt(
+                  `Select a report type (enter number):\n${reportTypes.map((type, i) => `${i + 1}. ${type}`).join('\n')}`, 
+                  "1"
+                );
+                
+                if (!reportType) return;
+                
+                const selectedIndex = parseInt(reportType) - 1;
+                if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= reportTypes.length) {
+                  window.alert("Invalid selection. Please try again.");
+                  return;
+                }
+                
+                const selectedReport = reportTypes[selectedIndex];
+                window.alert(`Creating new ${selectedReport} report...\nNavigating to reports page.`);
+                setLocation("/reports?new=true&type=" + encodeURIComponent(selectedReport));
+              }}
               type="button"
             >
               <Plus className="-ml-1 mr-2 h-5 w-5" />
