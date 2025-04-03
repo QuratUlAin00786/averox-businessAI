@@ -67,7 +67,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       <div className="flex items-center justify-center h-16 px-4 border-b border-neutral-200">
         <div className="flex items-center">
           <Link href="/">
-            <AveroxLogo height={30} />
+            <AveroxLogo height={40} />
           </Link>
         </div>
       </div>

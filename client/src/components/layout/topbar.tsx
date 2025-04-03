@@ -48,7 +48,7 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
         <div className="flex flex-1 items-center">
           {/* Mobile logo visible in topbar when sidebar is closed */}
           <div className="flex md:hidden mr-3">
-            <AveroxLogo height={24} />
+            <AveroxLogo height={36} />
           </div>
           <div className="flex items-center w-full max-w-2xl px-2 ml-4 md:ml-0">
             <div className="w-full">
