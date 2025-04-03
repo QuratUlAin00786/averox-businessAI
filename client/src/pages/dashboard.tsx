@@ -57,49 +57,83 @@ export default function Dashboard() {
               variant="outline" 
               className="text-primary border-primary hover:bg-primary/10 w-full sm:w-auto"
               onClick={() => {
-                // Create CSV content from dashboard data
-                if (!data) {
-                  window.alert("No data available to export");
-                  return;
-                }
-                
-                // Create CSV header row
-                const headers = ["Metric", "Value", "Change"];
-                
-                // Create data rows
-                const rows = data.stats.map(stat => [
-                  stat.title,
-                  stat.value,
-                  `${stat.change.value} (${stat.change.trend})`
-                ]);
-                
-                // Add pipeline data
-                if (data.pipelineStages && data.pipelineStages.length > 0) {
-                  rows.push([]);
-                  rows.push(["Pipeline Stage", "Value", "Percentage"]);
-                  data.pipelineStages.forEach(stage => {
-                    rows.push([stage.name, stage.value, `${stage.percentage}%`]);
+                try {
+                  // Verify data is available and has expected structure
+                  if (!data || !data.stats || !Array.isArray(data.stats)) {
+                    window.alert("No dashboard data available to export");
+                    return;
+                  }
+                  
+                  // Basic dashboard information
+                  let csvRows = [];
+                  
+                  // Add stats section
+                  csvRows.push(["Dashboard Statistics"]);
+                  csvRows.push(["Metric", "Value", "Change"]);
+                  
+                  data.stats.forEach(stat => {
+                    csvRows.push([
+                      stat.title,
+                      stat.value,
+                      `${stat.change.value} (${stat.change.trend === 'up' ? 'Increase' : stat.change.trend === 'down' ? 'Decrease' : 'No change'})`
+                    ]);
                   });
+                  
+                  // Add pipeline data
+                  if (data.pipelineStages && data.pipelineStages.length > 0) {
+                    csvRows.push([]);
+                    csvRows.push(["Sales Pipeline"]);
+                    csvRows.push(["Stage", "Value", "Percentage"]);
+                    
+                    data.pipelineStages.forEach(stage => {
+                      csvRows.push([
+                        stage.name,
+                        stage.value,
+                        `${stage.percentage}%`
+                      ]);
+                    });
+                  }
+                  
+                  // Add recent activities
+                  if (data.recentActivities && data.recentActivities.length > 0) {
+                    csvRows.push([]);
+                    csvRows.push(["Recent Activities"]);
+                    csvRows.push(["User", "Action", "Time"]);
+                    
+                    data.recentActivities.forEach(activity => {
+                      csvRows.push([
+                        activity.user.name,
+                        activity.action,
+                        activity.time
+                      ]);
+                    });
+                  }
+                  
+                  // Convert to CSV content
+                  const csvContent = csvRows.map(row => 
+                    row.map(cell => 
+                      typeof cell === 'string' ? `"${cell.replace(/"/g, '""')}"` : cell
+                    ).join(',')
+                  ).join('\n');
+                  
+                  // Create and trigger download
+                  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.setAttribute("href", url);
+                  link.setAttribute("download", `averox_crm_dashboard_${new Date().toISOString().split('T')[0]}.csv`);
+                  
+                  // Append link, trigger download, then clean up
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                  
+                  console.log("Export completed successfully");
+                } catch (error) {
+                  console.error("Export failed:", error);
+                  window.alert("Failed to export dashboard data. Please try again.");
                 }
-                
-                // Convert to CSV
-                const csvContent = [
-                  headers.join(","),
-                  ...rows.map(row => row.join(","))
-                ].join("\n");
-                
-                // Create download link
-                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.setAttribute("href", url);
-                link.setAttribute("download", `dashboard_export_${new Date().toISOString().split('T')[0]}.csv`);
-                document.body.appendChild(link);
-                
-                // Trigger download and clean up
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
               }}
               type="button"
             >
