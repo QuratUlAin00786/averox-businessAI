@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { 
   Search, 
   Menu, 
@@ -30,6 +31,8 @@ interface TopBarProps {
 }
 
 export default function TopBar({ onToggleSidebar }: TopBarProps) {
+  const [, setLocation] = useLocation();
+  
   return (
     <div className="relative z-10 flex flex-shrink-0 h-16 bg-white shadow">
       <Button 
@@ -79,24 +82,60 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuLabel>Records</DropdownMenuLabel>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new contact...")}>
+              <DropdownMenuItem 
+                className="cursor-pointer"
+                onClick={() => {
+                  window.alert("Creating new contact...");
+                  setLocation("/contacts?new=true");
+                }}
+              >
                 <span>Contact</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new account...")}>
+              <DropdownMenuItem 
+                className="cursor-pointer"
+                onClick={() => {
+                  window.alert("Creating new account...");
+                  setLocation("/accounts?new=true");
+                }}
+              >
                 <span>Account</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new lead...")}>
+              <DropdownMenuItem 
+                className="cursor-pointer"
+                onClick={() => {
+                  window.alert("Creating new lead...");
+                  setLocation("/leads?new=true");
+                }}
+              >
                 <span>Lead</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new opportunity...")}>
+              <DropdownMenuItem 
+                className="cursor-pointer"
+                onClick={() => {
+                  window.alert("Creating new opportunity...");
+                  setLocation("/opportunities?new=true");
+                }}
+              >
                 <span>Opportunity</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Activities</DropdownMenuLabel>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new task...")}>
+              <DropdownMenuItem 
+                className="cursor-pointer"
+                onClick={() => {
+                  window.alert("Creating new task...");
+                  setLocation("/tasks?new=true");
+                }}
+              >
                 <span>Task</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => window.alert("Creating new event...")}>
+              <DropdownMenuItem 
+                className="cursor-pointer"
+                onClick={() => {
+                  window.alert("Creating new event...");
+                  setLocation("/calendar?new=true");
+                }}
+              >
                 <span>Event</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
