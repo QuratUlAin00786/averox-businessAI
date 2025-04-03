@@ -57,10 +57,10 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
             <span className="text-base sm:text-sm text-neutral-500">Last 30 days</span>
             <SimpleButton 
               variant="outline" 
-              className="ml-2 border-primary text-primary hover:bg-primary hover:text-white p-1 sm:p-2"
+              className="ml-2 border-primary text-primary hover:bg-primary hover:text-white p-2 sm:p-2"
               onClick={() => window.alert("Opening pipeline settings...")}
             >
-              <Settings className="w-6 h-6 sm:w-5 sm:h-5" />
+              <Settings className="w-7 h-7 sm:w-5 sm:h-5" />
             </SimpleButton>
           </div>
         </div>
