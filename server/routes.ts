@@ -755,8 +755,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Intelligence endpoints
   // Initialize OpenAI client
   const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
   });
+  
+  // The newest OpenAI model is "gpt-4o"
+  const AI_MODEL = "gpt-4o";
 
   // Analyze data with AI
   app.post('/api/ai/analyze', async (req, res) => {
@@ -795,7 +798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Call OpenAI API
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        model: AI_MODEL, // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
         messages: messages as any,
         temperature: 0.7,
         max_tokens: 1000,
@@ -830,7 +833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Call OpenAI API with JSON response format
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        model: AI_MODEL, // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
         messages: [
           { role: "system", content: systemContent },
           { role: "user", content: prompt }
@@ -866,7 +869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Call OpenAI API with JSON response format
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        model: AI_MODEL, // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
         messages: [
           { role: "system", content: systemContent },
           { role: "user", content: prompt }
