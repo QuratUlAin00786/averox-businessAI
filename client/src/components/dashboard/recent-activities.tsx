@@ -43,7 +43,7 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
 
   return (
     <div className="overflow-hidden bg-white rounded-lg shadow">
-      <div className="px-4 py-5 sm:px-6">
+      <div className="px-4 py-5 border-b border-neutral-200 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <h3 className="text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">Recent Activities</h3>
           <div>
