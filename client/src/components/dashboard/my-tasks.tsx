@@ -1,8 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { SimpleButton } from "@/components/ui/simple-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, ChevronRight, Plus } from "lucide-react";
-import { Link } from "wouter";
 import { MyTask } from "@/lib/data";
 
 interface MyTasksProps {
@@ -13,11 +11,11 @@ export function MyTasks({ tasks }: MyTasksProps) {
   const getPriorityClass = (priority: MyTask["priority"]) => {
     switch (priority) {
       case "High":
-        return "bg-primary text-white";
+        return "bg-red-500 text-white";
       case "Medium":
-        return "bg-secondary text-white";
+        return "bg-orange-500 text-white";
       case "Normal":
-        return "bg-neutral-400 text-white";
+        return "bg-blue-500 text-white";
       default:
         return "bg-neutral-400 text-white";
     }
@@ -34,95 +32,88 @@ export function MyTasks({ tasks }: MyTasksProps) {
   };
 
   return (
-    <div className="overflow-hidden bg-white rounded-lg shadow">
-      <div className="px-4 py-5 border-b border-neutral-200 sm:px-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-          <h3 className="text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">My Tasks</h3>
-          <div>
-            <SimpleButton 
-              variant="outline" 
-              className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto"
-              onClick={() => window.alert("Opening task creation form...")}
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add Task
-            </SimpleButton>
-          </div>
+    <div className="h-full overflow-hidden bg-white rounded-lg shadow">
+      <div className="px-4 py-3 border-b border-neutral-200 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-lg font-medium leading-6 text-neutral-700">My Tasks</h3>
+          <SimpleButton 
+            variant="outline" 
+            className="border-primary text-primary hover:bg-primary hover:text-white"
+            onClick={() => window.alert("Opening task creation form...")}
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Task
+          </SimpleButton>
         </div>
       </div>
       
-      {tasks.length > 0 ? (
-        <>
-          <ul className="divide-y divide-neutral-200">
-            {tasks.map((task) => (
-              <li key={task.id}>
-                <div className="flex hover:bg-neutral-50">
-                  <div className="flex-shrink-0 pl-4 pt-4">
-                    <Checkbox 
-                      id={String(task.id)} 
-                      className="w-4 h-4 text-primary border-neutral-300"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const message = `Task marked as complete: ${task.title}`;
-                        console.log(message);
-                        window.alert(message);
-                      }}
-                    />
-                  </div>
-                  <SimpleButton
-                    variant="ghost"
-                    className="flex-1 p-0 h-auto text-left"
-                    onClick={() => window.alert(`Viewing task details: ${task.title}`)}
-                  >
-                    <div className="flex flex-col px-4 py-4 sm:px-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                        <p className="text-sm font-medium text-neutral-700 truncate pr-4">{task.title}</p>
-                        <div className="flex justify-end mt-1 sm:mt-0">
-                          <ChevronRight className="w-5 h-5 text-neutral-400" />
+      <div className="px-0 py-0">
+        {tasks.length > 0 ? (
+          <>
+            <ul className="divide-y divide-neutral-200">
+              {tasks.map((task) => (
+                <li key={task.id}>
+                  <div className="flex hover:bg-neutral-50 cursor-pointer" 
+                       onClick={() => window.alert(`Viewing task details: ${task.title}`)}>
+                    <div className="flex-shrink-0 pl-4 pt-4">
+                      <Checkbox 
+                        id={String(task.id)} 
+                        className="w-4 h-4 text-primary border-neutral-300"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const message = `Task marked as complete: ${task.title}`;
+                          console.log(message);
+                          window.alert(message);
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col px-4 py-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-neutral-700">{task.title}</p>
+                          <ChevronRight className="w-4 h-4 text-neutral-400 flex-shrink-0 ml-2" />
                         </div>
-                      </div>
-                      <div className="flex flex-wrap mt-1 gap-2">
-                        <div className="flex items-center text-sm text-neutral-500">
-                          <Calendar className="flex-shrink-0 mr-1.5 h-5 w-5 text-neutral-400" />
-                          <span>{formatDueDate(task.dueDate)}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-neutral-500">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityClass(task.priority)}`}>
-                            {task.priority} Priority
+                        <div className="flex flex-wrap items-center mt-1 gap-2">
+                          <div className="flex items-center text-xs text-neutral-500">
+                            <Calendar className="flex-shrink-0 mr-1 h-3.5 w-3.5 text-neutral-400" />
+                            <span>{formatDueDate(task.dueDate)}</span>
+                          </div>
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getPriorityClass(task.priority)}`}>
+                            {task.priority}
                           </span>
                         </div>
                       </div>
                     </div>
-                  </SimpleButton>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <div className="px-4 py-3 bg-neutral-50 text-center sm:px-6">
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="px-4 py-3 border-t border-neutral-200 text-center">
+              <SimpleButton 
+                variant="outline" 
+                className="text-primary border-primary w-full sm:w-auto"
+                href="/tasks"
+                onClick={() => window.alert("Navigating to tasks page...")}
+              >
+                View All Tasks
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </SimpleButton>
+            </div>
+          </>
+        ) : (
+          <div className="px-4 py-6 text-center text-neutral-500">
+            <p>No pending tasks</p>
             <SimpleButton 
               variant="outline" 
-              className="text-neutral-700 border-neutral-200 shadow-sm w-full sm:w-auto"
-              href="/tasks"
-              onClick={() => window.alert("Navigating to tasks page...")}
+              className="mt-4 text-primary border-primary"
+              onClick={() => window.alert("Opening task creation form...")}
             >
-              View All Tasks
-              <ChevronRight className="w-5 h-5 ml-2 -mr-1" />
+              <Plus className="w-4 h-4 mr-1" />
+              Create New Task
             </SimpleButton>
           </div>
-        </>
-      ) : (
-        <div className="px-4 py-10 text-center text-neutral-500">
-          <p>No pending tasks</p>
-          <SimpleButton 
-            variant="outline" 
-            className="mt-4 text-neutral-700 border-neutral-200 shadow-sm w-full sm:w-auto"
-            onClick={() => window.alert("Opening task creation form...")}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create New Task
-          </SimpleButton>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
