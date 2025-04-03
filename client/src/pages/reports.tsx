@@ -12,62 +12,131 @@ import {
   Download, FileBarChart, BarChart3, PieChart as PieChartIcon, 
   LineChart as LineChartIcon, ArrowUpRight, Lightbulb
 } from "lucide-react";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PageHeader } from "@/components/ui/page-header";
-
-// Sample data for charts
-const opportunityData = [
-  { name: 'Jan', deals: 12, value: 45000 },
-  { name: 'Feb', deals: 19, value: 52000 },
-  { name: 'Mar', deals: 15, value: 48000 },
-  { name: 'Apr', deals: 21, value: 61000 },
-  { name: 'May', deals: 18, value: 54000 },
-  { name: 'Jun', deals: 24, value: 69000 },
-  { name: 'Jul', deals: 16, value: 47000 },
-  { name: 'Aug', deals: 22, value: 63000 },
-  { name: 'Sep', deals: 28, value: 75000 },
-  { name: 'Oct', deals: 25, value: 72000 },
-  { name: 'Nov', deals: 30, value: 83000 },
-  { name: 'Dec', deals: 23, value: 67000 },
-];
-
-const leadSourceData = [
-  { name: 'Website', value: 35 },
-  { name: 'Referral', value: 25 },
-  { name: 'Social Media', value: 20 },
-  { name: 'Email Campaign', value: 15 },
-  { name: 'Event', value: 5 },
-];
+import { generateAnalysis } from "@/lib/openai";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
-const salesStageData = [
-  { name: 'Lead Generation', value: 35 },
-  { name: 'Qualification', value: 25 },
-  { name: 'Proposal', value: 20 },
-  { name: 'Negotiation', value: 15 },
-  { name: 'Closing', value: 5 },
-];
-
-const leadTrendData = [
-  { name: 'Week 1', newLeads: 40, converted: 10 },
-  { name: 'Week 2', newLeads: 45, converted: 12 },
-  { name: 'Week 3', newLeads: 38, converted: 8 },
-  { name: 'Week 4', newLeads: 50, converted: 15 },
-];
 
 export default function Reports() {
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState("last-30");
 
-  // Simulate AI insight generation
+  interface SalesReport {
+    monthlyData: Array<{
+      name: string;
+      deals: number;
+      value: number;
+    }>;
+    pipelineStages: Array<{
+      name: string;
+      value: number;
+      percentage?: number;
+      color?: string;
+    }>;
+  }
+  
+  interface LeadsReport {
+    sourceData: Array<{
+      name: string;
+      value: number;
+    }>;
+    trendData: Array<{
+      name: string;
+      newLeads: number;
+      converted: number;
+    }>;
+  }
+  
+  interface ConversionReport {
+    conversionRate: number;
+    previousRate: number;
+    avgTimeToConvert: number;
+    previousTime: number;
+    bestChannel: {
+      name: string;
+      rate: number;
+    };
+    weeklyData: Array<{
+      name: string;
+      newLeads: number;
+      converted: number;
+    }>;
+  }
+  
+  interface TeamReport {
+    teamMembers: Array<{
+      name: string;
+      deals: number;
+      revenue: number;
+      conversion: number;
+    }>;
+  }
+
+  // Fetch sales report data
+  const { data: salesReport, isLoading: isSalesLoading } = useQuery<SalesReport, Error>({
+    queryKey: ['/api/reports/sales', selectedTimeRange],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/reports/sales?timeRange=${selectedTimeRange}`);
+      return response as SalesReport;
+    },
+    enabled: true,
+  });
+
+  // Fetch leads report data
+  const { data: leadsReport, isLoading: isLeadsLoading } = useQuery<LeadsReport, Error>({
+    queryKey: ['/api/reports/leads', selectedTimeRange],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/reports/leads?timeRange=${selectedTimeRange}`);
+      return response as LeadsReport;
+    },
+    enabled: true,
+  });
+  
+  // Fetch conversion report data
+  const { data: conversionReport, isLoading: isConversionLoading } = useQuery<ConversionReport, Error>({
+    queryKey: ['/api/reports/conversion', selectedTimeRange],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/reports/conversion?timeRange=${selectedTimeRange}`);
+      return response as ConversionReport;
+    },
+    enabled: true,
+  });
+  
+  // Fetch team performance report data
+  const { data: teamReport, isLoading: isTeamLoading } = useQuery<TeamReport, Error>({
+    queryKey: ['/api/reports/team-performance', selectedTimeRange],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/reports/team-performance?timeRange=${selectedTimeRange}`);
+      return response as TeamReport;
+    },
+    enabled: true,
+  });
+
+  // Generate AI insights
   const generateInsight = async () => {
     setIsGeneratingInsight(true);
-    // Simulating API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setAiInsight("Based on your data, there's a 23% growth in lead conversion rate over the past quarter, primarily driven by website and referral sources. The sales team is most effective at closing deals in the technology sector, with an average close time of 18 days compared to 24 days in other sectors. Consider allocating more resources to referral programs and technology sector outreach for optimal growth.");
-    setIsGeneratingInsight(false);
+    try {
+      const analysisResult = await generateAnalysis({
+        prompt: "Analyze the current CRM data and provide actionable insights.",
+        type: "general",
+        context: JSON.stringify({
+          salesReport, 
+          leadsReport, 
+          conversionReport, 
+          teamReport
+        })
+      });
+      
+      setAiInsight(analysisResult.content);
+    } catch (error) {
+      console.error("Error generating AI insights:", error);
+      setAiInsight("Unable to generate insights at this time. Please try again later.");
+    } finally {
+      setIsGeneratingInsight(false);
+    }
   };
 
   return (
@@ -165,16 +234,22 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={opportunityData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => `$${value}`} />
-                      <Legend />
-                      <Bar dataKey="value" name="Revenue" fill="#0088FE" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {isSalesLoading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <Skeleton className="h-[250px] w-full" />
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={salesReport?.monthlyData || []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => `$${value}`} />
+                        <Legend />
+                        <Bar dataKey="value" name="Revenue" fill="#0088FE" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -186,16 +261,22 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={opportunityData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="deals" name="Deals" stroke="#00C49F" />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  {isSalesLoading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <Skeleton className="h-[250px] w-full" />
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={salesReport?.monthlyData || []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="deals" name="Deals" stroke="#00C49F" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -207,26 +288,32 @@ export default function Reports() {
               </CardHeader>
               <CardContent className="flex justify-center">
                 <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={salesStageData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {salesStageData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => `${value}%`} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  {isSalesLoading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <Skeleton className="h-[250px] w-full" />
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={salesReport?.pipelineStages || []}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }: { name: string; percent: number }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {(salesReport?.pipelineStages || []).map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => `${value}`} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -243,26 +330,32 @@ export default function Reports() {
               </CardHeader>
               <CardContent className="flex justify-center">
                 <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={leadSourceData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {leadSourceData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => `${value}%`} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  {isLeadsLoading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <Skeleton className="h-[250px] w-full" />
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={leadsReport?.sourceData || []}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }: { name: string; percent: number }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {(leadsReport?.sourceData || []).map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => `${value}`} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -274,17 +367,23 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={leadTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Area type="monotone" dataKey="newLeads" name="New Leads" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                      <Area type="monotone" dataKey="converted" name="Converted" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  {isLeadsLoading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <Skeleton className="h-[250px] w-full" />
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={leadsReport?.trendData || []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Area type="monotone" dataKey="newLeads" name="New Leads" stackId="1" stroke="#8884d8" fill="#8884d8" />
+                        <Area type="monotone" dataKey="converted" name="Converted" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -301,47 +400,63 @@ export default function Reports() {
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={leadTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="newLeads" name="New Leads" fill="#8884d8" />
-                      <Bar dataKey="converted" name="Converted" fill="#82ca9d" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {isConversionLoading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <Skeleton className="h-[250px] w-full" />
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={conversionReport?.weeklyData || []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="newLeads" name="New Leads" fill="#8884d8" />
+                        <Bar dataKey="converted" name="Converted" fill="#82ca9d" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
                 <div className="space-y-6">
-                  <div>
-                    <h3 className="font-medium text-sm text-gray-500">Conversion Rate</h3>
-                    <div className="flex items-end gap-2">
-                      <span className="text-3xl font-bold">23.7%</span>
-                      <span className="text-sm text-green-600 flex items-center">
-                        <ArrowUpRight className="h-4 w-4" />
-                        2.1%
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-500">vs previous period</p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-sm text-gray-500">Average Time to Convert</h3>
-                    <div className="flex items-end gap-2">
-                      <span className="text-3xl font-bold">18 days</span>
-                      <span className="text-sm text-green-600 flex items-center">
-                        <ArrowUpRight className="h-4 w-4" />
-                        Improved by 2 days
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-sm text-gray-500">Best Performing Channel</h3>
-                    <div className="mt-1">
-                      <span className="text-xl font-bold">Referrals</span>
-                      <p className="text-sm text-gray-500">32.5% conversion rate</p>
-                    </div>
-                  </div>
+                  {isConversionLoading ? (
+                    <>
+                      <Skeleton className="h-16 w-3/4" />
+                      <Skeleton className="h-16 w-3/4" />
+                      <Skeleton className="h-16 w-3/4" />
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <h3 className="font-medium text-sm text-gray-500">Conversion Rate</h3>
+                        <div className="flex items-end gap-2">
+                          <span className="text-3xl font-bold">{conversionReport?.conversionRate}%</span>
+                          <span className={`text-sm ${conversionReport?.conversionRate > conversionReport?.previousRate ? 'text-green-600' : 'text-red-500'} flex items-center`}>
+                            <ArrowUpRight className="h-4 w-4" />
+                            {Math.abs((conversionReport?.conversionRate || 0) - (conversionReport?.previousRate || 0)).toFixed(1)}%
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">vs previous period</p>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-sm text-gray-500">Average Time to Convert</h3>
+                        <div className="flex items-end gap-2">
+                          <span className="text-3xl font-bold">{conversionReport?.avgTimeToConvert} days</span>
+                          <span className={`text-sm ${conversionReport?.previousTime > conversionReport?.avgTimeToConvert ? 'text-green-600' : 'text-red-500'} flex items-center`}>
+                            <ArrowUpRight className="h-4 w-4" />
+                            Improved by {Math.abs((conversionReport?.avgTimeToConvert || 0) - (conversionReport?.previousTime || 0))} days
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-sm text-gray-500">Best Performing Channel</h3>
+                        <div className="mt-1">
+                          <span className="text-xl font-bold">{conversionReport?.bestChannel?.name}</span>
+                          <p className="text-sm text-gray-500">{conversionReport?.bestChannel?.rate}% conversion rate</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -357,26 +472,32 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    layout="vertical"
-                    data={[
-                      { name: 'John Smith', deals: 42, revenue: 126000 },
-                      { name: 'Emma Johnson', deals: 38, revenue: 114000 },
-                      { name: 'Michael Brown', deals: 31, revenue: 93000 },
-                      { name: 'Sophia Davis', deals: 28, revenue: 84000 },
-                      { name: 'William Wilson', deals: 25, revenue: 75000 },
-                    ]}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" />
-                    <Tooltip formatter={(value, name) => [name === 'revenue' ? `$${value}` : value, name === 'revenue' ? 'Revenue' : 'Deals']} />
-                    <Legend />
-                    <Bar dataKey="deals" name="Deals Closed" fill="#8884d8" />
-                    <Bar dataKey="revenue" name="Revenue Generated" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
+                {isTeamLoading ? (
+                  <div className="h-full flex items-center justify-center">
+                    <Skeleton className="h-[350px] w-full" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={teamReport?.teamMembers || []}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="name" type="category" />
+                      <Tooltip formatter={(value, name) => {
+                        if (name === 'revenue') return [`$${value}`, 'Revenue']
+                        if (name === 'deals') return [value, 'Deals']
+                        if (name === 'conversion') return [`${value}%`, 'Conversion Rate']
+                        return [value, name]
+                      }} />
+                      <Legend />
+                      <Bar dataKey="deals" name="Deals Closed" fill="#8884d8" />
+                      <Bar dataKey="revenue" name="Revenue Generated" fill="#82ca9d" />
+                      <Bar dataKey="conversion" name="Conversion Rate (%)" fill="#FF8042" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>

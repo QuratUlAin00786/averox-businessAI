@@ -108,6 +108,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Reports endpoints
+  app.get('/api/reports/sales', async (req, res) => {
+    try {
+      const timeRange = req.query.timeRange as string || 'last-30';
+      const salesReport = await storage.getSalesReport(timeRange);
+      return res.json(salesReport);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  });
+  
+  app.get('/api/reports/leads', async (req, res) => {
+    try {
+      const timeRange = req.query.timeRange as string || 'last-30';
+      const leadsReport = await storage.getLeadsReport(timeRange);
+      return res.json(leadsReport);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  });
+  
+  app.get('/api/reports/conversion', async (req, res) => {
+    try {
+      const timeRange = req.query.timeRange as string || 'last-30';
+      const conversionReport = await storage.getConversionReport(timeRange);
+      return res.json(conversionReport);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  });
+  
+  app.get('/api/reports/team-performance', async (req, res) => {
+    try {
+      const timeRange = req.query.timeRange as string || 'last-30';
+      const teamReport = await storage.getTeamPerformanceReport(timeRange);
+      return res.json(teamReport);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  });
+  
   // Users endpoints
   app.get('/api/users', async (req, res) => {
     try {
