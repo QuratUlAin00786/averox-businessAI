@@ -103,18 +103,22 @@ export default function Reports() {
   const generateInsight = async () => {
     setIsGeneratingInsight(true);
     try {
-      const analysisResult = await generateAnalysis({
-        prompt: "Analyze the current CRM data and provide actionable insights.",
-        type: "general",
-        context: JSON.stringify({
+      // Import the generateRecommendations function
+      const { generateRecommendations } = await import('@/lib/openai');
+      
+      // Use the recommendations endpoint instead of analysis
+      const recommendationsResult = await generateRecommendations(
+        "reports",
+        {
           salesReport, 
           leadsReport, 
           conversionReport, 
-          teamReport
-        })
-      });
+          teamReport,
+          timeRange: selectedTimeRange
+        }
+      );
       
-      setAiInsight(analysisResult.content);
+      setAiInsight(recommendationsResult.content);
     } catch (error) {
       console.error("Error generating AI insights:", error);
       setAiInsight("Unable to generate insights at this time. Please try again later.");

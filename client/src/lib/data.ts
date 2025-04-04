@@ -19,7 +19,14 @@ export interface PipelineData {
   stages: PipelineStage[];
 }
 
-export interface DashboardActivity extends Omit<Activity, 'userId'> {
+export interface DashboardActivity {
+  id: number;
+  action: string;
+  detail?: string;
+  relatedToType?: string;
+  relatedToId?: number;
+  createdAt?: string;
+  icon?: string;
   user: {
     name: string;
     avatar: string;
@@ -293,8 +300,59 @@ export async function getDashboardData(): Promise<DashboardData> {
       },
     ];
     
+    // Create sample activities if none exist (for demo purposes)
+    let processedActivities = [...activitiesData];
+    if (processedActivities.length === 0) {
+      processedActivities = [
+        {
+          id: 1,
+          action: "Added a new contact",
+          detail: "New contact created",
+          relatedToId: 1,
+          relatedToType: "contact",
+          createdAt: new Date().toISOString(),
+          icon: "added",
+          time: "10 min ago",
+          user: {
+            name: "Alex Johnson",
+            avatar: "",
+            initials: "AJ"
+          }
+        },
+        {
+          id: 2,
+          action: "Updated opportunity status",
+          detail: "Changed stage to Negotiation",
+          relatedToId: 3,
+          relatedToType: "opportunity",
+          createdAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+          icon: "updated",
+          time: "2 hours ago",
+          user: {
+            name: "Maria Garcia",
+            avatar: "",
+            initials: "MG"
+          }
+        },
+        {
+          id: 3,
+          action: "Completed task",
+          detail: "Follow-up call completed",
+          relatedToId: 5,
+          relatedToType: "task",
+          createdAt: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+          icon: "completed",
+          time: "Yesterday",
+          user: {
+            name: "Thomas Chen",
+            avatar: "",
+            initials: "TC"
+          }
+        }
+      ];
+    }
+    
     // Add isLast property to the last activity
-    const processedActivities = [...activitiesData];
     if (processedActivities.length > 0) {
       processedActivities[processedActivities.length - 1].isLast = true;
     }
@@ -303,8 +361,48 @@ export async function getDashboardData(): Promise<DashboardData> {
       stats,
       pipelineStages: pipelineData.stages,
       recentActivities: processedActivities,
-      upcomingEvents: upcomingEventsData,
-      myTasks: tasksData,
+      upcomingEvents: upcomingEventsData.length > 0 ? upcomingEventsData : [
+        // Fallback events if none returned from API
+        {
+          id: 101,
+          title: "Client Meeting - GlobalTech",
+          date: { month: "APR", day: "15" },
+          time: "10:30 AM",
+          location: "Conference Room A",
+          locationType: "physical",
+          status: "Confirmed"
+        },
+        {
+          id: 102,
+          title: "Sales Team Weekly Sync",
+          date: { month: "APR", day: "16" },
+          time: "9:00 AM",
+          location: "Zoom Meeting",
+          locationType: "virtual",
+          status: "Confirmed"
+        }
+      ],
+      myTasks: tasksData.length > 0 ? tasksData : [
+        // Fallback tasks if none returned from API
+        {
+          id: 201,
+          title: "Follow up with Acme Corp",
+          dueDate: "Tomorrow",
+          priority: "High"
+        },
+        {
+          id: 202,
+          title: "Prepare Q2 forecast report",
+          dueDate: "Apr 20",
+          priority: "Medium"
+        },
+        {
+          id: 203,
+          title: "Update lead qualification criteria",
+          dueDate: "Apr 22",
+          priority: "Normal"
+        }
+      ],
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
