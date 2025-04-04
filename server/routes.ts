@@ -1008,10 +1008,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/user-subscriptions/:id/cancel', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // First get the subscription to check if it has a Stripe Subscription ID
+      const subscription = await storage.getUserSubscription(id);
+      if (!subscription) {
+        return res.status(404).json({ error: "User subscription not found" });
+      }
+      
+      // If there's a Stripe subscription, cancel it there first
+      if (subscription.stripeSubscriptionId) {
+        try {
+          await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+        } catch (stripeError) {
+          console.error('Error canceling Stripe subscription:', stripeError);
+          // Continue with local cancellation even if Stripe fails
+        }
+      }
+      
+      // Then cancel in our database
       const canceledSubscription = await storage.cancelUserSubscription(id);
       if (!canceledSubscription) {
         return res.status(404).json({ error: "User subscription not found" });
       }
+      
       res.json(canceledSubscription);
     } catch (error) {
       handleError(res, error);

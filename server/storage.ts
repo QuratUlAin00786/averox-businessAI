@@ -24,7 +24,7 @@ import {
   addCommunicationsToMemStorage,
   addCommunicationsToDatabase
 } from './communication-integration';
-import { eq } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { db } from './db';
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -191,6 +191,7 @@ export interface IStorage {
   createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
   updateUserSubscription(id: number, subscription: Partial<InsertUserSubscription>): Promise<UserSubscription | undefined>;
   cancelUserSubscription(id: number): Promise<UserSubscription | undefined>;
+  deleteUserSubscription(id: number): Promise<boolean>;
   
   // User Account Management
   updateUserStripeInfo(userId: number, stripeInfo: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User | undefined>;
@@ -1865,6 +1866,14 @@ export class MemStorage implements IStorage {
     this.userSubscriptions.set(id, updatedSubscription);
     return updatedSubscription;
   }
+  
+  async deleteUserSubscription(id: number): Promise<boolean> {
+    if (!this.userSubscriptions.has(id)) {
+      return false;
+    }
+    
+    return this.userSubscriptions.delete(id);
+  }
 
   // User Account Management Methods
   async updateUserStripeInfo(userId: number, stripeInfo: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User | undefined> {
@@ -2162,8 +2171,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listContacts(filter?: Partial<Contact>): Promise<Contact[]> {
-    // Implement with database queries
-    return [];
+    try {
+      const allContacts = await db.select().from(contacts);
+      return allContacts;
+    } catch (error) {
+      console.error("Error retrieving contacts:", error);
+      return [];
+    }
   }
 
   async createContact(contact: InsertContact): Promise<Contact> {
@@ -2214,8 +2228,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listAccounts(filter?: Partial<Account>): Promise<Account[]> {
-    // Implement with database queries
-    return [];
+    try {
+      const allAccounts = await db.select().from(accounts);
+      return allAccounts;
+    } catch (error) {
+      console.error("Error retrieving accounts:", error);
+      return [];
+    }
   }
 
   async createAccount(account: InsertAccount): Promise<Account> {
@@ -2249,8 +2268,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listLeads(filter?: Partial<Lead>): Promise<Lead[]> {
-    // Implement with database queries
-    return [];
+    try {
+      const allLeads = await db.select().from(leads);
+      return allLeads;
+    } catch (error) {
+      console.error("Error retrieving leads:", error);
+      return [];
+    }
   }
 
   async createLead(lead: InsertLead): Promise<Lead> {
@@ -2306,8 +2330,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listOpportunities(filter?: Partial<Opportunity>): Promise<Opportunity[]> {
-    // Implement with database queries
-    return [];
+    try {
+      const allOpportunities = await db.select().from(opportunities);
+      return allOpportunities;
+    } catch (error) {
+      console.error("Error retrieving opportunities:", error);
+      return [];
+    }
   }
 
   async createOpportunity(opportunity: InsertOpportunity): Promise<Opportunity> {
@@ -2332,8 +2361,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listTasks(filter?: Partial<Task>): Promise<Task[]> {
-    // Implement with database queries
-    return [];
+    try {
+      const allTasks = await db.select().from(tasks);
+      return allTasks;
+    } catch (error) {
+      console.error("Error retrieving tasks:", error);
+      return [];
+    }
   }
 
   async createTask(task: InsertTask): Promise<Task> {
@@ -2358,8 +2392,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listEvents(filter?: Partial<Event>): Promise<Event[]> {
-    // Implement with database queries
-    return [];
+    try {
+      const allEvents = await db.select().from(events);
+      return allEvents;
+    } catch (error) {
+      console.error("Error retrieving events:", error);
+      return [];
+    }
   }
 
   async createEvent(event: InsertEvent): Promise<Event> {
@@ -2384,8 +2423,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listActivities(filter?: Partial<Activity>): Promise<Activity[]> {
-    // Implement with database queries
-    return [];
+    try {
+      const allActivities = await db.select().from(activities);
+      return allActivities;
+    } catch (error) {
+      console.error("Error retrieving activities:", error);
+      return [];
+    }
   }
 
   async createActivity(activity: InsertActivity): Promise<Activity> {
@@ -2521,13 +2565,23 @@ export class DatabaseStorage implements IStorage {
 
   // Subscription Package Methods
   async getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [package_] = await db.select().from(subscriptionPackages).where(eq(subscriptionPackages.id, id));
+      return package_;
+    } catch (error) {
+      console.error(`Error retrieving subscription package with id ${id}:`, error);
+      return undefined;
+    }
   }
 
   async listSubscriptionPackages(filter?: Partial<SubscriptionPackage>): Promise<SubscriptionPackage[]> {
-    // Implement with database queries
-    return [];
+    try {
+      const allPackages = await db.select().from(subscriptionPackages);
+      return allPackages;
+    } catch (error) {
+      console.error("Error retrieving subscription packages:", error);
+      return [];
+    }
   }
 
   async createSubscriptionPackage(pkg: InsertSubscriptionPackage): Promise<SubscriptionPackage> {
@@ -2547,33 +2601,109 @@ export class DatabaseStorage implements IStorage {
 
   // User Subscription Methods
   async getUserSubscription(id: number): Promise<UserSubscription | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [subscription] = await db.select().from(userSubscriptions).where(eq(userSubscriptions.id, id));
+      return subscription;
+    } catch (error) {
+      console.error(`Error retrieving user subscription with id ${id}:`, error);
+      return undefined;
+    }
   }
 
   async getUserActiveSubscription(userId: number): Promise<UserSubscription | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [subscription] = await db.select().from(userSubscriptions)
+        .where(and(
+          eq(userSubscriptions.userId, userId),
+          eq(userSubscriptions.status, 'Active')
+        ))
+        .orderBy(desc(userSubscriptions.startDate))
+        .limit(1);
+      
+      return subscription;
+    } catch (error) {
+      console.error(`Error retrieving active subscription for user ${userId}:`, error);
+      return undefined;
+    }
   }
 
   async listUserSubscriptions(filter?: Partial<UserSubscription>): Promise<UserSubscription[]> {
-    // Implement with database queries
-    return [];
+    try {
+      let query = db.select().from(userSubscriptions);
+      
+      if (filter) {
+        if (filter.userId !== undefined) {
+          query = query.where(eq(userSubscriptions.userId, filter.userId));
+        }
+        if (filter.packageId !== undefined) {
+          query = query.where(eq(userSubscriptions.packageId, filter.packageId));
+        }
+        if (filter.status !== undefined) {
+          query = query.where(eq(userSubscriptions.status, filter.status));
+        }
+      }
+      
+      const subscriptions = await query;
+      return subscriptions;
+    } catch (error) {
+      console.error("Error retrieving user subscriptions:", error);
+      return [];
+    }
   }
 
   async createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription> {
-    // Implement with database queries
-    throw new Error('Method not implemented');
+    try {
+      const [newSubscription] = await db.insert(userSubscriptions).values(subscription).returning();
+      return newSubscription;
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      throw new Error(`Failed to create subscription: ${error.message}`);
+    }
   }
 
   async updateUserSubscription(id: number, subscription: Partial<InsertUserSubscription>): Promise<UserSubscription | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [updatedSubscription] = await db.update(userSubscriptions)
+        .set({ ...subscription, updatedAt: new Date() })
+        .where(eq(userSubscriptions.id, id))
+        .returning();
+      
+      return updatedSubscription;
+    } catch (error) {
+      console.error(`Error updating subscription ${id}:`, error);
+      return undefined;
+    }
   }
 
   async cancelUserSubscription(id: number): Promise<UserSubscription | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      // Update the subscription status to Canceled instead of deleting
+      const [canceledSubscription] = await db.update(userSubscriptions)
+        .set({ 
+          status: 'Canceled',
+          updatedAt: new Date(),
+          endDate: new Date() // End immediately
+        })
+        .where(eq(userSubscriptions.id, id))
+        .returning();
+        
+      return canceledSubscription;
+    } catch (error) {
+      console.error(`Error canceling subscription ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async deleteUserSubscription(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(userSubscriptions)
+        .where(eq(userSubscriptions.id, id));
+      
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error(`Error deleting subscription ${id}:`, error);
+      return false;
+    }
   }
 
   // Social Media Integrations
