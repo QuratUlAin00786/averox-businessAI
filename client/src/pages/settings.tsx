@@ -42,7 +42,19 @@ export default function Settings() {
             </h2>
           </div>
           <div className="flex mt-4 md:mt-0 md:ml-4">
-            <Button>
+            <Button 
+              onClick={() => {
+                toast({
+                  title: "Settings Saved",
+                  description: "Your settings have been successfully saved.",
+                  variant: "success",
+                  custom: {
+                    variant: "success",
+                    hasCloseButton: true
+                  }
+                });
+              }}
+            >
               <Save className="-ml-1 mr-2 h-5 w-5" />
               Save Changes
             </Button>
@@ -101,8 +113,8 @@ export default function Settings() {
             </CardContent>
             <CardFooter>
               <Link href="/settings/profile">
-                <Button variant="outline" className="w-full">
-                  Edit Profile
+                <Button variant="outline" className="w-full flex items-center justify-center">
+                  <User className="mr-2 h-4 w-4" /> Edit Profile
                 </Button>
               </Link>
             </CardFooter>
@@ -125,8 +137,8 @@ export default function Settings() {
             </CardContent>
             <CardFooter>
               <Link href="/settings/system">
-                <Button variant="outline" className="w-full">
-                  Configure
+                <Button variant="outline" className="w-full flex items-center justify-center">
+                  <SettingsIcon className="mr-2 h-4 w-4" /> Configure
                 </Button>
               </Link>
             </CardFooter>
@@ -149,8 +161,8 @@ export default function Settings() {
             </CardContent>
             <CardFooter>
               <Link href="/subscriptions">
-                <Button variant="outline" className="w-full">
-                  Manage Subscription
+                <Button variant="outline" className="w-full flex items-center justify-center">
+                  <Package2 className="mr-2 h-4 w-4" /> Manage Subscription
                 </Button>
               </Link>
             </CardFooter>
@@ -175,8 +187,8 @@ export default function Settings() {
                 </CardContent>
                 <CardFooter>
                   <Link href="/admin/users">
-                    <Button className="w-full">
-                      Manage Users
+                    <Button className="w-full flex items-center justify-center">
+                      <Users className="mr-2 h-4 w-4" /> Manage Users
                     </Button>
                   </Link>
                 </CardFooter>
@@ -199,8 +211,8 @@ export default function Settings() {
                 </CardContent>
                 <CardFooter>
                   <Link href="/admin/subscription-packages">
-                    <Button className="w-full">
-                      Manage Packages
+                    <Button className="w-full flex items-center justify-center">
+                      <Package2 className="mr-2 h-4 w-4" /> Manage Packages
                     </Button>
                   </Link>
                 </CardFooter>

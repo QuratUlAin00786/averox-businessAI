@@ -167,9 +167,29 @@ export default function SettingsProfile() {
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <Button variant="outline" className="w-full">
-                    <Upload className="mr-2 h-4 w-4" /> Upload Photo
-                  </Button>
+                  <label htmlFor="avatar-upload" className="w-full">
+                    <Button variant="outline" className="w-full cursor-pointer" type="button">
+                      <Upload className="mr-2 h-4 w-4" /> Upload Photo
+                    </Button>
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // Convert to base64 for storage
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            const base64String = reader.result as string;
+                            setFormData(prev => ({ ...prev, avatar: base64String }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
 
                 <div className="flex-1">
