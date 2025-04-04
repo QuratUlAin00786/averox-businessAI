@@ -64,6 +64,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       message: error instanceof Error ? error.message : "Unknown error" 
     });
   };
+  
+  // Special endpoint to make the current user an admin (for demo purposes only)
+  app.post('/api/make-admin', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const userId = req.user.id;
+      const updatedUser = await storage.updateUser(userId, { role: 'Admin' });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Don't send password back to client
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
 
   // Users routes
   app.get('/api/users', async (req: Request, res: Response) => {
