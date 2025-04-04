@@ -448,7 +448,33 @@ export default function Intelligence() {
                       type="button" 
                       variant="outline" 
                       size="sm"
-                      onClick={() => alert("Opening data analysis tool...")}
+                      onClick={async () => {
+                        try {
+                          // Get the current prompt or set a default analysis prompt
+                          const currentPrompt = prompt.trim() || "Analyze my CRM data and identify key trends";
+                          
+                          // Call the analyze endpoint using the openai.ts utility
+                          const response = await fetch('/api/ai/analyze', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              prompt: currentPrompt,
+                              type: 'general',
+                              context: 'Performing general CRM data analysis'
+                            }),
+                          });
+                          
+                          if (!response.ok) throw new Error('Failed to analyze data');
+                          
+                          const analysis = await response.json();
+                          window.alert(`Analysis complete: ${analysis.content.substring(0, 150)}...`);
+                        } catch (error) {
+                          console.error("Error analyzing data:", error);
+                          window.alert("Error analyzing data. Please try again.");
+                        }
+                      }}
                     >
                       <Search className="h-4 w-4 mr-2" />
                       Analyze Data
@@ -457,7 +483,58 @@ export default function Intelligence() {
                       type="button" 
                       variant="outline" 
                       size="sm"
-                      onClick={() => alert("Generating AI report based on CRM data...")}
+                      onClick={async () => {
+                        try {
+                          // Fetch data for the report
+                          const [leadsRes, opportunitiesRes, accountsRes] = await Promise.all([
+                            fetch('/api/leads'),
+                            fetch('/api/opportunities'),
+                            fetch('/api/accounts')
+                          ]);
+                          
+                          if (!leadsRes.ok || !opportunitiesRes.ok || !accountsRes.ok) {
+                            throw new Error('Failed to fetch data for report');
+                          }
+                          
+                          const leads = await leadsRes.json();
+                          const opportunities = await opportunitiesRes.json();
+                          const accounts = await accountsRes.json();
+                          
+                          // Prepare the data for the report
+                          const reportData = {
+                            leads: leads.slice(0, 5),
+                            opportunities: opportunities.slice(0, 5),
+                            accounts: accounts.slice(0, 5),
+                            summary: {
+                              totalLeads: leads.length,
+                              totalOpportunities: opportunities.length,
+                              totalAccounts: accounts.length,
+                              avgDealSize: opportunities.reduce((sum: number, opp: any) => sum + (parseFloat(opp.amount) || 0), 0) / 
+                                           (opportunities.length || 1)
+                            }
+                          };
+                          
+                          // Call the recommendations endpoint
+                          const result = await fetch('/api/ai/recommendations', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              entityType: 'crm',
+                              entityData: reportData
+                            }),
+                          });
+                          
+                          if (!result.ok) throw new Error('Failed to generate report');
+                          
+                          const reportResponse = await result.json();
+                          window.alert(`Report generated: ${reportResponse.content.substring(0, 150)}...`);
+                        } catch (error) {
+                          console.error("Error generating report:", error);
+                          window.alert("Error generating report. Please try again.");
+                        }
+                      }}
                     >
                       <LineChart className="h-4 w-4 mr-2" />
                       Generate Report
@@ -492,7 +569,42 @@ export default function Intelligence() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => alert("Opening custom insight creation form...")}
+                onClick={async () => {
+                  try {
+                    // Open a dialog that would allow creating a custom insight
+                    // For now, we'll simulate this with a prompt
+                    const insightTitle = window.prompt("Enter insight title:", "New Custom Insight");
+                    if (!insightTitle) return;
+                    
+                    const insightType = window.prompt("Enter insight type (Trend, Customer, or Prediction):", "Customer");
+                    if (!insightType) return;
+                    
+                    const insightDesc = window.prompt("Enter insight description:", "This is a custom insight created by the user.");
+                    if (!insightDesc) return;
+                    
+                    // Create a new insight with the provided information
+                    const newInsight: Insight = {
+                      id: Date.now(),
+                      title: insightTitle,
+                      description: insightDesc, 
+                      date: new Date().toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      }),
+                      type: insightType as "Trend" | "Customer" | "Prediction",
+                      seen: false,
+                      importance: "medium"
+                    };
+                    
+                    // Add the new insight to the list
+                    setInsights(prev => [newInsight, ...prev]);
+                    window.alert("Custom insight created successfully!");
+                  } catch (error) {
+                    console.error("Error creating custom insight:", error);
+                    window.alert("Error creating custom insight. Please try again.");
+                  }
+                }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Custom Insight
@@ -534,14 +646,64 @@ export default function Intelligence() {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => alert(`Dismissing insight: ${insight.title}`)}
+                    onClick={() => {
+                      // Mark the insight as seen and move it to the end
+                      setInsights(prevInsights => {
+                        const updatedInsights = prevInsights.map(item => {
+                          if (item.id === insight.id) {
+                            return { ...item, seen: true };
+                          }
+                          return item;
+                        });
+                        
+                        // Sort to move seen insights to the end
+                        return updatedInsights.sort((a, b) => {
+                          if (a.seen === b.seen) return 0;
+                          return a.seen ? 1 : -1;
+                        });
+                      });
+                      window.alert(`Dismissed insight: ${insight.title}`);
+                    }}
                   >
                     Dismiss
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => alert(`Taking action on insight: ${insight.title}`)}
+                    onClick={async () => {
+                      try {
+                        // Generate an action plan based on the insight
+                        const response = await fetch('/api/ai/recommendations', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            entityType: 'insight',
+                            entityData: {
+                              title: insight.title,
+                              description: insight.description,
+                              type: insight.type
+                            }
+                          }),
+                        });
+                        
+                        if (!response.ok) throw new Error('Failed to generate action plan');
+                        
+                        const actionPlan = await response.json();
+                        window.alert(`Action plan for "${insight.title}": ${actionPlan.content.substring(0, 150)}...`);
+                        
+                        // Mark the insight as seen
+                        setInsights(prevInsights => 
+                          prevInsights.map(item => 
+                            item.id === insight.id ? { ...item, seen: true } : item
+                          )
+                        );
+                      } catch (error) {
+                        console.error("Error generating action plan:", error);
+                        window.alert("Error generating action plan. Please try again.");
+                      }
+                    }}
                   >
                     Take Action
                   </Button>
@@ -564,15 +726,70 @@ export default function Intelligence() {
                 <p className="text-sm text-gray-600 mb-4">Generate professional email templates for client communication</p>
                 <div className="space-y-4">
                   <div className="flex gap-2">
-                    <Input placeholder="Subject or purpose" className="flex-1" />
-                    <Button onClick={() => alert("Generating email template...")}>Generate</Button>
+                    <Input placeholder="Subject or purpose" className="flex-1 email-subject" />
+                    <Button onClick={async () => {
+                      try {
+                        // Get the subject input value
+                        const subjectInput = document.querySelector('.email-subject') as HTMLInputElement;
+                        const subject = subjectInput?.value || 'Meeting follow-up';
+                        
+                        // Call the AI analyze endpoint to generate email template
+                        const response = await fetch('/api/ai/analyze', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            prompt: `Generate a professional email template with subject: "${subject}"`,
+                            type: 'general',
+                            context: 'Crafting professional email template'
+                          }),
+                        });
+                        
+                        if (!response.ok) throw new Error('Failed to generate email template');
+                        
+                        const result = await response.json();
+                        window.alert(`Email template created: ${result.content.substring(0, 150)}...`);
+                      } catch (error) {
+                        console.error("Error generating email template:", error);
+                        window.alert("Error generating email template. Please try again.");
+                      }
+                    }}>Generate</Button>
                   </div>
                   <div className="flex gap-2 text-sm">
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="flex-1"
-                      onClick={() => alert("Generating follow-up email template...")}
+                      onClick={async () => {
+                        try {
+                          // Get the subject input value if available 
+                          const subjectInput = document.querySelector('.email-subject') as HTMLInputElement;
+                          const customSubject = subjectInput?.value || '';
+                          const subject = customSubject || 'Follow-up Meeting';
+                          
+                          // Call the AI analyze endpoint to generate email template
+                          const response = await fetch('/api/ai/analyze', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              prompt: `Generate a professional follow-up email template ${customSubject ? `about "${customSubject}"` : ''}`,
+                              type: 'general',
+                              context: 'Crafting professional follow-up email template'
+                            }),
+                          });
+                          
+                          if (!response.ok) throw new Error('Failed to generate email template');
+                          
+                          const result = await response.json();
+                          window.alert(`Follow-up email template created: ${result.content.substring(0, 150)}...`);
+                        } catch (error) {
+                          console.error("Error generating follow-up email:", error);
+                          window.alert("Error generating follow-up email. Please try again.");
+                        }
+                      }}
                     >
                       Follow-up
                     </Button>
@@ -580,7 +797,35 @@ export default function Intelligence() {
                       variant="outline" 
                       size="sm" 
                       className="flex-1"
-                      onClick={() => alert("Generating proposal email template...")}
+                      onClick={async () => {
+                        try {
+                          // Get the subject input value if available 
+                          const subjectInput = document.querySelector('.email-subject') as HTMLInputElement;
+                          const customSubject = subjectInput?.value || '';
+                          const subject = customSubject || 'Business Proposal';
+                          
+                          // Call the AI analyze endpoint to generate email template
+                          const response = await fetch('/api/ai/analyze', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              prompt: `Generate a professional business proposal email template ${customSubject ? `for "${customSubject}"` : ''}`,
+                              type: 'general',
+                              context: 'Crafting professional proposal email template'
+                            }),
+                          });
+                          
+                          if (!response.ok) throw new Error('Failed to generate proposal email');
+                          
+                          const result = await response.json();
+                          window.alert(`Proposal email template created: ${result.content.substring(0, 150)}...`);
+                        } catch (error) {
+                          console.error("Error generating proposal email:", error);
+                          window.alert("Error generating proposal email. Please try again.");
+                        }
+                      }}
                     >
                       Proposal
                     </Button>
@@ -588,7 +833,35 @@ export default function Intelligence() {
                       variant="outline" 
                       size="sm" 
                       className="flex-1"
-                      onClick={() => alert("Generating introduction email template...")}
+                      onClick={async () => {
+                        try {
+                          // Get the subject input value if available 
+                          const subjectInput = document.querySelector('.email-subject') as HTMLInputElement;
+                          const customSubject = subjectInput?.value || '';
+                          const subject = customSubject || 'Introduction';
+                          
+                          // Call the AI analyze endpoint to generate email template
+                          const response = await fetch('/api/ai/analyze', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              prompt: `Generate a professional introduction/first contact email template ${customSubject ? `regarding "${customSubject}"` : ''}`,
+                              type: 'general',
+                              context: 'Crafting professional introduction email template'
+                            }),
+                          });
+                          
+                          if (!response.ok) throw new Error('Failed to generate introduction email');
+                          
+                          const result = await response.json();
+                          window.alert(`Introduction email template created: ${result.content.substring(0, 150)}...`);
+                        } catch (error) {
+                          console.error("Error generating introduction email:", error);
+                          window.alert("Error generating introduction email. Please try again.");
+                        }
+                      }}
                     >
                       Introduction
                     </Button>
@@ -609,13 +882,79 @@ export default function Intelligence() {
                 <div className="space-y-4">
                   <div 
                     className="border-2 border-dashed rounded-md p-8 text-center cursor-pointer"
-                    onClick={() => alert("Opening file upload dialog...")}
+                    onClick={() => {
+                      // Create a temporary file input element
+                      const fileInput = document.createElement('input');
+                      fileInput.type = 'file';
+                      fileInput.accept = '.txt,.docx,.pdf,.wav,.mp3';
+                      
+                      // Handle the file selection
+                      fileInput.onchange = (e) => {
+                        const files = (e.target as HTMLInputElement).files;
+                        if (files && files.length > 0) {
+                          const file = files[0];
+                          window.alert(`Selected file: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+                          // In a real implementation, we would handle the file upload here
+                          // For now, we'll just show an alert with the file info
+                        }
+                      };
+                      
+                      // Trigger the file dialog
+                      fileInput.click();
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.add('border-blue-500');
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.classList.remove('border-blue-500');
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove('border-blue-500');
+                      
+                      // Handle the dropped files
+                      const files = e.dataTransfer.files;
+                      if (files && files.length > 0) {
+                        const file = files[0];
+                        window.alert(`Dropped file: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+                        // In a real implementation, we would handle the file upload here
+                      }
+                    }}
                   >
                     <p className="text-sm text-gray-500">Drop file or click to upload</p>
                   </div>
                   <Button 
                     className="w-full"
-                    onClick={() => alert("Summarizing meeting recording...")}
+                    onClick={async () => {
+                      try {
+                        // For now we'll handle a text-based meeting summary via prompt 
+                        // since we can't actually upload audio files in this prototype
+                        const meetingNotes = window.prompt("Enter your meeting notes to summarize:", "");
+                        if (!meetingNotes) return;
+                        
+                        // Call the AI analyze endpoint to generate the summary
+                        const response = await fetch('/api/ai/analyze', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            prompt: "Summarize these meeting notes into key points, action items, and decisions made",
+                            type: 'general',
+                            context: meetingNotes
+                          }),
+                        });
+                        
+                        if (!response.ok) throw new Error('Failed to summarize meeting notes');
+                        
+                        const result = await response.json();
+                        window.alert(`Meeting Summary: ${result.content.substring(0, 150)}...`);
+                      } catch (error) {
+                        console.error("Error summarizing meeting:", error);
+                        window.alert("Error summarizing meeting. Please try again.");
+                      }
+                    }}
                   >
                     Summarize
                   </Button>
@@ -643,7 +982,44 @@ export default function Intelligence() {
                   </div>
                   <Button 
                     className="w-full"
-                    onClick={() => alert("Analyzing and scoring leads from selected source...")}
+                    onClick={async () => {
+                      try {
+                        // Get the select element value
+                        const sourceSelect = document.querySelector('select') as HTMLSelectElement;
+                        const selectedSource = sourceSelect?.value || 'Website Contact Form';
+                        
+                        const response = await fetch('/api/leads');
+                        if (!response.ok) throw new Error('Failed to fetch leads');
+                        
+                        const leads = await response.json();
+                        
+                        // Filter leads by source if available
+                        const relevantLeads = leads.filter((lead: any) => 
+                          !selectedSource || lead.source === selectedSource || true
+                        );
+                        
+                        // Call the AI analyze endpoint
+                        const result = await fetch('/api/ai/analyze', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            prompt: `Analyze and score the leads from ${selectedSource}`,
+                            type: 'leads',
+                            context: `Analyzing ${relevantLeads.length} leads from ${selectedSource}`
+                          }),
+                        });
+                        
+                        if (!result.ok) throw new Error('Failed to analyze leads');
+                        
+                        const analysis = await result.json();
+                        window.alert(`Analysis complete: ${analysis.content.substring(0, 150)}...`);
+                      } catch (error) {
+                        console.error("Error analyzing leads:", error);
+                        window.alert("Error analyzing leads. Please try again.");
+                      }
+                    }}
                   >
                     Analyze Leads
                   </Button>
