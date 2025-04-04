@@ -96,6 +96,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleError(res, error);
     }
   });
+  
+  app.post('/api/users', async (req: Request, res: Response) => {
+    try {
+      if (req.user?.role !== 'Admin') {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      }
+      
+      const { username, password, email, firstName, lastName, role, isActive, avatar } = req.body;
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ error: 'Username already exists' });
+      }
+      
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+      
+      // Create user
+      const user = await storage.createUser({
+        username,
+        password: hashedPassword,
+        email,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        role: role || 'User',
+        isActive: isActive !== undefined ? isActive : true,
+        avatar: avatar || null,
+      });
+      
+      res.status(200).json(user);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
 
   app.get('/api/users/:id', async (req: Request, res: Response) => {
     try {

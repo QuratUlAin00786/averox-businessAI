@@ -9,6 +9,7 @@ import {
   RotateCcw, Settings, Edit2, Trash2, Copy, Zap, Workflow, Mail, Bell, Calendar,
   MessageSquare, RefreshCcw, User
 } from "lucide-react";
+import { WorkflowEditor } from "@/components/workflows/workflow-editor";
 import { PageHeader } from "@/components/ui/page-header";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -182,6 +183,7 @@ export default function Workflows() {
   const [expandedRunDetails, setExpandedRunDetails] = useState<number | null>(null);
 
   const openWorkflowDetail = (id: number) => {
+    const workflow = activeWorkflowsList.find(w => w.id === id);
     setSelectedWorkflow(id);
     setIsWorkflowDetailOpen(true);
   };
@@ -239,10 +241,7 @@ export default function Workflows() {
         actions={
           <Button 
             className="flex items-center gap-2"
-            onClick={() => {
-              alert('New workflow creation wizard will be shown here');
-              setShowNewWorkflowModal(true);
-            }}
+            onClick={() => setShowNewWorkflowModal(true)}
           >
             <Plus className="h-4 w-4" />
             Create Workflow
@@ -308,7 +307,7 @@ export default function Workflows() {
                           <Settings className="h-4 w-4" />
                           <span className="sr-only">Settings</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => alert(`Editing workflow: ${workflow.name}`)}>
+                        <Button variant="ghost" size="icon" onClick={() => openWorkflowDetail(workflow.id)}>
                           <Edit2 className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
                         </Button>
@@ -364,17 +363,13 @@ export default function Workflows() {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => alert(`Previewing template: ${template.name}`)}
+                    onClick={() => setShowNewWorkflowModal(true)}
                   >
                     Preview
                   </Button>
                   <Button 
                     className="flex items-center gap-1"
-                    onClick={() => {
-                      alert(`Using template: ${template.name}`);
-                      // This would typically start a workflow creation process with the template
-                      setShowNewWorkflowModal(true);
-                    }}
+                    onClick={() => setShowNewWorkflowModal(true)}
                   >
                     Use Template
                     <ArrowRight className="h-4 w-4" />
@@ -546,7 +541,7 @@ export default function Workflows() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => alert('Switching to workflow preview mode')}
+                    onClick={() => setShowNewWorkflowModal(true)}
                   >Preview Mode</Button>
                 </div>
                 <div className="flex items-center justify-center h-[200px] border-2 border-dashed border-blue-200 rounded-md">
@@ -582,10 +577,7 @@ export default function Workflows() {
               </ul>
               <Button 
                 className="mt-4"
-                onClick={() => {
-                  alert('Opening the workflow builder interface');
-                  // This would typically navigate to the builder or open a modal
-                }}
+                onClick={() => setShowNewWorkflowModal(true)}
               >
                 Open Workflow Builder
               </Button>
@@ -593,6 +585,25 @@ export default function Workflows() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Workflow Editor Modal */}
+      {isWorkflowDetailOpen && selectedWorkflow && (
+        <WorkflowEditor
+          isOpen={isWorkflowDetailOpen}
+          onClose={() => setIsWorkflowDetailOpen(false)}
+          workflow={activeWorkflowsList.find(w => w.id === selectedWorkflow)}
+          isNew={false}
+        />
+      )}
+      
+      {/* New Workflow Modal */}
+      {showNewWorkflowModal && (
+        <WorkflowEditor
+          isOpen={showNewWorkflowModal}
+          onClose={() => setShowNewWorkflowModal(false)}
+          isNew={true}
+        />
+      )}
     </div>
   );
 }
