@@ -225,7 +225,7 @@ export const socialMessages = pgTable("social_messages", {
   attachments: jsonb("attachments"), // Array of attachment objects
   metadata: jsonb("metadata"), // Platform-specific metadata
   status: messageStatusEnum("status").default("Unread"),
-  sentAt: timestamp("sent_at").notNull(),
+  // We only use created_at for timestamps, not sent_at
   receivedAt: timestamp("received_at"),
   createdAt: timestamp("created_at").defaultNow(),
   isDeleted: boolean("is_deleted").default(false),

@@ -349,6 +349,7 @@ export function addCommunicationsToDatabase(dbStorage: any) {
           // In the database the message field is used instead of content
           content: msg.social_messages.message || '',
           status: (msg.social_messages.status?.toLowerCase() || 'unread') as 'unread' | 'read' | 'replied' | 'archived',
+          // We use createdAt for the sentAt field since our database schema doesn't have sent_at
           sentAt: msg.social_messages.createdAt,
           receivedAt: msg.social_messages.receivedAt || undefined,
           attachments: msg.social_messages.attachments as any || [],
