@@ -2068,8 +2068,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAccount(account: InsertAccount): Promise<Account> {
-    // Implement with database queries
-    throw new Error('Method not implemented');
+    try {
+      const [newAccount] = await db.insert(accounts).values({
+        ...account,
+        createdAt: new Date(),
+        isActive: account.isActive !== false
+      }).returning();
+      return newAccount;
+    } catch (error) {
+      console.error('Database error in createAccount:', error);
+      throw error;
+    }
   }
 
   async updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account | undefined> {
