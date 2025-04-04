@@ -250,6 +250,9 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
 export const insertSubscriptionPackageSchema = createInsertSchema(subscriptionPackages).omit({
   id: true,
   createdAt: true,
+}).extend({
+  // Ensure price is always a string
+  price: z.string(),
 });
 
 export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({

@@ -63,10 +63,14 @@ export default function AdminSubscriptionPackagesPage() {
     mutationFn: async (data: PackageFormData) => {
       const featuresArray = data.features.split('\n').map(f => f.trim()).filter(Boolean);
       
-      const response = await apiRequest('POST', '/api/subscription-packages', {
+      // Ensure price is a string
+      const payload = {
         ...data,
-        features: featuresArray
-      });
+        features: featuresArray,
+        price: String(data.price)
+      };
+      
+      const response = await apiRequest('POST', '/api/subscription-packages', payload);
       
       return await response.json();
     },
@@ -92,10 +96,14 @@ export default function AdminSubscriptionPackagesPage() {
     mutationFn: async (data: PackageFormData & { id: number }) => {
       const featuresArray = data.features.split('\n').map(f => f.trim()).filter(Boolean);
       
-      const response = await apiRequest('PATCH', `/api/subscription-packages/${data.id}`, {
+      // Ensure price is a string
+      const payload = {
         ...data,
-        features: featuresArray
-      });
+        features: featuresArray,
+        price: String(data.price)
+      };
+      
+      const response = await apiRequest('PATCH', `/api/subscription-packages/${data.id}`, payload);
       
       return await response.json();
     },
@@ -141,6 +149,7 @@ export default function AdminSubscriptionPackagesPage() {
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    // Always store price as a string to match the database schema
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
