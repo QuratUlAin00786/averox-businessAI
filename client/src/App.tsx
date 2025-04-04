@@ -18,6 +18,8 @@ import Settings from "@/pages/settings";
 import Intelligence from "@/pages/intelligence";
 import Workflows from "@/pages/workflows";
 import Subscriptions from "@/pages/subscriptions";
+import AdminSubscriptionPackages from "@/pages/admin-subscription-packages";
+import AdminUsers from "@/pages/admin-users";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
@@ -101,6 +103,18 @@ function Router() {
       <ProtectedRoute path="/settings" component={() => (
         <Layout>
           <Settings />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/admin/subscription-packages" component={() => (
+        <Layout>
+          <AdminSubscriptionPackages />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/admin/users" component={() => (
+        <Layout>
+          <AdminUsers />
         </Layout>
       )} />
       

@@ -125,14 +125,15 @@ export default function Sidebar({ className = "" }: SidebarProps) {
             {user?.role || user?.email || ""}
           </p>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="p-1 ml-auto text-neutral-400 hover:text-neutral-500"
-          onClick={() => location.href = "/settings/profile"}
-        >
-          <Settings className="w-5 h-5" />
-        </Button>
+        <Link href="/settings/profile">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="p-1 ml-auto text-neutral-400 hover:text-neutral-500"
+          >
+            <Settings className="w-5 h-5" />
+          </Button>
+        </Link>
       </div>
     </>
   );
