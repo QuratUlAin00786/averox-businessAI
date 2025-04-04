@@ -37,6 +37,63 @@ const workflowTemplates = [
       category: "Leads",
       description: "Trigger when a new lead is created in the system"
     },
+    nodes: [
+      {
+        id: "trigger_1",
+        type: "trigger",
+        triggerType: "new_lead",
+        name: "New Lead Created",
+        position: { x: 100, y: 100 },
+        config: {}
+      },
+      {
+        id: "action_1",
+        type: "action",
+        actionType: "send_email",
+        name: "Send Welcome Email",
+        position: { x: 100, y: 250 },
+        config: { template: "welcome", subject: "Welcome to Our Company", recipientType: "lead" }
+      },
+      {
+        id: "action_2",
+        type: "action",
+        actionType: "wait",
+        name: "Wait 2 Days",
+        position: { x: 100, y: 400 },
+        config: { days: 2, hours: 0 }
+      },
+      {
+        id: "action_3",
+        type: "action",
+        actionType: "send_email",
+        name: "Send Product Info",
+        position: { x: 100, y: 550 },
+        config: { template: "product_info", subject: "Our Products and Services", recipientType: "lead" }
+      },
+      {
+        id: "action_4",
+        type: "action",
+        actionType: "wait",
+        name: "Wait 3 Days",
+        position: { x: 100, y: 700 },
+        config: { days: 3, hours: 0 }
+      },
+      {
+        id: "action_5",
+        type: "action",
+        actionType: "create_task",
+        name: "Sales Follow-up Call",
+        position: { x: 100, y: 850 },
+        config: { assignTo: "owner", dueInDays: 1, priority: "High", title: "Follow up with lead" }
+      }
+    ],
+    connections: [
+      { id: "conn_1", source: "trigger_1", target: "action_1" },
+      { id: "conn_2", source: "action_1", target: "action_2" },
+      { id: "conn_3", source: "action_2", target: "action_3" },
+      { id: "conn_4", source: "action_3", target: "action_4" },
+      { id: "conn_5", source: "action_4", target: "action_5" }
+    ],
     actions: [
       { id: "send_email", name: "Send Welcome Email", config: { template: "welcome" } },
       { id: "wait", name: "Wait 2 Days", config: { days: 2 } },
@@ -60,6 +117,45 @@ const workflowTemplates = [
       category: "Opportunities",
       description: "Trigger when a deal moves to a different stage"
     },
+    nodes: [
+      {
+        id: "trigger_1",
+        type: "trigger",
+        triggerType: "deal_stage_change",
+        name: "Deal Stage Changed",
+        position: { x: 100, y: 100 },
+        config: { stage: "Negotiation" }
+      },
+      {
+        id: "action_1",
+        type: "action",
+        actionType: "condition",
+        name: "Check Deal Value",
+        position: { x: 100, y: 250 },
+        config: { condition: "amount > 10000", field: "amount", operator: ">", value: "10000" }
+      },
+      {
+        id: "action_2",
+        type: "action",
+        actionType: "create_task",
+        name: "Schedule Manager Review",
+        position: { x: 100, y: 400 },
+        config: { assignTo: "manager", dueInDays: 2, priority: "High", title: "Review high-value deal" }
+      },
+      {
+        id: "action_3",
+        type: "action",
+        actionType: "send_notification",
+        name: "Alert Sales Team",
+        position: { x: 100, y: 550 },
+        config: { channel: "sales", message: "High value deal requires attention", urgency: "Medium" }
+      }
+    ],
+    connections: [
+      { id: "conn_1", source: "trigger_1", target: "action_1" },
+      { id: "conn_2", source: "action_1", target: "action_2" },
+      { id: "conn_3", source: "action_2", target: "action_3" }
+    ],
     actions: [
       { id: "condition", name: "Check Deal Value", config: { condition: "amount > 10000" } },
       { id: "create_task", name: "Schedule Manager Review", config: { assignTo: "manager" } },

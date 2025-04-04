@@ -180,7 +180,14 @@ export function VisualWorkflowEditor({ isOpen, onClose, workflow, isNew = false,
       setWorkflowName(workflow.name || "");
       setWorkflowDescription(workflow.description || "");
       
-      // Initialize nodes and connections
+      // If the workflow already has nodes and connections (like in a template), use those directly
+      if (workflow.nodes && workflow.connections) {
+        setNodes(workflow.nodes);
+        setConnections(workflow.connections);
+        return;
+      }
+      
+      // Otherwise initialize nodes and connections from actions
       const initialNodes: WorkflowNode[] = [];
       const initialConnections: Connection[] = [];
       
