@@ -237,11 +237,7 @@ export interface IStorage {
   getAllCommunications(filter?: Partial<Communication>): Promise<Communication[]>;
   getCommunication(id: number): Promise<Communication | undefined>;
   getContactCommunications(contactId: number): Promise<Communication[]>;
-  getLeadCommunications(leadId: number): Promise<Communication[]>;
-  createCommunication(communication: InsertCommunication): Promise<Communication>;
-  updateCommunication(id: number, communication: Partial<InsertCommunication>): Promise<Communication | undefined>;
-  deleteCommunication(id: number): Promise<boolean>;
-  updateCommunicationStatus(id: number, status: string): Promise<Communication | undefined>;
+
 }
 
 export class MemStorage implements IStorage {

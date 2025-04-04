@@ -1783,9 +1783,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contactId: recipientId,
         contactType,
         channel,
-        direction: 'outbound',
+        direction: 'inbound',
         content,
-        status: 'Read',
+        status: 'read',
         sentAt: new Date(),
       });
       
