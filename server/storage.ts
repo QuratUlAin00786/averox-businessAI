@@ -12,7 +12,8 @@ import {
   socialIntegrations, type SocialIntegration, type InsertSocialIntegration,
   socialMessages, type SocialMessage, type InsertSocialMessage,
   leadSources, type LeadSource, type InsertLeadSource,
-  socialCampaigns, type SocialCampaign, type InsertSocialCampaign
+  socialCampaigns, type SocialCampaign, type InsertSocialCampaign,
+  apiKeys, type ApiKey, type InsertApiKey
 } from "@shared/schema";
 import { 
   MemStorageSocialMediaIntegrations, 
@@ -200,6 +201,13 @@ export interface IStorage {
   createSocialCampaign(campaign: InsertSocialCampaign): Promise<SocialCampaign>;
   updateSocialCampaign(id: number, campaign: Partial<InsertSocialCampaign>): Promise<SocialCampaign | undefined>;
   deleteSocialCampaign(id: number): Promise<boolean>;
+  
+  // API Keys
+  getApiKey(id: number): Promise<ApiKey | undefined>;
+  listApiKeys(filter?: Partial<ApiKey>): Promise<ApiKey[]>;
+  createApiKey(apiKey: InsertApiKey): Promise<ApiKey>;
+  updateApiKey(id: number, apiKey: Partial<InsertApiKey>): Promise<ApiKey | undefined>;
+  deleteApiKey(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -221,6 +229,7 @@ export class MemStorage implements IStorage {
   private socialMessages: Map<number, SocialMessage>;
   private leadSources: Map<number, LeadSource>;
   private socialCampaigns: Map<number, SocialCampaign>;
+  private apiKeys: Map<number, ApiKey>;
   
   // Counter for IDs
   private userIdCounter: number;
@@ -237,6 +246,7 @@ export class MemStorage implements IStorage {
   private socialMessageIdCounter: number;
   private leadSourceIdCounter: number;
   private socialCampaignIdCounter: number;
+  private apiKeyIdCounter: number;
 
   constructor() {
     // Initialize session store
@@ -259,6 +269,7 @@ export class MemStorage implements IStorage {
     this.socialMessages = new Map();
     this.leadSources = new Map();
     this.socialCampaigns = new Map();
+    this.apiKeys = new Map();
     
     // Initialize ID counters
     this.userIdCounter = 1;
@@ -275,6 +286,7 @@ export class MemStorage implements IStorage {
     this.socialMessageIdCounter = 1;
     this.leadSourceIdCounter = 1;
     this.socialCampaignIdCounter = 1;
+    this.apiKeyIdCounter = 1;
     
     // Create default data
     this.initializeData();

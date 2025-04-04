@@ -13,7 +13,8 @@ import {
   insertEventSchema,
   insertActivitySchema,
   insertSubscriptionPackageSchema,
-  insertUserSubscriptionSchema
+  insertUserSubscriptionSchema,
+  insertApiKeySchema
 } from "@shared/schema";
 import { z } from "zod";
 import { 
@@ -1556,6 +1557,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // API Keys routes
+  app.get('/api/settings/api-keys', async (req: Request, res: Response) => {
+    try {
+      // Check if user is authenticated and is admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      if (req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Permission denied" });
+      }
+      
+      const apiKeys = await storage.listApiKeys();
+      res.json(apiKeys);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/settings/api-keys', async (req: Request, res: Response) => {
+    try {
+      // Check if user is authenticated and is admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      if (req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Permission denied" });
+      }
+      
+      // Validate the data
+      const apiKeyData = insertApiKeySchema.parse({
+        ...req.body,
+        ownerId: req.user.id
+      });
+      
+      const apiKey = await storage.createApiKey(apiKeyData);
+      res.status(201).json(apiKey);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/settings/api-keys/:id', async (req: Request, res: Response) => {
+    try {
+      // Check if user is authenticated and is admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      if (req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Permission denied" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const apiKey = await storage.getApiKey(id);
+      
+      if (!apiKey) {
+        return res.status(404).json({ error: "API key not found" });
+      }
+      
+      res.json(apiKey);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/settings/api-keys/:id', async (req: Request, res: Response) => {
+    try {
+      // Check if user is authenticated and is admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      if (req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Permission denied" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const apiKeyData = insertApiKeySchema.partial().parse(req.body);
+      
+      const updatedApiKey = await storage.updateApiKey(id, apiKeyData);
+      
+      if (!updatedApiKey) {
+        return res.status(404).json({ error: "API key not found" });
+      }
+      
+      res.json(updatedApiKey);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/settings/api-keys/:id', async (req: Request, res: Response) => {
+    try {
+      // Check if user is authenticated and is admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      if (req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Permission denied" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteApiKey(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "API key not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/settings/api-keys/:id/stats', async (req: Request, res: Response) => {
+    try {
+      // Check if user is authenticated and is admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      if (req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Permission denied" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const apiKey = await storage.getApiKey(id);
+      
+      if (!apiKey) {
+        return res.status(404).json({ error: "API key not found" });
+      }
+      
+      // For now we'll return static data, but this would be backed by a real stats system
+      const stats = {
+        totalRequests: apiKey.usageCount || 0,
+        successRate: "95%",
+        lastUsed: apiKey.lastUsed,
+        usageByDay: [
+          { date: "2025-03-28", count: 12 },
+          { date: "2025-03-29", count: 15 },
+          { date: "2025-03-30", count: 8 },
+          { date: "2025-03-31", count: 20 },
+          { date: "2025-04-01", count: 18 },
+          { date: "2025-04-02", count: 25 },
+          { date: "2025-04-03", count: 22 }
+        ]
+      };
+      
+      res.json(stats);
     } catch (error) {
       handleError(res, error);
     }

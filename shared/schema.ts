@@ -12,6 +12,7 @@ export const subscriptionStatusEnum = pgEnum('subscription_status', ['Active', '
 export const userRoleEnum = pgEnum('user_role', ['Admin', 'Manager', 'User', 'ReadOnly']);
 export const socialPlatformEnum = pgEnum('social_platform', ['Facebook', 'LinkedIn', 'Twitter', 'Instagram', 'WhatsApp', 'Email', 'Messenger', 'Other']);
 export const messageStatusEnum = pgEnum('message_status', ['Unread', 'Read', 'Replied', 'Archived']);
+export const apiProviderEnum = pgEnum('api_provider', ['OpenAI', 'Stripe', 'Facebook', 'LinkedIn', 'Twitter', 'WhatsApp', 'Other']);
 
 // Users
 export const users = pgTable("users", {
@@ -255,6 +256,21 @@ export const socialCampaigns = pgTable("social_campaigns", {
   isActive: boolean("is_active").default(true),
 });
 
+// API Keys
+export const apiKeys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  provider: text("provider").notNull(),
+  key: text("key").notNull(),
+  secret: text("secret"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  usageCount: integer("usage_count").default(0),
+  lastUsed: timestamp("last_used"),
+  ownerId: integer("owner_id").references(() => users.id).notNull(),
+});
+
 // Schema validation for inserts
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -351,9 +367,20 @@ export const insertSocialCampaignSchema = createInsertSchema(socialCampaigns).om
   updatedAt: true,
 });
 
+export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  usageCount: true,
+  lastUsed: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+export type ApiKey = typeof apiKeys.$inferSelect;
 
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
