@@ -17,6 +17,7 @@ import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import SettingsProfile from "@/pages/settings-profile";
 import SettingsSystem from "@/pages/settings-system";
+import SettingsApiKeys from "@/pages/settings-api-keys";
 import Intelligence from "@/pages/intelligence";
 import Workflows from "@/pages/workflows";
 import Subscriptions from "@/pages/subscriptions";
@@ -117,6 +118,12 @@ function Router() {
       <ProtectedRoute path="/settings/system" component={() => (
         <Layout>
           <SettingsSystem />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/settings/api-keys" component={() => (
+        <Layout>
+          <SettingsApiKeys />
         </Layout>
       )} />
       

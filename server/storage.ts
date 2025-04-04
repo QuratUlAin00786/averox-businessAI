@@ -2644,6 +2644,8 @@ export class DatabaseStorage implements IStorage {
 
 // Import social integration helper functions
 import { addSocialIntegrationsToMemStorage, addSocialIntegrationsToDatabaseStorage } from './social-integrations';
+// Import API key integration helper functions
+import { addApiKeysToMemStorage, addApiKeysToDatabaseStorage } from './api-keys-integration';
 
 // Create the appropriate storage implementation
 // For development, you can switch between MemStorage and DatabaseStorage
@@ -2656,12 +2658,16 @@ if (useDatabase) {
   const dbStorage = new DatabaseStorage();
   // Add social media integration methods to database storage
   addSocialIntegrationsToDatabaseStorage(dbStorage);
+  // Add API key management methods to database storage
+  addApiKeysToDatabaseStorage(dbStorage);
   storage = dbStorage;
 } else {
   // Use in-memory storage for development/testing
   const memStorage = new MemStorage();
   // Add social media integration methods to memory storage
   addSocialIntegrationsToMemStorage(memStorage);
+  // Add API key management methods to memory storage
+  addApiKeysToMemStorage(memStorage);
   storage = memStorage;
   // Initialize sample subscription packages for in-memory storage
   initializeSubscriptionPackages(storage);

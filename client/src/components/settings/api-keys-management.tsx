@@ -1,4 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { 
+  KeyRound, 
+  Plus, 
+  RefreshCw, 
+  DownloadCloud, 
+  Check, 
+  X, 
+  Edit, 
+  Trash2, 
+  BarChart, 
+  Eye, 
+  EyeOff 
+} from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Card, 
   CardContent, 
@@ -6,142 +22,175 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
+import { Switch } from "@/components/ui/switch";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, PlusCircle, Edit, Trash2, CheckCircle, XCircle, LineChart } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { ApiKey, InsertApiKey } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-// Additional schema for form validation
-const apiKeySchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  provider: z.string().min(1, "Provider is required"),
-  key: z.string().min(1, "API Key is required"),
-  secret: z.string().optional(),
-  isActive: z.boolean().default(true),
-  ownerId: z.number().optional(), // Will be set from current user
-});
-
-type ApiKeyFormValues = z.infer<typeof apiKeySchema>;
-
-// API key stats interface for the stats endpoint
-interface ApiKeyStats {
-  totalRequests: number;
-  successRate: string;
-  lastUsed: string | null;
-  usageByDay?: {
-    date: string;
-    count: number;
-  }[];
+// API key type matching the server schema
+interface ApiKey {
+  id: number;
+  name: string;
+  key: string;
+  secret?: string | null;
+  provider: string;
+  ownerId: number;
+  isActive: boolean | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  usageCount: number | null;
+  lastUsed: Date | null;
 }
 
-// Stats component for each API key
-const ApiKeyStats = ({ apiKeyId }: { apiKeyId: number }) => {
-  const { data, isLoading } = useQuery<ApiKeyStats>({
-    queryKey: [`/api/settings/api-keys/${apiKeyId}/stats`],
-  });
+// Form schema for creating/editing API keys
+const apiKeyFormSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  provider: z.string().min(2, "Provider must be at least 2 characters"),
+  key: z.string().min(5, "Key must be at least 5 characters"),
+  secret: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
 
-  if (isLoading) {
-    return <div className="flex justify-center p-4"><Loader2 className="h-5 w-5 animate-spin" /></div>;
-  }
+type ApiKeyFormValues = z.infer<typeof apiKeyFormSchema>;
 
-  if (!data) {
-    return <div className="text-sm text-muted-foreground">No statistics available</div>;
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.totalRequests || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.successRate || "0%"}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Last Used</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-md font-medium">
-              {data.lastUsed ? new Date(data.lastUsed).toLocaleString() : "Never"}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {data.usageByDay && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Daily Usage</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[200px] w-full flex items-center justify-center">
-              <LineChart className="h-16 w-16 text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Usage chart will appear here</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-};
-
-const ApiKeysManagement = () => {
-  const { user } = useAuth();
+export default function ApiKeysManagement() {
   const { toast } = useToast();
-  const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
-  const [showStats, setShowStats] = useState<number | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const [showSecrets, setShowSecrets] = useState<{[key: number]: boolean}>({});
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingApiKey, setEditingApiKey] = useState<ApiKey | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingApiKey, setDeletingApiKey] = useState<ApiKey | null>(null);
 
-  // Admin check
-  const isAdmin = user?.role === "Admin";
-  
-  // API keys query
-  const { data: apiKeys, isLoading } = useQuery<ApiKey[]>({
-    queryKey: ["/api/settings/api-keys"],
-    enabled: isAdmin,
+  // Fetch API keys
+  const { data: apiKeys, isLoading } = useQuery({
+    queryKey: ['/api/settings/api-keys'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/settings/api-keys');
+      const data = await response.json();
+      return data as ApiKey[];
+    }
   });
 
-  // Form for adding/editing API keys
-  const form = useForm<ApiKeyFormValues>({
-    resolver: zodResolver(apiKeySchema),
+  // Create API key mutation
+  const createApiKeyMutation = useMutation({
+    mutationFn: async (values: ApiKeyFormValues) => {
+      const response = await apiRequest('POST', '/api/settings/api-keys', values);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ['/api/settings/api-keys']});
+      toast({
+        title: "API Key Created",
+        description: "The API key has been created successfully.",
+      });
+      setIsCreateDialogOpen(false);
+      createForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Create API Key",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Update API key mutation
+  const updateApiKeyMutation = useMutation({
+    mutationFn: async (values: ApiKeyFormValues & { id: number }) => {
+      const { id, ...data } = values;
+      const response = await apiRequest('PATCH', `/api/settings/api-keys/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ['/api/settings/api-keys']});
+      toast({
+        title: "API Key Updated",
+        description: "The API key has been updated successfully.",
+      });
+      setIsEditDialogOpen(false);
+      setEditingApiKey(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Update API Key",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete API key mutation
+  const deleteApiKeyMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/settings/api-keys/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ['/api/settings/api-keys']});
+      toast({
+        title: "API Key Deleted",
+        description: "The API key has been deleted successfully.",
+      });
+      setIsDeleteDialogOpen(false);
+      setDeletingApiKey(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Delete API Key",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Form for creating new API keys
+  const createForm = useForm<ApiKeyFormValues>({
+    resolver: zodResolver(apiKeyFormSchema),
     defaultValues: {
       name: "",
       provider: "",
@@ -151,183 +200,391 @@ const ApiKeysManagement = () => {
     },
   });
 
-  // Reset form when editing key changes
-  useEffect(() => {
-    if (editingKey) {
-      form.reset({
-        name: editingKey.name,
-        provider: editingKey.provider,
-        key: editingKey.key,
-        secret: editingKey.secret || "",
-        isActive: editingKey.isActive || false,
-      });
-    } else {
-      form.reset({
-        name: "",
-        provider: "",
-        key: "",
-        secret: "",
-        isActive: true,
-      });
-    }
-  }, [editingKey, form]);
-
-  // Add API key mutation
-  const addMutation = useMutation({
-    mutationFn: async (data: ApiKeyFormValues) => {
-      const res = await apiRequest("POST", "/api/settings/api-keys", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "API Key added",
-        description: "The API key has been successfully added.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/settings/api-keys"] });
-      setIsDialogOpen(false);
-      form.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to add API Key",
-        description: error.message,
-        variant: "destructive",
-      });
+  // Form for editing API keys
+  const editForm = useForm<ApiKeyFormValues>({
+    resolver: zodResolver(apiKeyFormSchema),
+    defaultValues: {
+      name: "",
+      provider: "",
+      key: "",
+      secret: "",
+      isActive: true,
     },
   });
 
-  // Update API key mutation
-  const updateMutation = useMutation({
-    mutationFn: async (data: { id: number; apiKey: ApiKeyFormValues }) => {
-      const res = await apiRequest("PATCH", `/api/settings/api-keys/${data.id}`, data.apiKey);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "API Key updated",
-        description: "The API key has been successfully updated.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/settings/api-keys"] });
-      setIsDialogOpen(false);
-      setEditingKey(null);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to update API Key",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Delete API key mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/settings/api-keys/${id}`);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "API Key deleted",
-        description: "The API key has been successfully deleted.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/settings/api-keys"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to delete API Key",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Form submission
-  const onSubmit = (values: ApiKeyFormValues) => {
-    if (editingKey) {
-      updateMutation.mutate({ id: editingKey.id, apiKey: values });
-    } else {
-      addMutation.mutate(values);
-    }
+  // Function to handle opening the edit dialog
+  const handleEditClick = (apiKey: ApiKey) => {
+    setEditingApiKey(apiKey);
+    editForm.reset({
+      name: apiKey.name,
+      provider: apiKey.provider,
+      key: apiKey.key,
+      secret: apiKey.secret || "",
+      isActive: apiKey.isActive || false,
+    });
+    setIsEditDialogOpen(true);
   };
 
-  // If not admin, show message
-  if (!isAdmin) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>API Keys Management</CardTitle>
-          <CardDescription>
-            You need administrator privileges to manage API keys.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+  // Function to handle opening the delete dialog
+  const handleDeleteClick = (apiKey: ApiKey) => {
+    setDeletingApiKey(apiKey);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Function to toggle showing/hiding API secrets
+  const toggleShowSecret = (id: number) => {
+    setShowSecrets(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  // Function to format the date for display
+  const formatDate = (date: Date | null) => {
+    if (!date) return "Never";
+    return new Date(date).toLocaleString();
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold tracking-tight">API Keys Management</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={() => {
-                setEditingKey(null);
-                form.reset();
-              }}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add API Key
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>{editingKey ? "Edit API Key" : "Add New API Key"}</DialogTitle>
-              <DialogDescription>
-                {editingKey 
-                  ? "Update the API key details below." 
-                  : "Enter the details of the API key you want to add."}
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl flex items-center">
+              <KeyRound className="mr-2 h-5 w-5" />
+              API Keys
+            </CardTitle>
+            <CardDescription>
+              Manage API keys for external service integrations
+            </CardDescription>
+          </div>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="mb-1">
+                <Plus className="mr-2 h-4 w-4" /> Add API Key
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create API Key</DialogTitle>
+                <DialogDescription>
+                  Add a new API key for external service integration.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...createForm}>
+                <form onSubmit={createForm.handleSubmit((data) => createApiKeyMutation.mutate(data))} className="space-y-6">
+                  <FormField
+                    control={createForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="OpenAI API Key" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          A descriptive name for the API key
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="provider"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Provider</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select provider" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="OpenAI">OpenAI</SelectItem>
+                            <SelectItem value="Stripe">Stripe</SelectItem>
+                            <SelectItem value="Google">Google</SelectItem>
+                            <SelectItem value="AWS">AWS</SelectItem>
+                            <SelectItem value="Twitter">Twitter</SelectItem>
+                            <SelectItem value="Facebook">Facebook</SelectItem>
+                            <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          The service provider this key belongs to
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="key"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>API Key</FormLabel>
+                        <FormControl>
+                          <Input placeholder="sk_test_1234567890abcdef" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          The public key or identifier for the API
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="secret"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>API Secret (Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="API Secret" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Any secret associated with this API key (will be securely stored)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel>Active</FormLabel>
+                          <FormDescription>
+                            Enable or disable this API key
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="submit" disabled={createApiKeyMutation.isPending}>
+                      {createApiKeyMutation.isPending ? (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <DownloadCloud className="mr-2 h-4 w-4" />
+                          Save
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : !apiKeys || apiKeys.length === 0 ? (
+            <div className="text-center py-10 border rounded-md">
+              <KeyRound className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No API Keys</h3>
+              <p className="text-muted-foreground">
+                You haven't added any API keys yet. Click 'Add API Key' to get started.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Provider</TableHead>
+                    <TableHead>Key</TableHead>
+                    <TableHead>Secret</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Usage</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Last Used</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {apiKeys.map((apiKey) => (
+                    <TableRow key={apiKey.id}>
+                      <TableCell className="font-medium">{apiKey.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize font-normal">
+                          {apiKey.provider}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs font-mono">
+                        <div className="max-w-[100px] truncate" title={apiKey.key}>
+                          {apiKey.key.substring(0, 8)}...{apiKey.key.substring(apiKey.key.length - 4)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {apiKey.secret ? (
+                          <div className="flex items-center text-xs font-mono space-x-1">
+                            <div className="max-w-[100px] truncate">
+                              {showSecrets[apiKey.id] 
+                                ? apiKey.secret 
+                                : '••••••••••••••••••••'}
+                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-6 w-6 p-0" 
+                                    onClick={() => toggleShowSecret(apiKey.id)}
+                                  >
+                                    {showSecrets[apiKey.id] ? (
+                                      <EyeOff className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <Eye className="h-3.5 w-3.5" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {showSecrets[apiKey.id] ? "Hide Secret" : "Show Secret"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {apiKey.isActive ? (
+                          <Badge variant="outline" className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
+                            <Check className="mr-1 h-3 w-3" /> Active
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200">
+                            <X className="mr-1 h-3 w-3" /> Inactive
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center">
+                                <BarChart className="h-4 w-4 mr-1 text-muted-foreground" />
+                                <span>
+                                  {apiKey.usageCount || 0}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {apiKey.usageCount || 0} API calls made with this key
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                      <TableCell>
+                        {formatDate(apiKey.createdAt)}
+                      </TableCell>
+                      <TableCell>
+                        {formatDate(apiKey.lastUsed)}
+                      </TableCell>
+                      <TableCell className="text-right space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditClick(apiKey)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => handleDeleteClick(apiKey)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit API Key Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit API Key</DialogTitle>
+            <DialogDescription>
+              Update the API key details.
+            </DialogDescription>
+          </DialogHeader>
+          {editingApiKey && (
+            <Form {...editForm}>
+              <form 
+                onSubmit={editForm.handleSubmit((data) => 
+                  updateApiKeyMutation.mutate({ ...data, id: editingApiKey.id })
+                )} 
+                className="space-y-6"
+              >
                 <FormField
-                  control={form.control}
+                  control={editForm.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="OpenAI API" {...field} />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={editForm.control}
                   name="provider"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Provider</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
+                      <Select
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a provider" />
+                            <SelectValue placeholder="Select provider" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="openai">OpenAI</SelectItem>
-                          <SelectItem value="stripe">Stripe</SelectItem>
-                          <SelectItem value="facebook">Facebook</SelectItem>
-                          <SelectItem value="linkedin">LinkedIn</SelectItem>
-                          <SelectItem value="twitter">Twitter</SelectItem>
-                          <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="OpenAI">OpenAI</SelectItem>
+                          <SelectItem value="Stripe">Stripe</SelectItem>
+                          <SelectItem value="Google">Google</SelectItem>
+                          <SelectItem value="AWS">AWS</SelectItem>
+                          <SelectItem value="Twitter">Twitter</SelectItem>
+                          <SelectItem value="Facebook">Facebook</SelectItem>
+                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -335,185 +592,283 @@ const ApiKeysManagement = () => {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={editForm.control}
                   name="key"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>API Key</FormLabel>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={editForm.control}
                   name="secret"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>API Secret (optional)</FormLabel>
+                      <FormLabel>API Secret (Optional)</FormLabel>
                       <FormControl>
                         <Input type="password" {...field} />
                       </FormControl>
+                      <FormDescription>
+                        Leave blank to keep existing secret
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={editForm.control}
                   name="isActive"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Active</FormLabel>
+                        <FormDescription>
+                          Enable or disable this API key
+                        </FormDescription>
+                      </div>
                       <FormControl>
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
+                        <Switch
                           checked={field.value}
-                          onChange={field.onChange}
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Active</FormLabel>
-                      </div>
                     </FormItem>
                   )}
                 />
                 <DialogFooter>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => {
-                      setIsDialogOpen(false);
-                      setEditingKey(null);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit"
-                    disabled={addMutation.isPending || updateMutation.isPending}
-                  >
-                    {(addMutation.isPending || updateMutation.isPending) && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Button type="submit" disabled={updateApiKeyMutation.isPending}>
+                    {updateApiKeyMutation.isPending ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <DownloadCloud className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </>
                     )}
-                    {editingKey ? "Update" : "Add"}
                   </Button>
                 </DialogFooter>
               </form>
             </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
+      {/* Delete API Key Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete API Key</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this API key? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deletingApiKey && (
+            <>
+              <div className="bg-muted p-3 rounded-md">
+                <p className="font-medium">{deletingApiKey.name}</p>
+                <p className="text-sm text-muted-foreground">Provider: {deletingApiKey.provider}</p>
+                <p className="text-xs font-mono mt-2">
+                  Key: {deletingApiKey.key.substring(0, 8)}...{deletingApiKey.key.substring(deletingApiKey.key.length - 4)}
+                </p>
+              </div>
+              <DialogFooter className="flex space-x-2 sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => deleteApiKeyMutation.mutate(deletingApiKey.id)}
+                  disabled={deleteApiKeyMutation.isPending}
+                >
+                  {deleteApiKeyMutation.isPending ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* API Key Usage Statistics */}
       <Card>
         <CardHeader>
-          <CardTitle>API Keys</CardTitle>
+          <CardTitle className="text-xl flex items-center">
+            <BarChart className="mr-2 h-5 w-5" />
+            API Key Usage Statistics
+          </CardTitle>
           <CardDescription>
-            Manage all API keys for external service integrations.
+            Monitor the usage patterns of your API keys
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center p-4">
-              <Loader2 className="h-6 w-6 animate-spin" />
+            <div className="flex justify-center items-center h-40">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : apiKeys && apiKeys.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Key</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Usage</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {apiKeys.map((apiKey) => (
-                  <TableRow key={apiKey.id}>
-                    <TableCell className="font-medium">{apiKey.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize">
-                        {apiKey.provider}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {apiKey.key.slice(0, 8)}...
-                    </TableCell>
-                    <TableCell>
-                      {apiKey.createdAt ? new Date(apiKey.createdAt).toLocaleDateString() : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {apiKey.isActive ? (
-                        <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
-                          <CheckCircle className="mr-1 h-3 w-3" />
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-100">
-                          <XCircle className="mr-1 h-3 w-3" />
-                          Inactive
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {apiKey.usageCount || 0} requests
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowStats(apiKey.id === showStats ? null : apiKey.id)}
-                        >
-                          <LineChart className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingKey(apiKey);
-                            setIsDialogOpen(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            if (window.confirm("Are you sure you want to delete this API key?")) {
-                              deleteMutation.mutate(apiKey.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {showStats !== null && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="bg-muted/50 p-4">
-                      <ApiKeyStats apiKeyId={showStats} />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+          ) : !apiKeys || apiKeys.length === 0 ? (
+            <div className="text-center py-10 border rounded-md">
+              <BarChart className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Usage Data</h3>
+              <p className="text-muted-foreground">
+                Start using API keys to see usage statistics here.
+              </p>
+            </div>
           ) : (
-            <div className="text-center py-6">
-              <p className="text-muted-foreground">No API keys found. Add your first API key to get started.</p>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total API Keys</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{apiKeys.length}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {apiKeys.filter(k => k.isActive).length} active, {apiKeys.filter(k => !k.isActive).length} inactive
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total API Calls</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {apiKeys.reduce((sum, key) => sum + (key.usageCount || 0), 0)}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Across all API keys
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Most Used Provider</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {apiKeys.length > 0 ? (
+                      <>
+                        <div className="text-2xl font-bold">
+                          {Object.entries(
+                            apiKeys.reduce((acc, key) => {
+                              const provider = key.provider;
+                              acc[provider] = (acc[provider] || 0) + (key.usageCount || 0);
+                              return acc;
+                            }, {} as {[key: string]: number})
+                          ).sort((a, b) => b[1] - a[1])[0]?.[0] || "None"}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Based on API call volume
+                        </p>
+                      </>
+                    ) : (
+                      <div className="text-2xl font-bold">None</div>
+                    )}
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Most Recent Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {apiKeys.some(k => k.lastUsed) ? (
+                      <>
+                        <div className="text-2xl font-bold">
+                          {formatDate(
+                            apiKeys.reduce((latest, key) => {
+                              if (!key.lastUsed) return latest;
+                              if (!latest) return key.lastUsed;
+                              return new Date(key.lastUsed) > new Date(latest) 
+                                ? key.lastUsed 
+                                : latest;
+                            }, null as Date | null)
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Last API key usage
+                        </p>
+                      </>
+                    ) : (
+                      <div className="text-2xl font-bold">Never</div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h3 className="text-lg font-medium mb-4">Usage by Provider</h3>
+                <div className="overflow-hidden rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Provider</TableHead>
+                        <TableHead>API Keys</TableHead>
+                        <TableHead>Total Usage</TableHead>
+                        <TableHead>Active Keys</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.entries(
+                        apiKeys.reduce((acc, key) => {
+                          const provider = key.provider;
+                          if (!acc[provider]) {
+                            acc[provider] = {
+                              count: 0,
+                              usage: 0,
+                              active: 0,
+                            };
+                          }
+                          acc[provider].count++;
+                          acc[provider].usage += key.usageCount || 0;
+                          if (key.isActive) acc[provider].active++;
+                          return acc;
+                        }, {} as {[key: string]: {count: number, usage: number, active: number}})
+                      ).sort((a, b) => b[1].usage - a[1].usage).map(([provider, stats]) => (
+                        <TableRow key={provider}>
+                          <TableCell className="font-medium">
+                            <Badge variant="outline" className="capitalize font-normal">
+                              {provider}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{stats.count}</TableCell>
+                          <TableCell>{stats.usage}</TableCell>
+                          <TableCell>{stats.active} of {stats.count}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
   );
-};
-
-export default ApiKeysManagement;
+}

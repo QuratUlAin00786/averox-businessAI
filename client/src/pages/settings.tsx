@@ -217,6 +217,30 @@ export default function Settings() {
                   </Link>
                 </CardFooter>
               </Card>
+              
+              <Card className="border-primary bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Shield className="w-5 h-5 mr-2" />
+                    API Keys Management
+                  </CardTitle>
+                  <CardDescription>
+                    Admin only - Manage API keys and integrations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Create, update, and monitor API keys for external service integrations
+                  </p>
+                </CardContent>
+                <CardFooter>
+                  <Link href="/settings/api-keys">
+                    <Button className="w-full flex items-center justify-center">
+                      <Shield className="mr-2 h-4 w-4" /> Manage API Keys
+                    </Button>
+                  </Link>
+                </CardFooter>
+              </Card>
             </>
           )}
         </div>
