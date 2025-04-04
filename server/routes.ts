@@ -12,16 +12,14 @@ import {
   insertActivitySchema
 } from "@shared/schema";
 import { z } from "zod";
-import OpenAI from "openai";
-
-// Utility function to check for OpenAI quota errors in API responses
-function isOpenAIQuotaError(errorMessage: string): boolean {
-  return (
-    errorMessage.includes("quota") || 
-    errorMessage.includes("insufficient_quota") || 
-    errorMessage.includes("rate_limit")
-  );
-}
+import { 
+  isOpenAIQuotaError, 
+  generateAnalysis, 
+  generateInsights, 
+  generateRecommendations,
+  generateEmailTemplate,
+  summarizeMeeting
+} from "./openai";
 
 // Utility function to handle OpenAI API errors
 function handleOpenAIError(res: Response, errorData: any) {
@@ -572,46 +570,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing required field: prompt" });
       }
       
-      // Prepare OpenAI API request
-      const openaiApiEndpoint = "https://api.openai.com/v1/chat/completions";
-      
-      // Set up the request to OpenAI API
-      const response = await fetch(openaiApiEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [
-            {
-              role: "system",
-              content: `You are an AI assistant for a CRM system. You will analyze ${type || 'general'} data and provide insightful analysis. ${context ? 'Context: ' + context : ''}`
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 800
-        })
+      const result = await generateAnalysis({
+        prompt,
+        context,
+        type: type as any
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API Error Response:", errorData);
-        return handleOpenAIError(res, errorData);
-      }
-      
-      const data = await response.json();
-      
-      // Return the AI response
-      return res.json({
-        content: data.choices[0].message.content,
-        type: type || 'general'
-      });
+      return res.json(result);
       
     } catch (error) {
       handleError(res, error);
@@ -620,78 +585,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/ai/insights', async (req: Request, res: Response) => {
     try {
-      const { dataType, timeRange } = req.body;
+      const { data, type } = req.body;
       
-      if (!dataType) {
-        return res.status(400).json({ error: "Missing required field: dataType" });
+      if (!data) {
+        return res.status(400).json({ error: "Missing required field: data" });
       }
       
-      // Get data for context
-      let contextData;
-      try {
-        switch(dataType) {
-          case 'sales':
-            contextData = await storage.getSalesReport(timeRange || 'month');
-            break;
-          case 'leads':
-            contextData = await storage.getLeadsReport(timeRange || 'month');
-            break;
-          case 'conversion':
-            contextData = await storage.getConversionReport(timeRange || 'month');
-            break;
-          default:
-            contextData = {
-              message: "No specific data requested."
-            };
-        }
-      } catch (dataError) {
-        console.error('Error fetching data for AI insights:', dataError);
-        contextData = { error: "Failed to fetch context data" };
-      }
-      
-      // Prepare OpenAI API request
-      const openaiApiEndpoint = "https://api.openai.com/v1/chat/completions";
-      
-      // Set up the request to OpenAI API
-      const response = await fetch(openaiApiEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [
-            {
-              role: "system",
-              content: `You are an AI analyst for a CRM system. Analyze the following ${dataType} data and provide 3-5 key insights. Format your response in markdown with bullet points.`
-            },
-            {
-              role: "user",
-              content: `Here is the ${dataType} data for the ${timeRange || 'last month'}: ${JSON.stringify(contextData)}`
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 800
-        })
+      const result = await generateInsights({
+        data,
+        type: type as any || 'all'
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API Error Response:", errorData);
-        return handleOpenAIError(res, errorData);
-      }
-      
-      const data = await response.json();
-      
-      // Return the AI response
-      return res.json({
-        content: data.choices[0].message.content,
-        type: dataType,
-        metadata: {
-          timeRange: timeRange || 'month'
-        }
-      });
+      return res.json(result);
       
     } catch (error) {
       handleError(res, error);
@@ -700,90 +605,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/ai/recommendations', async (req: Request, res: Response) => {
     try {
-      const { entityType, entityId } = req.body;
+      const { entityType, entityData } = req.body;
       
       if (!entityType) {
         return res.status(400).json({ error: "Missing required field: entityType" });
       }
       
-      // Get data for context
-      let contextData;
-      try {
-        switch(entityType) {
-          case 'lead':
-            if (entityId) {
-              contextData = await storage.getLead(parseInt(entityId));
-            } else {
-              contextData = await storage.listLeads();
-            }
-            break;
-          case 'opportunity':
-            if (entityId) {
-              contextData = await storage.getOpportunity(parseInt(entityId));
-            } else {
-              contextData = await storage.listOpportunities();
-            }
-            break;
-          case 'contact':
-            if (entityId) {
-              contextData = await storage.getContact(parseInt(entityId));
-            } else {
-              contextData = await storage.listContacts();
-            }
-            break;
-          default:
-            contextData = {
-              message: "No specific entity requested."
-            };
+      // If entityData was not provided, fetch it
+      let contextData = entityData;
+      if (!contextData) {
+        try {
+          const entityId = req.body.entityId;
+          switch(entityType) {
+            case 'lead':
+              if (entityId) {
+                contextData = await storage.getLead(parseInt(entityId));
+              } else {
+                contextData = await storage.listLeads();
+              }
+              break;
+            case 'opportunity':
+              if (entityId) {
+                contextData = await storage.getOpportunity(parseInt(entityId));
+              } else {
+                contextData = await storage.listOpportunities();
+              }
+              break;
+            case 'contact':
+              if (entityId) {
+                contextData = await storage.getContact(parseInt(entityId));
+              } else {
+                contextData = await storage.listContacts();
+              }
+              break;
+            default:
+              contextData = {
+                message: "No specific entity requested."
+              };
+          }
+        } catch (dataError) {
+          console.error('Error fetching data for AI recommendations:', dataError);
+          contextData = { error: "Failed to fetch context data" };
         }
-      } catch (dataError) {
-        console.error('Error fetching data for AI recommendations:', dataError);
-        contextData = { error: "Failed to fetch context data" };
       }
       
-      // Prepare OpenAI API request
-      const openaiApiEndpoint = "https://api.openai.com/v1/chat/completions";
-      
-      // Set up the request to OpenAI API
-      const response = await fetch(openaiApiEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [
-            {
-              role: "system",
-              content: `You are a CRM assistant that provides actionable recommendations. Analyze the ${entityType} data and suggest 3-5 specific actions to improve outcomes. Format your response in markdown with bullet points.`
-            },
-            {
-              role: "user",
-              content: `Here is the ${entityType} data: ${JSON.stringify(contextData)}`
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 800
-        })
+      const result = await generateRecommendations({
+        entityType,
+        entityData: contextData
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API Error Response:", errorData);
-        return handleOpenAIError(res, errorData);
+      return res.json(result);
+      
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Email template generation endpoint
+  app.post('/api/ai/email-template', async (req: Request, res: Response) => {
+    try {
+      const { emailType, contactInfo, dealInfo, additionalContext } = req.body;
+      
+      if (!emailType || !contactInfo) {
+        return res.status(400).json({ 
+          error: "Missing required fields", 
+          details: "Both emailType and contactInfo are required" 
+        });
       }
       
-      const data = await response.json();
+      const result = await generateEmailTemplate(
+        emailType,
+        contactInfo,
+        dealInfo,
+        additionalContext
+      );
       
-      // Return the AI response
-      return res.json({
-        content: data.choices[0].message.content,
-        type: entityType,
-        metadata: {
-          entityId: entityId || 'all'
-        }
-      });
+      return res.json(result);
+      
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  // Meeting summarization endpoint
+  app.post('/api/ai/summarize-meeting', async (req: Request, res: Response) => {
+    try {
+      const { transcript, meetingContext } = req.body;
+      
+      if (!transcript) {
+        return res.status(400).json({ 
+          error: "Missing required field", 
+          details: "Transcript is required" 
+        });
+      }
+      
+      const result = await summarizeMeeting(transcript, meetingContext);
+      
+      return res.json(result);
       
     } catch (error) {
       handleError(res, error);

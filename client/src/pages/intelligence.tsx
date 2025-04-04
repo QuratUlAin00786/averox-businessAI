@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BrainCircuit, MessageCircle, BrainCog, Search, Sparkles, LineChart, ArrowRight, Plus, DownloadCloud, Lightbulb, CheckCircle2, Zap } from "lucide-react";
+import { BrainCircuit, MessageCircle, BrainCog, Search, Sparkles, LineChart, ArrowRight, Plus, DownloadCloud, Lightbulb, CheckCircle2, Zap, LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 
 // Define interfaces for our Intelligence page
@@ -733,16 +733,20 @@ export default function Intelligence() {
                         const subjectInput = document.querySelector('.email-subject') as HTMLInputElement;
                         const subject = subjectInput?.value || 'Meeting follow-up';
                         
-                        // Call the AI analyze endpoint to generate email template
-                        const response = await fetch('/api/ai/analyze', {
+                        // Call the dedicated email template endpoint
+                        const response = await fetch('/api/ai/email-template', {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
                           },
                           body: JSON.stringify({
-                            prompt: `Generate a professional email template with subject: "${subject}"`,
-                            type: 'general',
-                            context: 'Crafting professional email template'
+                            emailType: "general",
+                            contactInfo: {
+                              firstName: "Client",
+                              lastName: "Name",
+                              company: "Client Company"
+                            },
+                            additionalContext: subject
                           }),
                         });
                         
@@ -768,16 +772,20 @@ export default function Intelligence() {
                           const customSubject = subjectInput?.value || '';
                           const subject = customSubject || 'Follow-up Meeting';
                           
-                          // Call the AI analyze endpoint to generate email template
-                          const response = await fetch('/api/ai/analyze', {
+                          // Call the dedicated email template endpoint
+                          const response = await fetch('/api/ai/email-template', {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
                             },
                             body: JSON.stringify({
-                              prompt: `Generate a professional follow-up email template ${customSubject ? `about "${customSubject}"` : ''}`,
-                              type: 'general',
-                              context: 'Crafting professional follow-up email template'
+                              emailType: "follow-up",
+                              contactInfo: {
+                                firstName: "Client",
+                                lastName: "Name",
+                                company: "Client Company"
+                              },
+                              additionalContext: customSubject
                             }),
                           });
                           
@@ -804,16 +812,23 @@ export default function Intelligence() {
                           const customSubject = subjectInput?.value || '';
                           const subject = customSubject || 'Business Proposal';
                           
-                          // Call the AI analyze endpoint to generate email template
-                          const response = await fetch('/api/ai/analyze', {
+                          // Call the dedicated email template endpoint
+                          const response = await fetch('/api/ai/email-template', {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
                             },
                             body: JSON.stringify({
-                              prompt: `Generate a professional business proposal email template ${customSubject ? `for "${customSubject}"` : ''}`,
-                              type: 'general',
-                              context: 'Crafting professional proposal email template'
+                              emailType: "proposal",
+                              contactInfo: {
+                                firstName: "Client",
+                                lastName: "Name",
+                                company: "Client Company"
+                              },
+                              dealInfo: {
+                                name: customSubject || "Business Proposal"
+                              },
+                              additionalContext: "Include value proposition and next steps"
                             }),
                           });
                           
@@ -840,16 +855,20 @@ export default function Intelligence() {
                           const customSubject = subjectInput?.value || '';
                           const subject = customSubject || 'Introduction';
                           
-                          // Call the AI analyze endpoint to generate email template
-                          const response = await fetch('/api/ai/analyze', {
+                          // Call the dedicated email template endpoint
+                          const response = await fetch('/api/ai/email-template', {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
                             },
                             body: JSON.stringify({
-                              prompt: `Generate a professional introduction/first contact email template ${customSubject ? `regarding "${customSubject}"` : ''}`,
-                              type: 'general',
-                              context: 'Crafting professional introduction email template'
+                              emailType: "introduction",
+                              contactInfo: {
+                                firstName: "Client",
+                                lastName: "Name",
+                                company: "Client Company"
+                              },
+                              additionalContext: customSubject || "First contact with potential client"
                             }),
                           });
                           
@@ -933,16 +952,15 @@ export default function Intelligence() {
                         const meetingNotes = window.prompt("Enter your meeting notes to summarize:", "");
                         if (!meetingNotes) return;
                         
-                        // Call the AI analyze endpoint to generate the summary
-                        const response = await fetch('/api/ai/analyze', {
+                        // Call the dedicated meeting summary endpoint
+                        const response = await fetch('/api/ai/summarize-meeting', {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
                           },
                           body: JSON.stringify({
-                            prompt: "Summarize these meeting notes into key points, action items, and decisions made",
-                            type: 'general',
-                            context: meetingNotes
+                            transcript: meetingNotes,
+                            meetingContext: "Sales team meeting summary"
                           }),
                         });
                         
@@ -998,16 +1016,15 @@ export default function Intelligence() {
                           !selectedSource || lead.source === selectedSource || true
                         );
                         
-                        // Call the AI analyze endpoint
-                        const result = await fetch('/api/ai/analyze', {
+                        // Call the dedicated insights endpoint
+                        const result = await fetch('/api/ai/insights', {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
                           },
                           body: JSON.stringify({
-                            prompt: `Analyze and score the leads from ${selectedSource}`,
-                            type: 'leads',
-                            context: `Analyzing ${relevantLeads.length} leads from ${selectedSource}`
+                            data: relevantLeads,
+                            type: 'leads'
                           }),
                         });
                         
