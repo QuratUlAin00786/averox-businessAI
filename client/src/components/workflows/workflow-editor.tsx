@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -163,20 +163,32 @@ export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false, isTem
   // Debug
   console.log("WorkflowEditor rendering:", { isOpen, workflow, isNew, isTemplate });
   
-  // Initialize actions - handle both regular workflow format and template format
-  const initialActions = workflow?.actions?.map((action: any) => {
-    // If it's in template format with name and config
-    if (action.name && action.id) {
-      return {
-        id: action.id,
-        actionType: action.id,
-        config: action.config || {},
-        name: action.name
-      };
+  useEffect(() => {
+    if (workflow) {
+      setWorkflowName(workflow.name || "");
+      setWorkflowDescription(workflow.description || "");
+      setSelectedTrigger(workflow.triggerType || workflow.trigger?.id || "");
     }
-    // If it's already in the correct format
-    return action;
-  }) || [];
+  }, [workflow]);
+  
+  // Initialize actions - handle both regular workflow format and template format
+  const initialActions = useMemo(() => {
+    if (!workflow?.actions) return [];
+    
+    return workflow.actions.map((action: any) => {
+      // If it's in template format with name and config
+      if (action.name && action.id) {
+        return {
+          id: action.id,
+          actionType: action.id,
+          config: action.config || {},
+          name: action.name
+        };
+      }
+      // If it's already in the correct format
+      return action;
+    });
+  }, [workflow]);
   
   const [actions, setActions] = useState<{id: string, actionType: string, config: any, name?: string}[]>(
     initialActions

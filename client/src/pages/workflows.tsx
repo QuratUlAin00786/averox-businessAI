@@ -30,6 +30,12 @@ const workflowTemplates = [
     triggers: ["New Lead Created"],
     steps: 5,
     popular: true,
+    trigger: {
+      id: "new_lead",
+      name: "New Lead Created",
+      category: "Leads",
+      description: "Trigger when a new lead is created in the system"
+    },
     actions: [
       { id: "send_email", name: "Send Welcome Email", config: { template: "welcome" } },
       { id: "wait", name: "Wait 2 Days", config: { days: 2 } },
@@ -47,6 +53,12 @@ const workflowTemplates = [
     triggers: ["Deal Stage Changed"],
     steps: 3,
     popular: false,
+    trigger: {
+      id: "deal_stage_change",
+      name: "Deal Stage Changed",
+      category: "Opportunities",
+      description: "Trigger when a deal moves to a different stage"
+    },
     actions: [
       { id: "condition", name: "Check Deal Value", config: { condition: "amount > 10000" } },
       { id: "create_task", name: "Schedule Manager Review", config: { assignTo: "manager" } },
@@ -62,6 +74,12 @@ const workflowTemplates = [
     triggers: ["Deal Won"],
     steps: 7,
     popular: true,
+    trigger: {
+      id: "deal_closed",
+      name: "Deal Closed (Won/Lost)",
+      category: "Opportunities",
+      description: "Trigger when a deal is marked as won or lost"
+    },
     actions: [
       { id: "send_email", name: "Welcome to Our Product", config: { template: "onboarding_welcome" } },
       { id: "create_task", name: "Assign Customer Success Rep", config: { assignTo: "cs_team" } },
@@ -81,6 +99,12 @@ const workflowTemplates = [
     triggers: ["Event Completed"],
     steps: 2,
     popular: false,
+    trigger: {
+      id: "meeting_scheduled",
+      name: "Meeting Scheduled",
+      category: "Events",
+      description: "Trigger when a new meeting is scheduled"
+    },
     actions: [
       { id: "send_email", name: "Meeting Summary Email", config: { template: "meeting_summary" } },
       { id: "create_task", name: "Follow-up Action Items", config: { assignTo: "participants" } }
@@ -95,6 +119,12 @@ const workflowTemplates = [
     triggers: ["New Lead Created"],
     steps: 4,
     popular: false,
+    trigger: {
+      id: "new_lead",
+      name: "New Lead Created",
+      category: "Leads",
+      description: "Trigger when a new lead is created in the system"
+    },
     actions: [
       { id: "condition", name: "Check Lead Source", config: { condition: "source == 'website'" } },
       { id: "update_record", name: "Assign to Web Team", config: { field: "owner", value: "web_team" } },
@@ -111,6 +141,12 @@ const workflowTemplates = [
     triggers: ["Time Trigger"],
     steps: 3,
     popular: false,
+    trigger: {
+      id: "scheduled",
+      name: "Scheduled (Time-Based)",
+      category: "System",
+      description: "Trigger based on a schedule (daily, weekly, monthly)"
+    },
     actions: [
       { id: "condition", name: "Check Account Status", config: { condition: "status == 'active'" } },
       { id: "create_task", name: "Quarterly Review", config: { assignTo: "account_manager", recurring: true } },
@@ -128,7 +164,14 @@ const activeWorkflows = [
     status: "active",
     lastRun: "2 hours ago",
     runs: 28,
-    created: "Mar 15, 2023"
+    created: "Mar 15, 2023",
+    trigger: {
+      id: "new_lead",
+      name: "New Lead Created",
+      category: "Leads",
+      description: "Trigger when a new lead is created in the system"
+    },
+    triggerType: "new_lead"
   },
   {
     id: 102,
@@ -137,7 +180,14 @@ const activeWorkflows = [
     status: "active",
     lastRun: "Yesterday",
     runs: 12,
-    created: "Apr 1, 2023"
+    created: "Apr 1, 2023",
+    trigger: {
+      id: "deal_stage_change",
+      name: "Deal Stage Changed",
+      category: "Opportunities",
+      description: "Trigger when a deal moves to a different stage"
+    },
+    triggerType: "deal_stage_change"
   },
   {
     id: 103,
@@ -146,7 +196,14 @@ const activeWorkflows = [
     status: "active",
     lastRun: "3 days ago",
     runs: 45,
-    created: "Jan 10, 2023"
+    created: "Jan 10, 2023",
+    trigger: {
+      id: "scheduled",
+      name: "Scheduled (Time-Based)",
+      category: "System",
+      description: "Trigger based on a schedule (daily, weekly, monthly)"
+    },
+    triggerType: "scheduled"
   },
   {
     id: 104,
@@ -155,7 +212,14 @@ const activeWorkflows = [
     status: "paused",
     lastRun: "1 month ago",
     runs: 8,
-    created: "Feb 22, 2023"
+    created: "Feb 22, 2023",
+    trigger: {
+      id: "meeting_scheduled",
+      name: "Meeting Scheduled",
+      category: "Events",
+      description: "Trigger when a new meeting is scheduled"
+    },
+    triggerType: "meeting_scheduled"
   }
 ];
 
@@ -225,7 +289,9 @@ export default function Workflows() {
   const [expandedRunDetails, setExpandedRunDetails] = useState<number | null>(null);
 
   const openWorkflowDetail = (id: number) => {
-    const workflow = activeWorkflowsList.find(w => w.id === id);
+    // This function is used for regular workflows, not templates
+    // Templates use a different click handler in the template cards
+    console.log("Opening workflow detail for ID:", id);
     setSelectedWorkflow(id);
     setIsWorkflowDetailOpen(true);
   };
@@ -406,6 +472,7 @@ export default function Workflows() {
                     variant="ghost" 
                     size="sm"
                     onClick={() => {
+                      console.log("Opening template preview:", template);
                       setSelectedWorkflow(template.id);
                       setIsWorkflowDetailOpen(true);
                     }}
