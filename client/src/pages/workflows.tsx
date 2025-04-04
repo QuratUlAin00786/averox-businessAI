@@ -10,6 +10,7 @@ import {
   MessageSquare, RefreshCcw, User
 } from "lucide-react";
 import { WorkflowEditor } from "@/components/workflows/workflow-editor";
+import { VisualWorkflowEditor } from "@/components/workflows/visual-workflow-editor";
 import { PageHeader } from "@/components/ui/page-header";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -720,7 +721,7 @@ export default function Workflows() {
       
       {/* Workflow Editor Modal */}
       {/* Workflow Detail Modal */}
-      <WorkflowEditor
+      <VisualWorkflowEditor
         isOpen={isWorkflowDetailOpen && selectedWorkflow !== null}
         onClose={() => setIsWorkflowDetailOpen(false)}
         workflow={
@@ -734,7 +735,7 @@ export default function Workflows() {
       />
       
       {/* New Workflow Modal */}
-      <WorkflowEditor
+      <VisualWorkflowEditor
         isOpen={showNewWorkflowModal}
         onClose={() => setShowNewWorkflowModal(false)}
         isNew={true}
