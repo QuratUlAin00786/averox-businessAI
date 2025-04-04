@@ -1199,6 +1199,368 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Social Media Integrations Routes
+  app.get('/api/social-integrations', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Get user ID from authenticated user
+      const userId = req.user.id;
+      const integrations = await storage.getUserSocialIntegrations(userId);
+      res.json(integrations);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/social-integrations', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Get user ID from authenticated user
+      const userId = req.user.id;
+      const integrationData = {
+        ...req.body,
+        userId
+      };
+
+      const integration = await storage.createSocialIntegration(integrationData);
+      res.status(201).json(integration);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/social-integrations/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const id = parseInt(req.params.id);
+      const integration = await storage.getSocialIntegration(id);
+      
+      if (!integration) {
+        return res.status(404).json({ error: "Social integration not found" });
+      }
+      
+      // Make sure the user owns this integration or is an admin
+      if (integration.userId !== req.user.id && req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "You don't have permission to access this integration" });
+      }
+      
+      res.json(integration);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/social-integrations/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const id = parseInt(req.params.id);
+      
+      // First get the integration to check permissions
+      const integration = await storage.getSocialIntegration(id);
+      if (!integration) {
+        return res.status(404).json({ error: "Social integration not found" });
+      }
+      
+      // Make sure the user owns this integration or is an admin
+      if (integration.userId !== req.user.id && req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "You don't have permission to update this integration" });
+      }
+      
+      const updatedIntegration = await storage.updateSocialIntegration(id, req.body);
+      res.json(updatedIntegration);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/social-integrations/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const id = parseInt(req.params.id);
+      
+      // First get the integration to check permissions
+      const integration = await storage.getSocialIntegration(id);
+      if (!integration) {
+        return res.status(404).json({ error: "Social integration not found" });
+      }
+      
+      // Make sure the user owns this integration or is an admin
+      if (integration.userId !== req.user.id && req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "You don't have permission to delete this integration" });
+      }
+      
+      const success = await storage.deleteSocialIntegration(id);
+      if (!success) {
+        return res.status(500).json({ error: "Failed to delete integration" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Social Media Messages Routes
+  app.get('/api/social-messages', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Optionally filter by lead or contact ID
+      const leadId = req.query.leadId ? parseInt(req.query.leadId as string) : undefined;
+      const contactId = req.query.contactId ? parseInt(req.query.contactId as string) : undefined;
+      
+      let messages = [];
+      if (leadId) {
+        messages = await storage.getLeadSocialMessages(leadId);
+      } else if (contactId) {
+        messages = await storage.getContactSocialMessages(contactId);
+      } else {
+        messages = await storage.listSocialMessages();
+      }
+      
+      res.json(messages);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/social-messages', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const message = await storage.createSocialMessage(req.body);
+      res.status(201).json(message);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/social-messages/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const id = parseInt(req.params.id);
+      const updatedMessage = await storage.updateSocialMessage(id, req.body);
+      
+      if (!updatedMessage) {
+        return res.status(404).json({ error: "Social message not found" });
+      }
+      
+      res.json(updatedMessage);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Lead Sources Routes
+  app.get('/api/lead-sources', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const sources = await storage.listLeadSources();
+      res.json(sources);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/lead-sources', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Only allow admins to create lead sources
+      if (req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Only administrators can create lead sources" });
+      }
+
+      const source = await storage.createLeadSource(req.body);
+      res.status(201).json(source);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/lead-sources/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Only allow admins to update lead sources
+      if (req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Only administrators can update lead sources" });
+      }
+
+      const id = parseInt(req.params.id);
+      const updatedSource = await storage.updateLeadSource(id, req.body);
+      
+      if (!updatedSource) {
+        return res.status(404).json({ error: "Lead source not found" });
+      }
+      
+      res.json(updatedSource);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/lead-sources/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Only allow admins to delete lead sources
+      if (req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Only administrators can delete lead sources" });
+      }
+
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteLeadSource(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Lead source not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Social Campaigns Routes
+  app.get('/api/social-campaigns', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const campaigns = await storage.listSocialCampaigns();
+      res.json(campaigns);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/social-campaigns', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Set the owner ID to the current user if not provided
+      const campaignData = {
+        ...req.body,
+        ownerId: req.body.ownerId || req.user.id
+      };
+
+      const campaign = await storage.createSocialCampaign(campaignData);
+      res.status(201).json(campaign);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/social-campaigns/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const id = parseInt(req.params.id);
+      const campaign = await storage.getSocialCampaign(id);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: "Social campaign not found" });
+      }
+      
+      res.json(campaign);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/social-campaigns/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const id = parseInt(req.params.id);
+      
+      // First get the campaign to check permissions
+      const campaign = await storage.getSocialCampaign(id);
+      if (!campaign) {
+        return res.status(404).json({ error: "Social campaign not found" });
+      }
+      
+      // Make sure the user owns this campaign or is an admin
+      if (campaign.ownerId !== req.user.id && req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "You don't have permission to update this campaign" });
+      }
+      
+      const updatedCampaign = await storage.updateSocialCampaign(id, req.body);
+      res.json(updatedCampaign);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/social-campaigns/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const id = parseInt(req.params.id);
+      
+      // First get the campaign to check permissions
+      const campaign = await storage.getSocialCampaign(id);
+      if (!campaign) {
+        return res.status(404).json({ error: "Social campaign not found" });
+      }
+      
+      // Make sure the user owns this campaign or is an admin
+      if (campaign.ownerId !== req.user.id && req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "You don't have permission to delete this campaign" });
+      }
+      
+      const success = await storage.deleteSocialCampaign(id);
+      if (!success) {
+        return res.status(500).json({ error: "Failed to delete campaign" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
   // Create HTTP server
   const server = createServer(app);
   

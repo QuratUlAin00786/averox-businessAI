@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, date, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, date, numeric, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -10,6 +10,8 @@ export const taskStatusEnum = pgEnum('task_status', ['Not Started', 'In Progress
 export const eventTypeEnum = pgEnum('event_type', ['Meeting', 'Call', 'Demonstration', 'Follow-up', 'Other']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['Active', 'Pending', 'Expired', 'Canceled', 'Trial']);
 export const userRoleEnum = pgEnum('user_role', ['Admin', 'Manager', 'User', 'ReadOnly']);
+export const socialPlatformEnum = pgEnum('social_platform', ['Facebook', 'LinkedIn', 'Twitter', 'Instagram', 'WhatsApp', 'Email', 'Messenger', 'Other']);
+export const messageStatusEnum = pgEnum('message_status', ['Unread', 'Read', 'Replied', 'Archived']);
 
 // Users
 export const users = pgTable("users", {
@@ -190,6 +192,69 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   trialEndsAt: timestamp("trial_ends_at"),
 });
 
+// Social Media Integrations
+export const socialIntegrations = pgTable("social_integrations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  platform: socialPlatformEnum("platform").notNull(),
+  name: text("name").notNull(),
+  accountId: text("account_id").notNull(),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  tokenExpiry: timestamp("token_expiry"),
+  settings: jsonb("settings"), // Replaced config with settings
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  isActive: boolean("is_active").default(true),
+});
+
+// Social Media Messages
+export const socialMessages = pgTable("social_messages", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").references(() => socialIntegrations.id).notNull(),
+  externalId: text("external_id").notNull(), // ID from external platform
+  leadId: integer("lead_id").references(() => leads.id),
+  contactId: integer("contact_id").references(() => contacts.id),
+  direction: text("direction").notNull(), // 'inbound' or 'outbound'
+  content: text("content").notNull(),
+  attachments: jsonb("attachments"), // Array of attachment objects
+  metadata: jsonb("metadata"), // Platform-specific metadata
+  status: messageStatusEnum("status").default("Unread"),
+  sentAt: timestamp("sent_at").notNull(),
+  receivedAt: timestamp("received_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  isDeleted: boolean("is_deleted").default(false),
+});
+
+// Lead Source Tracking
+export const leadSources = pgTable("lead_sources", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  platform: socialPlatformEnum("platform"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// Social Media Campaigns
+export const socialCampaigns = pgTable("social_campaigns", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  platform: socialPlatformEnum("platform").notNull(),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  status: text("status").default("Draft"), // Draft, Active, Paused, Completed
+  ownerId: integer("owner_id").references(() => users.id),
+  content: text("content"),
+  targetAudience: jsonb("target_audience"),
+  metrics: jsonb("metrics"), // Performance metrics
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  isActive: boolean("is_active").default(true),
+});
+
 // Schema validation for inserts
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -262,6 +327,30 @@ export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions
   startDate: z.string().or(z.date())
 });
 
+// Social media integration schemas
+export const insertSocialIntegrationSchema = createInsertSchema(socialIntegrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSocialMessageSchema = createInsertSchema(socialMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertLeadSourceSchema = createInsertSchema(leadSources).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSocialCampaignSchema = createInsertSchema(socialCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -292,3 +381,15 @@ export type SubscriptionPackage = typeof subscriptionPackages.$inferSelect;
 
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
+
+export type InsertSocialIntegration = z.infer<typeof insertSocialIntegrationSchema>;
+export type SocialIntegration = typeof socialIntegrations.$inferSelect;
+
+export type InsertSocialMessage = z.infer<typeof insertSocialMessageSchema>;
+export type SocialMessage = typeof socialMessages.$inferSelect;
+
+export type InsertLeadSource = z.infer<typeof insertLeadSourceSchema>;
+export type LeadSource = typeof leadSources.$inferSelect;
+
+export type InsertSocialCampaign = z.infer<typeof insertSocialCampaignSchema>;
+export type SocialCampaign = typeof socialCampaigns.$inferSelect;

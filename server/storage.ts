@@ -8,8 +8,16 @@ import {
   events, type Event, type InsertEvent,
   activities, type Activity, type InsertActivity,
   subscriptionPackages, type SubscriptionPackage, type InsertSubscriptionPackage,
-  userSubscriptions, type UserSubscription, type InsertUserSubscription
+  userSubscriptions, type UserSubscription, type InsertUserSubscription,
+  socialIntegrations, type SocialIntegration, type InsertSocialIntegration,
+  socialMessages, type SocialMessage, type InsertSocialMessage,
+  leadSources, type LeadSource, type InsertLeadSource,
+  socialCampaigns, type SocialCampaign, type InsertSocialCampaign
 } from "@shared/schema";
+import { 
+  MemStorageSocialMediaIntegrations, 
+  DatabaseStorageSocialMediaIntegrations 
+} from './social-media-storage';
 import { eq } from "drizzle-orm";
 import { db } from './db';
 import session from "express-session";
@@ -161,6 +169,37 @@ export interface IStorage {
   // User Account Management
   updateUserStripeInfo(userId: number, stripeInfo: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User | undefined>;
   updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User | undefined>;
+  
+  // Social Media Integrations
+  getSocialIntegration(id: number): Promise<SocialIntegration | undefined>;
+  listSocialIntegrations(filter?: Partial<SocialIntegration>): Promise<SocialIntegration[]>;
+  getUserSocialIntegrations(userId: number): Promise<SocialIntegration[]>;
+  createSocialIntegration(integration: InsertSocialIntegration): Promise<SocialIntegration>;
+  updateSocialIntegration(id: number, integration: Partial<InsertSocialIntegration>): Promise<SocialIntegration | undefined>;
+  deleteSocialIntegration(id: number): Promise<boolean>;
+  
+  // Social Media Messages
+  getSocialMessage(id: number): Promise<SocialMessage | undefined>;
+  listSocialMessages(filter?: Partial<SocialMessage>): Promise<SocialMessage[]>;
+  getLeadSocialMessages(leadId: number): Promise<SocialMessage[]>;
+  getContactSocialMessages(contactId: number): Promise<SocialMessage[]>;
+  createSocialMessage(message: InsertSocialMessage): Promise<SocialMessage>;
+  updateSocialMessage(id: number, message: Partial<InsertSocialMessage>): Promise<SocialMessage | undefined>;
+  deleteSocialMessage(id: number): Promise<boolean>;
+  
+  // Lead Sources
+  getLeadSource(id: number): Promise<LeadSource | undefined>;
+  listLeadSources(filter?: Partial<LeadSource>): Promise<LeadSource[]>;
+  createLeadSource(source: InsertLeadSource): Promise<LeadSource>;
+  updateLeadSource(id: number, source: Partial<InsertLeadSource>): Promise<LeadSource | undefined>;
+  deleteLeadSource(id: number): Promise<boolean>;
+  
+  // Social Media Campaigns
+  getSocialCampaign(id: number): Promise<SocialCampaign | undefined>;
+  listSocialCampaigns(filter?: Partial<SocialCampaign>): Promise<SocialCampaign[]>;
+  createSocialCampaign(campaign: InsertSocialCampaign): Promise<SocialCampaign>;
+  updateSocialCampaign(id: number, campaign: Partial<InsertSocialCampaign>): Promise<SocialCampaign | undefined>;
+  deleteSocialCampaign(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -178,6 +217,10 @@ export class MemStorage implements IStorage {
   private activities: Map<number, Activity>;
   private subscriptionPackages: Map<number, SubscriptionPackage>;
   private userSubscriptions: Map<number, UserSubscription>;
+  private socialIntegrations: Map<number, SocialIntegration>;
+  private socialMessages: Map<number, SocialMessage>;
+  private leadSources: Map<number, LeadSource>;
+  private socialCampaigns: Map<number, SocialCampaign>;
   
   // Counter for IDs
   private userIdCounter: number;
@@ -190,6 +233,10 @@ export class MemStorage implements IStorage {
   private activityIdCounter: number;
   private subscriptionPackageIdCounter: number;
   private userSubscriptionIdCounter: number;
+  private socialIntegrationIdCounter: number;
+  private socialMessageIdCounter: number;
+  private leadSourceIdCounter: number;
+  private socialCampaignIdCounter: number;
 
   constructor() {
     // Initialize session store
@@ -208,6 +255,10 @@ export class MemStorage implements IStorage {
     this.activities = new Map();
     this.subscriptionPackages = new Map();
     this.userSubscriptions = new Map();
+    this.socialIntegrations = new Map();
+    this.socialMessages = new Map();
+    this.leadSources = new Map();
+    this.socialCampaigns = new Map();
     
     // Initialize ID counters
     this.userIdCounter = 1;
@@ -220,6 +271,10 @@ export class MemStorage implements IStorage {
     this.activityIdCounter = 1;
     this.subscriptionPackageIdCounter = 1;
     this.userSubscriptionIdCounter = 1;
+    this.socialIntegrationIdCounter = 1;
+    this.socialMessageIdCounter = 1;
+    this.leadSourceIdCounter = 1;
+    this.socialCampaignIdCounter = 1;
     
     // Create default data
     this.initializeData();
@@ -2252,7 +2307,322 @@ export class DatabaseStorage implements IStorage {
     // Implement with database queries
     return undefined;
   }
+
+  // Social Media Integrations
+  async getSocialIntegration(id: number): Promise<SocialIntegration | undefined> {
+    try {
+      const [integration] = await db.select().from(socialIntegrations).where(eq(socialIntegrations.id, id));
+      return integration;
+    } catch (error) {
+      console.error('Database error in getSocialIntegration:', error);
+      return undefined;
+    }
+  }
+
+  async listSocialIntegrations(filter?: Partial<SocialIntegration>): Promise<SocialIntegration[]> {
+    try {
+      let query = db.select().from(socialIntegrations);
+      
+      if (filter) {
+        // Add conditions dynamically based on filter
+        if (filter.userId !== undefined) {
+          query = query.where(eq(socialIntegrations.userId, filter.userId));
+        }
+        if (filter.platform !== undefined) {
+          query = query.where(eq(socialIntegrations.platform, filter.platform));
+        }
+        if (filter.isActive !== undefined) {
+          query = query.where(eq(socialIntegrations.isActive, filter.isActive));
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Database error in listSocialIntegrations:', error);
+      return [];
+    }
+  }
+
+  async getUserSocialIntegrations(userId: number): Promise<SocialIntegration[]> {
+    try {
+      return await db.select().from(socialIntegrations).where(eq(socialIntegrations.userId, userId));
+    } catch (error) {
+      console.error('Database error in getUserSocialIntegrations:', error);
+      return [];
+    }
+  }
+
+  async createSocialIntegration(integration: InsertSocialIntegration): Promise<SocialIntegration> {
+    try {
+      const [newIntegration] = await db.insert(socialIntegrations).values(integration).returning();
+      return newIntegration;
+    } catch (error) {
+      console.error('Database error in createSocialIntegration:', error);
+      throw new Error(`Failed to create social integration: ${error.message}`);
+    }
+  }
+
+  async updateSocialIntegration(id: number, integration: Partial<InsertSocialIntegration>): Promise<SocialIntegration | undefined> {
+    try {
+      const [updatedIntegration] = await db.update(socialIntegrations)
+        .set({ ...integration, updatedAt: new Date() })
+        .where(eq(socialIntegrations.id, id))
+        .returning();
+      return updatedIntegration;
+    } catch (error) {
+      console.error('Database error in updateSocialIntegration:', error);
+      return undefined;
+    }
+  }
+
+  async deleteSocialIntegration(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(socialIntegrations).where(eq(socialIntegrations.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deleteSocialIntegration:', error);
+      return false;
+    }
+  }
+
+  // Social Media Messages
+  async getSocialMessage(id: number): Promise<SocialMessage | undefined> {
+    try {
+      const [message] = await db.select().from(socialMessages).where(eq(socialMessages.id, id));
+      return message;
+    } catch (error) {
+      console.error('Database error in getSocialMessage:', error);
+      return undefined;
+    }
+  }
+
+  async listSocialMessages(filter?: Partial<SocialMessage>): Promise<SocialMessage[]> {
+    try {
+      let query = db.select().from(socialMessages);
+      
+      if (filter) {
+        // Add conditions dynamically based on filter
+        if (filter.integrationId !== undefined) {
+          query = query.where(eq(socialMessages.integrationId, filter.integrationId));
+        }
+        if (filter.leadId !== undefined) {
+          query = query.where(eq(socialMessages.leadId, filter.leadId));
+        }
+        if (filter.contactId !== undefined) {
+          query = query.where(eq(socialMessages.contactId, filter.contactId));
+        }
+        if (filter.direction !== undefined) {
+          query = query.where(eq(socialMessages.direction, filter.direction));
+        }
+        if (filter.status !== undefined) {
+          query = query.where(eq(socialMessages.status, filter.status));
+        }
+        if (filter.isDeleted !== undefined) {
+          query = query.where(eq(socialMessages.isDeleted, filter.isDeleted));
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Database error in listSocialMessages:', error);
+      return [];
+    }
+  }
+
+  async getLeadSocialMessages(leadId: number): Promise<SocialMessage[]> {
+    try {
+      return await db.select().from(socialMessages).where(eq(socialMessages.leadId, leadId));
+    } catch (error) {
+      console.error('Database error in getLeadSocialMessages:', error);
+      return [];
+    }
+  }
+
+  async getContactSocialMessages(contactId: number): Promise<SocialMessage[]> {
+    try {
+      return await db.select().from(socialMessages).where(eq(socialMessages.contactId, contactId));
+    } catch (error) {
+      console.error('Database error in getContactSocialMessages:', error);
+      return [];
+    }
+  }
+
+  async createSocialMessage(message: InsertSocialMessage): Promise<SocialMessage> {
+    try {
+      const [newMessage] = await db.insert(socialMessages).values(message).returning();
+      return newMessage;
+    } catch (error) {
+      console.error('Database error in createSocialMessage:', error);
+      throw new Error(`Failed to create social message: ${error.message}`);
+    }
+  }
+
+  async updateSocialMessage(id: number, message: Partial<InsertSocialMessage>): Promise<SocialMessage | undefined> {
+    try {
+      const [updatedMessage] = await db.update(socialMessages)
+        .set(message)
+        .where(eq(socialMessages.id, id))
+        .returning();
+      return updatedMessage;
+    } catch (error) {
+      console.error('Database error in updateSocialMessage:', error);
+      return undefined;
+    }
+  }
+
+  async deleteSocialMessage(id: number): Promise<boolean> {
+    try {
+      // Soft delete - update isDeleted flag
+      const [updatedMessage] = await db.update(socialMessages)
+        .set({ isDeleted: true })
+        .where(eq(socialMessages.id, id))
+        .returning();
+      return !!updatedMessage;
+    } catch (error) {
+      console.error('Database error in deleteSocialMessage:', error);
+      return false;
+    }
+  }
+
+  // Lead Sources
+  async getLeadSource(id: number): Promise<LeadSource | undefined> {
+    try {
+      const [source] = await db.select().from(leadSources).where(eq(leadSources.id, id));
+      return source;
+    } catch (error) {
+      console.error('Database error in getLeadSource:', error);
+      return undefined;
+    }
+  }
+
+  async listLeadSources(filter?: Partial<LeadSource>): Promise<LeadSource[]> {
+    try {
+      let query = db.select().from(leadSources);
+      
+      if (filter) {
+        // Add conditions dynamically based on filter
+        if (filter.platform !== undefined) {
+          query = query.where(eq(leadSources.platform, filter.platform));
+        }
+        if (filter.isActive !== undefined) {
+          query = query.where(eq(leadSources.isActive, filter.isActive));
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Database error in listLeadSources:', error);
+      return [];
+    }
+  }
+
+  async createLeadSource(source: InsertLeadSource): Promise<LeadSource> {
+    try {
+      const [newSource] = await db.insert(leadSources).values(source).returning();
+      return newSource;
+    } catch (error) {
+      console.error('Database error in createLeadSource:', error);
+      throw new Error(`Failed to create lead source: ${error.message}`);
+    }
+  }
+
+  async updateLeadSource(id: number, source: Partial<InsertLeadSource>): Promise<LeadSource | undefined> {
+    try {
+      const [updatedSource] = await db.update(leadSources)
+        .set({ ...source, updatedAt: new Date() })
+        .where(eq(leadSources.id, id))
+        .returning();
+      return updatedSource;
+    } catch (error) {
+      console.error('Database error in updateLeadSource:', error);
+      return undefined;
+    }
+  }
+
+  async deleteLeadSource(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(leadSources).where(eq(leadSources.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deleteLeadSource:', error);
+      return false;
+    }
+  }
+
+  // Social Media Campaigns
+  async getSocialCampaign(id: number): Promise<SocialCampaign | undefined> {
+    try {
+      const [campaign] = await db.select().from(socialCampaigns).where(eq(socialCampaigns.id, id));
+      return campaign;
+    } catch (error) {
+      console.error('Database error in getSocialCampaign:', error);
+      return undefined;
+    }
+  }
+
+  async listSocialCampaigns(filter?: Partial<SocialCampaign>): Promise<SocialCampaign[]> {
+    try {
+      let query = db.select().from(socialCampaigns);
+      
+      if (filter) {
+        // Add conditions dynamically based on filter
+        if (filter.platform !== undefined) {
+          query = query.where(eq(socialCampaigns.platform, filter.platform));
+        }
+        if (filter.ownerId !== undefined) {
+          query = query.where(eq(socialCampaigns.ownerId, filter.ownerId));
+        }
+        if (filter.status !== undefined) {
+          query = query.where(eq(socialCampaigns.status, filter.status));
+        }
+        if (filter.isActive !== undefined) {
+          query = query.where(eq(socialCampaigns.isActive, filter.isActive));
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Database error in listSocialCampaigns:', error);
+      return [];
+    }
+  }
+
+  async createSocialCampaign(campaign: InsertSocialCampaign): Promise<SocialCampaign> {
+    try {
+      const [newCampaign] = await db.insert(socialCampaigns).values(campaign).returning();
+      return newCampaign;
+    } catch (error) {
+      console.error('Database error in createSocialCampaign:', error);
+      throw new Error(`Failed to create social campaign: ${error.message}`);
+    }
+  }
+
+  async updateSocialCampaign(id: number, campaign: Partial<InsertSocialCampaign>): Promise<SocialCampaign | undefined> {
+    try {
+      const [updatedCampaign] = await db.update(socialCampaigns)
+        .set({ ...campaign, updatedAt: new Date() })
+        .where(eq(socialCampaigns.id, id))
+        .returning();
+      return updatedCampaign;
+    } catch (error) {
+      console.error('Database error in updateSocialCampaign:', error);
+      return undefined;
+    }
+  }
+
+  async deleteSocialCampaign(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(socialCampaigns).where(eq(socialCampaigns.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deleteSocialCampaign:', error);
+      return false;
+    }
+  }
 }
+
+// Import social integration helper functions
+import { addSocialIntegrationsToMemStorage, addSocialIntegrationsToDatabaseStorage } from './social-integrations';
 
 // Create the appropriate storage implementation
 // For development, you can switch between MemStorage and DatabaseStorage
@@ -2262,10 +2632,16 @@ export let storage: IStorage;
 
 if (useDatabase) {
   // Use PostgreSQL for persistent data
-  storage = new DatabaseStorage();
+  const dbStorage = new DatabaseStorage();
+  // Add social media integration methods to database storage
+  addSocialIntegrationsToDatabaseStorage(dbStorage);
+  storage = dbStorage;
 } else {
   // Use in-memory storage for development/testing
-  storage = new MemStorage();
+  const memStorage = new MemStorage();
+  // Add social media integration methods to memory storage
+  addSocialIntegrationsToMemStorage(memStorage);
+  storage = memStorage;
   // Initialize sample subscription packages for in-memory storage
   initializeSubscriptionPackages(storage);
 }

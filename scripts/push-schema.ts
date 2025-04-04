@@ -59,6 +59,14 @@ async function createEnumTypes() {
     {
       name: 'user_role',
       values: ['Admin', 'Manager', 'User', 'ReadOnly']
+    },
+    {
+      name: 'social_platform',
+      values: ['Facebook', 'LinkedIn', 'Twitter', 'Instagram', 'WhatsApp', 'Email', 'Messenger', 'Other']
+    },
+    {
+      name: 'message_status',
+      values: ['Unread', 'Read', 'Replied', 'Archived']
     }
   ];
   
@@ -292,6 +300,81 @@ async function createTables() {
     )
   `);
   console.log("Created user_subscriptions table");
+  
+  // Create social_integrations table
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS "social_integrations" (
+      "id" serial PRIMARY KEY,
+      "user_id" integer NOT NULL REFERENCES "users"("id"),
+      "platform" social_platform NOT NULL,
+      "account_id" text NOT NULL,
+      "name" text NOT NULL,
+      "access_token" text NOT NULL,
+      "refresh_token" text,
+      "token_expiry" timestamp,
+      "settings" jsonb,
+      "created_at" timestamp DEFAULT now(),
+      "updated_at" timestamp,
+      "is_active" boolean DEFAULT true
+    )
+  `);
+  console.log("Created social_integrations table");
+  
+  // Create social_messages table
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS "social_messages" (
+      "id" serial PRIMARY KEY,
+      "integration_id" integer NOT NULL REFERENCES "social_integrations"("id"),
+      "external_id" text NOT NULL,
+      "sender" text NOT NULL,
+      "recipient" text,
+      "message" text NOT NULL,
+      "attachments" jsonb,
+      "metadata" jsonb,
+      "status" message_status DEFAULT 'Unread',
+      "lead_id" integer REFERENCES "leads"("id"),
+      "contact_id" integer REFERENCES "contacts"("id"),
+      "received_at" timestamp,
+      "created_at" timestamp DEFAULT now(),
+      "is_deleted" boolean DEFAULT false
+    )
+  `);
+  console.log("Created social_messages table");
+
+  // Create lead_sources table
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS "lead_sources" (
+      "id" serial PRIMARY KEY,
+      "name" text NOT NULL,
+      "description" text,
+      "platform" social_platform,
+      "is_active" boolean DEFAULT true,
+      "created_at" timestamp DEFAULT now(),
+      "updated_at" timestamp
+    )
+  `);
+  console.log("Created lead_sources table");
+
+  // Create social_campaigns table
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS "social_campaigns" (
+      "id" serial PRIMARY KEY,
+      "name" text NOT NULL,
+      "description" text,
+      "content" text,
+      "platform" social_platform,
+      "integration_id" integer REFERENCES "social_integrations"("id"),
+      "status" text DEFAULT 'Draft',
+      "start_date" timestamp,
+      "end_date" timestamp,
+      "owner_id" integer REFERENCES "users"("id"),
+      "metrics" jsonb,
+      "created_at" timestamp DEFAULT now(),
+      "updated_at" timestamp,
+      "is_active" boolean DEFAULT true
+    )
+  `);
+  console.log("Created social_campaigns table");
 }
 
 main()
