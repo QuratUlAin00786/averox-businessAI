@@ -105,6 +105,20 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: 60000, // 1 minute
       retry: false,
+      
+      // Custom query key matching function to handle different caching strategies
+      queryKeyHashFn: (queryKey) => {
+        // For reports, include the current timestamp to prevent caching
+        if (typeof queryKey[0] === 'string' && queryKey[0].includes('/api/reports/')) {
+          // Create a unique hash that includes current time (in 2-second intervals)
+          // This effectively disables caching while preventing multiple near-simultaneous requests
+          const timeComponent = Math.floor(Date.now() / 2000);
+          return `${queryKey[0]}_${timeComponent}`;
+        }
+        
+        // For all other queries, use the default key serialization
+        return JSON.stringify(queryKey);
+      },
     },
     mutations: {
       retry: false,

@@ -26,13 +26,17 @@ export default function Reports() {
   
   // Handle time range change
   const handleTimeRangeChange = (newValue: string) => {
+    console.log(`Time range changing from ${selectedTimeRange} to ${newValue}`);
     setSelectedTimeRange(newValue);
-    // Invalidate all report queries to force refetch with new time range
-    queryClient.invalidateQueries({ queryKey: ['/api/reports/sales'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/reports/leads'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/reports/conversion'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/reports/performance'] });
-    console.log(`Time range changed to ${newValue}, invalidated all report queries`);
+    
+    // Force clear all cache and refetch everything
+    queryClient.clear();
+    
+    // Specifically invalidate each report type to ensure refetch
+    queryClient.invalidateQueries();
+    
+    // Log the change for debugging
+    console.log(`Time range changed to ${newValue}, invalidated all queries`);
   };
 
   interface SalesReport {
@@ -642,27 +646,39 @@ export default function Reports() {
                   <div className="h-full flex items-center justify-center">
                     <Skeleton className="h-[350px] w-full" />
                   </div>
+                ) : !teamReport || !teamReport.teamMembers || teamReport.teamMembers.length === 0 ? (
+                  <div className="h-full flex items-center justify-center flex-col">
+                    <p>No team performance data available for selected time range.</p>
+                    <p className="text-xs text-gray-500 mt-2">Selected time range: {selectedTimeRange}</p>
+                  </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      layout="vertical"
-                      data={teamReport?.teamMembers || []}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="name" type="category" />
-                      <Tooltip formatter={(value, name) => {
-                        if (name === 'revenue') return [`$${value}`, 'Revenue']
-                        if (name === 'deals') return [value, 'Deals']
-                        if (name === 'conversion') return [`${value}%`, 'Conversion Rate']
-                        return [value, name]
-                      }} />
-                      <Legend />
-                      <Bar dataKey="deals" name="Deals Closed" fill="#8884d8" />
-                      <Bar dataKey="revenue" name="Revenue Generated" fill="#82ca9d" />
-                      <Bar dataKey="conversion" name="Conversion Rate (%)" fill="#FF8042" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <>
+                    <div className="mb-2 text-xs text-gray-500">
+                      Time range: {selectedTimeRange} | 
+                      Members: {teamReport.teamMembers.length} |
+                      Data timestamp: {new Date().toISOString()}
+                    </div>
+                    <ResponsiveContainer width="100%" height="90%">
+                      <BarChart
+                        layout="vertical"
+                        data={teamReport.teamMembers}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" />
+                        <Tooltip formatter={(value, name) => {
+                          if (name === 'revenue') return [`$${value}`, 'Revenue']
+                          if (name === 'deals') return [value, 'Deals']
+                          if (name === 'conversion') return [`${value}%`, 'Conversion Rate']
+                          return [value, name]
+                        }} />
+                        <Legend />
+                        <Bar dataKey="deals" name="Deals Closed" fill="#8884d8" />
+                        <Bar dataKey="revenue" name="Revenue Generated" fill="#82ca9d" />
+                        <Bar dataKey="conversion" name="Conversion Rate (%)" fill="#FF8042" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </>
                 )}
               </div>
             </CardContent>
