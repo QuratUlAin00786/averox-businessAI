@@ -217,16 +217,16 @@ async function seedOpportunities() {
   const assignedTo = userIds.length > 0 ? userIds[0] : null;
   
   const opportunitiesData = [
-    { name: 'Enterprise Software Implementation', accountId: accountIds[0], stage: 'Discovery', amount: 125000, probability: 20, expectedCloseDate: new Date(2025, 5, 15) },
+    { name: 'Enterprise Software Implementation', accountId: accountIds[0], stage: 'Lead Generation', amount: 125000, probability: 20, expectedCloseDate: new Date(2025, 5, 15) },
     { name: 'Cloud Migration Services', accountId: accountIds[1], stage: 'Proposal', amount: 85000, probability: 50, expectedCloseDate: new Date(2025, 4, 30) },
     { name: 'Logistics Software Upgrade', accountId: accountIds[2], stage: 'Negotiation', amount: 150000, probability: 75, expectedCloseDate: new Date(2025, 4, 10) },
-    { name: 'Patient Management System', accountId: accountIds[3], stage: 'Discovery', amount: 95000, probability: 25, expectedCloseDate: new Date(2025, 6, 20) },
+    { name: 'Patient Management System', accountId: accountIds[3], stage: 'Qualification', amount: 95000, probability: 25, expectedCloseDate: new Date(2025, 6, 20) },
     { name: 'Financial Reporting Tools', accountId: accountIds[4], stage: 'Proposal', amount: 65000, probability: 60, expectedCloseDate: new Date(2025, 5, 5) },
-    { name: 'Educational Platform License', accountId: accountIds[5], stage: 'Closed Won', amount: 45000, probability: 100, expectedCloseDate: new Date(2025, 3, 25) },
+    { name: 'Educational Platform License', accountId: accountIds[5], stage: 'Closing', amount: 45000, probability: 100, expectedCloseDate: new Date(2025, 3, 25) },
     { name: 'Hospitality Management Suite', accountId: accountIds[6], stage: 'Negotiation', amount: 110000, probability: 80, expectedCloseDate: new Date(2025, 4, 15) },
-    { name: 'Agricultural Analytics Platform', accountId: accountIds[7], stage: 'Discovery', amount: 70000, probability: 30, expectedCloseDate: new Date(2025, 7, 10) },
+    { name: 'Agricultural Analytics Platform', accountId: accountIds[7], stage: 'Lead Generation', amount: 70000, probability: 30, expectedCloseDate: new Date(2025, 7, 10) },
     { name: 'Energy Monitoring Solutions', accountId: accountIds[8], stage: 'Proposal', amount: 130000, probability: 55, expectedCloseDate: new Date(2025, 6, 1) },
-    { name: 'Telecommunications Infrastructure', accountId: accountIds[9], stage: 'Closed Lost', amount: 200000, probability: 0, expectedCloseDate: new Date(2025, 3, 30) },
+    { name: 'Telecommunications Infrastructure', accountId: accountIds[9], stage: 'Closing', amount: 200000, probability: 0, expectedCloseDate: new Date(2025, 3, 30) },
   ];
   
   for (const opportunityData of opportunitiesData) {
@@ -341,24 +341,23 @@ async function seedActivities() {
   const userId = userIds.length > 0 ? userIds[0] : 1;
   
   const activitiesData = [
-    { type: 'Call', entityType: 'lead', entityId: leadIds[0], subject: 'Introduction call', description: 'Made initial contact to introduce our services', outcome: 'Positive response, scheduled follow-up' },
-    { type: 'Email', entityType: 'lead', entityId: leadIds[1], subject: 'Product information', description: 'Sent detailed product information', outcome: 'No response yet' },
-    { type: 'Meeting', entityType: 'account', entityId: accountIds[0], subject: 'Quarterly review', description: 'Conducted quarterly business review', outcome: 'Identified new opportunity' },
-    { type: 'Email', entityType: 'opportunity', entityId: opportunityIds[0], subject: 'Proposal follow-up', description: 'Sent follow-up regarding proposal', outcome: 'Client requested modifications' },
-    { type: 'Call', entityType: 'lead', entityId: leadIds[2], subject: 'Qualification call', description: 'Called to qualify lead requirements', outcome: 'Lead qualified, moved to opportunity' },
-    { type: 'Meeting', entityType: 'account', entityId: accountIds[1], subject: 'Demo presentation', description: 'Presented product demo to key stakeholders', outcome: 'Client impressed, requested pricing' },
-    { type: 'Email', entityType: 'opportunity', entityId: opportunityIds[1], subject: 'Contract details', description: 'Sent contract details for review', outcome: 'Awaiting feedback' },
-    { type: 'Call', entityType: 'account', entityId: accountIds[2], subject: 'Service follow-up', description: 'Called to ensure satisfaction with services', outcome: 'Positive feedback received' },
-    { type: 'Email', entityType: 'lead', entityId: leadIds[3], subject: 'Case study sharing', description: 'Shared relevant case studies', outcome: 'Lead expressed increased interest' },
-    { type: 'Meeting', entityType: 'opportunity', entityId: opportunityIds[2], subject: 'Negotiation meeting', description: 'Met to negotiate final terms', outcome: 'Agreement reached on key points' },
+    { action: 'Made a call', relatedToType: 'lead', relatedToId: leadIds[0], detail: 'Introduction call - Made initial contact to introduce our services. Outcome: Positive response, scheduled follow-up' },
+    { action: 'Sent an email', relatedToType: 'lead', relatedToId: leadIds[1], detail: 'Product information - Sent detailed product information. Outcome: No response yet' },
+    { action: 'Held a meeting', relatedToType: 'account', relatedToId: accountIds[0], detail: 'Quarterly review - Conducted quarterly business review. Outcome: Identified new opportunity' },
+    { action: 'Sent an email', relatedToType: 'opportunity', relatedToId: opportunityIds[0], detail: 'Proposal follow-up - Sent follow-up regarding proposal. Outcome: Client requested modifications' },
+    { action: 'Made a call', relatedToType: 'lead', relatedToId: leadIds[2], detail: 'Qualification call - Called to qualify lead requirements. Outcome: Lead qualified, moved to opportunity' },
+    { action: 'Held a meeting', relatedToType: 'account', relatedToId: accountIds[1], detail: 'Demo presentation - Presented product demo to key stakeholders. Outcome: Client impressed, requested pricing' },
+    { action: 'Sent an email', relatedToType: 'opportunity', relatedToId: opportunityIds[1], detail: 'Contract details - Sent contract details for review. Outcome: Awaiting feedback' },
+    { action: 'Made a call', relatedToType: 'account', relatedToId: accountIds[2], detail: 'Service follow-up - Called to ensure satisfaction with services. Outcome: Positive feedback received' },
+    { action: 'Sent an email', relatedToType: 'lead', relatedToId: leadIds[3], detail: 'Case study sharing - Shared relevant case studies. Outcome: Lead expressed increased interest' },
+    { action: 'Held a meeting', relatedToType: 'opportunity', relatedToId: opportunityIds[2], detail: 'Negotiation meeting - Met to negotiate final terms. Outcome: Agreement reached on key points' },
   ];
   
   for (const activityData of activitiesData) {
     await db.insert(activities).values({
       ...activityData,
       userId,
-      createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000), // Random date in last 30 days
-      duration: Math.floor(Math.random() * 60) + 15 // Random duration between 15-75 minutes
+      createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000) // Random date in last 30 days
     });
   }
   
@@ -372,14 +371,21 @@ async function seedSocialIntegrations() {
   const [user] = await db.select().from(users).where(sql`role = 'Admin'`).limit(1);
   const userId = user?.id || 1;
   
+  // Get account IDs for social integrations
+  const accountResults = await db.select({ id: accounts.id, name: accounts.name }).from(accounts).limit(3);
+  if (accountResults.length === 0) {
+    console.log('No accounts found, skipping social integrations seeding');
+    return;
+  }
+  
   const integrationsData = [
-    { platform: 'Facebook', name: 'Facebook Company Page', accessToken: 'sample_fb_token_123', details: { pageId: '123456789', pageName: 'AVEROX CRM' } },
-    { platform: 'LinkedIn', name: 'LinkedIn Company Profile', accessToken: 'sample_li_token_456', details: { companyId: '987654321', companyName: 'AVEROX' } },
-    { platform: 'Twitter', name: 'Twitter Business Account', accessToken: 'sample_tw_token_789', details: { username: '@averoxcrm' } },
-    { platform: 'Instagram', name: 'Instagram Business Profile', accessToken: 'sample_ig_token_012', details: { username: 'averoxcrm', businessId: '567891234' } },
-    { platform: 'WhatsApp', name: 'WhatsApp Business Account', accessToken: 'sample_wa_token_345', details: { phoneNumber: '+1234567890', businessName: 'AVEROX Support' } },
-    { platform: 'Email', name: 'Marketing Email Integration', accessToken: 'sample_email_token_678', details: { emailAddress: 'marketing@averox.example.com' } },
-    { platform: 'Messenger', name: 'Facebook Messenger', accessToken: 'sample_messenger_token_901', details: { pageId: '123456789' } },
+    { platform: 'Facebook', name: 'Facebook Company Page', accountId: 'page_123456789', accessToken: 'sample_fb_token_123', details: { pageId: '123456789', pageName: 'AVEROX CRM' } },
+    { platform: 'LinkedIn', name: 'LinkedIn Company Profile', accountId: 'company_987654321', accessToken: 'sample_li_token_456', details: { companyId: '987654321', companyName: 'AVEROX' } },
+    { platform: 'Twitter', name: 'Twitter Business Account', accountId: 'twitter_averoxcrm', accessToken: 'sample_tw_token_789', details: { username: '@averoxcrm' } },
+    { platform: 'Instagram', name: 'Instagram Business Profile', accountId: 'instagram_567891234', accessToken: 'sample_ig_token_012', details: { username: 'averoxcrm', businessId: '567891234' } },
+    { platform: 'WhatsApp', name: 'WhatsApp Business Account', accountId: 'whatsapp_1234567890', accessToken: 'sample_wa_token_345', details: { phoneNumber: '+1234567890', businessName: 'AVEROX Support' } },
+    { platform: 'Email', name: 'Marketing Email Integration', accountId: 'email_averox', accessToken: 'sample_email_token_678', details: { emailAddress: 'marketing@averox.example.com' } },
+    { platform: 'Messenger', name: 'Facebook Messenger', accountId: 'messenger_123456789', accessToken: 'sample_messenger_token_901', details: { pageId: '123456789' } },
   ];
   
   for (const integrationData of integrationsData) {
@@ -441,8 +447,8 @@ async function seedSocialCampaigns() {
   const [user] = await db.select().from(users).where(sql`role = 'Admin'`).limit(1);
   const userId = user?.id || 1;
   
-  // Get source IDs for relations
-  const sources = await db.select().from(leadSources).limit(5);
+  // Get integrations for relations
+  const integrations = await db.select().from(socialIntegrations).limit(5);
   
   const campaignsData = [
     { name: 'Spring Promotion', platform: 'Facebook', status: 'Active', budget: 5000, startDate: new Date(2025, 3, 1), endDate: new Date(2025, 4, 30) },
@@ -458,33 +464,38 @@ async function seedSocialCampaigns() {
   ];
   
   for (const [index, campaignData] of campaignsData.entries()) {
-    const sourceId = sources[index % sources.length]?.id || null;
+    const integrationId = integrations[index % integrations.length]?.id || null;
     
     await db.insert(socialCampaigns).values({
-      ...campaignData,
-      sourceId,
+      name: campaignData.name,
+      platform: campaignData.platform as any, // Cast to any to avoid type issues
+      status: campaignData.status,
       ownerId: userId,
+      integrationId: integrationId,
+      content: `Campaign content for ${campaignData.name}`,
+      startDate: campaignData.startDate,
+      endDate: campaignData.endDate,
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: campaignData.status === 'Active',
       description: `Campaign targeting ${campaignData.platform} users with focused messaging and offers.`,
-      objectives: ['increase_leads', 'brand_awareness', 'engagement'],
-      targetAudience: {
-        demographics: {
-          ageRange: '25-54',
-          locations: ['United States', 'Canada', 'United Kingdom'],
-          interests: ['Business', 'Technology', 'Marketing']
-        },
-        targeting: {
-          includeKeywords: ['business solutions', 'productivity', 'efficiency'],
-          excludeKeywords: ['free', 'cheap']
-        }
-      },
-      performanceMetrics: {
+      metrics: {
         impressions: Math.floor(Math.random() * 100000) + 5000,
         clicks: Math.floor(Math.random() * 5000) + 500,
         leads: Math.floor(Math.random() * 200) + 20,
-        conversion: Math.random() * 0.1 + 0.02 // 2-12% conversion rate
+        conversion: Math.random() * 0.1 + 0.02, // 2-12% conversion rate
+        targetAudience: {
+          demographics: {
+            ageRange: '25-54',
+            locations: ['United States', 'Canada', 'United Kingdom'],
+            interests: ['Business', 'Technology', 'Marketing']
+          },
+          targeting: {
+            includeKeywords: ['business solutions', 'productivity', 'efficiency'],
+            excludeKeywords: ['free', 'cheap']
+          },
+          objectives: ['increase_leads', 'brand_awareness', 'engagement']
+        }
       }
     });
   }
@@ -531,53 +542,53 @@ async function seedSocialMessages() {
           messageText = isInbound 
             ? 'Hi there! I saw your post about AVEROX CRM. Can you tell me more about its features?' 
             : 'Thanks for reaching out! AVEROX CRM offers comprehensive lead management, contact tracking, and AI-powered insights. Would you like a demo?';
-          status = isInbound ? 'Unread' : 'Sent';
+          status = isInbound ? 'Unread' : 'Read';
           break;
         case 'LinkedIn':
           messageText = isInbound 
             ? 'Hello, I\'m interested in learning more about how AVEROX CRM can help my B2B sales team.' 
             : 'Great to connect! AVEROX CRM is designed to boost B2B sales efficiency with our workflow automation and analytics. When would be a good time to show you our platform?';
-          status = isInbound ? 'Read' : 'Sent';
+          status = isInbound ? 'Read' : 'Replied';
           break;
         case 'Twitter':
           messageText = isInbound 
             ? 'Just came across @averoxcrm - does your platform integrate with our existing marketing tools?' 
             : 'Yes! We pride ourselves on our open API and pre-built integrations with all major marketing platforms. Which tools are you currently using?';
-          status = isInbound ? 'Replied' : 'Sent';
+          status = isInbound ? 'Replied' : 'Read';
           break;
         case 'Instagram':
           messageText = isInbound 
             ? 'Your dashboard screenshots look amazing! Is there a mobile app version?' 
             : 'Thank you! Yes, we have fully-featured iOS and Android apps that give you the same powerful features on the go.';
-          status = isInbound ? 'Read' : 'Sent';
+          status = isInbound ? 'Read' : 'Replied';
           break;
         case 'WhatsApp':
           messageText = isInbound 
             ? 'Hi, I need some help setting up my team in AVEROX CRM. Are you available for a quick chat?' 
             : 'Absolutely! I can help you set up your team right now. How many team members do you need to add?';
-          status = isInbound ? 'Replied' : 'Sent';
+          status = isInbound ? 'Replied' : 'Read';
           break;
         case 'Email':
           messageText = isInbound 
             ? 'Subject: Pricing Question\n\nHello AVEROX team,\n\nI\'m evaluating CRM solutions and would like to know more about your pricing tiers for a 20-person team.\n\nRegards,\nPotential Customer' 
             : 'Subject: Re: Pricing Question\n\nHi there,\n\nThanks for your interest in AVEROX CRM! For a 20-person team, our Business Plan would be the most cost-effective at $49/user/month. I\'ve attached a detailed pricing breakdown for your review.\n\nBest regards,\nAVEROX Sales Team';
-          status = isInbound ? 'Read' : 'Sent';
+          status = isInbound ? 'Read' : 'Replied';
           break;
         case 'Messenger':
           messageText = isInbound 
             ? 'Quick question - do you offer a trial period?' 
             : 'Yes! We offer a full-featured 14-day trial with no credit card required. Would you like me to set that up for you?';
-          status = isInbound ? 'Unread' : 'Sent';
+          status = isInbound ? 'Unread' : 'Read';
           break;
         default:
           messageText = isInbound 
             ? 'I have a question about your services.' 
             : 'Thank you for your question. How can we help you today?';
-          status = isInbound ? 'Unread' : 'Sent';
+          status = isInbound ? 'Unread' : 'Archived';
       }
       
-      // Create message object
-      const message = {
+      // Create base message object
+      let message: any = {
         integrationId: integration.id,
         externalId: `ext_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
         message: messageText,
@@ -596,9 +607,9 @@ async function seedSocialMessages() {
       
       // Add either contactId or leadId
       if (useContact) {
-        message['contactId'] = entityId;
+        message.contactId = entityId;
       } else {
-        message['leadId'] = entityId;
+        message.leadId = entityId;
       }
       
       messagesData.push(message);

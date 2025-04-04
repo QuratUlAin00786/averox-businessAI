@@ -253,8 +253,9 @@ export const socialCampaigns = pgTable("social_campaigns", {
   status: text("status").default("Draft"), // Draft, Active, Paused, Completed
   ownerId: integer("owner_id").references(() => users.id),
   content: text("content"),
-  targetAudience: jsonb("target_audience"),
-  metrics: jsonb("metrics"), // Performance metrics
+  // Note: targetAudience is currently in metrics json
+  integrationId: integer("integration_id"),
+  metrics: jsonb("metrics"), // Performance metrics including target audience data
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at"),
   isActive: boolean("is_active").default(true),
