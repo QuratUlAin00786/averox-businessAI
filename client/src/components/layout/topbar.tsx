@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AveroxLogo from "@/assets/AveroxLogo";
+import { useAuth } from "@/hooks/use-auth";
 
 interface TopBarProps {
   onToggleSidebar: () => void;
@@ -32,6 +33,7 @@ interface TopBarProps {
 
 export default function TopBar({ onToggleSidebar }: TopBarProps) {
   const [, setLocation] = useLocation();
+  const { user, logoutMutation } = useAuth();
   
   return (
     <div className="relative z-10 flex flex-shrink-0 h-16 bg-white shadow">
@@ -166,27 +168,38 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
                 <Button variant="ghost" size="icon" className="flex items-center max-w-xs text-sm bg-white rounded-full focus:ring-primary" id="user-menu-button">
                   <span className="sr-only">Open user menu</span>
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src="https://images.unsplash.com/photo-1506863530036-1efeddceb993?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Sarah Johnson" />
-                    <AvatarFallback>SJ</AvatarFallback>
+                    <AvatarImage 
+                      src={user?.avatar || ""} 
+                      alt={`${user?.firstName || ""} ${user?.lastName || ""}`} 
+                    />
+                    <AvatarFallback>
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName[0]}${user.lastName[0]}`
+                        : user?.username?.[0]?.toUpperCase() || "U"}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Sarah Johnson</p>
+                    <p className="text-sm font-medium leading-none">
+                      {user?.firstName && user?.lastName
+                        ? `${user.firstName} ${user.lastName}`
+                        : user?.username || "User"}
+                    </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      s.johnson@example.com
+                      {user?.email || ""}
                     </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLocation("/settings/profile")}>
                     <User className="w-4 h-4 mr-2" />
                     <span>Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLocation("/settings")}>
                     <Settings className="w-4 h-4 mr-2" />
                     <span>Settings</span>
                   </DropdownMenuItem>
@@ -201,9 +214,21 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
                   <span>Help & Documentation</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  <span>Log out</span>
+                <DropdownMenuItem 
+                  onClick={() => logoutMutation.mutate()}
+                  disabled={logoutMutation.isPending}
+                >
+                  {logoutMutation.isPending ? (
+                    <>
+                      <span className="w-4 h-4 mr-2 animate-spin">⏳</span>
+                      <span>Logging out...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      <span>Log out</span>
+                    </>
+                  )}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

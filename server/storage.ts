@@ -10,8 +10,14 @@ import {
   subscriptionPackages, type SubscriptionPackage, type InsertSubscriptionPackage,
   userSubscriptions, type UserSubscription, type InsertUserSubscription
 } from "@shared/schema";
+import session from "express-session";
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
+  // Session store for authentication
+  sessionStore: session.Store;
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -153,8 +159,11 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  // Session store for authentication
+  public sessionStore: session.Store;
+  
   // Maps to store entity data
-  private users: Map<number, User>;
+  public users: Map<number, User>; // Make users map public for auth module direct access
   private contacts: Map<number, Contact>;
   private accounts: Map<number, Account>;
   private leads: Map<number, Lead>;
@@ -178,6 +187,11 @@ export class MemStorage implements IStorage {
   private userSubscriptionIdCounter: number;
 
   constructor() {
+    // Initialize session store
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
+    
     // Initialize maps
     this.users = new Map();
     this.contacts = new Map();

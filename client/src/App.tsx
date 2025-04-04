@@ -2,6 +2,8 @@ import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 import Layout from "@/components/layout/layout";
 import Dashboard from "@/pages/dashboard";
 import Contacts from "@/pages/contacts";
@@ -16,36 +18,104 @@ import Settings from "@/pages/settings";
 import Intelligence from "@/pages/intelligence";
 import Workflows from "@/pages/workflows";
 import Subscriptions from "@/pages/subscriptions";
+import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/contacts" component={Contacts} />
-        <Route path="/simple-contacts" component={SimpleContacts} />
-        <Route path="/accounts" component={Accounts} />
-        <Route path="/leads" component={Leads} />
-        <Route path="/opportunities" component={Opportunities} />
-        <Route path="/calendar" component={Calendar} />
-        <Route path="/tasks" component={Tasks} />
-        <Route path="/reports" component={Reports} />
-        <Route path="/intelligence" component={Intelligence} />
-        <Route path="/workflows" component={Workflows} />
-        <Route path="/subscriptions" component={Subscriptions} />
-        <Route path="/settings" component={Settings} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      <Route path="/auth" component={AuthPage} />
+      
+      <ProtectedRoute path="/" component={() => (
+        <Layout>
+          <Dashboard />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/contacts" component={() => (
+        <Layout>
+          <Contacts />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/simple-contacts" component={() => (
+        <Layout>
+          <SimpleContacts />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounts" component={() => (
+        <Layout>
+          <Accounts />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/leads" component={() => (
+        <Layout>
+          <Leads />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/opportunities" component={() => (
+        <Layout>
+          <Opportunities />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/calendar" component={() => (
+        <Layout>
+          <Calendar />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/tasks" component={() => (
+        <Layout>
+          <Tasks />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/reports" component={() => (
+        <Layout>
+          <Reports />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/intelligence" component={() => (
+        <Layout>
+          <Intelligence />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/workflows" component={() => (
+        <Layout>
+          <Workflows />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/subscriptions" component={() => (
+        <Layout>
+          <Subscriptions />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/settings" component={() => (
+        <Layout>
+          <Settings />
+        </Layout>
+      )} />
+      
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <AuthProvider>
+        <Router />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
