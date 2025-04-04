@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useEnhancedToast } from "@/hooks/use-enhanced-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ type UserFormData = {
 }
 
 export default function AdminUsersPage() {
-  const { toast } = useToast();
+  const { success, error } = useEnhancedToast();
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -68,16 +68,18 @@ export default function AdminUsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       setIsDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "User created successfully",
+      success({
+        title: "User Created",
+        description: "The user was created successfully",
+        hasCloseButton: true,
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
+      error({
+        title: "Error Creating User",
+        description: error.message || "Something went wrong during user creation",
+        hasCloseButton: true,
+        hasCopyButton: true,
       });
     }
   });
@@ -98,16 +100,18 @@ export default function AdminUsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       setIsDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "User updated successfully",
+      success({
+        title: "User Updated",
+        description: "The user was updated successfully",
+        hasCloseButton: true,
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
+      error({
+        title: "Error Updating User",
+        description: error.message || "Something went wrong during user update",
+        hasCloseButton: true,
+        hasCopyButton: true,
       });
     }
   });
@@ -121,16 +125,18 @@ export default function AdminUsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       setIsDeleteDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
+      success({
+        title: "User Deleted",
+        description: "The user was deleted successfully",
+        hasCloseButton: true,
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
+      error({
+        title: "Error Deleting User",
+        description: error.message || "Something went wrong during user deletion",
+        hasCloseButton: true,
+        hasCopyButton: true,
       });
     }
   });

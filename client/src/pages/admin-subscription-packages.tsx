@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useEnhancedToast } from "@/hooks/use-enhanced-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ type PackageFormData = {
 }
 
 export default function AdminSubscriptionPackagesPage() {
-  const { toast } = useToast();
+  const { toast, success, error, warning } = useEnhancedToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -77,16 +77,17 @@ export default function AdminSubscriptionPackagesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/subscription-packages'] });
       setIsDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Package created successfully",
+      success({
+        title: "Package Created",
+        description: "The subscription package was created successfully",
+        hasCloseButton: true,
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
+      error({
+        title: "Error Creating Package",
+        description: error.message || "Something went wrong while creating the package. Please try again.",
+        hasCloseButton: true,
       });
     }
   });
@@ -110,16 +111,17 @@ export default function AdminSubscriptionPackagesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/subscription-packages'] });
       setIsDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Package updated successfully",
+      success({
+        title: "Package Updated",
+        description: "The subscription package was updated successfully",
+        hasCloseButton: true,
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
+      error({
+        title: "Error Updating Package",
+        description: error.message || "Something went wrong while updating the package. Please try again.",
+        hasCloseButton: true,
       });
     }
   });
@@ -133,16 +135,17 @@ export default function AdminSubscriptionPackagesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/subscription-packages'] });
       setIsDeleteDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Package deleted successfully",
+      success({
+        title: "Package Deleted",
+        description: "The subscription package was deleted successfully",
+        hasCloseButton: true,
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
+      error({
+        title: "Error Deleting Package",
+        description: error.message || "Something went wrong while deleting the package. Please try again.",
+        hasCloseButton: true,
       });
     }
   });
