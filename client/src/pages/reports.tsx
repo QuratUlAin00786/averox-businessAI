@@ -142,7 +142,166 @@ export default function Reports() {
                 <SelectItem value="custom">Custom range</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                try {
+                  // Check which tab is active to determine what data to export
+                  const activeTab = document.querySelector("[data-state='active'][role='tab']")?.getAttribute("data-value") || "sales";
+                  
+                  let csvRows = [];
+                  let filename = "averox_crm_";
+                  
+                  // Add header with export information
+                  csvRows.push(["AVEROX CRM Export"]);
+                  csvRows.push([`Report Type: ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`]);
+                  csvRows.push([`Time Range: ${selectedTimeRange}`]);
+                  csvRows.push([`Export Date: ${new Date().toISOString().split('T')[0]}`]);
+                  csvRows.push([]);
+                  
+                  switch(activeTab) {
+                    case "sales":
+                      if (!salesReport) {
+                        window.alert("No sales data available to export");
+                        return;
+                      }
+                      
+                      filename += "sales_report_";
+                      
+                      // Monthly revenue data
+                      csvRows.push(["Monthly Revenue"]);
+                      csvRows.push(["Month", "Deals", "Revenue"]);
+                      salesReport.monthlyData.forEach(month => {
+                        csvRows.push([
+                          month.name,
+                          month.deals,
+                          month.value
+                        ]);
+                      });
+                      
+                      // Pipeline stages
+                      csvRows.push([]);
+                      csvRows.push(["Pipeline Stages"]);
+                      csvRows.push(["Stage", "Value"]);
+                      salesReport.pipelineStages.forEach(stage => {
+                        csvRows.push([
+                          stage.name,
+                          stage.value
+                        ]);
+                      });
+                      break;
+                      
+                    case "leads":
+                      if (!leadsReport) {
+                        window.alert("No leads data available to export");
+                        return;
+                      }
+                      
+                      filename += "leads_report_";
+                      
+                      // Lead sources
+                      csvRows.push(["Lead Sources"]);
+                      csvRows.push(["Source", "Number of Leads"]);
+                      leadsReport.sourceData.forEach(source => {
+                        csvRows.push([
+                          source.name,
+                          source.value
+                        ]);
+                      });
+                      
+                      // Lead trends
+                      csvRows.push([]);
+                      csvRows.push(["Lead Trends"]);
+                      csvRows.push(["Period", "New Leads", "Converted"]);
+                      leadsReport.trendData.forEach(period => {
+                        csvRows.push([
+                          period.name,
+                          period.newLeads,
+                          period.converted
+                        ]);
+                      });
+                      break;
+                      
+                    case "conversion":
+                      if (!conversionReport) {
+                        window.alert("No conversion data available to export");
+                        return;
+                      }
+                      
+                      filename += "conversion_report_";
+                      
+                      // Conversion summary
+                      csvRows.push(["Conversion Summary"]);
+                      csvRows.push(["Metric", "Value"]);
+                      csvRows.push(["Current Conversion Rate", `${conversionReport.conversionRate || 0}%`]);
+                      csvRows.push(["Previous Conversion Rate", `${conversionReport.previousRate || 0}%`]);
+                      csvRows.push(["Average Time to Convert (days)", conversionReport.avgTimeToConvert || 0]);
+                      csvRows.push(["Previous Average Time (days)", conversionReport.previousTime || 0]);
+                      csvRows.push(["Best Performing Channel", conversionReport.bestChannel.name]);
+                      csvRows.push(["Best Channel Conversion Rate", `${conversionReport.bestChannel.rate}%`]);
+                      
+                      // Weekly conversion data
+                      csvRows.push([]);
+                      csvRows.push(["Weekly Conversion Data"]);
+                      csvRows.push(["Week", "New Leads", "Converted"]);
+                      conversionReport.weeklyData.forEach(week => {
+                        csvRows.push([
+                          week.name,
+                          week.newLeads,
+                          week.converted
+                        ]);
+                      });
+                      break;
+                      
+                    case "performance":
+                      if (!teamReport) {
+                        window.alert("No team performance data available to export");
+                        return;
+                      }
+                      
+                      filename += "team_performance_";
+                      
+                      // Team performance
+                      csvRows.push(["Team Performance"]);
+                      csvRows.push(["Team Member", "Deals", "Revenue", "Conversion Rate"]);
+                      teamReport.teamMembers.forEach(member => {
+                        csvRows.push([
+                          member.name,
+                          member.deals,
+                          member.revenue,
+                          `${member.conversion}%`
+                        ]);
+                      });
+                      break;
+                  }
+                  
+                  // Convert to CSV content
+                  const csvContent = csvRows.map(row => 
+                    row.map(cell => 
+                      typeof cell === 'string' ? `"${cell.replace(/"/g, '""')}"` : cell
+                    ).join(',')
+                  ).join('\n');
+                  
+                  // Create and trigger download
+                  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.setAttribute("href", url);
+                  link.setAttribute("download", `${filename}${new Date().toISOString().split('T')[0]}.csv`);
+                  
+                  // Append link, trigger download, then clean up
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                  
+                  console.log("Export completed successfully");
+                } catch (error) {
+                  console.error("Export failed:", error);
+                  window.alert("Failed to export report data. Please try again.");
+                }
+              }}
+            >
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
@@ -414,8 +573,8 @@ export default function Reports() {
                       <div>
                         <h3 className="font-medium text-sm text-gray-500">Conversion Rate</h3>
                         <div className="flex items-end gap-2">
-                          <span className="text-3xl font-bold">{conversionReport?.conversionRate}%</span>
-                          <span className={`text-sm ${conversionReport?.conversionRate > conversionReport?.previousRate ? 'text-green-600' : 'text-red-500'} flex items-center`}>
+                          <span className="text-3xl font-bold">{conversionReport?.conversionRate || 0}%</span>
+                          <span className={`text-sm ${(conversionReport?.conversionRate || 0) > (conversionReport?.previousRate || 0) ? 'text-green-600' : 'text-red-500'} flex items-center`}>
                             <ArrowUpRight className="h-4 w-4" />
                             {Math.abs((conversionReport?.conversionRate || 0) - (conversionReport?.previousRate || 0)).toFixed(1)}%
                           </span>
@@ -425,8 +584,8 @@ export default function Reports() {
                       <div>
                         <h3 className="font-medium text-sm text-gray-500">Average Time to Convert</h3>
                         <div className="flex items-end gap-2">
-                          <span className="text-3xl font-bold">{conversionReport?.avgTimeToConvert} days</span>
-                          <span className={`text-sm ${conversionReport?.previousTime > conversionReport?.avgTimeToConvert ? 'text-green-600' : 'text-red-500'} flex items-center`}>
+                          <span className="text-3xl font-bold">{conversionReport?.avgTimeToConvert || 0} days</span>
+                          <span className={`text-sm ${(conversionReport?.previousTime || 0) > (conversionReport?.avgTimeToConvert || 0) ? 'text-green-600' : 'text-red-500'} flex items-center`}>
                             <ArrowUpRight className="h-4 w-4" />
                             Improved by {Math.abs((conversionReport?.avgTimeToConvert || 0) - (conversionReport?.previousTime || 0))} days
                           </span>

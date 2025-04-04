@@ -297,7 +297,94 @@ export default function Intelligence() {
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
-            onClick={() => alert("Exporting insights to CSV format...")}
+            onClick={() => {
+              try {
+                // Current active tab
+                const activeTab = document.querySelector("[data-state='active'][role='tab']")?.getAttribute("data-value") || "assistant";
+                
+                let csvRows = [];
+                let filename = "averox_crm_ai_";
+                
+                // Add header with export information
+                csvRows.push(["AVEROX CRM AI Insights Export"]);
+                csvRows.push([`Export Date: ${new Date().toISOString().split('T')[0]}`]);
+                csvRows.push([]);
+                
+                switch(activeTab) {
+                  case "assistant":
+                    filename += "assistant_";
+                    
+                    if (aiResponse) {
+                      csvRows.push(["AI Assistant Response"]);
+                      csvRows.push(["Prompt", prompt]);
+                      csvRows.push(["Response", aiResponse]);
+                    } else {
+                      csvRows.push(["No AI Assistant responses to export"]);
+                    }
+                    break;
+                    
+                  case "insights":
+                    filename += "insights_";
+                    
+                    if (insights.length > 0) {
+                      csvRows.push(["AI Generated Insights"]);
+                      csvRows.push(["ID", "Title", "Description", "Type", "Date", "Status"]);
+                      
+                      insights.forEach(insight => {
+                        csvRows.push([
+                          insight.id,
+                          insight.title,
+                          insight.description,
+                          insight.type,
+                          insight.date,
+                          insight.seen ? "Read" : "Unread"
+                        ]);
+                      });
+                    } else {
+                      csvRows.push(["No insights to export"]);
+                    }
+                    break;
+                    
+                  case "recommendations":
+                    filename += "recommendations_";
+                    
+                    // For demonstration, we'll export a simple recommendation
+                    csvRows.push(["AI Recommendations"]);
+                    
+                    // If we had recommendations data, we would export it here
+                    csvRows.push(["Type", "Description", "Priority", "Status"]);
+                    csvRows.push(["Follow-up", "Schedule a follow-up call with Acme Corp", "High", "Pending"]);
+                    csvRows.push(["Deal Strategy", "Prepare a customized proposal for TechStart Inc", "Medium", "In Progress"]);
+                    csvRows.push(["Lead Nurturing", "Send the new whitepaper to cold leads from the conference", "Medium", "Pending"]);
+                    break;
+                }
+                
+                // Convert to CSV content
+                const csvContent = csvRows.map(row => 
+                  row.map(cell => 
+                    typeof cell === 'string' ? `"${cell.replace(/"/g, '""')}"` : cell
+                  ).join(',')
+                ).join('\n');
+                
+                // Create and trigger download
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `${filename}${new Date().toISOString().split('T')[0]}.csv`);
+                
+                // Append link, trigger download, then clean up
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                console.log("Export completed successfully");
+              } catch (error) {
+                console.error("Export failed:", error);
+                window.alert("Failed to export AI insights. Please try again.");
+              }
+            }}
           >
             <DownloadCloud className="h-4 w-4" />
             Export Insights
