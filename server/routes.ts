@@ -524,8 +524,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/reports/sales', async (req: Request, res: Response) => {
     try {
       const timeRange = req.query.timeRange as string || 'month';
+      
+      // Force different response based on time range to avoid 304 caching issues
       const report = await storage.getSalesReport(timeRange);
-      res.json(report);
+      
+      // Add timestamp to ensure unique responses for different time ranges
+      const responseData = {
+        ...report,
+        _requestTime: new Date().toISOString(),
+        _timeRange: timeRange
+      };
+      
+      res.json(responseData);
     } catch (error) {
       handleError(res, error);
     }
@@ -534,8 +544,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/reports/leads', async (req: Request, res: Response) => {
     try {
       const timeRange = req.query.timeRange as string || 'month';
+      
+      // Force different response based on time range to avoid 304 caching issues
       const report = await storage.getLeadsReport(timeRange);
-      res.json(report);
+      
+      // Add timestamp to ensure unique responses for different time ranges
+      const responseData = {
+        ...report,
+        _requestTime: new Date().toISOString(),
+        _timeRange: timeRange
+      };
+      
+      res.json(responseData);
     } catch (error) {
       handleError(res, error);
     }
@@ -544,8 +564,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/reports/conversion', async (req: Request, res: Response) => {
     try {
       const timeRange = req.query.timeRange as string || 'month';
+      
+      // Force different response based on time range to avoid 304 caching issues
       const report = await storage.getConversionReport(timeRange);
-      res.json(report);
+      
+      // Add timestamp to ensure unique responses for different time ranges
+      const responseData = {
+        ...report,
+        _requestTime: new Date().toISOString(),
+        _timeRange: timeRange
+      };
+      
+      res.json(responseData);
     } catch (error) {
       handleError(res, error);
     }
@@ -554,8 +584,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/reports/performance', async (req: Request, res: Response) => {
     try {
       const timeRange = req.query.timeRange as string || 'month';
+      
+      // Force different response based on time range to avoid 304 caching issues
       const report = await storage.getTeamPerformanceReport(timeRange);
-      res.json(report);
+      
+      // Add timestamp to ensure unique responses for different time ranges
+      const responseData = {
+        ...report,
+        _requestTime: new Date().toISOString(),
+        _timeRange: timeRange
+      };
+      
+      res.json(responseData);
     } catch (error) {
       handleError(res, error);
     }
