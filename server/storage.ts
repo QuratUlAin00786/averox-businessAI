@@ -2437,6 +2437,88 @@ export class DatabaseStorage implements IStorage {
     return { teamMembers: [] };
   }
 
+  // Workflow Methods
+  async getWorkflow(id: number): Promise<Workflow | undefined> {
+    try {
+      const [workflow] = await db.select().from(workflows).where(eq(workflows.id, id));
+      return workflow;
+    } catch (error) {
+      console.error('Database error in getWorkflow:', error);
+      return undefined;
+    }
+  }
+
+  async listWorkflows(filter?: Partial<Workflow>): Promise<Workflow[]> {
+    try {
+      let query = db.select().from(workflows);
+      
+      if (filter) {
+        if (filter.isTemplate !== undefined) {
+          query = query.where(eq(workflows.isTemplate, filter.isTemplate));
+        }
+        if (filter.isActive !== undefined) {
+          query = query.where(eq(workflows.isActive, filter.isActive));
+        }
+        if (filter.status) {
+          query = query.where(eq(workflows.status, filter.status));
+        }
+        if (filter.ownerId !== undefined) {
+          query = query.where(eq(workflows.ownerId, filter.ownerId));
+        }
+        if (filter.triggerType) {
+          query = query.where(eq(workflows.triggerType, filter.triggerType));
+        }
+      }
+      
+      const workflowList = await query;
+      return workflowList;
+    } catch (error) {
+      console.error('Database error in listWorkflows:', error);
+      return [];
+    }
+  }
+
+  async createWorkflow(workflowData: InsertWorkflow): Promise<Workflow> {
+    try {
+      const [workflow] = await db.insert(workflows).values({
+        ...workflowData,
+        createdAt: new Date(),
+        isActive: workflowData.isActive === undefined ? true : workflowData.isActive,
+        isTemplate: workflowData.isTemplate === undefined ? false : workflowData.isTemplate,
+        lastExecuted: null
+      }).returning();
+      
+      return workflow;
+    } catch (error) {
+      console.error('Database error in createWorkflow:', error);
+      throw new Error(`Failed to create workflow: ${error}`);
+    }
+  }
+
+  async updateWorkflow(id: number, workflowData: Partial<InsertWorkflow>): Promise<Workflow | undefined> {
+    try {
+      const [updatedWorkflow] = await db.update(workflows)
+        .set(workflowData)
+        .where(eq(workflows.id, id))
+        .returning();
+      
+      return updatedWorkflow;
+    } catch (error) {
+      console.error('Database error in updateWorkflow:', error);
+      return undefined;
+    }
+  }
+
+  async deleteWorkflow(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(workflows).where(eq(workflows.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error('Database error in deleteWorkflow:', error);
+      return false;
+    }
+  }
+
   // Subscription Package Methods
   async getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined> {
     // Implement with database queries
