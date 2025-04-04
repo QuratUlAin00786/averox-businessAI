@@ -1009,18 +1009,38 @@ export default function Workflows() {
       
       {/* Workflow Editor Modal */}
       {/* Workflow Detail Modal */}
-      <VisualWorkflowEditor
-        isOpen={isWorkflowDetailOpen && selectedWorkflow !== null}
-        onClose={() => setIsWorkflowDetailOpen(false)}
-        workflow={
-          // Check if it's a template or active workflow
-          selectedWorkflow && (selectedWorkflow <= 10 
+      {isWorkflowDetailOpen && selectedWorkflow !== null && (() => {
+        // Debug wrapper to verify template data is passed correctly
+        const templateData = selectedWorkflow !== null ? (
+          selectedWorkflow <= 10 
             ? workflowTemplates.find(t => t.id === selectedWorkflow) 
-            : activeWorkflowsList.find(w => w.id === selectedWorkflow))
+            : activeWorkflowsList.find(w => w.id === selectedWorkflow)
+        ) : null;
+        
+        console.log("DEBUG - Selected template data:", templateData);
+        console.log("DEBUG - Has nodes property:", !!templateData?.nodes);
+        console.log("DEBUG - Has connections property:", !!templateData?.connections);
+        
+        if (templateData?.nodes) {
+          console.log("DEBUG - Nodes length:", templateData.nodes.length);
+          console.log("DEBUG - First node:", templateData.nodes[0]);
         }
-        isNew={false}
-        isTemplate={!!selectedWorkflow && selectedWorkflow <= 10}
-      />
+        
+        if (templateData?.connections) {
+          console.log("DEBUG - Connections length:", templateData.connections.length);
+          console.log("DEBUG - First connection:", templateData.connections[0]);
+        }
+        
+        return (
+          <VisualWorkflowEditor
+            isOpen={true}
+            onClose={() => setIsWorkflowDetailOpen(false)}
+            workflow={templateData}
+            isNew={false}
+            isTemplate={!!selectedWorkflow && selectedWorkflow <= 10}
+          />
+        );
+      })()}
       
       {/* New Workflow Modal */}
       <VisualWorkflowEditor

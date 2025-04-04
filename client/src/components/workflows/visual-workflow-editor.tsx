@@ -160,6 +160,25 @@ const ACTION_TYPES = [
 ];
 
 export function VisualWorkflowEditor({ isOpen, onClose, workflow, isNew = false, isTemplate = false }: VisualWorkflowEditorProps) {
+  // CRITICAL DEBUG LOGGING
+  console.log("%c VISUAL EDITOR INITIALIZED WITH:", "background: red; color: white; padding: 3px; font-size: 16px; font-weight: bold;");
+  console.log("%c isOpen:", "color: blue; font-weight: bold;", isOpen);
+  console.log("%c isNew:", "color: blue; font-weight: bold;", isNew);
+  console.log("%c isTemplate:", "color: blue; font-weight: bold;", isTemplate);
+  if (workflow) {
+    console.log("%c WORKFLOW FULL OBJECT:", "color: green; font-weight: bold;", workflow);
+    console.log("%c HAS NODES:", "color: purple; font-weight: bold;", !!workflow.nodes);
+    console.log("%c HAS CONNECTIONS:", "color: purple; font-weight: bold;", !!workflow.connections);
+    if (workflow.nodes) {
+      console.log("%c NODES DATA:", "color: orange; font-weight: bold;", workflow.nodes);
+    }
+    if (workflow.connections) {
+      console.log("%c CONNECTIONS DATA:", "color: orange; font-weight: bold;", workflow.connections);
+    }
+  } else {
+    console.log("%c NO WORKFLOW DATA RECEIVED", "color: red; font-weight: bold;");
+  }
+  
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
   const [workflowDescription, setWorkflowDescription] = useState(workflow?.description || "");
   const [nodes, setNodes] = useState<WorkflowNode[]>([]);
@@ -177,19 +196,20 @@ export function VisualWorkflowEditor({ isOpen, onClose, workflow, isNew = false,
   // Initialize workflow from props
   useEffect(() => {
     if (workflow && isOpen) {
-      console.log("Workflow details:", workflow);
-      console.log("Is Template:", isTemplate);
-      console.log("Has nodes:", !!workflow.nodes);
-      console.log("Has connections:", !!workflow.connections);
+      console.log("%c Workflow details:", "background: #0066ff; color: white; padding: 2px 5px; border-radius: 3px;", workflow);
+      console.log("%c Is Template:", "background: #0066ff; color: white; padding: 2px 5px; border-radius: 3px;", isTemplate);
+      console.log("%c Has nodes:", "background: #0066ff; color: white; padding: 2px 5px; border-radius: 3px;", !!workflow.nodes);
+      console.log("%c Has connections:", "background: #0066ff; color: white; padding: 2px 5px; border-radius: 3px;", !!workflow.connections);
+      console.log("%c Full workflow object:", "background: #0066ff; color: white; padding: 2px 5px; border-radius: 3px;", JSON.stringify(workflow, null, 2));
       
       setWorkflowName(workflow.name || "");
       setWorkflowDescription(workflow.description || "");
       
       // If the workflow already has nodes and connections (like in a template), use those directly
       if (workflow.nodes && workflow.connections) {
-        console.log("Using pre-defined nodes and connections");
-        console.log("Nodes:", workflow.nodes);
-        console.log("Connections:", workflow.connections);
+        console.log("%c Using pre-defined nodes and connections", "background: #00cc66; color: white; padding: 2px 5px; border-radius: 3px;");
+        console.log("%c Nodes:", "background: #00cc66; color: white; padding: 2px 5px; border-radius: 3px;", JSON.stringify(workflow.nodes, null, 2));
+        console.log("%c Connections:", "background: #00cc66; color: white; padding: 2px 5px; border-radius: 3px;", JSON.stringify(workflow.connections, null, 2));
         setNodes(workflow.nodes);
         setConnections(workflow.connections);
         return;
