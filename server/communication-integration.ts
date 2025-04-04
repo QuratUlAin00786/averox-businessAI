@@ -274,9 +274,13 @@ export function addCommunicationsToDatabase(dbStorage: any) {
     try {
       // First get all social messages
       const messages = await db
-        .select()
+        .select({
+          social_messages: socialMessages,
+          social_integrations: socialIntegrations
+        })
         .from(socialMessages)
         .leftJoin(socialIntegrations, eq(socialMessages.integrationId, socialIntegrations.id))
+        .where(eq(socialMessages.isDeleted, false))
         .orderBy(desc(socialMessages.sentAt));
 
       // Map to our unified Communication type
@@ -340,8 +344,10 @@ export function addCommunicationsToDatabase(dbStorage: any) {
           contactId: contactDetails.id,
           contactType,
           channel,
-          direction: msg.social_messages.direction as 'inbound' | 'outbound',
-          content: msg.social_messages.content,
+          // Determine direction based on sender field
+          direction: msg.social_messages.sender === 'system' ? 'outbound' : 'inbound',
+          // In the database the message field is used instead of content
+          content: msg.social_messages.message || '',
           status: (msg.social_messages.status?.toLowerCase() || 'unread') as 'unread' | 'read' | 'replied' | 'archived',
           sentAt: msg.social_messages.sentAt,
           receivedAt: msg.social_messages.receivedAt || undefined,
@@ -365,7 +371,10 @@ export function addCommunicationsToDatabase(dbStorage: any) {
     try {
       // Query based on contact type
       const messages = await db
-        .select()
+        .select({
+          social_messages: socialMessages,
+          social_integrations: socialIntegrations
+        })
         .from(socialMessages)
         .leftJoin(socialIntegrations, eq(socialMessages.integrationId, socialIntegrations.id))
         .where(
@@ -467,9 +476,12 @@ export function addCommunicationsToDatabase(dbStorage: any) {
       const messageData: any = {
         integrationId: integration?.id || null,
         externalId: `internal-${Date.now()}`, // Generate a fake external ID for internal messages
-        content: data.content,
+        // Use message field instead of content since that's what exists in the database
+        message: data.content,
+        // For direction, use sender/recipient fields
+        sender: data.direction === 'outbound' ? 'system' : 'user',
+        recipient: data.direction === 'outbound' ? 'user' : 'system',
         status: dbStatus,
-        direction: data.direction,
         sentAt: data.sentAt || new Date(),
         receivedAt: data.receivedAt,
         attachments: data.attachments || null,

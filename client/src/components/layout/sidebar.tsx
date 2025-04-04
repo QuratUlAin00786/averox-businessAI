@@ -15,7 +15,8 @@ import {
   BrainCircuit,
   Workflow,
   MoreVertical,
-  CreditCard
+  CreditCard,
+  MessageSquare
 } from "lucide-react";
 import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
@@ -36,6 +37,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: 'Opportunities', path: '/opportunities', icon: <TrendingUp className="w-5 h-5" /> },
     { name: 'Calendar', path: '/calendar', icon: <Calendar className="w-5 h-5" /> },
     { name: 'Tasks', path: '/tasks', icon: <CheckSquare className="w-5 h-5" /> },
+    { name: 'Communication Center', path: '/communication-center', icon: <MessageSquare className="w-5 h-5" /> },
     { name: 'Reports', path: '/reports', icon: <BarChart2 className="w-5 h-5" /> },
     { name: 'Intelligence', path: '/intelligence', icon: <BrainCircuit className="w-5 h-5" /> },
     { name: 'Workflows', path: '/workflows', icon: <Workflow className="w-5 h-5" /> },
@@ -87,10 +89,19 @@ export default function Sidebar({ className = "" }: SidebarProps) {
         <hr className="my-4 border-neutral-200" />
         
         <div className="px-4 mb-2">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Communication</p>
+        </div>
+        <div className="px-2 space-y-1">
+          {renderNavItems(navItems.slice(7, 8))}
+        </div>
+        
+        <hr className="my-4 border-neutral-200" />
+        
+        <div className="px-4 mb-2">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Analytics & Automation</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(7, 10))}
+          {renderNavItems(navItems.slice(8, 11))}
         </div>
         
         <hr className="my-4 border-neutral-200" />
@@ -99,7 +110,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">System</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(10))}
+          {renderNavItems(navItems.slice(11))}
         </div>
       </ScrollArea>
       

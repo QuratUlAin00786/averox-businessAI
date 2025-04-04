@@ -219,8 +219,9 @@ export const socialMessages = pgTable("social_messages", {
   externalId: text("external_id").notNull(), // ID from external platform
   leadId: integer("lead_id").references(() => leads.id),
   contactId: integer("contact_id").references(() => contacts.id),
-  direction: text("direction").notNull(), // 'inbound' or 'outbound'
-  content: text("content").notNull(),
+  sender: text("sender").notNull(), // 'system' or 'user'
+  recipient: text("recipient").notNull(), // 'system' or 'user'
+  message: text("message").notNull(),
   attachments: jsonb("attachments"), // Array of attachment objects
   metadata: jsonb("metadata"), // Platform-specific metadata
   status: messageStatusEnum("status").default("Unread"),
