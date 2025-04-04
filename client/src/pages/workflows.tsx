@@ -177,6 +177,81 @@ const workflowTemplates = [
       category: "Opportunities",
       description: "Trigger when a deal is marked as won or lost"
     },
+    nodes: [
+      {
+        id: "trigger_1",
+        type: "trigger",
+        triggerType: "deal_closed",
+        name: "Deal Closed (Won)",
+        position: { x: 100, y: 100 },
+        config: { status: "won" }
+      },
+      {
+        id: "action_1",
+        type: "action",
+        actionType: "send_email",
+        name: "Welcome to Our Product",
+        position: { x: 100, y: 250 },
+        config: { template: "onboarding_welcome", subject: "Welcome Aboard!", recipientType: "contact" }
+      },
+      {
+        id: "action_2",
+        type: "action",
+        actionType: "create_task",
+        name: "Assign Customer Success Rep",
+        position: { x: 100, y: 400 },
+        config: { assignTo: "cs_team", dueInDays: 1, priority: "High", title: "Assign CS Rep to new customer" }
+      },
+      {
+        id: "action_3",
+        type: "action",
+        actionType: "create_event",
+        name: "Schedule Kickoff Call",
+        position: { x: 100, y: 550 },
+        config: { duration: 60, title: "Customer Kickoff Call", attendees: ["customer", "cs_rep", "account_manager"] }
+      },
+      {
+        id: "action_4",
+        type: "action",
+        actionType: "wait",
+        name: "Wait 1 Week",
+        position: { x: 100, y: 700 },
+        config: { days: 7, hours: 0 }
+      },
+      {
+        id: "action_5",
+        type: "action",
+        actionType: "send_email",
+        name: "Training Resources",
+        position: { x: 100, y: 850 },
+        config: { template: "training", subject: "Your Training Resources", recipientType: "contact" }
+      },
+      {
+        id: "action_6",
+        type: "action",
+        actionType: "wait",
+        name: "Wait 2 Weeks",
+        position: { x: 100, y: 1000 },
+        config: { days: 14, hours: 0 }
+      },
+      {
+        id: "action_7",
+        type: "action",
+        actionType: "create_task",
+        name: "Check-in Call",
+        position: { x: 100, y: 1150 },
+        config: { assignTo: "owner", dueInDays: 2, priority: "Medium", title: "Follow-up check-in call with customer" }
+      }
+    ],
+    connections: [
+      { id: "conn_1", source: "trigger_1", target: "action_1" },
+      { id: "conn_2", source: "action_1", target: "action_2" },
+      { id: "conn_3", source: "action_2", target: "action_3" },
+      { id: "conn_4", source: "action_3", target: "action_4" },
+      { id: "conn_5", source: "action_4", target: "action_5" },
+      { id: "conn_6", source: "action_5", target: "action_6" },
+      { id: "conn_7", source: "action_6", target: "action_7" }
+    ],
     actions: [
       { id: "send_email", name: "Welcome to Our Product", config: { template: "onboarding_welcome" } },
       { id: "create_task", name: "Assign Customer Success Rep", config: { assignTo: "cs_team" } },
@@ -202,6 +277,36 @@ const workflowTemplates = [
       category: "Events",
       description: "Trigger when a new meeting is scheduled"
     },
+    nodes: [
+      {
+        id: "trigger_1",
+        type: "trigger",
+        triggerType: "meeting_scheduled",
+        name: "Meeting Scheduled",
+        position: { x: 100, y: 100 },
+        config: { status: "completed" }
+      },
+      {
+        id: "action_1",
+        type: "action",
+        actionType: "send_email",
+        name: "Meeting Summary Email",
+        position: { x: 100, y: 250 },
+        config: { template: "meeting_summary", subject: "Meeting Summary", recipientType: "participants" }
+      },
+      {
+        id: "action_2",
+        type: "action",
+        actionType: "create_task",
+        name: "Follow-up Action Items",
+        position: { x: 100, y: 400 },
+        config: { assignTo: "participants", dueInDays: 3, priority: "Medium", title: "Action items from meeting" }
+      }
+    ],
+    connections: [
+      { id: "conn_1", source: "trigger_1", target: "action_1" },
+      { id: "conn_2", source: "action_1", target: "action_2" }
+    ],
     actions: [
       { id: "send_email", name: "Meeting Summary Email", config: { template: "meeting_summary" } },
       { id: "create_task", name: "Follow-up Action Items", config: { assignTo: "participants" } }
@@ -222,6 +327,54 @@ const workflowTemplates = [
       category: "Leads",
       description: "Trigger when a new lead is created in the system"
     },
+    nodes: [
+      {
+        id: "trigger_1",
+        type: "trigger",
+        triggerType: "new_lead",
+        name: "New Lead Created",
+        position: { x: 100, y: 100 },
+        config: {}
+      },
+      {
+        id: "action_1",
+        type: "action",
+        actionType: "condition",
+        name: "Check Lead Source",
+        position: { x: 100, y: 250 },
+        config: { condition: "source == 'website'", field: "source", operator: "==", value: "website" }
+      },
+      {
+        id: "action_2",
+        type: "action",
+        actionType: "update_record",
+        name: "Assign to Web Team",
+        position: { x: 100, y: 400 },
+        config: { field: "owner", value: "web_team", recordType: "lead" }
+      },
+      {
+        id: "action_3",
+        type: "action",
+        actionType: "condition",
+        name: "Check Industry",
+        position: { x: 100, y: 550 },
+        config: { condition: "industry == 'healthcare'", field: "industry", operator: "==", value: "healthcare" }
+      },
+      {
+        id: "action_4",
+        type: "action",
+        actionType: "update_record",
+        name: "Assign to Healthcare Specialist",
+        position: { x: 100, y: 700 },
+        config: { field: "owner", value: "healthcare_specialist", recordType: "lead" }
+      }
+    ],
+    connections: [
+      { id: "conn_1", source: "trigger_1", target: "action_1" },
+      { id: "conn_2", source: "action_1", target: "action_2" },
+      { id: "conn_3", source: "action_2", target: "action_3" },
+      { id: "conn_4", source: "action_3", target: "action_4" }
+    ],
     actions: [
       { id: "condition", name: "Check Lead Source", config: { condition: "source == 'website'" } },
       { id: "update_record", name: "Assign to Web Team", config: { field: "owner", value: "web_team" } },
@@ -244,6 +397,45 @@ const workflowTemplates = [
       category: "System",
       description: "Trigger based on a schedule (daily, weekly, monthly)"
     },
+    nodes: [
+      {
+        id: "trigger_1",
+        type: "trigger",
+        triggerType: "scheduled",
+        name: "Scheduled (Every Quarter)",
+        position: { x: 100, y: 100 },
+        config: { frequency: "quarterly", day: "1", time: "09:00" }
+      },
+      {
+        id: "action_1",
+        type: "action",
+        actionType: "condition",
+        name: "Check Account Status",
+        position: { x: 100, y: 250 },
+        config: { condition: "status == 'active'", field: "status", operator: "==", value: "active" }
+      },
+      {
+        id: "action_2",
+        type: "action",
+        actionType: "create_task",
+        name: "Quarterly Review",
+        position: { x: 100, y: 400 },
+        config: { assignTo: "account_manager", dueInDays: 14, priority: "Normal", title: "Quarterly customer review", recurring: true }
+      },
+      {
+        id: "action_3",
+        type: "action",
+        actionType: "send_email",
+        name: "Satisfaction Survey",
+        position: { x: 100, y: 550 },
+        config: { template: "satisfaction_survey", subject: "How Are We Doing?", recipientType: "customer" }
+      }
+    ],
+    connections: [
+      { id: "conn_1", source: "trigger_1", target: "action_1" },
+      { id: "conn_2", source: "action_1", target: "action_2" },
+      { id: "conn_3", source: "action_2", target: "action_3" }
+    ],
     actions: [
       { id: "condition", name: "Check Account Status", config: { condition: "status == 'active'" } },
       { id: "create_task", name: "Quarterly Review", config: { assignTo: "account_manager", recurring: true } },

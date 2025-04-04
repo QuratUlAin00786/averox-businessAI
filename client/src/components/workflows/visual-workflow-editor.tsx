@@ -177,11 +177,19 @@ export function VisualWorkflowEditor({ isOpen, onClose, workflow, isNew = false,
   // Initialize workflow from props
   useEffect(() => {
     if (workflow && isOpen) {
+      console.log("Workflow details:", workflow);
+      console.log("Is Template:", isTemplate);
+      console.log("Has nodes:", !!workflow.nodes);
+      console.log("Has connections:", !!workflow.connections);
+      
       setWorkflowName(workflow.name || "");
       setWorkflowDescription(workflow.description || "");
       
       // If the workflow already has nodes and connections (like in a template), use those directly
       if (workflow.nodes && workflow.connections) {
+        console.log("Using pre-defined nodes and connections");
+        console.log("Nodes:", workflow.nodes);
+        console.log("Connections:", workflow.connections);
         setNodes(workflow.nodes);
         setConnections(workflow.connections);
         return;
