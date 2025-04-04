@@ -1,4 +1,11 @@
 import { useState } from "react";
+
+// Define window.currentTemplate global property
+declare global {
+  interface Window {
+    currentTemplate: any;
+  }
+}
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -762,7 +769,15 @@ export default function Workflows() {
                     size="sm"
                     onClick={() => {
                       console.log("Opening template preview:", template);
+                      console.log("Template has nodes:", !!template.nodes);
+                      console.log("Template has connections:", !!template.connections);
+                      if (template.nodes) console.log("Nodes count:", template.nodes.length);
+                      if (template.connections) console.log("Connections count:", template.connections.length);
+                      
+                      // Use the exact template object rather than searching by ID
                       setSelectedWorkflow(template.id);
+                      // Store the full template data directly
+                      window.currentTemplate = template; 
                       setIsWorkflowDetailOpen(true);
                     }}
                   >

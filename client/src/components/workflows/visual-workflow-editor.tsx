@@ -7,6 +7,13 @@ import {
   DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog";
+
+// Define the global window property for currentTemplate
+declare global {
+  interface Window {
+    currentTemplate: any;
+  }
+}
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -193,9 +200,38 @@ export function VisualWorkflowEditor({ isOpen, onClose, workflow, isNew = false,
   const canvasRef = useRef<HTMLDivElement>(null);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
-  // Initialize workflow from props
+  // Initialize workflow from props or from window.currentTemplate
   useEffect(() => {
-    if (workflow && isOpen) {
+    // First check if we have a template in the window object (set from the workflow cards)
+    const templateData = window.currentTemplate;
+    
+    if (templateData && isOpen) {
+      console.log("%c Using window.currentTemplate:", "background: #ff9900; color: white; padding: 2px 5px; border-radius: 3px;", templateData);
+      console.log("%c Template has nodes:", "background: #ff9900; color: white; padding: 2px 5px; border-radius: 3px;", !!templateData.nodes);
+      console.log("%c Template has connections:", "background: #ff9900; color: white; padding: 2px 5px; border-radius: 3px;", !!templateData.connections);
+      
+      setWorkflowName(templateData.name || "");
+      setWorkflowDescription(templateData.description || "");
+      
+      // Use nodes and connections from the template
+      if (templateData.nodes && templateData.connections) {
+        console.log("%c Setting nodes from window.currentTemplate", "background: #00cc66; color: white; padding: 2px 5px; border-radius: 3px;");
+        console.log("%c Nodes count:", "background: #00cc66; color: white; padding: 2px 5px; border-radius: 3px;", templateData.nodes.length);
+        console.log("%c First node:", "background: #00cc66; color: white; padding: 2px 5px; border-radius: 3px;", templateData.nodes[0]);
+        
+        setNodes(templateData.nodes);
+        setConnections(templateData.connections);
+        
+        // Clear the template from window after using it
+        window.currentTemplate = null;
+        return;
+      }
+      
+      // Clear the template even if we didn't use it
+      window.currentTemplate = null;
+    }
+    // Fallback to workflow prop if no window.currentTemplate is available
+    else if (workflow && isOpen) {
       console.log("%c Workflow details:", "background: #0066ff; color: white; padding: 2px 5px; border-radius: 3px;", workflow);
       console.log("%c Is Template:", "background: #0066ff; color: white; padding: 2px 5px; border-radius: 3px;", isTemplate);
       console.log("%c Has nodes:", "background: #0066ff; color: white; padding: 2px 5px; border-radius: 3px;", !!workflow.nodes);
