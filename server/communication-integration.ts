@@ -281,7 +281,7 @@ export function addCommunicationsToDatabase(dbStorage: any) {
         .from(socialMessages)
         .leftJoin(socialIntegrations, eq(socialMessages.integrationId, socialIntegrations.id))
         .where(eq(socialMessages.isDeleted, false))
-        .orderBy(desc(socialMessages.sentAt));
+        .orderBy(desc(socialMessages.createdAt));
 
       // Map to our unified Communication type
       const result: Communication[] = [];
@@ -349,7 +349,7 @@ export function addCommunicationsToDatabase(dbStorage: any) {
           // In the database the message field is used instead of content
           content: msg.social_messages.message || '',
           status: (msg.social_messages.status?.toLowerCase() || 'unread') as 'unread' | 'read' | 'replied' | 'archived',
-          sentAt: msg.social_messages.sentAt,
+          sentAt: msg.social_messages.createdAt,
           receivedAt: msg.social_messages.receivedAt || undefined,
           attachments: msg.social_messages.attachments as any || [],
           contactDetails
@@ -385,7 +385,7 @@ export function addCommunicationsToDatabase(dbStorage: any) {
             eq(socialMessages.isDeleted, false)
           )
         )
-        .orderBy(desc(socialMessages.sentAt));
+        .orderBy(desc(socialMessages.createdAt));
 
       // The rest of the function is similar to getAllCommunications
       // but specifically for this contact
@@ -482,7 +482,8 @@ export function addCommunicationsToDatabase(dbStorage: any) {
         sender: data.direction === 'outbound' ? 'system' : 'user',
         recipient: data.direction === 'outbound' ? 'user' : 'system',
         status: dbStatus,
-        sentAt: data.sentAt || new Date(),
+        // Don't use sentAt as it doesn't exist in the database schema
+        // createdAt will be set automatically by Drizzle's defaultNow()
         receivedAt: data.receivedAt,
         attachments: data.attachments || null,
       };
