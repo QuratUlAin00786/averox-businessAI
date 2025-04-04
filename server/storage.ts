@@ -200,7 +200,7 @@ export class MemStorage implements IStorage {
       avatar: ""
     });
     
-    // Create some sample accounts
+    // Create some sample accounts (10 in total)
     const account1 = this.createAccount({
       name: "Acme Corporation",
       industry: "Technology",
@@ -235,7 +235,143 @@ export class MemStorage implements IStorage {
       isActive: true
     });
     
-    // Create some sample contacts
+    const account3 = this.createAccount({
+      name: "Blue Sky Innovations",
+      industry: "Healthcare",
+      website: "https://bluesky.example.com",
+      phone: "555-222-3333",
+      billingAddress: "789 Broadway",
+      billingCity: "Boston",
+      billingState: "MA",
+      billingZip: "02110",
+      billingCountry: "USA",
+      ownerId: 1,
+      annualRevenue: 3500000,
+      employeeCount: 120,
+      notes: "Healthcare technology provider",
+      isActive: true
+    });
+    
+    const account4 = this.createAccount({
+      name: "Quantum Solutions",
+      industry: "Manufacturing",
+      website: "https://quantum.example.com",
+      phone: "555-444-5555",
+      billingAddress: "101 Park Ave",
+      billingCity: "Chicago",
+      billingState: "IL",
+      billingZip: "60601",
+      billingCountry: "USA",
+      ownerId: 2,
+      annualRevenue: 8000000,
+      employeeCount: 300,
+      notes: "Cutting-edge manufacturing solutions",
+      isActive: true
+    });
+    
+    const account5 = this.createAccount({
+      name: "Nexus Financial",
+      industry: "Finance",
+      website: "https://nexus.example.com",
+      phone: "555-666-7777",
+      billingAddress: "555 Wall St",
+      billingCity: "New York",
+      billingState: "NY",
+      billingZip: "10005",
+      billingCountry: "USA",
+      ownerId: 1,
+      annualRevenue: 20000000,
+      employeeCount: 450,
+      notes: "Financial services provider",
+      isActive: true
+    });
+    
+    const account6 = this.createAccount({
+      name: "EcoSmart Systems",
+      industry: "Energy",
+      website: "https://ecosmart.example.com",
+      phone: "555-888-9999",
+      billingAddress: "222 Solar Rd",
+      billingCity: "Austin",
+      billingState: "TX",
+      billingZip: "78701",
+      billingCountry: "USA",
+      ownerId: 2,
+      annualRevenue: 4500000,
+      employeeCount: 150,
+      notes: "Renewable energy solutions",
+      isActive: true
+    });
+    
+    const account7 = this.createAccount({
+      name: "Metro Retail Group",
+      industry: "Retail",
+      website: "https://metroretail.example.com",
+      phone: "555-122-3344",
+      billingAddress: "333 Retail Blvd",
+      billingCity: "Seattle",
+      billingState: "WA",
+      billingZip: "98101",
+      billingCountry: "USA",
+      ownerId: 1,
+      annualRevenue: 15000000,
+      employeeCount: 600,
+      notes: "Large retail chain",
+      isActive: true
+    });
+    
+    const account8 = this.createAccount({
+      name: "Digital Dynamics",
+      industry: "Marketing",
+      website: "https://digitaldynamics.example.com",
+      phone: "555-455-6677",
+      billingAddress: "444 Creative Way",
+      billingCity: "Los Angeles",
+      billingState: "CA",
+      billingZip: "90001",
+      billingCountry: "USA",
+      ownerId: 2,
+      annualRevenue: 3000000,
+      employeeCount: 75,
+      notes: "Digital marketing agency",
+      isActive: true
+    });
+    
+    const account9 = this.createAccount({
+      name: "Pacific Transport",
+      industry: "Transportation",
+      website: "https://pacifictransport.example.com",
+      phone: "555-788-9900",
+      billingAddress: "555 Harbor Dr",
+      billingCity: "San Diego",
+      billingState: "CA",
+      billingZip: "92101",
+      billingCountry: "USA",
+      ownerId: 1,
+      annualRevenue: 9000000,
+      employeeCount: 350,
+      notes: "Logistics and transportation company",
+      isActive: true
+    });
+    
+    const account10 = this.createAccount({
+      name: "Evergreen Education",
+      industry: "Education",
+      website: "https://evergreenedu.example.com",
+      phone: "555-112-3344",
+      billingAddress: "666 Campus Circle",
+      billingCity: "Portland",
+      billingState: "OR",
+      billingZip: "97201",
+      billingCountry: "USA",
+      ownerId: 2,
+      annualRevenue: 2500000,
+      employeeCount: 100,
+      notes: "Educational technology provider",
+      isActive: true
+    });
+    
+    // Create sample contacts (10 in total)
     this.createContact({
       firstName: "John",
       lastName: "Smith",
@@ -270,7 +406,143 @@ export class MemStorage implements IStorage {
       isActive: true
     });
     
-    // Create some sample leads
+    this.createContact({
+      firstName: "Robert",
+      lastName: "Chen",
+      email: "robert.chen@bluesky.example.com",
+      phone: "555-222-4444",
+      title: "CEO",
+      accountId: account3.id,
+      ownerId: 1,
+      address: "789 Broadway",
+      city: "Boston",
+      state: "MA",
+      zip: "02110",
+      country: "USA",
+      notes: "Decision maker for healthcare solutions",
+      isActive: true
+    });
+    
+    this.createContact({
+      firstName: "Maria",
+      lastName: "Garcia",
+      email: "maria.garcia@quantum.example.com",
+      phone: "555-345-6789",
+      title: "VP of Operations",
+      accountId: account4.id,
+      ownerId: 2,
+      address: "101 Park Ave",
+      city: "Chicago",
+      state: "IL",
+      zip: "60601",
+      country: "USA",
+      notes: "Interested in optimization software",
+      isActive: true
+    });
+    
+    this.createContact({
+      firstName: "David",
+      lastName: "Wilson",
+      email: "david.wilson@nexus.example.com",
+      phone: "555-678-1234",
+      title: "Chief Risk Officer",
+      accountId: account5.id,
+      ownerId: 1,
+      address: "555 Wall St",
+      city: "New York",
+      state: "NY",
+      zip: "10005",
+      country: "USA",
+      notes: "Looking for compliance solutions",
+      isActive: true
+    });
+    
+    this.createContact({
+      firstName: "Emily",
+      lastName: "Taylor",
+      email: "emily.taylor@ecosmart.example.com",
+      phone: "555-987-6543",
+      title: "Sustainability Director",
+      accountId: account6.id,
+      ownerId: 2,
+      address: "222 Solar Rd",
+      city: "Austin",
+      state: "TX",
+      zip: "78701",
+      country: "USA",
+      notes: "Champion for green solutions",
+      isActive: true
+    });
+    
+    this.createContact({
+      firstName: "Michael",
+      lastName: "Brown",
+      email: "michael.brown@metroretail.example.com",
+      phone: "555-444-3333",
+      title: "CTO",
+      accountId: account7.id,
+      ownerId: 1,
+      address: "333 Retail Blvd",
+      city: "Seattle",
+      state: "WA",
+      zip: "98101",
+      country: "USA",
+      notes: "Evaluating our retail solutions",
+      isActive: true
+    });
+    
+    this.createContact({
+      firstName: "Jessica",
+      lastName: "Kim",
+      email: "jessica.kim@digitaldynamics.example.com",
+      phone: "555-123-7890",
+      title: "Creative Director",
+      accountId: account8.id,
+      ownerId: 2,
+      address: "444 Creative Way",
+      city: "Los Angeles",
+      state: "CA",
+      zip: "90001",
+      country: "USA",
+      notes: "Potential client for marketing tools",
+      isActive: true
+    });
+    
+    this.createContact({
+      firstName: "Thomas",
+      lastName: "Rodriguez",
+      email: "thomas.rodriguez@pacifictransport.example.com",
+      phone: "555-654-7890",
+      title: "Logistics Manager",
+      accountId: account9.id,
+      ownerId: 1,
+      address: "555 Harbor Dr",
+      city: "San Diego",
+      state: "CA",
+      zip: "92101",
+      country: "USA",
+      notes: "Interested in logistics optimization",
+      isActive: true
+    });
+    
+    this.createContact({
+      firstName: "Sarah",
+      lastName: "Johnson",
+      email: "sarah.johnson@evergreenedu.example.com",
+      phone: "555-246-8102",
+      title: "Education Technology Director",
+      accountId: account10.id,
+      ownerId: 2,
+      address: "666 Campus Circle",
+      city: "Portland",
+      state: "OR",
+      zip: "97201",
+      country: "USA",
+      notes: "Looking for learning management solutions",
+      isActive: true
+    });
+    
+    // Create sample leads (10 in total)
     this.createLead({
       firstName: "Mike",
       lastName: "Johnson",
@@ -297,13 +569,117 @@ export class MemStorage implements IStorage {
       notes: "Looking for marketing automation",
     });
     
-    // Create sample opportunities
+    this.createLead({
+      firstName: "Alex",
+      lastName: "Rivera",
+      email: "alex@tech.example.com",
+      phone: "555-234-5678",
+      company: "TechStream Solutions",
+      title: "CTO",
+      status: "New",
+      source: "Website",
+      ownerId: 1,
+      notes: "Requested demo of our platform",
+    });
+    
+    this.createLead({
+      firstName: "Jennifer",
+      lastName: "Liu",
+      email: "jennifer@global.example.com",
+      phone: "555-876-5432",
+      company: "Global Innovations",
+      title: "Product Manager",
+      status: "Qualified",
+      source: "Trade Show",
+      ownerId: 2,
+      notes: "Met at Technology Expo 2025",
+    });
+    
+    this.createLead({
+      firstName: "Carlos",
+      lastName: "Mendoza",
+      email: "carlos@data.example.com",
+      phone: "555-567-8901",
+      company: "DataSphere Analytics",
+      title: "Data Science Director",
+      status: "Contacted",
+      source: "Online Ad",
+      ownerId: 1,
+      notes: "Interested in data integration features",
+    });
+    
+    this.createLead({
+      firstName: "Priya",
+      lastName: "Patel",
+      email: "priya@health.example.com",
+      phone: "555-890-1234",
+      company: "HealthTech Innovations",
+      title: "CEO",
+      status: "New",
+      source: "Webinar",
+      ownerId: 2,
+      notes: "Attended our healthcare solutions webinar",
+    });
+    
+    this.createLead({
+      firstName: "Daniel",
+      lastName: "Washington",
+      email: "daniel@retail.example.com",
+      phone: "555-432-1098",
+      company: "Retail Revolution",
+      title: "IT Director",
+      status: "Qualified",
+      source: "Website",
+      ownerId: 1,
+      notes: "Looking for POS integration solutions",
+    });
+    
+    this.createLead({
+      firstName: "Sophia",
+      lastName: "Lee",
+      email: "sophia@edu.example.com",
+      phone: "555-765-4321",
+      company: "EduTech Systems",
+      title: "COO",
+      status: "New",
+      source: "Email Campaign",
+      ownerId: 2,
+      notes: "Responded to educational solutions email",
+    });
+    
+    this.createLead({
+      firstName: "Marcus",
+      lastName: "Johnson",
+      email: "marcus@finance.example.com",
+      phone: "555-321-6789",
+      company: "Financial Frontiers",
+      title: "VP of Technology",
+      status: "Contacted",
+      source: "LinkedIn",
+      ownerId: 1,
+      notes: "Connected via LinkedIn, interested in fintech solutions",
+    });
+    
+    this.createLead({
+      firstName: "Laura",
+      lastName: "Martinez",
+      email: "laura@creative.example.com",
+      phone: "555-987-2345",
+      company: "Creative Dynamics",
+      title: "Marketing Manager",
+      status: "New",
+      source: "Referral",
+      ownerId: 2,
+      notes: "Referred by Jane Doe at GlobalTech",
+    });
+    
+    // Create sample opportunities (10 in total)
     this.createOpportunity({
       name: "Acme Corporation - Enterprise License",
       accountId: account1.id,
       stage: "Proposal",
       amount: 125000,
-      expectedCloseDate: new Date("2023-07-15"),
+      expectedCloseDate: new Date("2025-07-15"),
       probability: 70,
       ownerId: 1,
       notes: "Proposal submitted, waiting for feedback",
@@ -314,10 +690,98 @@ export class MemStorage implements IStorage {
       accountId: account2.id,
       stage: "Negotiation",
       amount: 75000,
-      expectedCloseDate: new Date("2023-06-30"),
+      expectedCloseDate: new Date("2025-06-30"),
       probability: 85,
       ownerId: 2,
       notes: "Final negotiation on contract terms",
+    });
+    
+    this.createOpportunity({
+      name: "Blue Sky Innovations - Healthcare Platform",
+      accountId: account3.id,
+      stage: "Qualification",
+      amount: 95000,
+      expectedCloseDate: new Date("2025-08-10"),
+      probability: 50,
+      ownerId: 1,
+      notes: "Initial requirements gathering completed",
+    });
+    
+    this.createOpportunity({
+      name: "Quantum Solutions - Manufacturing Optimization",
+      accountId: account4.id,
+      stage: "Lead Generation",
+      amount: 150000,
+      expectedCloseDate: new Date("2025-09-22"),
+      probability: 30,
+      ownerId: 2,
+      notes: "Preliminary discussions about optimizing manufacturing processes",
+    });
+    
+    this.createOpportunity({
+      name: "Nexus Financial - Compliance Suite",
+      accountId: account5.id,
+      stage: "Proposal",
+      amount: 200000,
+      expectedCloseDate: new Date("2025-07-05"),
+      probability: 65,
+      ownerId: 1,
+      notes: "Customized proposal for financial compliance tools",
+    });
+    
+    this.createOpportunity({
+      name: "EcoSmart Systems - Energy Analytics",
+      accountId: account6.id,
+      stage: "Closing",
+      amount: 85000,
+      expectedCloseDate: new Date("2025-05-15"),
+      probability: 95,
+      ownerId: 2,
+      notes: "Contract ready for signatures",
+    });
+    
+    this.createOpportunity({
+      name: "Metro Retail Group - POS Integration",
+      accountId: account7.id,
+      stage: "Negotiation",
+      amount: 120000,
+      expectedCloseDate: new Date("2025-06-20"),
+      probability: 80,
+      ownerId: 1,
+      notes: "Negotiating service level agreements",
+    });
+    
+    this.createOpportunity({
+      name: "Digital Dynamics - Marketing Platform",
+      accountId: account8.id,
+      stage: "Qualification",
+      amount: 65000,
+      expectedCloseDate: new Date("2025-08-30"),
+      probability: 45,
+      ownerId: 2,
+      notes: "Evaluating technical requirements",
+    });
+    
+    this.createOpportunity({
+      name: "Pacific Transport - Fleet Management",
+      accountId: account9.id,
+      stage: "Lead Generation",
+      amount: 110000,
+      expectedCloseDate: new Date("2025-10-15"),
+      probability: 25,
+      ownerId: 1,
+      notes: "Initial discovery call completed",
+    });
+    
+    this.createOpportunity({
+      name: "Evergreen Education - LMS Integration",
+      accountId: account10.id,
+      stage: "Proposal",
+      amount: 80000,
+      expectedCloseDate: new Date("2025-07-25"),
+      probability: 60,
+      ownerId: 2,
+      notes: "Proposal for learning management system integration",
     });
     
     // Create sample tasks
