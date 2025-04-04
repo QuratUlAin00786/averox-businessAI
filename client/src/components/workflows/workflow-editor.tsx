@@ -59,6 +59,7 @@ interface WorkflowEditorProps {
   onClose: () => void;
   workflow?: any;
   isNew?: boolean;
+  isTemplate?: boolean;
 }
 
 const TRIGGER_TYPES: WorkflowTrigger[] = [
@@ -151,13 +152,31 @@ const ACTION_TYPES: WorkflowAction[] = [
   }
 ];
 
-export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false }: WorkflowEditorProps) {
+export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false, isTemplate = false }: WorkflowEditorProps) {
   const [currentTab, setCurrentTab] = useState("trigger");
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
   const [workflowDescription, setWorkflowDescription] = useState(workflow?.description || "");
-  const [selectedTrigger, setSelectedTrigger] = useState<string>(workflow?.trigger?.id || "");
-  const [actions, setActions] = useState<{id: string, actionType: string, config: any}[]>(
-    workflow?.actions || []
+  const [selectedTrigger, setSelectedTrigger] = useState<string>(
+    workflow?.triggerType || workflow?.trigger?.id || ""
+  );
+  
+  // Initialize actions - handle both regular workflow format and template format
+  const initialActions = workflow?.actions?.map((action: any) => {
+    // If it's in template format with name and config
+    if (action.name && action.id) {
+      return {
+        id: action.id,
+        actionType: action.id,
+        config: action.config || {},
+        name: action.name
+      };
+    }
+    // If it's already in the correct format
+    return action;
+  }) || [];
+  
+  const [actions, setActions] = useState<{id: string, actionType: string, config: any, name?: string}[]>(
+    initialActions
   );
   const [saving, setSaving] = useState(false);
 
@@ -221,13 +240,18 @@ export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false }: Wor
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">
+          <DialogTitle className="text-xl flex items-center gap-2">
             {isNew ? "Create New Workflow" : `Edit Workflow: ${workflow?.name}`}
+            {isTemplate && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 ml-2">Template</Badge>
+            )}
           </DialogTitle>
           <DialogDescription>
             {isNew 
               ? "Create an automated workflow to save time and ensure consistency"
-              : "Modify your existing workflow settings, triggers, and actions"
+              : isTemplate
+                ? "Review this pre-configured workflow template before using it"
+                : "Modify your existing workflow settings, triggers, and actions"
             }
           </DialogDescription>
         </DialogHeader>
@@ -343,9 +367,10 @@ export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false }: Wor
                               {index + 1}
                             </div>
                             <CardTitle className="text-base">
-                              {action.actionType ? 
+                              {action.name || 
+                               (action.actionType ? 
                                 ACTION_TYPES.find(a => a.id === action.actionType)?.name : 
-                                "Select an action"
+                                "Select an action")
                               }
                             </CardTitle>
                           </div>
@@ -385,11 +410,25 @@ export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false }: Wor
                             <div className="bg-gray-50 p-3 rounded-md text-sm">
                               <p>{ACTION_TYPES.find(a => a.id === action.actionType)?.description}</p>
                               
-                              {/* Action specific configuration would go here */}
+                              {/* Display configuration for template or custom workflow */}
                               <div className="mt-3 pt-3 border-t border-gray-200">
-                                <p className="text-xs text-muted-foreground">
-                                  Configuration options for this action would appear here
-                                </p>
+                                {action.config && Object.keys(action.config).length > 0 ? (
+                                  <div className="space-y-2">
+                                    <h4 className="font-medium text-sm">Configuration</h4>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      {Object.entries(action.config).map(([key, value]) => (
+                                        <div key={key} className="text-xs bg-white p-2 rounded border">
+                                          <span className="font-medium text-gray-700">{key}: </span>
+                                          <span className="text-gray-900">{String(value)}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">
+                                    Configuration options for this action would appear here
+                                  </p>
+                                )}
                               </div>
                             </div>
                           )}

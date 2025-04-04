@@ -29,7 +29,15 @@ const workflowTemplates = [
     category: "Sales",
     triggers: ["New Lead Created"],
     steps: 5,
-    popular: true
+    popular: true,
+    actions: [
+      { id: "send_email", name: "Send Welcome Email", config: { template: "welcome" } },
+      { id: "wait", name: "Wait 2 Days", config: { days: 2 } },
+      { id: "send_email", name: "Send Product Info", config: { template: "product_info" } },
+      { id: "wait", name: "Wait 3 Days", config: { days: 3 } },
+      { id: "create_task", name: "Sales Follow-up Call", config: { assignTo: "owner" } }
+    ],
+    triggerType: "new_lead"
   },
   {
     id: 2,
@@ -38,7 +46,13 @@ const workflowTemplates = [
     category: "Sales",
     triggers: ["Deal Stage Changed"],
     steps: 3,
-    popular: false
+    popular: false,
+    actions: [
+      { id: "condition", name: "Check Deal Value", config: { condition: "amount > 10000" } },
+      { id: "create_task", name: "Schedule Manager Review", config: { assignTo: "manager" } },
+      { id: "send_notification", name: "Alert Sales Team", config: { channel: "sales" } }
+    ],
+    triggerType: "deal_stage_change"
   },
   {
     id: 3,
@@ -47,7 +61,17 @@ const workflowTemplates = [
     category: "Customer Success",
     triggers: ["Deal Won"],
     steps: 7,
-    popular: true
+    popular: true,
+    actions: [
+      { id: "send_email", name: "Welcome to Our Product", config: { template: "onboarding_welcome" } },
+      { id: "create_task", name: "Assign Customer Success Rep", config: { assignTo: "cs_team" } },
+      { id: "create_event", name: "Schedule Kickoff Call", config: { duration: 60 } },
+      { id: "wait", name: "Wait 1 Week", config: { days: 7 } },
+      { id: "send_email", name: "Training Resources", config: { template: "training" } },
+      { id: "wait", name: "Wait 2 Weeks", config: { days: 14 } },
+      { id: "create_task", name: "Check-in Call", config: { assignTo: "owner" } }
+    ],
+    triggerType: "deal_closed"
   },
   {
     id: 4,
@@ -56,7 +80,12 @@ const workflowTemplates = [
     category: "Productivity",
     triggers: ["Event Completed"],
     steps: 2,
-    popular: false
+    popular: false,
+    actions: [
+      { id: "send_email", name: "Meeting Summary Email", config: { template: "meeting_summary" } },
+      { id: "create_task", name: "Follow-up Action Items", config: { assignTo: "participants" } }
+    ],
+    triggerType: "meeting_scheduled"
   },
   {
     id: 5,
@@ -65,7 +94,14 @@ const workflowTemplates = [
     category: "Sales",
     triggers: ["New Lead Created"],
     steps: 4,
-    popular: false
+    popular: false,
+    actions: [
+      { id: "condition", name: "Check Lead Source", config: { condition: "source == 'website'" } },
+      { id: "update_record", name: "Assign to Web Team", config: { field: "owner", value: "web_team" } },
+      { id: "condition", name: "Check Industry", config: { condition: "industry == 'healthcare'" } },
+      { id: "update_record", name: "Assign to Healthcare Specialist", config: { field: "owner", value: "healthcare_specialist" } }
+    ],
+    triggerType: "new_lead"
   },
   {
     id: 6,
@@ -74,7 +110,13 @@ const workflowTemplates = [
     category: "Customer Success",
     triggers: ["Time Trigger"],
     steps: 3,
-    popular: false
+    popular: false,
+    actions: [
+      { id: "condition", name: "Check Account Status", config: { condition: "status == 'active'" } },
+      { id: "create_task", name: "Quarterly Review", config: { assignTo: "account_manager", recurring: true } },
+      { id: "send_email", name: "Satisfaction Survey", config: { template: "satisfaction_survey" } }
+    ],
+    triggerType: "scheduled"
   }
 ];
 
@@ -363,7 +405,10 @@ export default function Workflows() {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => setShowNewWorkflowModal(true)}
+                    onClick={() => {
+                      setSelectedWorkflow(template.id);
+                      setIsWorkflowDetailOpen(true);
+                    }}
                   >
                     Preview
                   </Button>
@@ -591,8 +636,14 @@ export default function Workflows() {
         <WorkflowEditor
           isOpen={isWorkflowDetailOpen}
           onClose={() => setIsWorkflowDetailOpen(false)}
-          workflow={activeWorkflowsList.find(w => w.id === selectedWorkflow)}
+          workflow={
+            // Check if it's a template or active workflow
+            selectedWorkflow <= 10 
+              ? workflowTemplates.find(t => t.id === selectedWorkflow) 
+              : activeWorkflowsList.find(w => w.id === selectedWorkflow)
+          }
           isNew={false}
+          isTemplate={selectedWorkflow <= 10}
         />
       )}
       
@@ -602,6 +653,7 @@ export default function Workflows() {
           isOpen={showNewWorkflowModal}
           onClose={() => setShowNewWorkflowModal(false)}
           isNew={true}
+          isTemplate={false}
         />
       )}
     </div>

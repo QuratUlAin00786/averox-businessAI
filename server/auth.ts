@@ -54,11 +54,10 @@ export function setupAuth(app: Express) {
         } else {
           // Update last login timestamp
           const now = new Date();
-          // The updateUser would need lastLogin added to InsertUser type
-          // For now, directly update the user object and save it
-          const updatedUser = { ...user, lastLogin: now };
-          storage.users.set(user.id, updatedUser);
-          return done(null, updatedUser);
+          // Update user's lastLogin in storage
+          storage.updateUser(user.id, { lastLogin: now } as any);
+          // Return original user - it will be updated in DB but we don't need to wait
+          return done(null, user);
         }
       } catch (error) {
         return done(error);

@@ -10,10 +10,15 @@ import {
   subscriptionPackages, type SubscriptionPackage, type InsertSubscriptionPackage,
   userSubscriptions, type UserSubscription, type InsertUserSubscription
 } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { db } from './db';
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { pool } from './db';
 
 const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // Session store for authentication
@@ -1862,7 +1867,408 @@ function initializeSubscriptionPackages(storage: MemStorage) {
   });
 }
 
-export const storage = new MemStorage();
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
+  // Session store for authentication
+  public sessionStore: session.Store;
 
-// Initialize subscription packages
-initializeSubscriptionPackages(storage);
+  constructor() {
+    // Initialize PostgreSQL session store
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      tableName: 'session', // Name of the table to store sessions
+      createTableIfMissing: true // Automatically create the session table if it doesn't exist
+    });
+  }
+
+  // Implement all methods from IStorage interface with database queries
+
+  // User Methods
+  async getUser(id: number): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error('Database error in getUser:', error);
+      return undefined;
+    }
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      return user;
+    } catch (error) {
+      console.error('Database error in getUserByUsername:', error);
+      return undefined;
+    }
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    try {
+      const [user] = await db.insert(users).values({
+        ...insertUser,
+        createdAt: new Date(),
+        isActive: true,
+        isVerified: false
+      }).returning();
+      return user;
+    } catch (error) {
+      console.error('Database error in createUser:', error);
+      throw error;
+    }
+  }
+
+  async listUsers(): Promise<User[]> {
+    try {
+      return await db.select().from(users);
+    } catch (error) {
+      console.error('Database error in listUsers:', error);
+      return [];
+    }
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    try {
+      const [updatedUser] = await db.update(users)
+        .set(userData)
+        .where(eq(users.id, id))
+        .returning();
+      return updatedUser;
+    } catch (error) {
+      console.error('Database error in updateUser:', error);
+      return undefined;
+    }
+  }
+
+  // User-Stripe methods
+  async updateUserStripeInfo(userId: number, stripeInfo: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User | undefined> {
+    try {
+      const [updatedUser] = await db.update(users)
+        .set({
+          stripeCustomerId: stripeInfo.stripeCustomerId,
+          stripeSubscriptionId: stripeInfo.stripeSubscriptionId
+        })
+        .where(eq(users.id, userId))
+        .returning();
+      return updatedUser;
+    } catch (error) {
+      console.error('Database error in updateUserStripeInfo:', error);
+      return undefined;
+    }
+  }
+
+  async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User | undefined> {
+    try {
+      const [updatedUser] = await db.update(users)
+        .set({ stripeCustomerId })
+        .where(eq(users.id, userId))
+        .returning();
+      return updatedUser;
+    } catch (error) {
+      console.error('Database error in updateStripeCustomerId:', error);
+      return undefined;
+    }
+  }
+
+  // Placeholder methods to satisfy IStorage - implement as needed
+  // These would be implemented with proper database queries like the ones above
+  // For each entity (contacts, accounts, leads, etc.)
+  
+  // Contact Methods
+  async getContact(id: number): Promise<Contact | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async listContacts(filter?: Partial<Contact>): Promise<Contact[]> {
+    // Implement with database queries
+    return [];
+  }
+
+  async createContact(contact: InsertContact): Promise<Contact> {
+    // Implement with database queries
+    throw new Error('Method not implemented');
+  }
+
+  async updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async deleteContact(id: number): Promise<boolean> {
+    // Implement with database queries
+    return false;
+  }
+
+  // Account Methods
+  async getAccount(id: number): Promise<Account | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async listAccounts(filter?: Partial<Account>): Promise<Account[]> {
+    // Implement with database queries
+    return [];
+  }
+
+  async createAccount(account: InsertAccount): Promise<Account> {
+    // Implement with database queries
+    throw new Error('Method not implemented');
+  }
+
+  async updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async deleteAccount(id: number): Promise<boolean> {
+    // Implement with database queries
+    return false;
+  }
+
+  // Lead Methods
+  async getLead(id: number): Promise<Lead | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async listLeads(filter?: Partial<Lead>): Promise<Lead[]> {
+    // Implement with database queries
+    return [];
+  }
+
+  async createLead(lead: InsertLead): Promise<Lead> {
+    // Implement with database queries
+    throw new Error('Method not implemented');
+  }
+
+  async updateLead(id: number, lead: Partial<InsertLead>): Promise<Lead | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async deleteLead(id: number): Promise<boolean> {
+    // Implement with database queries
+    return false;
+  }
+
+  async convertLead(id: number, convertTo: { contact?: InsertContact, account?: InsertAccount, opportunity?: InsertOpportunity }): Promise<{ contact?: Contact, account?: Account, opportunity?: Opportunity, lead: Lead }> {
+    // Implement with database queries
+    throw new Error('Method not implemented');
+  }
+
+  // Opportunity Methods
+  async getOpportunity(id: number): Promise<Opportunity | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async listOpportunities(filter?: Partial<Opportunity>): Promise<Opportunity[]> {
+    // Implement with database queries
+    return [];
+  }
+
+  async createOpportunity(opportunity: InsertOpportunity): Promise<Opportunity> {
+    // Implement with database queries
+    throw new Error('Method not implemented');
+  }
+
+  async updateOpportunity(id: number, opportunity: Partial<InsertOpportunity>): Promise<Opportunity | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async deleteOpportunity(id: number): Promise<boolean> {
+    // Implement with database queries
+    return false;
+  }
+
+  // Task Methods
+  async getTask(id: number): Promise<Task | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async listTasks(filter?: Partial<Task>): Promise<Task[]> {
+    // Implement with database queries
+    return [];
+  }
+
+  async createTask(task: InsertTask): Promise<Task> {
+    // Implement with database queries
+    throw new Error('Method not implemented');
+  }
+
+  async updateTask(id: number, task: Partial<InsertTask>): Promise<Task | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async deleteTask(id: number): Promise<boolean> {
+    // Implement with database queries
+    return false;
+  }
+
+  // Event Methods
+  async getEvent(id: number): Promise<Event | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async listEvents(filter?: Partial<Event>): Promise<Event[]> {
+    // Implement with database queries
+    return [];
+  }
+
+  async createEvent(event: InsertEvent): Promise<Event> {
+    // Implement with database queries
+    throw new Error('Method not implemented');
+  }
+
+  async updateEvent(id: number, event: Partial<InsertEvent>): Promise<Event | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async deleteEvent(id: number): Promise<boolean> {
+    // Implement with database queries
+    return false;
+  }
+
+  // Activity Methods
+  async getActivity(id: number): Promise<Activity | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async listActivities(filter?: Partial<Activity>): Promise<Activity[]> {
+    // Implement with database queries
+    return [];
+  }
+
+  async createActivity(activity: InsertActivity): Promise<Activity> {
+    // Implement with database queries
+    throw new Error('Method not implemented');
+  }
+
+  // Dashboard Methods
+  async getDashboardStats(): Promise<{ newLeads: number; conversionRate: string; revenue: string; openDeals: number; }> {
+    // Implement with database queries
+    return {
+      newLeads: 0,
+      conversionRate: '0%',
+      revenue: '$0',
+      openDeals: 0
+    };
+  }
+
+  async getSalesPipeline(): Promise<{ stages: { name: string; value: string; percentage: number; }[]; }> {
+    // Implement with database queries
+    return { stages: [] };
+  }
+
+  // Report Methods
+  async getSalesReport(timeRange: string): Promise<{ monthlyData: { name: string; deals: number; value: number; }[]; pipelineStages: { name: string; value: number; }[]; }> {
+    // Implement with database queries
+    return { monthlyData: [], pipelineStages: [] };
+  }
+
+  async getLeadsReport(timeRange: string): Promise<{ sourceData: { name: string; value: number; }[]; trendData: { name: string; newLeads: number; converted: number; }[]; }> {
+    // Implement with database queries
+    return { sourceData: [], trendData: [] };
+  }
+
+  async getConversionReport(timeRange: string): Promise<{ conversionRate: number; previousRate: number; avgTimeToConvert: number; previousTime: number; bestChannel: { name: string; rate: number; }; weeklyData: { name: string; newLeads: number; converted: number; }[]; }> {
+    // Implement with database queries
+    return {
+      conversionRate: 0,
+      previousRate: 0,
+      avgTimeToConvert: 0,
+      previousTime: 0,
+      bestChannel: { name: '', rate: 0 },
+      weeklyData: []
+    };
+  }
+
+  async getTeamPerformanceReport(timeRange: string): Promise<{ teamMembers: { name: string; deals: number; revenue: number; conversion: number; }[]; }> {
+    // Implement with database queries
+    return { teamMembers: [] };
+  }
+
+  // Subscription Package Methods
+  async getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async listSubscriptionPackages(filter?: Partial<SubscriptionPackage>): Promise<SubscriptionPackage[]> {
+    // Implement with database queries
+    return [];
+  }
+
+  async createSubscriptionPackage(pkg: InsertSubscriptionPackage): Promise<SubscriptionPackage> {
+    // Implement with database queries
+    throw new Error('Method not implemented');
+  }
+
+  async updateSubscriptionPackage(id: number, pkg: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async deleteSubscriptionPackage(id: number): Promise<boolean> {
+    // Implement with database queries
+    return false;
+  }
+
+  // User Subscription Methods
+  async getUserSubscription(id: number): Promise<UserSubscription | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async getUserActiveSubscription(userId: number): Promise<UserSubscription | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async listUserSubscriptions(filter?: Partial<UserSubscription>): Promise<UserSubscription[]> {
+    // Implement with database queries
+    return [];
+  }
+
+  async createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription> {
+    // Implement with database queries
+    throw new Error('Method not implemented');
+  }
+
+  async updateUserSubscription(id: number, subscription: Partial<InsertUserSubscription>): Promise<UserSubscription | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+
+  async cancelUserSubscription(id: number): Promise<UserSubscription | undefined> {
+    // Implement with database queries
+    return undefined;
+  }
+}
+
+// Create the appropriate storage implementation
+// For development, you can switch between MemStorage and DatabaseStorage
+const useDatabase = true; // Set to false to use in-memory storage
+
+export let storage: IStorage;
+
+if (useDatabase) {
+  // Use PostgreSQL for persistent data
+  storage = new DatabaseStorage();
+} else {
+  // Use in-memory storage for development/testing
+  storage = new MemStorage();
+  // Initialize sample subscription packages for in-memory storage
+  initializeSubscriptionPackages(storage);
+}
+
+// For database storage, subscription packages would be created via admin UI
+// or initialized separately, not needed here
