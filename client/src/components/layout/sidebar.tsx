@@ -14,9 +14,11 @@ import {
   Settings,
   BrainCircuit,
   Workflow,
-  MoreVertical
+  MoreVertical,
+  CreditCard
 } from "lucide-react";
 import AveroxLogo from "@/assets/AveroxLogo";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SidebarProps {
   className?: string;
@@ -24,6 +26,7 @@ interface SidebarProps {
 
 export default function Sidebar({ className = "" }: SidebarProps) {
   const [location] = useLocation();
+  const { user } = useAuth();
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -36,6 +39,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: 'Reports', path: '/reports', icon: <BarChart2 className="w-5 h-5" /> },
     { name: 'Intelligence', path: '/intelligence', icon: <BrainCircuit className="w-5 h-5" /> },
     { name: 'Workflows', path: '/workflows', icon: <Workflow className="w-5 h-5" /> },
+    { name: 'Subscriptions', path: '/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
     { name: 'Settings', path: '/settings', icon: <Settings className="w-5 h-5" /> }
   ];
 
@@ -101,14 +105,32 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       
       <div className="flex items-center p-4 border-t border-neutral-200">
         <Avatar className="w-9 h-9">
-          <AvatarImage src="https://images.unsplash.com/photo-1506863530036-1efeddceb993?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Sarah Johnson" />
-          <AvatarFallback>SJ</AvatarFallback>
+          <AvatarImage 
+            src={user?.avatar || ""} 
+            alt={`${user?.firstName || ""} ${user?.lastName || ""}`} 
+          />
+          <AvatarFallback>
+            {user?.firstName && user?.lastName 
+              ? `${user.firstName[0]}${user.lastName[0]}`
+              : user?.username?.[0]?.toUpperCase() || "U"}
+          </AvatarFallback>
         </Avatar>
-        <div className="ml-3">
-          <p className="text-sm font-medium text-neutral-700">Sarah Johnson</p>
-          <p className="text-xs font-medium text-neutral-500">Marketing Director</p>
+        <div className="ml-3 overflow-hidden">
+          <p className="text-sm font-medium text-neutral-700 truncate">
+            {user?.firstName && user?.lastName
+              ? `${user.firstName} ${user.lastName}`
+              : user?.username || "User"}
+          </p>
+          <p className="text-xs font-medium text-neutral-500 truncate">
+            {user?.role || user?.email || ""}
+          </p>
         </div>
-        <Button variant="ghost" size="icon" className="p-1 ml-auto text-neutral-400 hover:text-neutral-500">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="p-1 ml-auto text-neutral-400 hover:text-neutral-500"
+          onClick={() => location.href = "/settings/profile"}
+        >
           <Settings className="w-5 h-5" />
         </Button>
       </div>
