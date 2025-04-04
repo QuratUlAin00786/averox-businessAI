@@ -651,7 +651,7 @@ export default function Workflows() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-medium">Workflow Designer</h3>
                   <Button 
-                    variant="primary" 
+                    variant="default" 
                     size="sm"
                     onClick={() => setShowNewWorkflowModal(true)}
                   >
@@ -692,7 +692,7 @@ export default function Workflows() {
               <ul className="space-y-2">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span>Drag-and-drop interface</span>
+                  <span>Step-by-step builder</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-500" />
