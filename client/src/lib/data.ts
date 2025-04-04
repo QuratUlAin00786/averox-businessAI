@@ -192,7 +192,41 @@ export async function getSalesPipeline(): Promise<PipelineData> {
 }
 
 export async function getRecentActivities(): Promise<DashboardActivity[]> {
-  return await apiRequestJson<DashboardActivity[]>('GET', '/api/dashboard/activities');
+  try {
+    // First try to get activities from the dashboard-specific endpoint
+    return await apiRequestJson<DashboardActivity[]>('GET', '/api/dashboard/activities');
+  } catch (error) {
+    console.warn('Failed to fetch dashboard activities, falling back to general activities');
+    
+    // If that fails, try the general activities endpoint
+    try {
+      const activities = await apiRequestJson<Activity[]>('GET', '/api/activities');
+      
+      // Transform the activities for dashboard display
+      return activities.map(activity => {
+        // Get relative time
+        const createdAt = new Date(activity.createdAt);
+        const timeString = getRelativeTimeString(createdAt);
+        
+        // Create user info (would come from a users endpoint in a real app)
+        const userInfo = {
+          name: 'System User',
+          avatar: '',
+          initials: 'SU'
+        };
+        
+        return {
+          ...activity,
+          time: timeString,
+          user: userInfo
+        } as DashboardActivity;
+      }).slice(0, 5); // Only take the 5 most recent
+      
+    } catch (secondError) {
+      console.error('Failed to fetch activities from both endpoints:', secondError);
+      return [];
+    }
+  }
 }
 
 export async function getUpcomingEvents(): Promise<UpcomingEvent[]> {
