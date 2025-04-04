@@ -35,6 +35,7 @@ const PostgresSessionStore = connectPg(session);
 
 // Import Communication types
 import { Communication, CommunicationContact } from "./communication-integration";
+import { InsertCommunication } from "@shared/schema";
 
 export interface IStorage {
   // Session store for authentication
@@ -60,7 +61,7 @@ export interface IStorage {
     sentAt?: Date;
     receivedAt?: Date;
     attachments?: Array<{name: string, url: string}>;
-  }): Promise<Communication | null>;
+  }): Promise<Communication>;
   
   // Contacts
   getContact(id: number): Promise<Contact | undefined>;
@@ -231,6 +232,16 @@ export interface IStorage {
   createApiKey(apiKey: InsertApiKey): Promise<ApiKey>;
   updateApiKey(id: number, apiKey: Partial<InsertApiKey>): Promise<ApiKey | undefined>;
   deleteApiKey(id: number): Promise<boolean>;
+  
+  // Communications Center
+  getAllCommunications(filter?: Partial<Communication>): Promise<Communication[]>;
+  getCommunication(id: number): Promise<Communication | undefined>;
+  getContactCommunications(contactId: number): Promise<Communication[]>;
+  getLeadCommunications(leadId: number): Promise<Communication[]>;
+  createCommunication(communication: InsertCommunication): Promise<Communication>;
+  updateCommunication(id: number, communication: Partial<InsertCommunication>): Promise<Communication | undefined>;
+  deleteCommunication(id: number): Promise<boolean>;
+  updateCommunicationStatus(id: number, status: string): Promise<Communication | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -242,6 +253,8 @@ export class MemStorage implements IStorage {
   private contacts: Map<number, Contact>;
   private accounts: Map<number, Account>;
   private leads: Map<number, Lead>;
+  
+  // Communication center properties will be added through the mixin pattern
   private opportunities: Map<number, Opportunity>;
   private tasks: Map<number, Task>;
   private events: Map<number, Event>;
@@ -253,6 +266,7 @@ export class MemStorage implements IStorage {
   private leadSources: Map<number, LeadSource>;
   private socialCampaigns: Map<number, SocialCampaign>;
   private apiKeys: Map<number, ApiKey>;
+  // Communications map already initialized
   
   // Counter for IDs
   private userIdCounter: number;
@@ -270,6 +284,7 @@ export class MemStorage implements IStorage {
   private leadSourceIdCounter: number;
   private socialCampaignIdCounter: number;
   private apiKeyIdCounter: number;
+  // Communication ID counter already initialized
 
   constructor() {
     // Initialize session store
@@ -293,6 +308,7 @@ export class MemStorage implements IStorage {
     this.leadSources = new Map();
     this.socialCampaigns = new Map();
     this.apiKeys = new Map();
+    // Communications map already initialized in the mixin
     
     // Initialize ID counters
     this.userIdCounter = 1;
@@ -310,6 +326,7 @@ export class MemStorage implements IStorage {
     this.leadSourceIdCounter = 1;
     this.socialCampaignIdCounter = 1;
     this.apiKeyIdCounter = 1;
+    // Communication ID counter already initialized in the mixin
     
     // Create default data
     this.initializeData();

@@ -14,7 +14,8 @@ import {
   insertActivitySchema,
   insertSubscriptionPackageSchema,
   insertUserSubscriptionSchema,
-  insertApiKeySchema
+  insertApiKeySchema,
+  insertCommunicationSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { 
@@ -1714,6 +1715,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       res.json(stats);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Communication Center APIs
+  app.get('/api/communications', async (req: Request, res: Response) => {
+    try {
+      const communications = await storage.getAllCommunications();
+      res.status(200).json(communications);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/communications/contact/:id', async (req: Request, res: Response) => {
+    try {
+      const contactId = parseInt(req.params.id);
+      const contactType = req.query.type as 'lead' | 'customer';
+      
+      if (!contactType || (contactType !== 'lead' && contactType !== 'customer')) {
+        return res.status(400).json({ error: "Invalid contact type. Must be 'lead' or 'customer'." });
+      }
+      
+      const communications = await storage.getContactCommunications(contactId, contactType);
+      res.status(200).json(communications);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.put('/api/communications/:id/status', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!status || !['unread', 'read', 'replied', 'archived'].includes(status)) {
+        return res.status(400).json({ error: "Invalid status. Must be 'unread', 'read', 'replied', or 'archived'." });
+      }
+      
+      const communication = await storage.updateCommunicationStatus(id, status as 'unread' | 'read' | 'replied' | 'archived');
+      
+      if (!communication) {
+        return res.status(404).json({ error: "Communication not found" });
+      }
+      
+      res.status(200).json(communication);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/communications/send', async (req: Request, res: Response) => {
+    try {
+      const { recipientId, channel, content, contactType } = req.body;
+      
+      if (!recipientId || !channel || !content || !contactType) {
+        return res.status(400).json({ error: "Required fields missing: recipientId, channel, content, contactType" });
+      }
+      
+      if (contactType !== 'lead' && contactType !== 'customer') {
+        return res.status(400).json({ error: "Invalid contactType. Must be 'lead' or 'customer'." });
+      }
+      
+      const communication = await storage.createCommunication({
+        contactId: recipientId,
+        contactType,
+        channel,
+        direction: 'outbound',
+        content,
+        status: 'Read',
+        sentAt: new Date(),
+      });
+      
+      res.status(201).json(communication);
     } catch (error) {
       handleError(res, error);
     }

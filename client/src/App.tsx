@@ -23,6 +23,7 @@ import Workflows from "@/pages/workflows";
 import Subscriptions from "@/pages/subscriptions";
 import AdminSubscriptionPackages from "@/pages/admin-subscription-packages";
 import AdminUsers from "@/pages/admin-users";
+import CommunicationCenter from "@/pages/communication-center";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
@@ -136,6 +137,12 @@ function Router() {
       <ProtectedRoute path="/admin/users" component={() => (
         <Layout>
           <AdminUsers />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/communication-center" component={() => (
+        <Layout>
+          <CommunicationCenter />
         </Layout>
       )} />
       

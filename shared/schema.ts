@@ -13,6 +13,9 @@ export const userRoleEnum = pgEnum('user_role', ['Admin', 'Manager', 'User', 'Re
 export const socialPlatformEnum = pgEnum('social_platform', ['Facebook', 'LinkedIn', 'Twitter', 'Instagram', 'WhatsApp', 'Email', 'Messenger', 'Other']);
 export const messageStatusEnum = pgEnum('message_status', ['Unread', 'Read', 'Replied', 'Archived']);
 export const apiProviderEnum = pgEnum('api_provider', ['OpenAI', 'Stripe', 'Facebook', 'LinkedIn', 'Twitter', 'WhatsApp', 'Other']);
+export const communicationChannelEnum = pgEnum('communication_channel', ['Email', 'WhatsApp', 'SMS', 'Phone', 'Messenger', 'LinkedIn', 'Twitter', 'Facebook', 'Instagram', 'Other']);
+export const communicationDirectionEnum = pgEnum('communication_direction', ['Inbound', 'Outbound']);
+export const communicationStatusEnum = pgEnum('communication_status', ['Unread', 'Read', 'Replied', 'Archived']);
 
 // Users
 export const users = pgTable("users", {
@@ -271,6 +274,24 @@ export const apiKeys = pgTable("api_keys", {
   ownerId: integer("owner_id").references(() => users.id).notNull(),
 });
 
+// Communications
+export const communications = pgTable("communications", {
+  id: serial("id").primaryKey(),
+  contactId: integer("contact_id").references(() => contacts.id),
+  leadId: integer("lead_id").references(() => leads.id),
+  channel: communicationChannelEnum("channel").notNull(),
+  direction: communicationDirectionEnum("direction").notNull(),
+  content: text("content").notNull(),
+  status: communicationStatusEnum("status").default("Unread"),
+  sentAt: timestamp("sent_at").notNull(),
+  receivedAt: timestamp("received_at"),
+  attachments: jsonb("attachments"), // Array of attachment objects
+  metadata: jsonb("metadata"), // Platform-specific metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  ownerId: integer("owner_id").references(() => users.id),
+  contactType: text("contact_type"), // 'lead' or 'customer'
+});
+
 // Schema validation for inserts
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -375,6 +396,14 @@ export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
   lastUsed: true,
 });
 
+export const insertCommunicationSchema = createInsertSchema(communications).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  sentAt: z.string().or(z.date()),
+  receivedAt: z.string().or(z.date()).nullable().optional(),
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -420,3 +449,6 @@ export type LeadSource = typeof leadSources.$inferSelect;
 
 export type InsertSocialCampaign = z.infer<typeof insertSocialCampaignSchema>;
 export type SocialCampaign = typeof socialCampaigns.$inferSelect;
+
+export type InsertCommunication = z.infer<typeof insertCommunicationSchema>;
+export type Communication = typeof communications.$inferSelect;
