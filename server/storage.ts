@@ -2090,8 +2090,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createContact(contact: InsertContact): Promise<Contact> {
-    // Implement with database queries
-    throw new Error('Method not implemented');
+    try {
+      const [newContact] = await db.insert(contacts).values({
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        email: contact.email,
+        phone: contact.phone,
+        address: contact.address,
+        city: contact.city,
+        state: contact.state,
+        zip: contact.zip,
+        country: contact.country,
+        accountId: contact.accountId,
+        title: contact.title,
+        department: contact.department,
+        leadSource: contact.leadSource,
+        assignedTo: contact.assignedTo,
+        status: contact.status,
+        tags: contact.tags,
+        notes: contact.notes,
+        socialProfiles: contact.socialProfiles,
+        createdAt: new Date(),
+      }).returning();
+      
+      return newContact;
+    } catch (error) {
+      console.error('Database error in createContact:', error);
+      throw new Error('Failed to create contact');
+    }
   }
 
   async updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact | undefined> {
@@ -2151,8 +2177,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLead(lead: InsertLead): Promise<Lead> {
-    // Implement with database queries
-    throw new Error('Method not implemented');
+    try {
+      const [newLead] = await db.insert(leads).values({
+        firstName: lead.firstName,
+        lastName: lead.lastName,
+        email: lead.email,
+        phone: lead.phone,
+        company: lead.company,
+        jobTitle: lead.jobTitle,
+        status: lead.status,
+        source: lead.source,
+        assignedTo: lead.assignedTo,
+        notes: lead.notes,
+        tags: lead.tags,
+        budget: lead.budget,
+        timeline: lead.timeline,
+        requirements: lead.requirements,
+        lastContacted: lead.lastContacted,
+        isQualified: lead.isQualified,
+        score: lead.score,
+        socialProfiles: lead.socialProfiles,
+        createdAt: new Date(),
+      }).returning();
+      
+      return newLead;
+    } catch (error) {
+      console.error('Database error in createLead:', error);
+      throw new Error('Failed to create lead');
+    }
   }
 
   async updateLead(id: number, lead: Partial<InsertLead>): Promise<Lead | undefined> {
