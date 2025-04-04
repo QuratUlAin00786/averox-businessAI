@@ -69,14 +69,14 @@ import { useAuth } from '@/hooks/use-auth';
 // Define types for our components
 interface Communication {
   id: number;
-  contactName: string;
   contactType: 'lead' | 'customer'; // Lead or Customer
   contactId: number;
   channel: string; // email, whatsapp, sms, phone, messenger, etc.
   direction: 'inbound' | 'outbound';
   content: string;
   status: 'unread' | 'read' | 'replied' | 'archived';
-  timestamp: Date;
+  sentAt: string;
+  receivedAt: string;
   attachments?: Array<{name: string, url: string}>;
   contactDetails: ContactDetails;
 }
@@ -630,7 +630,7 @@ const CommunicationCenter = () => {
                               <div className="flex items-center">
                                 <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
                                 <span className="text-xs text-muted-foreground">
-                                  {formatDate(comm.timestamp)}
+                                  {formatDate(new Date(comm.sentAt))}
                                 </span>
                               </div>
                             </TableCell>
@@ -794,7 +794,7 @@ const CommunicationCenter = () => {
                               <div className="flex items-center">
                                 <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
                                 <span className="text-xs text-muted-foreground">
-                                  {formatDate(comm.timestamp)}
+                                  {formatDate(new Date(comm.sentAt))}
                                 </span>
                               </div>
                             </TableCell>
@@ -935,7 +935,7 @@ const CommunicationCenter = () => {
                   <span className="ml-2 font-medium">Original message</span>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {formatDate(selectedCommunication.timestamp)}
+                  {formatDate(new Date(selectedCommunication.sentAt))}
                 </span>
               </div>
               <p className="line-clamp-3">{selectedCommunication.content}</p>
