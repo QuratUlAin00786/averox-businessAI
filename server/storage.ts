@@ -19,6 +19,10 @@ import {
   MemStorageSocialMediaIntegrations, 
   DatabaseStorageSocialMediaIntegrations 
 } from './social-media-storage';
+import {
+  addCommunicationsToMemStorage,
+  addCommunicationsToDatabase
+} from './communication-integration';
 import { eq } from "drizzle-orm";
 import { db } from './db';
 import session from "express-session";
@@ -29,6 +33,9 @@ import { pool } from './db';
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
 
+// Import Communication types
+import { Communication, CommunicationContact } from "./communication-integration";
+
 export interface IStorage {
   // Session store for authentication
   sessionStore: session.Store;
@@ -38,6 +45,22 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   listUsers(): Promise<User[]>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  
+  // Communication center methods
+  getAllCommunications(): Promise<Communication[]>;
+  getContactCommunications(contactId: number, contactType: 'lead' | 'customer'): Promise<Communication[]>;
+  updateCommunicationStatus(id: number, status: 'unread' | 'read' | 'replied' | 'archived'): Promise<Communication | null>;
+  createCommunication(data: {
+    contactId: number;
+    contactType: 'lead' | 'customer';
+    channel: string;
+    direction: 'inbound' | 'outbound';
+    content: string;
+    status?: 'unread' | 'read' | 'replied' | 'archived';
+    sentAt?: Date;
+    receivedAt?: Date;
+    attachments?: Array<{name: string, url: string}>;
+  }): Promise<Communication | null>;
   
   // Contacts
   getContact(id: number): Promise<Contact | undefined>;
@@ -2660,6 +2683,8 @@ if (useDatabase) {
   addSocialIntegrationsToDatabaseStorage(dbStorage);
   // Add API key management methods to database storage
   addApiKeysToDatabaseStorage(dbStorage);
+  // Add communication methods to database storage
+  addCommunicationsToDatabase(dbStorage);
   storage = dbStorage;
 } else {
   // Use in-memory storage for development/testing
@@ -2668,6 +2693,8 @@ if (useDatabase) {
   addSocialIntegrationsToMemStorage(memStorage);
   // Add API key management methods to memory storage
   addApiKeysToMemStorage(memStorage);
+  // Add communication methods to memory storage
+  addCommunicationsToMemStorage(memStorage);
   storage = memStorage;
   // Initialize sample subscription packages for in-memory storage
   initializeSubscriptionPackages(storage);
