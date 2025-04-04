@@ -651,15 +651,35 @@ export default function Workflows() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-medium">Workflow Designer</h3>
                   <Button 
-                    variant="outline" 
+                    variant="primary" 
                     size="sm"
                     onClick={() => setShowNewWorkflowModal(true)}
-                  >Preview Mode</Button>
+                  >
+                    <Edit2 className="h-4 w-4 mr-1" />
+                    Open Designer
+                  </Button>
                 </div>
-                <div className="flex items-center justify-center h-[200px] border-2 border-dashed border-blue-200 rounded-md">
-                  <div className="text-center text-blue-500">
-                    <Workflow className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Visual workflow builder coming soon!</p>
+                <div className="p-4 border rounded-md bg-gray-50">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 text-blue-600">
+                      <Zap className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">Trigger</h4>
+                      <p className="text-xs text-gray-500">When something happens in your CRM</p>
+                    </div>
+                  </div>
+                  
+                  <div className="h-10 border-l-2 border-dashed border-gray-300 ml-5 pl-8"></div>
+                  
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-green-100 text-green-600">
+                      <ArrowRight className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">Actions</h4>
+                      <p className="text-xs text-gray-500">Then perform automated tasks</p>
+                    </div>
                   </div>
                 </div>
               </div>
