@@ -632,30 +632,27 @@ export default function Workflows() {
       </Card>
       
       {/* Workflow Editor Modal */}
-      {isWorkflowDetailOpen && selectedWorkflow && (
-        <WorkflowEditor
-          isOpen={isWorkflowDetailOpen}
-          onClose={() => setIsWorkflowDetailOpen(false)}
-          workflow={
-            // Check if it's a template or active workflow
-            selectedWorkflow <= 10 
-              ? workflowTemplates.find(t => t.id === selectedWorkflow) 
-              : activeWorkflowsList.find(w => w.id === selectedWorkflow)
-          }
-          isNew={false}
-          isTemplate={selectedWorkflow <= 10}
-        />
-      )}
+      {/* Workflow Detail Modal */}
+      <WorkflowEditor
+        isOpen={isWorkflowDetailOpen && selectedWorkflow !== null}
+        onClose={() => setIsWorkflowDetailOpen(false)}
+        workflow={
+          // Check if it's a template or active workflow
+          selectedWorkflow && (selectedWorkflow <= 10 
+            ? workflowTemplates.find(t => t.id === selectedWorkflow) 
+            : activeWorkflowsList.find(w => w.id === selectedWorkflow))
+        }
+        isNew={false}
+        isTemplate={!!selectedWorkflow && selectedWorkflow <= 10}
+      />
       
       {/* New Workflow Modal */}
-      {showNewWorkflowModal && (
-        <WorkflowEditor
-          isOpen={showNewWorkflowModal}
-          onClose={() => setShowNewWorkflowModal(false)}
-          isNew={true}
-          isTemplate={false}
-        />
-      )}
+      <WorkflowEditor
+        isOpen={showNewWorkflowModal}
+        onClose={() => setShowNewWorkflowModal(false)}
+        isNew={true}
+        isTemplate={false}
+      />
     </div>
   );
 }

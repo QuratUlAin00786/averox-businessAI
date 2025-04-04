@@ -160,6 +160,9 @@ export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false, isTem
     workflow?.triggerType || workflow?.trigger?.id || ""
   );
   
+  // Debug
+  console.log("WorkflowEditor rendering:", { isOpen, workflow, isNew, isTemplate });
+  
   // Initialize actions - handle both regular workflow format and template format
   const initialActions = workflow?.actions?.map((action: any) => {
     // If it's in template format with name and config
@@ -237,11 +240,11 @@ export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false, isTem
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
-            {isNew ? "Create New Workflow" : `Edit Workflow: ${workflow?.name}`}
+            {isNew ? "Create New Workflow" : `Edit Workflow: ${workflow?.name || ''}`}
             {isTemplate && (
               <Badge variant="outline" className="bg-blue-50 text-blue-700 ml-2">Template</Badge>
             )}
