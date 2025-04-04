@@ -6,7 +6,9 @@ import {
   opportunities, type Opportunity, type InsertOpportunity,
   tasks, type Task, type InsertTask,
   events, type Event, type InsertEvent,
-  activities, type Activity, type InsertActivity
+  activities, type Activity, type InsertActivity,
+  subscriptionPackages, type SubscriptionPackage, type InsertSubscriptionPackage,
+  userSubscriptions, type UserSubscription, type InsertUserSubscription
 } from "@shared/schema";
 
 export interface IStorage {
@@ -129,6 +131,25 @@ export interface IStorage {
       conversion: number;
     }[];
   }>;
+  
+  // Subscription Packages
+  getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined>;
+  listSubscriptionPackages(filter?: Partial<SubscriptionPackage>): Promise<SubscriptionPackage[]>;
+  createSubscriptionPackage(pkg: InsertSubscriptionPackage): Promise<SubscriptionPackage>;
+  updateSubscriptionPackage(id: number, pkg: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage | undefined>;
+  deleteSubscriptionPackage(id: number): Promise<boolean>;
+  
+  // User Subscriptions
+  getUserSubscription(id: number): Promise<UserSubscription | undefined>;
+  getUserActiveSubscription(userId: number): Promise<UserSubscription | undefined>;
+  listUserSubscriptions(filter?: Partial<UserSubscription>): Promise<UserSubscription[]>;
+  createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
+  updateUserSubscription(id: number, subscription: Partial<InsertUserSubscription>): Promise<UserSubscription | undefined>;
+  cancelUserSubscription(id: number): Promise<UserSubscription | undefined>;
+  
+  // User Account Management
+  updateUserStripeInfo(userId: number, stripeInfo: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User | undefined>;
+  updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -141,6 +162,8 @@ export class MemStorage implements IStorage {
   private tasks: Map<number, Task>;
   private events: Map<number, Event>;
   private activities: Map<number, Activity>;
+  private subscriptionPackages: Map<number, SubscriptionPackage>;
+  private userSubscriptions: Map<number, UserSubscription>;
   
   // Counter for IDs
   private userIdCounter: number;
@@ -151,6 +174,8 @@ export class MemStorage implements IStorage {
   private taskIdCounter: number;
   private eventIdCounter: number;
   private activityIdCounter: number;
+  private subscriptionPackageIdCounter: number;
+  private userSubscriptionIdCounter: number;
 
   constructor() {
     // Initialize maps
@@ -162,6 +187,8 @@ export class MemStorage implements IStorage {
     this.tasks = new Map();
     this.events = new Map();
     this.activities = new Map();
+    this.subscriptionPackages = new Map();
+    this.userSubscriptions = new Map();
     
     // Initialize ID counters
     this.userIdCounter = 1;
@@ -172,6 +199,8 @@ export class MemStorage implements IStorage {
     this.taskIdCounter = 1;
     this.eventIdCounter = 1;
     this.activityIdCounter = 1;
+    this.subscriptionPackageIdCounter = 1;
+    this.userSubscriptionIdCounter = 1;
     
     // Create default data
     this.initializeData();
@@ -200,7 +229,7 @@ export class MemStorage implements IStorage {
       avatar: ""
     });
     
-    // Create some sample accounts (10 in total)
+    // Create some sample accounts (just a few for demonstration)
     const account1 = this.createAccount({
       name: "Acme Corporation",
       industry: "Technology",
@@ -235,143 +264,7 @@ export class MemStorage implements IStorage {
       isActive: true
     });
     
-    const account3 = this.createAccount({
-      name: "Blue Sky Innovations",
-      industry: "Healthcare",
-      website: "https://bluesky.example.com",
-      phone: "555-222-3333",
-      billingAddress: "789 Broadway",
-      billingCity: "Boston",
-      billingState: "MA",
-      billingZip: "02110",
-      billingCountry: "USA",
-      ownerId: 1,
-      annualRevenue: 3500000,
-      employeeCount: 120,
-      notes: "Healthcare technology provider",
-      isActive: true
-    });
-    
-    const account4 = this.createAccount({
-      name: "Quantum Solutions",
-      industry: "Manufacturing",
-      website: "https://quantum.example.com",
-      phone: "555-444-5555",
-      billingAddress: "101 Park Ave",
-      billingCity: "Chicago",
-      billingState: "IL",
-      billingZip: "60601",
-      billingCountry: "USA",
-      ownerId: 2,
-      annualRevenue: 8000000,
-      employeeCount: 300,
-      notes: "Cutting-edge manufacturing solutions",
-      isActive: true
-    });
-    
-    const account5 = this.createAccount({
-      name: "Nexus Financial",
-      industry: "Finance",
-      website: "https://nexus.example.com",
-      phone: "555-666-7777",
-      billingAddress: "555 Wall St",
-      billingCity: "New York",
-      billingState: "NY",
-      billingZip: "10005",
-      billingCountry: "USA",
-      ownerId: 1,
-      annualRevenue: 20000000,
-      employeeCount: 450,
-      notes: "Financial services provider",
-      isActive: true
-    });
-    
-    const account6 = this.createAccount({
-      name: "EcoSmart Systems",
-      industry: "Energy",
-      website: "https://ecosmart.example.com",
-      phone: "555-888-9999",
-      billingAddress: "222 Solar Rd",
-      billingCity: "Austin",
-      billingState: "TX",
-      billingZip: "78701",
-      billingCountry: "USA",
-      ownerId: 2,
-      annualRevenue: 4500000,
-      employeeCount: 150,
-      notes: "Renewable energy solutions",
-      isActive: true
-    });
-    
-    const account7 = this.createAccount({
-      name: "Metro Retail Group",
-      industry: "Retail",
-      website: "https://metroretail.example.com",
-      phone: "555-122-3344",
-      billingAddress: "333 Retail Blvd",
-      billingCity: "Seattle",
-      billingState: "WA",
-      billingZip: "98101",
-      billingCountry: "USA",
-      ownerId: 1,
-      annualRevenue: 15000000,
-      employeeCount: 600,
-      notes: "Large retail chain",
-      isActive: true
-    });
-    
-    const account8 = this.createAccount({
-      name: "Digital Dynamics",
-      industry: "Marketing",
-      website: "https://digitaldynamics.example.com",
-      phone: "555-455-6677",
-      billingAddress: "444 Creative Way",
-      billingCity: "Los Angeles",
-      billingState: "CA",
-      billingZip: "90001",
-      billingCountry: "USA",
-      ownerId: 2,
-      annualRevenue: 3000000,
-      employeeCount: 75,
-      notes: "Digital marketing agency",
-      isActive: true
-    });
-    
-    const account9 = this.createAccount({
-      name: "Pacific Transport",
-      industry: "Transportation",
-      website: "https://pacifictransport.example.com",
-      phone: "555-788-9900",
-      billingAddress: "555 Harbor Dr",
-      billingCity: "San Diego",
-      billingState: "CA",
-      billingZip: "92101",
-      billingCountry: "USA",
-      ownerId: 1,
-      annualRevenue: 9000000,
-      employeeCount: 350,
-      notes: "Logistics and transportation company",
-      isActive: true
-    });
-    
-    const account10 = this.createAccount({
-      name: "Evergreen Education",
-      industry: "Education",
-      website: "https://evergreenedu.example.com",
-      phone: "555-112-3344",
-      billingAddress: "666 Campus Circle",
-      billingCity: "Portland",
-      billingState: "OR",
-      billingZip: "97201",
-      billingCountry: "USA",
-      ownerId: 2,
-      annualRevenue: 2500000,
-      employeeCount: 100,
-      notes: "Educational technology provider",
-      isActive: true
-    });
-    
-    // Create sample contacts (10 in total)
+    // Create sample contacts
     this.createContact({
       firstName: "John",
       lastName: "Smith",
@@ -405,710 +298,285 @@ export class MemStorage implements IStorage {
       notes: "Interested in our premium plan",
       isActive: true
     });
-    
-    this.createContact({
-      firstName: "Robert",
-      lastName: "Chen",
-      email: "robert.chen@bluesky.example.com",
-      phone: "555-222-4444",
-      title: "CEO",
-      accountId: account3.id,
-      ownerId: 1,
-      address: "789 Broadway",
-      city: "Boston",
-      state: "MA",
-      zip: "02110",
-      country: "USA",
-      notes: "Decision maker for healthcare solutions",
-      isActive: true
-    });
-    
-    this.createContact({
-      firstName: "Maria",
-      lastName: "Garcia",
-      email: "maria.garcia@quantum.example.com",
-      phone: "555-345-6789",
-      title: "VP of Operations",
-      accountId: account4.id,
-      ownerId: 2,
-      address: "101 Park Ave",
-      city: "Chicago",
-      state: "IL",
-      zip: "60601",
-      country: "USA",
-      notes: "Interested in optimization software",
-      isActive: true
-    });
-    
-    this.createContact({
-      firstName: "David",
-      lastName: "Wilson",
-      email: "david.wilson@nexus.example.com",
-      phone: "555-678-1234",
-      title: "Chief Risk Officer",
-      accountId: account5.id,
-      ownerId: 1,
-      address: "555 Wall St",
-      city: "New York",
-      state: "NY",
-      zip: "10005",
-      country: "USA",
-      notes: "Looking for compliance solutions",
-      isActive: true
-    });
-    
-    this.createContact({
-      firstName: "Emily",
-      lastName: "Taylor",
-      email: "emily.taylor@ecosmart.example.com",
-      phone: "555-987-6543",
-      title: "Sustainability Director",
-      accountId: account6.id,
-      ownerId: 2,
-      address: "222 Solar Rd",
-      city: "Austin",
-      state: "TX",
-      zip: "78701",
-      country: "USA",
-      notes: "Champion for green solutions",
-      isActive: true
-    });
-    
-    this.createContact({
-      firstName: "Michael",
-      lastName: "Brown",
-      email: "michael.brown@metroretail.example.com",
-      phone: "555-444-3333",
-      title: "CTO",
-      accountId: account7.id,
-      ownerId: 1,
-      address: "333 Retail Blvd",
-      city: "Seattle",
-      state: "WA",
-      zip: "98101",
-      country: "USA",
-      notes: "Evaluating our retail solutions",
-      isActive: true
-    });
-    
-    this.createContact({
-      firstName: "Jessica",
-      lastName: "Kim",
-      email: "jessica.kim@digitaldynamics.example.com",
-      phone: "555-123-7890",
-      title: "Creative Director",
-      accountId: account8.id,
-      ownerId: 2,
-      address: "444 Creative Way",
-      city: "Los Angeles",
-      state: "CA",
-      zip: "90001",
-      country: "USA",
-      notes: "Potential client for marketing tools",
-      isActive: true
-    });
-    
-    this.createContact({
-      firstName: "Thomas",
-      lastName: "Rodriguez",
-      email: "thomas.rodriguez@pacifictransport.example.com",
-      phone: "555-654-7890",
-      title: "Logistics Manager",
-      accountId: account9.id,
-      ownerId: 1,
-      address: "555 Harbor Dr",
-      city: "San Diego",
-      state: "CA",
-      zip: "92101",
-      country: "USA",
-      notes: "Interested in logistics optimization",
-      isActive: true
-    });
-    
-    this.createContact({
-      firstName: "Sarah",
-      lastName: "Johnson",
-      email: "sarah.johnson@evergreenedu.example.com",
-      phone: "555-246-8102",
-      title: "Education Technology Director",
-      accountId: account10.id,
-      ownerId: 2,
-      address: "666 Campus Circle",
-      city: "Portland",
-      state: "OR",
-      zip: "97201",
-      country: "USA",
-      notes: "Looking for learning management solutions",
-      isActive: true
-    });
-    
-    // Create sample leads (10 in total)
-    this.createLead({
-      firstName: "Mike",
-      lastName: "Johnson",
-      email: "mike@innovate.example.com",
-      phone: "555-555-6666",
-      company: "Innovative Systems",
-      title: "CEO",
-      status: "Qualified",
-      source: "Website",
-      ownerId: 1,
-      notes: "Interested in our enterprise solution",
-    });
-    
-    this.createLead({
-      firstName: "Sarah",
-      lastName: "Williams",
-      email: "sarah@bright.example.com",
-      phone: "555-777-8888",
-      company: "Bright Solutions",
-      title: "Marketing Director",
-      status: "New",
-      source: "Referral",
-      ownerId: 2,
-      notes: "Looking for marketing automation",
-    });
-    
-    this.createLead({
-      firstName: "Alex",
-      lastName: "Rivera",
-      email: "alex@tech.example.com",
-      phone: "555-234-5678",
-      company: "TechStream Solutions",
-      title: "CTO",
-      status: "New",
-      source: "Website",
-      ownerId: 1,
-      notes: "Requested demo of our platform",
-    });
-    
-    this.createLead({
-      firstName: "Jennifer",
-      lastName: "Liu",
-      email: "jennifer@global.example.com",
-      phone: "555-876-5432",
-      company: "Global Innovations",
-      title: "Product Manager",
-      status: "Qualified",
-      source: "Trade Show",
-      ownerId: 2,
-      notes: "Met at Technology Expo 2025",
-    });
-    
-    this.createLead({
-      firstName: "Carlos",
-      lastName: "Mendoza",
-      email: "carlos@data.example.com",
-      phone: "555-567-8901",
-      company: "DataSphere Analytics",
-      title: "Data Science Director",
-      status: "Contacted",
-      source: "Online Ad",
-      ownerId: 1,
-      notes: "Interested in data integration features",
-    });
-    
-    this.createLead({
-      firstName: "Priya",
-      lastName: "Patel",
-      email: "priya@health.example.com",
-      phone: "555-890-1234",
-      company: "HealthTech Innovations",
-      title: "CEO",
-      status: "New",
-      source: "Webinar",
-      ownerId: 2,
-      notes: "Attended our healthcare solutions webinar",
-    });
-    
-    this.createLead({
-      firstName: "Daniel",
-      lastName: "Washington",
-      email: "daniel@retail.example.com",
-      phone: "555-432-1098",
-      company: "Retail Revolution",
-      title: "IT Director",
-      status: "Qualified",
-      source: "Website",
-      ownerId: 1,
-      notes: "Looking for POS integration solutions",
-    });
-    
-    this.createLead({
-      firstName: "Sophia",
-      lastName: "Lee",
-      email: "sophia@edu.example.com",
-      phone: "555-765-4321",
-      company: "EduTech Systems",
-      title: "COO",
-      status: "New",
-      source: "Email Campaign",
-      ownerId: 2,
-      notes: "Responded to educational solutions email",
-    });
-    
-    this.createLead({
-      firstName: "Marcus",
-      lastName: "Johnson",
-      email: "marcus@finance.example.com",
-      phone: "555-321-6789",
-      company: "Financial Frontiers",
-      title: "VP of Technology",
-      status: "Contacted",
-      source: "LinkedIn",
-      ownerId: 1,
-      notes: "Connected via LinkedIn, interested in fintech solutions",
-    });
-    
-    this.createLead({
-      firstName: "Laura",
-      lastName: "Martinez",
-      email: "laura@creative.example.com",
-      phone: "555-987-2345",
-      company: "Creative Dynamics",
-      title: "Marketing Manager",
-      status: "New",
-      source: "Referral",
-      ownerId: 2,
-      notes: "Referred by Jane Doe at GlobalTech",
-    });
-    
-    // Create sample opportunities (10 in total)
-    this.createOpportunity({
-      name: "Acme Corporation - Enterprise License",
-      accountId: account1.id,
-      stage: "Proposal",
-      amount: 125000,
-      expectedCloseDate: new Date("2025-07-15"),
-      probability: 70,
-      ownerId: 1,
-      notes: "Proposal submitted, waiting for feedback",
-    });
-    
-    this.createOpportunity({
-      name: "GlobalTech Inc. - Premium Support",
-      accountId: account2.id,
-      stage: "Negotiation",
-      amount: 75000,
-      expectedCloseDate: new Date("2025-06-30"),
-      probability: 85,
-      ownerId: 2,
-      notes: "Final negotiation on contract terms",
-    });
-    
-    this.createOpportunity({
-      name: "Blue Sky Innovations - Healthcare Platform",
-      accountId: account3.id,
-      stage: "Qualification",
-      amount: 95000,
-      expectedCloseDate: new Date("2025-08-10"),
-      probability: 50,
-      ownerId: 1,
-      notes: "Initial requirements gathering completed",
-    });
-    
-    this.createOpportunity({
-      name: "Quantum Solutions - Manufacturing Optimization",
-      accountId: account4.id,
-      stage: "Lead Generation",
-      amount: 150000,
-      expectedCloseDate: new Date("2025-09-22"),
-      probability: 30,
-      ownerId: 2,
-      notes: "Preliminary discussions about optimizing manufacturing processes",
-    });
-    
-    this.createOpportunity({
-      name: "Nexus Financial - Compliance Suite",
-      accountId: account5.id,
-      stage: "Proposal",
-      amount: 200000,
-      expectedCloseDate: new Date("2025-07-05"),
-      probability: 65,
-      ownerId: 1,
-      notes: "Customized proposal for financial compliance tools",
-    });
-    
-    this.createOpportunity({
-      name: "EcoSmart Systems - Energy Analytics",
-      accountId: account6.id,
-      stage: "Closing",
-      amount: 85000,
-      expectedCloseDate: new Date("2025-05-15"),
-      probability: 95,
-      ownerId: 2,
-      notes: "Contract ready for signatures",
-    });
-    
-    this.createOpportunity({
-      name: "Metro Retail Group - POS Integration",
-      accountId: account7.id,
-      stage: "Negotiation",
-      amount: 120000,
-      expectedCloseDate: new Date("2025-06-20"),
-      probability: 80,
-      ownerId: 1,
-      notes: "Negotiating service level agreements",
-    });
-    
-    this.createOpportunity({
-      name: "Digital Dynamics - Marketing Platform",
-      accountId: account8.id,
-      stage: "Qualification",
-      amount: 65000,
-      expectedCloseDate: new Date("2025-08-30"),
-      probability: 45,
-      ownerId: 2,
-      notes: "Evaluating technical requirements",
-    });
-    
-    this.createOpportunity({
-      name: "Pacific Transport - Fleet Management",
-      accountId: account9.id,
-      stage: "Lead Generation",
-      amount: 110000,
-      expectedCloseDate: new Date("2025-10-15"),
-      probability: 25,
-      ownerId: 1,
-      notes: "Initial discovery call completed",
-    });
-    
-    this.createOpportunity({
-      name: "Evergreen Education - LMS Integration",
-      accountId: account10.id,
-      stage: "Proposal",
-      amount: 80000,
-      expectedCloseDate: new Date("2025-07-25"),
-      probability: 60,
-      ownerId: 2,
-      notes: "Proposal for learning management system integration",
-    });
-    
-    // Create sample tasks
-    this.createTask({
-      title: "Follow up with Acme Corp about proposal",
-      description: "Call John Smith to discuss the proposal details",
-      dueDate: new Date(),
-      priority: "High",
-      status: "Not Started",
-      ownerId: 1,
-      relatedToType: "opportunity",
-      relatedToId: 1,
-    });
-    
-    this.createTask({
-      title: "Prepare quarterly sales report",
-      description: "Compile Q2 sales data and prepare report for executive meeting",
-      dueDate: new Date(Date.now() + 86400000), // Tomorrow
-      priority: "Medium",
-      status: "Not Started",
-      ownerId: 2,
-    });
-    
-    this.createTask({
-      title: "Schedule demo with new client",
-      description: "Set up a product demonstration for Bright Solutions",
-      dueDate: new Date(Date.now() + 259200000), // 3 days from now
-      priority: "Normal",
-      status: "Not Started",
-      ownerId: 1,
-      relatedToType: "lead",
-      relatedToId: 2,
-    });
-    
-    // Create sample events
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    
-    this.createEvent({
-      title: "Client Presentation - Acme Corp",
-      description: "Present the new product features to Acme Corp team",
-      startDate: new Date(currentYear, currentMonth, 18, 10, 0), // 10:00 AM on the 18th
-      endDate: new Date(currentYear, currentMonth, 18, 11, 30), // 11:30 AM on the 18th
-      location: "Conference Room A",
-      locationType: "physical",
-      eventType: "Meeting",
-      status: "Confirmed",
-      ownerId: 1,
-    });
-    
-    this.createEvent({
-      title: "Team Weekly Sync",
-      description: "Regular team sync to discuss ongoing projects and priorities",
-      startDate: new Date(currentYear, currentMonth, 19, 14, 0), // 2:00 PM on the 19th
-      endDate: new Date(currentYear, currentMonth, 19, 15, 0), // 3:00 PM on the 19th
-      location: "Zoom Meeting",
-      locationType: "virtual",
-      eventType: "Meeting",
-      status: "Confirmed",
-      ownerId: 2,
-      isRecurring: true,
-      recurringRule: "FREQ=WEEKLY;BYDAY=TH",
-    });
-    
-    this.createEvent({
-      title: "Sales Training Workshop",
-      description: "Workshop focusing on advanced sales techniques",
-      startDate: new Date(currentYear, currentMonth, 20, 9, 0), // 9:00 AM on the 20th
-      endDate: new Date(currentYear, currentMonth, 20, 12, 0), // 12:00 PM on the 20th
-      location: "Training Room B",
-      locationType: "physical",
-      eventType: "Other",
-      status: "Confirmed",
-      ownerId: 2,
-    });
-    
-    // Create sample activities
-    this.createActivity({
-      userId: 1,
-      action: "created a new lead",
-      detail: "Acme Corporation - Technology Services",
-      relatedToType: "lead",
-      relatedToId: 1,
-      icon: "added",
-    });
-    
-    this.createActivity({
-      userId: 2,
-      action: "completed a task",
-      detail: "Follow-up call with GlobalTech Inc.",
-      relatedToType: "task",
-      relatedToId: 1,
-      icon: "completed",
-    });
-    
-    this.createActivity({
-      userId: 1,
-      action: "added a comment",
-      detail: "On Bright Solutions proposal",
-      relatedToType: "opportunity",
-      relatedToId: 1,
-      icon: "commented",
-    });
-    
-    this.createActivity({
-      userId: 2,
-      action: "scheduled a meeting",
-      detail: "With Innovative Systems team on Friday",
-      relatedToType: "event",
-      relatedToId: 1,
-      icon: "scheduled",
-    });
   }
 
-  // User methods
+  // User Methods
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    for (const user of this.users.values()) {
+      if (user.username === username) {
+        return user;
+      }
+    }
+    return undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
     const createdAt = new Date();
-    const user: User = { ...insertUser, id, createdAt };
+    
+    // Default values for fields not in InsertUser but required in User
+    const user: User = {
+      ...insertUser,
+      id,
+      createdAt,
+      isActive: true,
+      isVerified: false,
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
+      role: insertUser.role || "User",
+      avatar: insertUser.avatar || null,
+      lastLogin: null,
+      company: null,
+      packageId: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null
+    };
+    
     this.users.set(id, user);
     return user;
   }
-  
+
   async listUsers(): Promise<User[]> {
     return Array.from(this.users.values());
   }
-  
+
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
-    const user = await this.getUser(id);
-    if (!user) return undefined;
+    const existingUser = this.users.get(id);
+    if (!existingUser) {
+      return undefined;
+    }
     
-    const updatedUser = { ...user, ...userData };
+    const updatedUser = {
+      ...existingUser,
+      ...userData
+    };
+    
     this.users.set(id, updatedUser);
     return updatedUser;
   }
-  
-  // Contact methods
+
+  // Contact Methods
   async getContact(id: number): Promise<Contact | undefined> {
     return this.contacts.get(id);
   }
-  
+
   async listContacts(filter?: Partial<Contact>): Promise<Contact[]> {
     let contacts = Array.from(this.contacts.values());
     
     if (filter) {
       contacts = contacts.filter(contact => {
-        return Object.entries(filter).every(([key, value]) => {
-          return contact[key as keyof Contact] === value;
-        });
+        for (const [key, value] of Object.entries(filter)) {
+          if (contact[key as keyof Contact] !== value) {
+            return false;
+          }
+        }
+        return true;
       });
     }
     
     return contacts;
   }
-  
+
   async createContact(insertContact: InsertContact): Promise<Contact> {
     const id = this.contactIdCounter++;
     const createdAt = new Date();
-    const contact: Contact = { ...insertContact, id, createdAt };
+    
+    const contact: Contact = {
+      ...insertContact,
+      id,
+      createdAt,
+      email: insertContact.email || null,
+      phone: insertContact.phone || null,
+      title: insertContact.title || null,
+      accountId: insertContact.accountId || null,
+      ownerId: insertContact.ownerId || null,
+      address: insertContact.address || null,
+      city: insertContact.city || null,
+      state: insertContact.state || null,
+      zip: insertContact.zip || null,
+      country: insertContact.country || null,
+      notes: insertContact.notes || null,
+      isActive: insertContact.isActive === undefined ? true : insertContact.isActive
+    };
+    
     this.contacts.set(id, contact);
-    
-    // Create activity for the new contact
-    if (insertContact.ownerId) {
-      this.createActivity({
-        userId: insertContact.ownerId,
-        action: "created a new contact",
-        detail: `${insertContact.firstName} ${insertContact.lastName}`,
-        relatedToType: "contact",
-        relatedToId: id,
-        icon: "added",
-      });
-    }
-    
     return contact;
   }
-  
+
   async updateContact(id: number, contactData: Partial<InsertContact>): Promise<Contact | undefined> {
-    const contact = await this.getContact(id);
-    if (!contact) return undefined;
+    const existingContact = this.contacts.get(id);
+    if (!existingContact) {
+      return undefined;
+    }
     
-    const updatedContact = { ...contact, ...contactData };
+    const updatedContact = {
+      ...existingContact,
+      ...contactData
+    };
+    
     this.contacts.set(id, updatedContact);
     return updatedContact;
   }
-  
+
   async deleteContact(id: number): Promise<boolean> {
     return this.contacts.delete(id);
   }
-  
-  // Account methods
+
+  // Account Methods
   async getAccount(id: number): Promise<Account | undefined> {
     return this.accounts.get(id);
   }
-  
+
   async listAccounts(filter?: Partial<Account>): Promise<Account[]> {
     let accounts = Array.from(this.accounts.values());
     
     if (filter) {
       accounts = accounts.filter(account => {
-        return Object.entries(filter).every(([key, value]) => {
-          return account[key as keyof Account] === value;
-        });
+        for (const [key, value] of Object.entries(filter)) {
+          if (account[key as keyof Account] !== value) {
+            return false;
+          }
+        }
+        return true;
       });
     }
     
     return accounts;
   }
-  
+
   async createAccount(insertAccount: InsertAccount): Promise<Account> {
     const id = this.accountIdCounter++;
     const createdAt = new Date();
-    const account: Account = { ...insertAccount, id, createdAt };
+    
+    const account: Account = {
+      ...insertAccount,
+      id,
+      createdAt,
+      industry: insertAccount.industry || null,
+      website: insertAccount.website || null,
+      phone: insertAccount.phone || null,
+      billingAddress: insertAccount.billingAddress || null,
+      billingCity: insertAccount.billingCity || null,
+      billingState: insertAccount.billingState || null,
+      billingZip: insertAccount.billingZip || null,
+      billingCountry: insertAccount.billingCountry || null,
+      ownerId: insertAccount.ownerId || null,
+      annualRevenue: insertAccount.annualRevenue || null,
+      employeeCount: insertAccount.employeeCount || null,
+      notes: insertAccount.notes || null,
+      isActive: insertAccount.isActive === undefined ? true : insertAccount.isActive
+    };
+    
     this.accounts.set(id, account);
-    
-    // Create activity for the new account
-    if (insertAccount.ownerId) {
-      this.createActivity({
-        userId: insertAccount.ownerId,
-        action: "created a new account",
-        detail: insertAccount.name,
-        relatedToType: "account",
-        relatedToId: id,
-        icon: "added",
-      });
-    }
-    
     return account;
   }
-  
+
   async updateAccount(id: number, accountData: Partial<InsertAccount>): Promise<Account | undefined> {
-    const account = await this.getAccount(id);
-    if (!account) return undefined;
+    const existingAccount = this.accounts.get(id);
+    if (!existingAccount) {
+      return undefined;
+    }
     
-    const updatedAccount = { ...account, ...accountData };
+    const updatedAccount = {
+      ...existingAccount,
+      ...accountData
+    };
+    
     this.accounts.set(id, updatedAccount);
     return updatedAccount;
   }
-  
+
   async deleteAccount(id: number): Promise<boolean> {
     return this.accounts.delete(id);
   }
-  
-  // Lead methods
+
+  // Lead Methods
   async getLead(id: number): Promise<Lead | undefined> {
     return this.leads.get(id);
   }
-  
+
   async listLeads(filter?: Partial<Lead>): Promise<Lead[]> {
     let leads = Array.from(this.leads.values());
     
     if (filter) {
       leads = leads.filter(lead => {
-        return Object.entries(filter).every(([key, value]) => {
-          return lead[key as keyof Lead] === value;
-        });
+        for (const [key, value] of Object.entries(filter)) {
+          if (lead[key as keyof Lead] !== value) {
+            return false;
+          }
+        }
+        return true;
       });
     }
     
     return leads;
   }
-  
+
   async createLead(insertLead: InsertLead): Promise<Lead> {
     const id = this.leadIdCounter++;
     const createdAt = new Date();
+    
     const lead: Lead = { 
-      ...insertLead, 
-      id, 
-      createdAt, 
+      ...insertLead,
+      id,
+      createdAt,
+      email: insertLead.email || null,
+      phone: insertLead.phone || null,
+      company: insertLead.company || null,
+      title: insertLead.title || null,
+      status: insertLead.status || "New",
+      source: insertLead.source || null,
+      ownerId: insertLead.ownerId || null,
+      notes: insertLead.notes || null,
       isConverted: false,
       convertedToContactId: null,
       convertedToAccountId: null,
       convertedToOpportunityId: null
     };
+    
     this.leads.set(id, lead);
-    
-    // Create activity for the new lead
-    if (insertLead.ownerId) {
-      this.createActivity({
-        userId: insertLead.ownerId,
-        action: "created a new lead",
-        detail: `${insertLead.firstName} ${insertLead.lastName} - ${insertLead.company}`,
-        relatedToType: "lead",
-        relatedToId: id,
-        icon: "added",
-      });
-    }
-    
     return lead;
   }
-  
+
   async updateLead(id: number, leadData: Partial<InsertLead>): Promise<Lead | undefined> {
-    const lead = await this.getLead(id);
-    if (!lead) return undefined;
+    const existingLead = this.leads.get(id);
+    if (!existingLead) {
+      return undefined;
+    }
     
-    const updatedLead = { ...lead, ...leadData };
+    const updatedLead = {
+      ...existingLead,
+      ...leadData
+    };
+    
     this.leads.set(id, updatedLead);
     return updatedLead;
   }
-  
+
   async deleteLead(id: number): Promise<boolean> {
     return this.leads.delete(id);
   }
-  
-  async convertLead(id: number, convertTo: { 
-    contact?: InsertContact, 
-    account?: InsertAccount, 
-    opportunity?: InsertOpportunity 
-  }): Promise<{ 
-    contact?: Contact, 
-    account?: Account, 
-    opportunity?: Opportunity, 
-    lead: Lead 
+
+  async convertLead(
+    id: number, 
+    convertTo: { 
+      contact?: InsertContact, 
+      account?: InsertAccount, 
+      opportunity?: InsertOpportunity 
+    }
+  ): Promise<{ 
+    contact?: Contact;
+    account?: Account;
+    opportunity?: Opportunity;
+    lead: Lead;
   }> {
-    const lead = await this.getLead(id);
+    const lead = this.leads.get(id);
     if (!lead) {
-      throw new Error(`Lead with id ${id} not found`);
+      throw new Error(`Lead with ID ${id} not found`);
     }
     
     const result: {
@@ -1116,25 +584,70 @@ export class MemStorage implements IStorage {
       account?: Account;
       opportunity?: Opportunity;
       lead: Lead;
-    } = { lead };
+    } = {
+      lead: { ...lead }
+    };
     
-    // Create contact if specified
+    // Create contact if provided
     if (convertTo.contact) {
-      const contact = await this.createContact(convertTo.contact);
+      const contactData = {
+        ...convertTo.contact
+      };
+      
+      // Use lead data for missing fields
+      if (!contactData.firstName) contactData.firstName = lead.firstName;
+      if (!contactData.lastName) contactData.lastName = lead.lastName;
+      if (!contactData.email) contactData.email = lead.email;
+      if (!contactData.phone) contactData.phone = lead.phone;
+      
+      const contact = await this.createContact(contactData);
       result.contact = contact;
       lead.convertedToContactId = contact.id;
     }
     
-    // Create account if specified
+    // Create account if provided
     if (convertTo.account) {
-      const account = await this.createAccount(convertTo.account);
+      const accountData = {
+        ...convertTo.account
+      };
+      
+      // Use lead data for missing fields
+      if (!accountData.name && lead.company) accountData.name = lead.company;
+      
+      const account = await this.createAccount(accountData);
       result.account = account;
       lead.convertedToAccountId = account.id;
+      
+      // Link contact to account if both were created
+      if (result.contact && !result.contact.accountId) {
+        const updatedContact = {
+          ...result.contact,
+          accountId: account.id
+        };
+        this.contacts.set(result.contact.id, updatedContact);
+        result.contact = updatedContact;
+      }
     }
     
-    // Create opportunity if specified
+    // Create opportunity if provided
     if (convertTo.opportunity) {
-      const opportunity = await this.createOpportunity(convertTo.opportunity);
+      const opportunityData = {
+        ...convertTo.opportunity
+      };
+      
+      // Use lead data for missing fields
+      if (!opportunityData.name && lead.company) {
+        opportunityData.name = `${lead.company} Opportunity`;
+      } else if (!opportunityData.name) {
+        opportunityData.name = `${lead.firstName} ${lead.lastName} Opportunity`;
+      }
+      
+      // Link to account if created
+      if (result.account && !opportunityData.accountId) {
+        opportunityData.accountId = result.account.id;
+      }
+      
+      const opportunity = await this.createOpportunity(opportunityData);
       result.opportunity = opportunity;
       lead.convertedToOpportunityId = opportunity.id;
     }
@@ -1142,322 +655,340 @@ export class MemStorage implements IStorage {
     // Mark lead as converted
     lead.isConverted = true;
     this.leads.set(id, lead);
-    
-    // Create activity for the conversion
-    if (lead.ownerId) {
-      this.createActivity({
-        userId: lead.ownerId,
-        action: "converted lead",
-        detail: `${lead.firstName} ${lead.lastName} - ${lead.company}`,
-        relatedToType: "lead",
-        relatedToId: id,
-        icon: "completed",
-      });
-    }
+    result.lead = lead;
     
     return result;
   }
-  
-  // Opportunity methods
+
+  // Opportunity Methods
   async getOpportunity(id: number): Promise<Opportunity | undefined> {
     return this.opportunities.get(id);
   }
-  
+
   async listOpportunities(filter?: Partial<Opportunity>): Promise<Opportunity[]> {
     let opportunities = Array.from(this.opportunities.values());
     
     if (filter) {
       opportunities = opportunities.filter(opportunity => {
-        return Object.entries(filter).every(([key, value]) => {
-          return opportunity[key as keyof Opportunity] === value;
-        });
+        for (const [key, value] of Object.entries(filter)) {
+          if (opportunity[key as keyof Opportunity] !== value) {
+            return false;
+          }
+        }
+        return true;
       });
     }
     
     return opportunities;
   }
-  
+
   async createOpportunity(insertOpportunity: InsertOpportunity): Promise<Opportunity> {
     const id = this.opportunityIdCounter++;
     const createdAt = new Date();
+    
     const opportunity: Opportunity = { 
-      ...insertOpportunity, 
-      id, 
-      createdAt, 
+      ...insertOpportunity,
+      id,
+      createdAt,
+      accountId: insertOpportunity.accountId || null,
+      stage: insertOpportunity.stage || "Lead Generation",
+      amount: insertOpportunity.amount || null,
+      expectedCloseDate: insertOpportunity.expectedCloseDate || null,
+      probability: insertOpportunity.probability || null,
+      ownerId: insertOpportunity.ownerId || null,
+      notes: insertOpportunity.notes || null,
       isClosed: false,
       isWon: false
     };
+    
     this.opportunities.set(id, opportunity);
-    
-    // Create activity for the new opportunity
-    if (insertOpportunity.ownerId) {
-      this.createActivity({
-        userId: insertOpportunity.ownerId,
-        action: "created a new opportunity",
-        detail: insertOpportunity.name,
-        relatedToType: "opportunity",
-        relatedToId: id,
-        icon: "added",
-      });
-    }
-    
     return opportunity;
   }
-  
+
   async updateOpportunity(id: number, opportunityData: Partial<InsertOpportunity>): Promise<Opportunity | undefined> {
-    const opportunity = await this.getOpportunity(id);
-    if (!opportunity) return undefined;
+    const existingOpportunity = this.opportunities.get(id);
+    if (!existingOpportunity) {
+      return undefined;
+    }
     
-    const updatedOpportunity = { ...opportunity, ...opportunityData };
+    const updatedOpportunity = {
+      ...existingOpportunity,
+      ...opportunityData
+    };
+    
     this.opportunities.set(id, updatedOpportunity);
     return updatedOpportunity;
   }
-  
+
   async deleteOpportunity(id: number): Promise<boolean> {
     return this.opportunities.delete(id);
   }
-  
-  // Task methods
+
+  // Task Methods
   async getTask(id: number): Promise<Task | undefined> {
     return this.tasks.get(id);
   }
-  
+
   async listTasks(filter?: Partial<Task>): Promise<Task[]> {
     let tasks = Array.from(this.tasks.values());
     
     if (filter) {
       tasks = tasks.filter(task => {
-        return Object.entries(filter).every(([key, value]) => {
-          return task[key as keyof Task] === value;
-        });
+        for (const [key, value] of Object.entries(filter)) {
+          if (task[key as keyof Task] !== value) {
+            return false;
+          }
+        }
+        return true;
       });
     }
     
     return tasks;
   }
-  
+
   async createTask(insertTask: InsertTask): Promise<Task> {
     const id = this.taskIdCounter++;
     const createdAt = new Date();
     
-    // Convert reminderDate from string to Date if it exists
-    let processedTask: any = { ...insertTask };
-    if (insertTask.reminderDate && typeof insertTask.reminderDate === 'string') {
-      processedTask.reminderDate = new Date(insertTask.reminderDate);
+    // Process dates
+    let processedTask = { ...insertTask };
+    if (typeof processedTask.reminderDate === 'string') {
+      processedTask.reminderDate = new Date(processedTask.reminderDate);
     }
     
-    const task: Task = { ...processedTask, id, createdAt };
+    const task: Task = {
+      ...processedTask,
+      id,
+      createdAt,
+      description: processedTask.description || null,
+      dueDate: processedTask.dueDate || null,
+      priority: processedTask.priority || "Normal",
+      status: processedTask.status || "Not Started",
+      ownerId: processedTask.ownerId || null,
+      relatedToType: processedTask.relatedToType || null,
+      relatedToId: processedTask.relatedToId || null,
+      isReminder: processedTask.isReminder || false,
+      reminderDate: processedTask.reminderDate || null
+    };
+    
     this.tasks.set(id, task);
-    
-    // Create activity for the new task
-    if (insertTask.ownerId) {
-      this.createActivity({
-        userId: insertTask.ownerId,
-        action: "created a new task",
-        detail: insertTask.title,
-        relatedToType: "task",
-        relatedToId: id,
-        icon: "added",
-      });
-    }
-    
     return task;
   }
-  
+
   async updateTask(id: number, taskData: Partial<InsertTask>): Promise<Task | undefined> {
-    const task = await this.getTask(id);
-    if (!task) return undefined;
-    
-    // Convert reminderDate from string to Date if it exists
-    let processedTaskData: any = { ...taskData };
-    if (taskData.reminderDate && typeof taskData.reminderDate === 'string') {
-      processedTaskData.reminderDate = new Date(taskData.reminderDate);
+    const existingTask = this.tasks.get(id);
+    if (!existingTask) {
+      return undefined;
     }
     
-    const updatedTask = { ...task, ...processedTaskData };
+    // Process dates
+    let processedData = { ...taskData };
+    if (typeof processedData.reminderDate === 'string') {
+      processedData.reminderDate = new Date(processedData.reminderDate);
+    }
+    
+    const updatedTask = {
+      ...existingTask,
+      ...processedData
+    };
+    
     this.tasks.set(id, updatedTask);
-    
-    // If the task status changed to completed, create an activity
-    if (taskData.status === 'Completed' && task.status !== 'Completed' && task.ownerId) {
-      this.createActivity({
-        userId: task.ownerId,
-        action: "completed a task",
-        detail: task.title,
-        relatedToType: "task",
-        relatedToId: id,
-        icon: "completed",
-      });
-    }
-    
     return updatedTask;
   }
-  
+
   async deleteTask(id: number): Promise<boolean> {
     return this.tasks.delete(id);
   }
-  
-  // Event methods
+
+  // Event Methods
   async getEvent(id: number): Promise<Event | undefined> {
     return this.events.get(id);
   }
-  
+
   async listEvents(filter?: Partial<Event>): Promise<Event[]> {
     let events = Array.from(this.events.values());
     
     if (filter) {
       events = events.filter(event => {
-        return Object.entries(filter).every(([key, value]) => {
-          return event[key as keyof Event] === value;
-        });
+        for (const [key, value] of Object.entries(filter)) {
+          if (event[key as keyof Event] !== value) {
+            return false;
+          }
+        }
+        return true;
       });
     }
     
+    // Sort by start date
+    events.sort((a, b) => {
+      // Handle null values
+      if (!a.startDate) return 1;
+      if (!b.startDate) return -1;
+      
+      const dateA = new Date(a.startDate).getTime();
+      const dateB = new Date(b.startDate).getTime();
+      return dateA - dateB;
+    });
+    
     return events;
   }
-  
+
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
-    console.log("Creating event with data:", insertEvent);
+    const id = this.eventIdCounter++;
+    const createdAt = new Date();
     
-    try {
-      const id = this.eventIdCounter++;
-      const createdAt = new Date();
-      
-      // Process date fields if they are strings
-      let startDate = insertEvent.startDate;
-      let endDate = insertEvent.endDate;
-      
-      if (typeof startDate === 'string') {
-        startDate = new Date(startDate);
-      }
-      
-      if (typeof endDate === 'string') {
-        endDate = new Date(endDate);
-      }
-      
-      // Create a minimal valid event with the required properties
-      const event: Event = {
-        id,
-        createdAt,
-        title: insertEvent.title,
-        startDate,
-        endDate,
-        description: insertEvent.description ?? null,
-        location: insertEvent.location ?? null,
-        locationType: insertEvent.locationType ?? null,
-        eventType: insertEvent.eventType ?? null,
-        status: insertEvent.status ?? null,
-        ownerId: insertEvent.ownerId ?? null,
-        isAllDay: insertEvent.isAllDay ?? null,
-        isRecurring: insertEvent.isRecurring ?? null,
-        recurringRule: insertEvent.recurringRule ?? null
-      };
-      
-      console.log("Saving event:", event);
-      this.events.set(id, event);
-      
-      // Create activity for the new event
-      if (insertEvent.ownerId) {
-        this.createActivity({
-          userId: insertEvent.ownerId,
-          action: "scheduled a new event",
-          detail: insertEvent.title,
-          relatedToType: "event",
-          relatedToId: id,
-          icon: "scheduled",
-        });
-      }
-      
-      console.log("Event created successfully with ID:", id);
-      return event;
-    } catch (error) {
-      console.error("Error creating event:", error);
-      throw error;
-    }
+    // Process dates
+    const startDate = typeof insertEvent.startDate === 'string' 
+      ? new Date(insertEvent.startDate) 
+      : insertEvent.startDate;
+    
+    const endDate = typeof insertEvent.endDate === 'string' 
+      ? new Date(insertEvent.endDate) 
+      : insertEvent.endDate;
+    
+    const event: Event = {
+      ...insertEvent,
+      id,
+      createdAt,
+      startDate,
+      endDate,
+      description: insertEvent.description || null,
+      location: insertEvent.location || null,
+      locationType: insertEvent.locationType || "physical",
+      eventType: insertEvent.eventType || "Meeting",
+      status: insertEvent.status || "Confirmed",
+      ownerId: insertEvent.ownerId || null,
+      isAllDay: insertEvent.isAllDay || false,
+      isRecurring: insertEvent.isRecurring || false,
+      recurringRule: insertEvent.recurringRule || null
+    };
+    
+    this.events.set(id, event);
+    return event;
   }
-  
+
   async updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined> {
-    const event = await this.getEvent(id);
-    if (!event) return undefined;
+    const existingEvent = this.events.get(id);
+    if (!existingEvent) {
+      return undefined;
+    }
     
-    const updatedEvent = { ...event, ...eventData };
+    // Process dates
+    let processedData = { ...eventData };
+    if (typeof processedData.startDate === 'string') {
+      processedData.startDate = new Date(processedData.startDate);
+    }
+    
+    if (typeof processedData.endDate === 'string') {
+      processedData.endDate = new Date(processedData.endDate);
+    }
+    
+    const updatedEvent = {
+      ...existingEvent,
+      ...processedData
+    };
+    
     this.events.set(id, updatedEvent);
     return updatedEvent;
   }
-  
+
   async deleteEvent(id: number): Promise<boolean> {
     return this.events.delete(id);
   }
-  
-  // Activity methods
+
+  // Activity Methods
   async getActivity(id: number): Promise<Activity | undefined> {
     return this.activities.get(id);
   }
-  
+
   async listActivities(filter?: Partial<Activity>): Promise<Activity[]> {
     let activities = Array.from(this.activities.values());
     
     if (filter) {
       activities = activities.filter(activity => {
-        return Object.entries(filter).every(([key, value]) => {
-          return activity[key as keyof Activity] === value;
-        });
+        for (const [key, value] of Object.entries(filter)) {
+          if (activity[key as keyof Activity] !== value) {
+            return false;
+          }
+        }
+        return true;
       });
     }
     
-    // Sort by created date descending
-    activities.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Sort by creation date (newest first)
+    activities.sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
     
     return activities;
   }
-  
+
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {
     const id = this.activityIdCounter++;
     const createdAt = new Date();
-    const activity: Activity = { ...insertActivity, id, createdAt };
+    
+    const activity: Activity = {
+      ...insertActivity,
+      id,
+      createdAt,
+      userId: insertActivity.userId || null,
+      detail: insertActivity.detail || null,
+      relatedToType: insertActivity.relatedToType || null,
+      relatedToId: insertActivity.relatedToId || null,
+      icon: insertActivity.icon || "added"
+    };
+    
     this.activities.set(id, activity);
     return activity;
   }
-  
-  // Dashboard methods
+
+  // Dashboard Methods
   async getDashboardStats(): Promise<{
     newLeads: number;
     conversionRate: string;
     revenue: string;
     openDeals: number;
   }> {
-    const leads = await this.listLeads();
-    const opportunities = await this.listOpportunities();
+    // Get counts
+    const leads = Array.from(this.leads.values());
+    const opportunities = Array.from(this.opportunities.values());
     
-    const newLeadsCount = leads.filter(lead => lead.status === 'New').length;
+    // Calculate stats
+    const newLeads = leads.filter(lead => 
+      lead.status === "New" && 
+      lead.createdAt && 
+      new Date(lead.createdAt) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    ).length;
     
-    // Calculate conversion rate (converted leads / total leads)
-    const convertedLeadsCount = leads.filter(lead => lead.isConverted).length;
-    const totalLeadsCount = leads.length;
-    const conversionRate = totalLeadsCount > 0 
-      ? ((convertedLeadsCount / totalLeadsCount) * 100).toFixed(1) + '%'
-      : '0%';
+    const totalLeads = leads.length;
+    const convertedLeads = leads.filter(lead => lead.isConverted).length;
+    const conversionRate = totalLeads > 0 
+      ? ((convertedLeads / totalLeads) * 100).toFixed(1)
+      : "0.0";
     
-    // Calculate total revenue from won opportunities
     const totalRevenue = opportunities
       .filter(opp => opp.isWon)
-      .reduce((sum, opp) => sum + Number(opp.amount || 0), 0);
-    const formattedRevenue = new Intl.NumberFormat('en-US', {
+      .reduce((sum, opp) => sum + parseFloat(opp.amount || "0"), 0);
+    
+    const revenue = totalRevenue.toLocaleString('en-US', {
       style: 'currency',
       currency: 'USD',
+      minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(totalRevenue);
+    });
     
-    // Count open deals (not closed)
-    const openDealsCount = opportunities.filter(opp => !opp.isClosed).length;
+    const openDeals = opportunities.filter(opp => !opp.isClosed).length;
     
     return {
-      newLeads: newLeadsCount,
-      conversionRate: conversionRate,
-      revenue: formattedRevenue,
-      openDeals: openDealsCount
+      newLeads,
+      conversionRate: conversionRate + "%",
+      revenue,
+      openDeals
     };
   }
-  
+
   async getSalesPipeline(): Promise<{
     stages: {
       name: string;
@@ -1465,51 +996,43 @@ export class MemStorage implements IStorage {
       percentage: number;
     }[];
   }> {
-    const opportunities = await this.listOpportunities({
-      isClosed: false
-    });
-    
-    // Group by stage and calculate totals
-    const stageMap = new Map<string, number>();
-    let totalAmount = 0;
-    
-    opportunities.forEach(opp => {
-      const amount = Number(opp.amount || 0);
-      totalAmount += amount;
-      
-      const currentAmount = stageMap.get(opp.stage) || 0;
-      stageMap.set(opp.stage, currentAmount + amount);
-    });
-    
-    // Create pipeline stages data
-    const formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0
-    });
-    
+    const opportunities = Array.from(this.opportunities.values());
     const stages = [
       "Lead Generation",
       "Qualification",
       "Proposal",
       "Negotiation",
       "Closing"
-    ].map(stageName => {
-      const stageAmount = stageMap.get(stageName) || 0;
-      const percentage = totalAmount > 0 
-        ? Math.round((stageAmount / totalAmount) * 100)
+    ];
+    
+    const totalValue = opportunities.reduce((sum, opp) => 
+      sum + parseFloat(opp.amount || "0"), 0);
+    
+    const pipelineData = stages.map(stageName => {
+      const stageOpps = opportunities.filter(opp => opp.stage === stageName);
+      const stageValue = stageOpps.reduce((sum, opp) => 
+        sum + parseFloat(opp.amount || "0"), 0);
+      
+      const percentage = totalValue > 0 
+        ? Math.round((stageValue / totalValue) * 100)
         : 0;
-        
+      
       return {
         name: stageName,
-        value: formatter.format(stageAmount),
+        value: stageValue.toLocaleString('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }),
         percentage
       };
     });
     
-    return { stages };
+    return { stages: pipelineData };
   }
-  
+
+  // Report Methods
   async getSalesReport(timeRange: string): Promise<{
     monthlyData: {
       name: string;
@@ -1521,64 +1044,88 @@ export class MemStorage implements IStorage {
       value: number;
     }[];
   }> {
-    // Get all opportunities data
-    const opportunities = await this.listOpportunities();
+    const opportunities = Array.from(this.opportunities.values());
     
-    // Create monthly data - Realistic monthly data
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const currentMonth = new Date().getMonth();
-    
-    // Filter opportunities based on the selected time range
-    let filteredOpportunities = [...opportunities];
-    
-    if (timeRange === 'last-7') {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      filteredOpportunities = opportunities.filter(opp => opp.createdAt >= weekAgo);
-    } else if (timeRange === 'last-30') {
-      const monthAgo = new Date();
-      monthAgo.setDate(monthAgo.getDate() - 30);
-      filteredOpportunities = opportunities.filter(opp => opp.createdAt >= monthAgo);
-    } else if (timeRange === 'last-90') {
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
-      filteredOpportunities = opportunities.filter(opp => opp.createdAt >= threeMonthsAgo);
-    } else if (timeRange === 'year-to-date') {
-      const startOfYear = new Date(new Date().getFullYear(), 0, 1);
-      filteredOpportunities = opportunities.filter(opp => opp.createdAt >= startOfYear);
+    // Calculate date range
+    let startDate = new Date();
+    switch (timeRange) {
+      case 'week':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case 'quarter':
+        startDate.setMonth(startDate.getMonth() - 3);
+        break;
+      case 'year':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setMonth(startDate.getMonth() - 1); // Default to month
     }
     
-    // Group by month and count deals/sum values
-    const monthlyData = months.map((month, index) => {
-      // Only include data for months that have already occurred this year
-      const oppsInMonth = filteredOpportunities.filter(opp => {
-        const oppMonth = opp.createdAt.getMonth();
-        return (index <= currentMonth) && (oppMonth === index);
+    // Filter by date range
+    const filteredOpps = opportunities.filter(opp => {
+      if (!opp.createdAt) return false;
+      return new Date(opp.createdAt) >= startDate;
+    });
+    
+    // Generate monthly data
+    const months = timeRange === 'year' ? 12 : timeRange === 'quarter' ? 3 : 1;
+    const monthlyData = [];
+    
+    for (let i = 0; i < months; i++) {
+      const monthDate = new Date();
+      monthDate.setMonth(monthDate.getMonth() - i);
+      
+      const monthName = monthDate.toLocaleString('en-US', { month: 'short' });
+      const monthYear = monthDate.getFullYear();
+      
+      const monthOpps = filteredOpps.filter(opp => {
+        if (!opp.createdAt) return false;
+        const oppDate = new Date(opp.createdAt);
+        return oppDate.getMonth() === monthDate.getMonth() &&
+               oppDate.getFullYear() === monthDate.getFullYear();
       });
       
-      const deals = oppsInMonth.length;
-      const value = oppsInMonth.reduce((sum, opp) => sum + Number(opp.amount || 0), 0);
+      const deals = monthOpps.length;
+      const value = monthOpps.reduce((sum, opp) => 
+        sum + parseFloat(opp.amount || "0"), 0);
+      
+      monthlyData.unshift({
+        name: `${monthName} ${monthYear}`,
+        deals,
+        value
+      });
+    }
+    
+    // Generate pipeline stages data
+    const stageNames = [
+      "Lead Generation",
+      "Qualification",
+      "Proposal",
+      "Negotiation",
+      "Closing"
+    ];
+    
+    const pipelineStages = stageNames.map(stage => {
+      const stageOpps = filteredOpps.filter(opp => opp.stage === stage);
+      const value = stageOpps.reduce((sum, opp) => 
+        sum + parseFloat(opp.amount || "0"), 0);
       
       return {
-        name: month,
-        deals,
+        name: stage,
         value
       };
     });
     
-    // Get pipeline stages data
-    const pipelineStages = await this.getSalesPipeline();
-    const pipelineData = pipelineStages.stages.map(stage => ({
-      name: stage.name,
-      value: parseInt(stage.value.replace(/[^0-9.-]+/g, "")) || 0
-    }));
-    
     return {
       monthlyData,
-      pipelineStages: pipelineData
+      pipelineStages
     };
   }
-  
+
   async getLeadsReport(timeRange: string): Promise<{
     sourceData: {
       name: string;
@@ -1590,65 +1137,116 @@ export class MemStorage implements IStorage {
       converted: number;
     }[];
   }> {
-    // Get all leads
-    const allLeads = await this.listLeads();
+    const leads = Array.from(this.leads.values());
     
-    // Filter leads based on the selected time range
-    let filteredLeads = [...allLeads];
+    // Calculate date range
     let startDate = new Date();
-    
-    if (timeRange === 'last-7') {
-      startDate.setDate(startDate.getDate() - 7);
-    } else if (timeRange === 'last-30') {
-      startDate.setDate(startDate.getDate() - 30);
-    } else if (timeRange === 'last-90') {
-      startDate.setDate(startDate.getDate() - 90);
-    } else if (timeRange === 'year-to-date') {
-      startDate = new Date(new Date().getFullYear(), 0, 1);
+    switch (timeRange) {
+      case 'week':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case 'quarter':
+        startDate.setMonth(startDate.getMonth() - 3);
+        break;
+      case 'year':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setMonth(startDate.getMonth() - 1); // Default to month
     }
     
-    filteredLeads = allLeads.filter(lead => lead.createdAt >= startDate);
+    // Filter by date range
+    const filteredLeads = leads.filter(lead => {
+      if (!lead.createdAt) return false;
+      return new Date(lead.createdAt) >= startDate;
+    });
     
-    // Group leads by source
+    // Generate source data
     const sourceCounts = new Map<string, number>();
     
     filteredLeads.forEach(lead => {
-      const source = lead.source || 'Other';
-      const currentCount = sourceCounts.get(source) || 0;
-      sourceCounts.set(source, currentCount + 1);
+      const source = lead.source || "Unknown";
+      sourceCounts.set(source, (sourceCounts.get(source) || 0) + 1);
     });
     
-    // Create source data
     const sourceData = Array.from(sourceCounts.entries()).map(([name, value]) => ({
       name,
       value
     }));
     
-    // Calculate weekly trends (last 4 weeks)
-    const trendData = [];
-    const weeksToShow = 4;
-    const millisecondsInWeek = 7 * 24 * 60 * 60 * 1000;
+    // Sort by count (highest first)
+    sourceData.sort((a, b) => b.value - a.value);
     
-    for (let i = weeksToShow - 1; i >= 0; i--) {
-      const weekEnd = new Date();
-      weekEnd.setHours(23, 59, 59, 999);
-      weekEnd.setDate(weekEnd.getDate() - (i * 7));
+    // Generate trend data (last 6 weeks or months)
+    const periods = timeRange === 'week' ? 6 : timeRange === 'month' || timeRange === 'quarter' ? 3 : 12;
+    const periodType = timeRange === 'week' ? 'week' : 'month';
+    
+    const trendData = [];
+    
+    for (let i = 0; i < periods; i++) {
+      const periodDate = new Date();
       
-      const weekStart = new Date(weekEnd.getTime() - millisecondsInWeek + 1);
-      
-      const leadsInWeek = filteredLeads.filter(lead => {
-        const createdAt = new Date(lead.createdAt);
-        return createdAt >= weekStart && createdAt <= weekEnd;
-      });
-      
-      const newLeads = leadsInWeek.length;
-      const converted = leadsInWeek.filter(lead => lead.isConverted).length;
-      
-      trendData.push({
-        name: `Week ${weeksToShow - i}`,
-        newLeads,
-        converted
-      });
+      if (periodType === 'week') {
+        periodDate.setDate(periodDate.getDate() - (7 * i));
+        
+        // Get start and end of week
+        const startOfWeek = new Date(periodDate);
+        startOfWeek.setDate(periodDate.getDate() - periodDate.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        
+        // Count leads for this week
+        const weekLeads = leads.filter(lead => {
+          if (!lead.createdAt) return false;
+          const leadDate = new Date(lead.createdAt);
+          return leadDate >= startOfWeek && leadDate <= endOfWeek;
+        });
+        
+        const newLeads = weekLeads.length;
+        const converted = weekLeads.filter(lead => lead.isConverted).length;
+        
+        // Format week name (e.g., "May 1-7")
+        const startMonth = startOfWeek.toLocaleString('en-US', { month: 'short' });
+        const endMonth = endOfWeek.toLocaleString('en-US', { month: 'short' });
+        
+        const weekName = startMonth === endMonth
+          ? `${startMonth} ${startOfWeek.getDate()}-${endOfWeek.getDate()}`
+          : `${startMonth} ${startOfWeek.getDate()}-${endMonth} ${endOfWeek.getDate()}`;
+        
+        trendData.unshift({
+          name: weekName,
+          newLeads,
+          converted
+        });
+      } else {
+        // Monthly data
+        periodDate.setMonth(periodDate.getMonth() - i);
+        
+        const monthName = periodDate.toLocaleString('en-US', { month: 'short' });
+        const monthYear = periodDate.getFullYear();
+        
+        const monthLeads = leads.filter(lead => {
+          if (!lead.createdAt) return false;
+          const leadDate = new Date(lead.createdAt);
+          return leadDate.getMonth() === periodDate.getMonth() &&
+                 leadDate.getFullYear() === periodDate.getFullYear();
+        });
+        
+        const newLeads = monthLeads.length;
+        const converted = monthLeads.filter(lead => lead.isConverted).length;
+        
+        trendData.unshift({
+          name: `${monthName} ${monthYear}`,
+          newLeads,
+          converted
+        });
+      }
     }
     
     return {
@@ -1656,7 +1254,7 @@ export class MemStorage implements IStorage {
       trendData
     };
   }
-  
+
   async getConversionReport(timeRange: string): Promise<{
     conversionRate: number;
     previousRate: number;
@@ -1672,101 +1270,184 @@ export class MemStorage implements IStorage {
       converted: number;
     }[];
   }> {
-    // Get all leads
-    const allLeads = await this.listLeads();
+    const leads = Array.from(this.leads.values());
+    const opportunities = Array.from(this.opportunities.values());
     
-    // Filter leads based on the selected time range
-    let currentPeriodStart = new Date();
-    let previousPeriodStart = new Date();
+    // Calculate current period date range
+    let currentStartDate = new Date();
+    let previousStartDate = new Date();
     
-    if (timeRange === 'last-7') {
-      currentPeriodStart.setDate(currentPeriodStart.getDate() - 7);
-      previousPeriodStart.setDate(previousPeriodStart.getDate() - 14);
-    } else if (timeRange === 'last-30') {
-      currentPeriodStart.setDate(currentPeriodStart.getDate() - 30);
-      previousPeriodStart.setDate(previousPeriodStart.getDate() - 60);
-    } else if (timeRange === 'last-90') {
-      currentPeriodStart.setDate(currentPeriodStart.getDate() - 90);
-      previousPeriodStart.setDate(previousPeriodStart.getDate() - 180);
-    } else if (timeRange === 'year-to-date') {
-      currentPeriodStart = new Date(new Date().getFullYear(), 0, 1);
-      previousPeriodStart = new Date(new Date().getFullYear() - 1, 0, 1);
+    switch (timeRange) {
+      case 'week':
+        currentStartDate.setDate(currentStartDate.getDate() - 7);
+        previousStartDate.setDate(previousStartDate.getDate() - 14);
+        break;
+      case 'month':
+        currentStartDate.setMonth(currentStartDate.getMonth() - 1);
+        previousStartDate.setMonth(previousStartDate.getMonth() - 2);
+        break;
+      case 'quarter':
+        currentStartDate.setMonth(currentStartDate.getMonth() - 3);
+        previousStartDate.setMonth(previousStartDate.getMonth() - 6);
+        break;
+      case 'year':
+        currentStartDate.setFullYear(currentStartDate.getFullYear() - 1);
+        previousStartDate.setFullYear(previousStartDate.getFullYear() - 2);
+        break;
+      default:
+        currentStartDate.setMonth(currentStartDate.getMonth() - 1);
+        previousStartDate.setMonth(previousStartDate.getMonth() - 2);
     }
     
-    const now = new Date();
+    // Filter leads by current period
+    const currentPeriodLeads = leads.filter(lead => {
+      if (!lead.createdAt) return false;
+      const leadDate = new Date(lead.createdAt);
+      return leadDate >= currentStartDate;
+    });
     
-    // Current period leads
-    const currentPeriodLeads = allLeads.filter(lead => 
-      lead.createdAt >= currentPeriodStart && lead.createdAt <= now
-    );
-    
-    // Previous period leads
-    const previousPeriodLeads = allLeads.filter(lead => 
-      lead.createdAt >= previousPeriodStart && lead.createdAt < currentPeriodStart
-    );
+    // Filter leads by previous period
+    const previousPeriodLeads = leads.filter(lead => {
+      if (!lead.createdAt) return false;
+      const leadDate = new Date(lead.createdAt);
+      return leadDate >= previousStartDate && leadDate < currentStartDate;
+    });
     
     // Calculate conversion rates
-    const currentConversionCount = currentPeriodLeads.filter(lead => lead.isConverted).length;
-    const previousConversionCount = previousPeriodLeads.filter(lead => lead.isConverted).length;
+    const currentConvertedCount = currentPeriodLeads.filter(lead => lead.isConverted).length;
+    const previousConvertedCount = previousPeriodLeads.filter(lead => lead.isConverted).length;
     
-    const conversionRate = currentPeriodLeads.length > 0 
-      ? (currentConversionCount / currentPeriodLeads.length) * 100 
+    const conversionRate = currentPeriodLeads.length > 0
+      ? Math.round((currentConvertedCount / currentPeriodLeads.length) * 100)
       : 0;
+    
+    const previousRate = previousPeriodLeads.length > 0
+      ? Math.round((previousConvertedCount / previousPeriodLeads.length) * 100)
+      : 0;
+    
+    // Calculate average time to convert
+    const convertedLeads = currentPeriodLeads.filter(lead => 
+      lead.isConverted && lead.convertedToOpportunityId !== null
+    );
+    
+    let totalDaysToConvert = 0;
+    let convertedCount = 0;
+    
+    for (const lead of convertedLeads) {
+      if (!lead.createdAt) continue;
       
-    const previousRate = previousPeriodLeads.length > 0 
-      ? (previousConversionCount / previousPeriodLeads.length) * 100 
+      // Find the opportunity created from this lead
+      const opportunity = lead.convertedToOpportunityId 
+        ? opportunities.find(opp => opp.id === lead.convertedToOpportunityId)
+        : null;
+      
+      if (opportunity && opportunity.createdAt) {
+        const leadDate = new Date(lead.createdAt);
+        const oppDate = new Date(opportunity.createdAt);
+        const daysDiff = Math.floor((oppDate.getTime() - leadDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        totalDaysToConvert += daysDiff;
+        convertedCount++;
+      }
+    }
+    
+    const avgTimeToConvert = convertedCount > 0
+      ? Math.round(totalDaysToConvert / convertedCount)
       : 0;
     
-    // Calculate avg time to convert (in days) - using a realistic value
-    const avgTimeToConvert = 18; // 18 days average
-    const previousTime = 20; // 20 days average for previous period
+    // Calculate previous average time to convert
+    const prevConvertedLeads = previousPeriodLeads.filter(lead => 
+      lead.isConverted && lead.convertedToOpportunityId !== null
+    );
+    
+    let prevTotalDaysToConvert = 0;
+    let prevConvertedCount = 0;
+    
+    for (const lead of prevConvertedLeads) {
+      if (!lead.createdAt) continue;
+      
+      const opportunity = lead.convertedToOpportunityId 
+        ? opportunities.find(opp => opp.id === lead.convertedToOpportunityId)
+        : null;
+      
+      if (opportunity && opportunity.createdAt) {
+        const leadDate = new Date(lead.createdAt);
+        const oppDate = new Date(opportunity.createdAt);
+        const daysDiff = Math.floor((oppDate.getTime() - leadDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        prevTotalDaysToConvert += daysDiff;
+        prevConvertedCount++;
+      }
+    }
+    
+    const previousTime = prevConvertedCount > 0
+      ? Math.round(prevTotalDaysToConvert / prevConvertedCount)
+      : 0;
     
     // Find best performing channel
-    const sourceConversionRates = new Map<string, { total: number, converted: number }>();
+    const channelStats = new Map<string, { total: number, converted: number }>();
     
     currentPeriodLeads.forEach(lead => {
-      const source = lead.source || 'Other';
-      const current = sourceConversionRates.get(source) || { total: 0, converted: 0 };
+      const source = lead.source || "Unknown";
       
-      current.total += 1;
+      if (!channelStats.has(source)) {
+        channelStats.set(source, { total: 0, converted: 0 });
+      }
+      
+      const stats = channelStats.get(source)!;
+      stats.total++;
+      
       if (lead.isConverted) {
-        current.converted += 1;
-      }
-      
-      sourceConversionRates.set(source, current);
-    });
-    
-    let bestChannel = { name: 'None', rate: 0 };
-    
-    sourceConversionRates.forEach((data, source) => {
-      const rate = data.total > 0 ? (data.converted / data.total) * 100 : 0;
-      if (rate > bestChannel.rate) {
-        bestChannel = { name: source, rate };
+        stats.converted++;
       }
     });
     
-    // Calculate weekly trends (last 4 weeks)
+    let bestChannel = { name: "Unknown", rate: 0 };
+    
+    channelStats.forEach((stats, channel) => {
+      if (stats.total >= 5) { // Minimum threshold to consider a channel
+        const rate = Math.round((stats.converted / stats.total) * 100);
+        
+        if (rate > bestChannel.rate) {
+          bestChannel = {
+            name: channel,
+            rate
+          };
+        }
+      }
+    });
+    
+    // Generate weekly data
     const weeklyData = [];
-    const weeksToShow = 4;
-    const millisecondsInWeek = 7 * 24 * 60 * 60 * 1000;
+    const weeksToShow = 6;
     
-    for (let i = weeksToShow - 1; i >= 0; i--) {
-      const weekEnd = new Date();
-      weekEnd.setHours(23, 59, 59, 999);
-      weekEnd.setDate(weekEnd.getDate() - (i * 7));
+    for (let i = 0; i < weeksToShow; i++) {
+      const weekEndDate = new Date();
+      weekEndDate.setDate(weekEndDate.getDate() - (7 * i));
       
-      const weekStart = new Date(weekEnd.getTime() - millisecondsInWeek + 1);
+      const weekStartDate = new Date(weekEndDate);
+      weekStartDate.setDate(weekEndDate.getDate() - 6);
       
-      const leadsInWeek = allLeads.filter(lead => {
-        const createdAt = new Date(lead.createdAt);
-        return createdAt >= weekStart && createdAt <= weekEnd;
+      // Count leads for this week
+      const weekLeads = leads.filter(lead => {
+        if (!lead.createdAt) return false;
+        const leadDate = new Date(lead.createdAt);
+        return leadDate >= weekStartDate && leadDate <= weekEndDate;
       });
       
-      const newLeads = leadsInWeek.length;
-      const converted = leadsInWeek.filter(lead => lead.isConverted).length;
+      const newLeads = weekLeads.length;
+      const converted = weekLeads.filter(lead => lead.isConverted).length;
       
-      weeklyData.push({
-        name: `Week ${weeksToShow - i}`,
+      // Format week name (e.g., "May 1-7")
+      const startMonth = weekStartDate.toLocaleString('en-US', { month: 'short' });
+      const endMonth = weekEndDate.toLocaleString('en-US', { month: 'short' });
+      
+      const weekName = startMonth === endMonth
+        ? `${startMonth} ${weekStartDate.getDate()}-${weekEndDate.getDate()}`
+        : `${startMonth} ${weekStartDate.getDate()}-${endMonth} ${weekEndDate.getDate()}`;
+      
+      weeklyData.unshift({
+        name: weekName,
         newLeads,
         converted
       });
@@ -1781,7 +1462,7 @@ export class MemStorage implements IStorage {
       weeklyData
     };
   }
-  
+
   async getTeamPerformanceReport(timeRange: string): Promise<{
     teamMembers: {
       name: string;
@@ -1790,53 +1471,96 @@ export class MemStorage implements IStorage {
       conversion: number;
     }[];
   }> {
-    // Get users, opportunities, and leads
-    const users = await this.listUsers();
-    const opportunities = await this.listOpportunities();
-    const leads = await this.listLeads();
+    // Get all opportunities
+    const opportunities = Array.from(this.opportunities.values());
     
-    // Filter based on time range
+    // Get all leads
+    const leads = Array.from(this.leads.values());
+    
+    // Get all users
+    const users = Array.from(this.users.values());
+    
+    // Create a map to track performance by user
+    const performanceByUser = new Map<number, {
+      name: string;
+      deals: number;
+      revenue: number;
+      leadsAssigned: number;
+      leadsConverted: number;
+    }>();
+    
+    // Initialize performance tracking for each user
+    users.forEach(user => {
+      if (user.id) {
+        performanceByUser.set(user.id, {
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || `User ${user.id}`,
+          deals: 0,
+          revenue: 0,
+          leadsAssigned: 0,
+          leadsConverted: 0
+        });
+      }
+    });
+    
+    // Calculate date range
     let startDate = new Date();
-    
-    if (timeRange === 'last-7') {
-      startDate.setDate(startDate.getDate() - 7);
-    } else if (timeRange === 'last-30') {
-      startDate.setDate(startDate.getDate() - 30);
-    } else if (timeRange === 'last-90') {
-      startDate.setDate(startDate.getDate() - 90);
-    } else if (timeRange === 'year-to-date') {
-      startDate = new Date(new Date().getFullYear(), 0, 1);
+    switch (timeRange) {
+      case 'week':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case 'quarter':
+        startDate.setMonth(startDate.getMonth() - 3);
+        break;
+      case 'year':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setMonth(startDate.getMonth() - 1); // Default to month
     }
     
-    // Filter opportunities and leads by date
-    const filteredOpportunities = opportunities.filter(opp => opp.createdAt >= startDate);
-    const filteredLeads = leads.filter(lead => lead.createdAt >= startDate);
+    // Track opportunities by owner
+    opportunities.forEach(opp => {
+      // Skip if no owner or if opportunity was created before the time range
+      if (!opp.ownerId || (opp.createdAt && new Date(opp.createdAt) < startDate)) {
+        return;
+      }
+      
+      const userPerf = performanceByUser.get(opp.ownerId);
+      if (userPerf) {
+        userPerf.deals += 1;
+        userPerf.revenue += parseFloat(opp.amount || '0');
+      }
+    });
     
-    // Calculate performance metrics for each team member
-    const teamMembers = users.map(user => {
-      // Count deals closed by this user
-      const userOpportunities = filteredOpportunities.filter(opp => opp.ownerId === user.id);
-      const deals = userOpportunities.filter(opp => opp.stage === 'Closing').length;
+    // Track leads by owner
+    leads.forEach(lead => {
+      // Skip if no owner or if lead was created before the time range
+      if (!lead.ownerId || (lead.createdAt && new Date(lead.createdAt) < startDate)) {
+        return;
+      }
       
-      // Calculate total revenue from deals
-      const revenue = userOpportunities.reduce((total, opp) => {
-        if (opp.stage === 'Closing') {
-          return total + Number(opp.amount || 0);
+      const userPerf = performanceByUser.get(lead.ownerId);
+      if (userPerf) {
+        userPerf.leadsAssigned += 1;
+        if (lead.isConverted) {
+          userPerf.leadsConverted += 1;
         }
-        return total;
-      }, 0);
-      
-      // Calculate lead conversion rate
-      const userLeads = filteredLeads.filter(lead => lead.ownerId === user.id);
-      const totalLeads = userLeads.length;
-      const convertedLeads = userLeads.filter(lead => lead.isConverted).length;
-      
-      const conversion = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
+      }
+    });
+    
+    // Calculate conversion rates and prepare final data
+    const teamMembers = Array.from(performanceByUser.values()).map(user => {
+      const conversion = user.leadsAssigned > 0 
+        ? Math.round((user.leadsConverted / user.leadsAssigned) * 100) 
+        : 0;
       
       return {
-        name: `${user.firstName} ${user.lastName}`,
-        deals,
-        revenue,
+        name: user.name,
+        deals: user.deals,
+        revenue: user.revenue,
         conversion
       };
     });
@@ -1846,6 +1570,285 @@ export class MemStorage implements IStorage {
     
     return { teamMembers };
   }
+
+  // Subscription Package Methods
+  async getSubscriptionPackage(id: number): Promise<SubscriptionPackage | undefined> {
+    return this.subscriptionPackages.get(id);
+  }
+
+  async listSubscriptionPackages(filter?: Partial<SubscriptionPackage>): Promise<SubscriptionPackage[]> {
+    let packages = Array.from(this.subscriptionPackages.values());
+    
+    if (filter) {
+      packages = packages.filter(pkg => {
+        for (const [key, value] of Object.entries(filter)) {
+          if (pkg[key as keyof SubscriptionPackage] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    
+    // Sort by display order
+    return packages.sort((a, b) => {
+      if (a.displayOrder === null) return 1;
+      if (b.displayOrder === null) return -1;
+      return a.displayOrder - b.displayOrder;
+    });
+  }
+
+  async createSubscriptionPackage(packageData: InsertSubscriptionPackage): Promise<SubscriptionPackage> {
+    const id = this.subscriptionPackageIdCounter++;
+    const createdAt = new Date();
+    
+    const subscriptionPackage: SubscriptionPackage = {
+      ...packageData,
+      id,
+      createdAt,
+      isActive: packageData.isActive ?? true,
+      displayOrder: packageData.displayOrder ?? 0
+    };
+    
+    this.subscriptionPackages.set(id, subscriptionPackage);
+    return subscriptionPackage;
+  }
+
+  async updateSubscriptionPackage(id: number, packageData: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage | undefined> {
+    const existingPackage = this.subscriptionPackages.get(id);
+    if (!existingPackage) {
+      return undefined;
+    }
+    
+    const updatedPackage: SubscriptionPackage = {
+      ...existingPackage,
+      ...packageData
+    };
+    
+    this.subscriptionPackages.set(id, updatedPackage);
+    return updatedPackage;
+  }
+
+  async deleteSubscriptionPackage(id: number): Promise<boolean> {
+    return this.subscriptionPackages.delete(id);
+  }
+
+  // User Subscription Methods
+  async getUserSubscription(id: number): Promise<UserSubscription | undefined> {
+    return this.userSubscriptions.get(id);
+  }
+
+  async getUserActiveSubscription(userId: number): Promise<UserSubscription | undefined> {
+    const userSubscriptions = Array.from(this.userSubscriptions.values());
+    return userSubscriptions.find(sub => 
+      sub.userId === userId && 
+      sub.status === "Active" &&
+      (!sub.endDate || new Date(sub.endDate) > new Date())
+    );
+  }
+
+  async listUserSubscriptions(filter?: Partial<UserSubscription>): Promise<UserSubscription[]> {
+    let subscriptions = Array.from(this.userSubscriptions.values());
+    
+    if (filter) {
+      subscriptions = subscriptions.filter(sub => {
+        for (const [key, value] of Object.entries(filter)) {
+          if (sub[key as keyof UserSubscription] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    
+    // Sort by creation date (newest first)
+    return subscriptions.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  }
+
+  async createUserSubscription(subscriptionData: InsertUserSubscription): Promise<UserSubscription> {
+    const id = this.userSubscriptionIdCounter++;
+    const createdAt = new Date();
+    
+    const startDate = new Date(subscriptionData.startDate);
+    const endDate = subscriptionData.endDate ? new Date(subscriptionData.endDate) : undefined;
+    
+    const userSubscription: UserSubscription = {
+      ...subscriptionData,
+      id,
+      createdAt,
+      startDate,
+      endDate,
+      status: subscriptionData.status || "Pending"
+    };
+    
+    this.userSubscriptions.set(id, userSubscription);
+    return userSubscription;
+  }
+
+  async updateUserSubscription(id: number, subscriptionData: Partial<InsertUserSubscription>): Promise<UserSubscription | undefined> {
+    const existingSubscription = this.userSubscriptions.get(id);
+    if (!existingSubscription) {
+      return undefined;
+    }
+    
+    let updatedSubscription: UserSubscription = {
+      ...existingSubscription
+    };
+    
+    if (subscriptionData.startDate) {
+      updatedSubscription.startDate = new Date(subscriptionData.startDate);
+    }
+    
+    if (subscriptionData.endDate) {
+      updatedSubscription.endDate = new Date(subscriptionData.endDate);
+    }
+    
+    updatedSubscription = {
+      ...updatedSubscription,
+      ...subscriptionData
+    };
+    
+    this.userSubscriptions.set(id, updatedSubscription);
+    return updatedSubscription;
+  }
+
+  async cancelUserSubscription(id: number): Promise<UserSubscription | undefined> {
+    const subscription = this.userSubscriptions.get(id);
+    if (!subscription) {
+      return undefined;
+    }
+    
+    const updatedSubscription: UserSubscription = {
+      ...subscription,
+      status: "Canceled",
+      canceledAt: new Date()
+    };
+    
+    this.userSubscriptions.set(id, updatedSubscription);
+    return updatedSubscription;
+  }
+
+  // User Account Management Methods
+  async updateUserStripeInfo(userId: number, stripeInfo: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) {
+      return undefined;
+    }
+    
+    const updatedUser: User = {
+      ...user,
+      stripeCustomerId: stripeInfo.stripeCustomerId,
+      stripeSubscriptionId: stripeInfo.stripeSubscriptionId
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+
+  async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) {
+      return undefined;
+    }
+    
+    const updatedUser: User = {
+      ...user,
+      stripeCustomerId
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+}
+
+// Initialize default subscription packages
+function initializeSubscriptionPackages(storage: MemStorage) {
+  // Create three subscription tiers
+  storage.createSubscriptionPackage({
+    name: "Starter",
+    description: "Basic CRM features for small businesses",
+    price: 19.99,
+    interval: "monthly",
+    features: ["Contact Management", "Basic Lead Tracking", "Task Management"],
+    maxUsers: 3,
+    maxContacts: 500,
+    maxStorage: 5,
+    displayOrder: 1,
+    stripePriceId: "price_starter_monthly"
+  });
+  
+  storage.createSubscriptionPackage({
+    name: "Professional",
+    description: "Advanced features for growing businesses",
+    price: 49.99,
+    interval: "monthly",
+    features: ["All Starter Features", "Sales Pipeline", "Opportunity Management", "Basic AI Insights", "Email Templates"],
+    maxUsers: 10,
+    maxContacts: 2500,
+    maxStorage: 20,
+    displayOrder: 2,
+    stripePriceId: "price_professional_monthly"
+  });
+  
+  storage.createSubscriptionPackage({
+    name: "Enterprise",
+    description: "Complete solution for established businesses",
+    price: 99.99,
+    interval: "monthly",
+    features: ["All Professional Features", "Advanced AI Insights", "Custom Reporting", "Workflow Automation", "Dedicated Support"],
+    maxUsers: 25,
+    maxContacts: 10000,
+    maxStorage: 100,
+    displayOrder: 3,
+    stripePriceId: "price_enterprise_monthly"
+  });
+  
+  // Yearly plans (offered at a discount)
+  storage.createSubscriptionPackage({
+    name: "Starter (Annual)",
+    description: "Basic CRM features for small businesses - 20% discount",
+    price: 191.88, // 19.99 * 12 * 0.8 (20% off)
+    interval: "yearly",
+    features: ["Contact Management", "Basic Lead Tracking", "Task Management"],
+    maxUsers: 3,
+    maxContacts: 500,
+    maxStorage: 5,
+    displayOrder: 4,
+    stripePriceId: "price_starter_yearly"
+  });
+  
+  storage.createSubscriptionPackage({
+    name: "Professional (Annual)",
+    description: "Advanced features for growing businesses - 20% discount",
+    price: 479.88, // 49.99 * 12 * 0.8 (20% off)
+    interval: "yearly",
+    features: ["All Starter Features", "Sales Pipeline", "Opportunity Management", "Basic AI Insights", "Email Templates"],
+    maxUsers: 10,
+    maxContacts: 2500,
+    maxStorage: 20,
+    displayOrder: 5,
+    stripePriceId: "price_professional_yearly"
+  });
+  
+  storage.createSubscriptionPackage({
+    name: "Enterprise (Annual)",
+    description: "Complete solution for established businesses - 20% discount",
+    price: 959.88, // 99.99 * 12 * 0.8 (20% off)
+    interval: "yearly",
+    features: ["All Professional Features", "Advanced AI Insights", "Custom Reporting", "Workflow Automation", "Dedicated Support"],
+    maxUsers: 25,
+    maxContacts: 10000,
+    maxStorage: 100,
+    displayOrder: 6,
+    stripePriceId: "price_enterprise_yearly"
+  });
 }
 
 export const storage = new MemStorage();
+
+// Initialize subscription packages
+initializeSubscriptionPackages(storage);

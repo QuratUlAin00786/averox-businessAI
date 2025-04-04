@@ -8,6 +8,8 @@ export const opportunityStageEnum = pgEnum('opportunity_stage', ['Lead Generatio
 export const taskPriorityEnum = pgEnum('task_priority', ['High', 'Medium', 'Normal']);
 export const taskStatusEnum = pgEnum('task_status', ['Not Started', 'In Progress', 'Completed', 'Deferred']);
 export const eventTypeEnum = pgEnum('event_type', ['Meeting', 'Call', 'Demonstration', 'Follow-up', 'Other']);
+export const subscriptionStatusEnum = pgEnum('subscription_status', ['Active', 'Pending', 'Expired', 'Canceled', 'Trial']);
+export const userRoleEnum = pgEnum('user_role', ['Admin', 'Manager', 'User', 'ReadOnly']);
 
 // Users
 export const users = pgTable("users", {
@@ -16,10 +18,21 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
-  email: text("email"),
-  role: text("role"),
+  email: text("email").notNull().unique(),
+  role: text("role").default("User"),
   avatar: text("avatar"),
   createdAt: timestamp("created_at").defaultNow(),
+  
+  // Stripe integration fields
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
+  
+  // Account management
+  isActive: boolean("is_active").default(true),
+  lastLogin: timestamp("last_login"),
+  isVerified: boolean("is_verified").default(false),
+  company: text("company"),
+  packageId: integer("package_id"),
 });
 
 // Contacts
@@ -144,6 +157,39 @@ export const activities = pgTable("activities", {
   icon: text("icon").default("added"), // 'added', 'completed', 'commented', 'scheduled'
 });
 
+// Subscription Packages
+export const subscriptionPackages = pgTable("subscription_packages", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  price: numeric("price").notNull(),
+  interval: text("interval").notNull(), // 'monthly', 'yearly'
+  stripePriceId: text("stripe_price_id"),
+  features: text("features").array(),
+  maxUsers: integer("max_users").notNull(),
+  maxContacts: integer("max_contacts").notNull(),
+  maxStorage: integer("max_storage").notNull(), // in GB
+  isActive: boolean("is_active").default(true),
+  displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User Subscriptions (stores current and historical subscription information)
+export const userSubscriptions = pgTable("user_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  packageId: integer("package_id").references(() => subscriptionPackages.id).notNull(),
+  status: subscriptionStatusEnum("status").default("Pending"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  canceledAt: timestamp("canceled_at"),
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  createdAt: timestamp("created_at").defaultNow(),
+  trialEndsAt: timestamp("trial_ends_at"),
+});
+
 // Schema validation for inserts
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -201,6 +247,18 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
   createdAt: true,
 });
 
+export const insertSubscriptionPackageSchema = createInsertSchema(subscriptionPackages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  startDate: z.string().or(z.date())
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -225,3 +283,9 @@ export type Event = typeof events.$inferSelect;
 
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
+
+export type InsertSubscriptionPackage = z.infer<typeof insertSubscriptionPackageSchema>;
+export type SubscriptionPackage = typeof subscriptionPackages.$inferSelect;
+
+export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
+export type UserSubscription = typeof userSubscriptions.$inferSelect;

@@ -15,6 +15,7 @@ import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Intelligence from "@/pages/intelligence";
 import Workflows from "@/pages/workflows";
+import Subscriptions from "@/pages/subscriptions";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
         <Route path="/reports" component={Reports} />
         <Route path="/intelligence" component={Intelligence} />
         <Route path="/workflows" component={Workflows} />
+        <Route path="/subscriptions" component={Subscriptions} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>

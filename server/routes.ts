@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import Stripe from "stripe";
 import { storage } from "./storage";
 import { 
   insertUserSchema,
@@ -9,7 +10,9 @@ import {
   insertOpportunitySchema,
   insertTaskSchema,
   insertEventSchema,
-  insertActivitySchema
+  insertActivitySchema,
+  insertSubscriptionPackageSchema,
+  insertUserSubscriptionSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { 
@@ -36,6 +39,9 @@ function handleOpenAIError(res: Response, errorData: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up Stripe client for payment processing
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+  
   // Base API route
   const apiRouter = app.route('/api');
   
@@ -745,6 +751,322 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
     } catch (error) {
       handleError(res, error);
+    }
+  });
+
+  // Subscription package routes
+  app.get('/api/subscription-packages', async (req: Request, res: Response) => {
+    try {
+      const packages = await storage.listSubscriptionPackages();
+      res.json(packages);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/subscription-packages/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const package_ = await storage.getSubscriptionPackage(id);
+      if (!package_) {
+        return res.status(404).json({ error: "Subscription package not found" });
+      }
+      res.json(package_);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/subscription-packages', async (req: Request, res: Response) => {
+    try {
+      const packageData = insertSubscriptionPackageSchema.parse(req.body);
+      const package_ = await storage.createSubscriptionPackage(packageData);
+      res.status(201).json(package_);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/subscription-packages/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const packageData = insertSubscriptionPackageSchema.partial().parse(req.body);
+      const updatedPackage = await storage.updateSubscriptionPackage(id, packageData);
+      if (!updatedPackage) {
+        return res.status(404).json({ error: "Subscription package not found" });
+      }
+      res.json(updatedPackage);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/subscription-packages/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSubscriptionPackage(id);
+      if (!success) {
+        return res.status(404).json({ error: "Subscription package not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // User subscription routes
+  app.get('/api/user-subscriptions', async (req: Request, res: Response) => {
+    try {
+      const subscriptions = await storage.listUserSubscriptions();
+      res.json(subscriptions);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/user-subscriptions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const subscription = await storage.getUserSubscription(id);
+      if (!subscription) {
+        return res.status(404).json({ error: "User subscription not found" });
+      }
+      res.json(subscription);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/users/:userId/active-subscription', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const subscription = await storage.getUserActiveSubscription(userId);
+      if (!subscription) {
+        return res.status(404).json({ error: "No active subscription found for this user" });
+      }
+      res.json(subscription);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/user-subscriptions', async (req: Request, res: Response) => {
+    try {
+      const subscriptionData = insertUserSubscriptionSchema.parse(req.body);
+      const subscription = await storage.createUserSubscription(subscriptionData);
+      res.status(201).json(subscription);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/user-subscriptions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const subscriptionData = insertUserSubscriptionSchema.partial().parse(req.body);
+      const updatedSubscription = await storage.updateUserSubscription(id, subscriptionData);
+      if (!updatedSubscription) {
+        return res.status(404).json({ error: "User subscription not found" });
+      }
+      res.json(updatedSubscription);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/user-subscriptions/:id/cancel', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const canceledSubscription = await storage.cancelUserSubscription(id);
+      if (!canceledSubscription) {
+        return res.status(404).json({ error: "User subscription not found" });
+      }
+      res.json(canceledSubscription);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Stripe Integration Routes
+  app.post('/api/create-payment-intent', async (req: Request, res: Response) => {
+    try {
+      const { amount } = req.body;
+      
+      if (!amount || isNaN(amount) || amount <= 0) {
+        return res.status(400).json({ 
+          error: "Invalid amount", 
+          details: "Amount must be a positive number" 
+        });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+      });
+      
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      res.status(500).json({ 
+        error: "Stripe Error", 
+        message: error.message
+      });
+    }
+  });
+
+  app.post('/api/create-subscription', async (req: Request, res: Response) => {
+    try {
+      const { userId, packageId } = req.body;
+      
+      if (!userId || !packageId) {
+        return res.status(400).json({ 
+          error: "Invalid input", 
+          details: "User ID and package ID are required" 
+        });
+      }
+
+      // Get user and package details
+      const user = await storage.getUser(userId);
+      const package_ = await storage.getSubscriptionPackage(packageId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if (!package_) {
+        return res.status(404).json({ error: "Subscription package not found" });
+      }
+
+      if (!package_.stripePriceId) {
+        return res.status(400).json({ 
+          error: "Invalid package", 
+          details: "This package is not configured for online payment" 
+        });
+      }
+
+      let customerId = user.stripeCustomerId;
+      
+      // Create a Stripe customer if user doesn't have one
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+        });
+        
+        customerId = customer.id;
+        await storage.updateStripeCustomerId(userId, customerId);
+      }
+
+      // Create a subscription
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: package_.stripePriceId }],
+        payment_behavior: 'default_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+      });
+
+      // Create user subscription in our database
+      const userSubscription = await storage.createUserSubscription({
+        userId,
+        packageId,
+        stripeSubscriptionId: subscription.id,
+        status: 'Pending',
+        startDate: new Date(),
+        endDate: null,
+        currentPeriodStart: null,
+        currentPeriodEnd: null,
+        canceledAt: null,
+        trialEndsAt: null
+      });
+
+      // Return the client secret
+      const invoice = subscription.latest_invoice as any;
+      const clientSecret = invoice?.payment_intent?.client_secret;
+
+      res.json({
+        clientSecret,
+        subscriptionId: subscription.id,
+        userSubscriptionId: userSubscription.id
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        error: "Stripe Error", 
+        message: error.message
+      });
+    }
+  });
+
+  app.post('/api/webhook', async (req: Request, res: Response) => {
+    const signature = req.headers['stripe-signature'] as string;
+    
+    try {
+      if (!process.env.STRIPE_WEBHOOK_SECRET) {
+        console.warn('Missing Stripe webhook secret, skipping signature verification');
+        return res.status(200).end();
+      }
+      
+      // Verify the webhook
+      const event = stripe.webhooks.constructEvent(
+        req.body, 
+        signature, 
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+
+      // Handle the event
+      switch (event.type) {
+        case 'invoice.payment_succeeded':
+          const invoice = event.data.object as any;
+          const subscriptionId = invoice.subscription;
+          const userSubscription = await storage.listUserSubscriptions({ 
+            stripeSubscriptionId: subscriptionId 
+          });
+          
+          if (userSubscription.length > 0) {
+            await storage.updateUserSubscription(userSubscription[0].id, {
+              status: 'Active',
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+            });
+          }
+          break;
+        
+        case 'customer.subscription.updated':
+          const subscription = event.data.object as any;
+          const userSubs = await storage.listUserSubscriptions({ 
+            stripeSubscriptionId: subscription.id 
+          });
+          
+          if (userSubs.length > 0) {
+            let status: "Active" | "Canceled" | "Expired" | "Pending" | "Trial" | null = null;
+            
+            switch (subscription.status) {
+              case 'active':
+                status = 'Active';
+                break;
+              case 'canceled':
+                status = 'Canceled';
+                break;
+              case 'past_due':
+              case 'unpaid':
+                status = 'Expired';
+                break;
+              case 'trialing':
+                status = 'Trial';
+                break;
+              default:
+                status = 'Pending';
+            }
+            
+            if (status) {
+              await storage.updateUserSubscription(userSubs[0].id, { status });
+            }
+          }
+          break;
+      }
+
+      res.status(200).end();
+    } catch (error: any) {
+      console.error('Webhook error:', error.message);
+      res.status(400).json({ error: error.message });
     }
   });
 
