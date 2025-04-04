@@ -23,6 +23,17 @@ export default function Reports() {
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState("last-30");
+  
+  // Handle time range change
+  const handleTimeRangeChange = (newValue: string) => {
+    setSelectedTimeRange(newValue);
+    // Invalidate all report queries to force refetch with new time range
+    queryClient.invalidateQueries({ queryKey: ['/api/reports/sales'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/reports/leads'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/reports/conversion'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/reports/performance'] });
+    console.log(`Time range changed to ${newValue}, invalidated all report queries`);
+  };
 
   interface SalesReport {
     monthlyData: Array<{
@@ -75,28 +86,28 @@ export default function Reports() {
     }>;
   }
 
-  // Fetch sales report data
+  // Fetch sales report data with selected time range
   const { data: salesReport, isLoading: isSalesLoading } = useQuery<SalesReport, Error>({
     queryKey: [`/api/reports/sales?timeRange=${selectedTimeRange}`],
-    enabled: true,
+    enabled: true
   });
 
-  // Fetch leads report data
+  // Fetch leads report data with selected time range
   const { data: leadsReport, isLoading: isLeadsLoading } = useQuery<LeadsReport, Error>({
     queryKey: [`/api/reports/leads?timeRange=${selectedTimeRange}`],
-    enabled: true,
+    enabled: true
   });
   
-  // Fetch conversion report data
+  // Fetch conversion report data with selected time range
   const { data: conversionReport, isLoading: isConversionLoading } = useQuery<ConversionReport, Error>({
     queryKey: [`/api/reports/conversion?timeRange=${selectedTimeRange}`],
-    enabled: true,
+    enabled: true
   });
   
-  // Fetch team performance report data
+  // Fetch team performance report data with selected time range
   const { data: teamReport, isLoading: isTeamLoading } = useQuery<TeamReport, Error>({
     queryKey: [`/api/reports/performance?timeRange=${selectedTimeRange}`],
-    enabled: true,
+    enabled: true
   });
 
   // Generate AI insights
@@ -134,7 +145,7 @@ export default function Reports() {
         description="Analyze your business performance with comprehensive reports"
         actions={
           <div className="flex gap-2">
-            <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
+            <Select value={selectedTimeRange} onValueChange={handleTimeRangeChange}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select time range" />
               </SelectTrigger>
