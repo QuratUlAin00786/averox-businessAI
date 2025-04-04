@@ -2,6 +2,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import initDatabase from "../scripts/init-database";
+import { resetAndSeedDatabase } from "../scripts/reset-and-seed-database";
+
+// Check if the --reset-db flag was passed
+const resetDb = process.argv.includes('--reset-db');
 
 const app = express();
 app.use(express.json());
@@ -40,8 +44,14 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize the database with default data
   try {
-    await initDatabase();
-    log('Database initialized successfully');
+    if (resetDb) {
+      log('Starting database reset and seed process...');
+      const result = await resetAndSeedDatabase();
+      log('Reset and seed process result:', result);
+    } else {
+      await initDatabase();
+      log('Database initialized successfully');
+    }
   } catch (error) {
     log('Error initializing database:', error instanceof Error ? error.message : String(error));
   }

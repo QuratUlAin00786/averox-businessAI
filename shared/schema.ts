@@ -275,6 +275,23 @@ export const apiKeys = pgTable("api_keys", {
   ownerId: integer("owner_id").references(() => users.id).notNull(),
 });
 
+// Workflows
+export const workflows = pgTable("workflows", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  entityType: text("entity_type").notNull(), // 'lead', 'contact', 'opportunity', etc.
+  entityFilter: jsonb("entity_filter"), // JSON condition to trigger workflow
+  actions: jsonb("actions").notNull(), // Array of actions to perform
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  updatedBy: integer("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  version: integer("version").default(1),
+  settings: jsonb("settings"), // Configuration options
+});
+
 // Communications
 export const communications = pgTable("communications", {
   id: serial("id").primaryKey(),
@@ -389,6 +406,12 @@ export const insertSocialCampaignSchema = createInsertSchema(socialCampaigns).om
   updatedAt: true,
 });
 
+export const insertWorkflowSchema = createInsertSchema(workflows).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
   id: true,
   createdAt: true,
@@ -450,6 +473,9 @@ export type LeadSource = typeof leadSources.$inferSelect;
 
 export type InsertSocialCampaign = z.infer<typeof insertSocialCampaignSchema>;
 export type SocialCampaign = typeof socialCampaigns.$inferSelect;
+
+export type InsertWorkflow = z.infer<typeof insertWorkflowSchema>;
+export type Workflow = typeof workflows.$inferSelect;
 
 export type InsertCommunication = z.infer<typeof insertCommunicationSchema>;
 export type Communication = typeof communications.$inferSelect;

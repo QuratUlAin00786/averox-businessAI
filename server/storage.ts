@@ -13,7 +13,8 @@ import {
   socialMessages, type SocialMessage, type InsertSocialMessage,
   leadSources, type LeadSource, type InsertLeadSource,
   socialCampaigns, type SocialCampaign, type InsertSocialCampaign,
-  apiKeys, type ApiKey, type InsertApiKey
+  apiKeys, type ApiKey, type InsertApiKey,
+  workflows, type Workflow, type InsertWorkflow
 } from "@shared/schema";
 import { 
   MemStorageSocialMediaIntegrations, 
@@ -233,6 +234,13 @@ export interface IStorage {
   updateApiKey(id: number, apiKey: Partial<InsertApiKey>): Promise<ApiKey | undefined>;
   deleteApiKey(id: number): Promise<boolean>;
   
+  // Workflows
+  getWorkflow(id: number): Promise<Workflow | undefined>;
+  listWorkflows(filter?: Partial<Workflow>): Promise<Workflow[]>;
+  createWorkflow(workflow: InsertWorkflow): Promise<Workflow>;
+  updateWorkflow(id: number, workflow: Partial<InsertWorkflow>): Promise<Workflow | undefined>;
+  deleteWorkflow(id: number): Promise<boolean>;
+
   // Communications Center
   getAllCommunications(filter?: Partial<Communication>): Promise<Communication[]>;
   getCommunication(id: number): Promise<Communication | undefined>;
@@ -262,6 +270,7 @@ export class MemStorage implements IStorage {
   private leadSources: Map<number, LeadSource>;
   private socialCampaigns: Map<number, SocialCampaign>;
   private apiKeys: Map<number, ApiKey>;
+  private workflows: Map<number, Workflow>;
   // Communications map already initialized
   
   // Counter for IDs
@@ -280,6 +289,7 @@ export class MemStorage implements IStorage {
   private leadSourceIdCounter: number;
   private socialCampaignIdCounter: number;
   private apiKeyIdCounter: number;
+  private workflowIdCounter: number;
   // Communication ID counter already initialized
 
   constructor() {
@@ -304,6 +314,7 @@ export class MemStorage implements IStorage {
     this.leadSources = new Map();
     this.socialCampaigns = new Map();
     this.apiKeys = new Map();
+    this.workflows = new Map();
     // Communications map already initialized in the mixin
     
     // Initialize ID counters
@@ -322,6 +333,7 @@ export class MemStorage implements IStorage {
     this.leadSourceIdCounter = 1;
     this.socialCampaignIdCounter = 1;
     this.apiKeyIdCounter = 1;
+    this.workflowIdCounter = 1;
     // Communication ID counter already initialized in the mixin
     
     // Create default data
@@ -1884,6 +1896,71 @@ export class MemStorage implements IStorage {
     
     this.users.set(userId, updatedUser);
     return updatedUser;
+  }
+
+  // Workflow Methods
+  async getWorkflow(id: number): Promise<Workflow | undefined> {
+    return this.workflows.get(id);
+  }
+
+  async listWorkflows(filter?: Partial<Workflow>): Promise<Workflow[]> {
+    let workflows = Array.from(this.workflows.values());
+    
+    if (filter) {
+      workflows = workflows.filter(workflow => {
+        for (const [key, value] of Object.entries(filter)) {
+          if (workflow[key as keyof Workflow] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    
+    return workflows;
+  }
+
+  async createWorkflow(insertWorkflow: InsertWorkflow): Promise<Workflow> {
+    const id = this.workflowIdCounter++;
+    const createdAt = new Date();
+    
+    const workflow: Workflow = { 
+      ...insertWorkflow,
+      id,
+      createdAt,
+      name: insertWorkflow.name,
+      description: insertWorkflow.description || null,
+      status: insertWorkflow.status || "Draft",
+      steps: insertWorkflow.steps || [],
+      triggerType: insertWorkflow.triggerType || null,
+      triggerConfig: insertWorkflow.triggerConfig || null,
+      ownerId: insertWorkflow.ownerId || null,
+      lastExecuted: null,
+      isActive: insertWorkflow.isActive === undefined ? true : insertWorkflow.isActive,
+      isTemplate: insertWorkflow.isTemplate === undefined ? false : insertWorkflow.isTemplate
+    };
+    
+    this.workflows.set(id, workflow);
+    return workflow;
+  }
+
+  async updateWorkflow(id: number, workflowData: Partial<InsertWorkflow>): Promise<Workflow | undefined> {
+    const existingWorkflow = this.workflows.get(id);
+    if (!existingWorkflow) {
+      return undefined;
+    }
+    
+    const updatedWorkflow = {
+      ...existingWorkflow,
+      ...workflowData
+    };
+    
+    this.workflows.set(id, updatedWorkflow);
+    return updatedWorkflow;
+  }
+
+  async deleteWorkflow(id: number): Promise<boolean> {
+    return this.workflows.delete(id);
   }
 }
 

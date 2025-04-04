@@ -614,7 +614,6 @@ async function seedSocialMessages() {
 }
 
 // This function has been commented out since there is no workflows table in the schema yet
-/* 
 async function seedWorkflows() {
   console.log('Seeding workflows...');
   
@@ -804,8 +803,8 @@ async function seedWorkflows() {
     }
   ];
   
-  /* 
   // This section is commented out because the workflows table doesn't exist in the schema yet
+  /*
   for (const workflowData of workflowsData) {
     await db.insert(workflows).values({
       ...workflowData,
@@ -823,8 +822,10 @@ async function seedWorkflows() {
     });
   }
   
-  // console.log(`Successfully seeded ${workflowsData.length} workflows`);
+  console.log(`Successfully seeded ${workflowsData.length} workflows`);
   */
+  
+  console.log('Skipping workflow seeding as the table does not exist yet');
 }
 
 async function seedApiKeys() {
@@ -884,7 +885,7 @@ export async function resetAndSeedDatabase() {
     await seedLeadSources();
     await seedSocialCampaigns();
     await seedSocialMessages();
-    // Removed seedWorkflows() call as the workflows table doesn't exist yet
+    await seedWorkflows(); // Now uncommented to enable workflow seeding
     await seedApiKeys();
     
     console.log('Database reset and seed completed successfully!');
