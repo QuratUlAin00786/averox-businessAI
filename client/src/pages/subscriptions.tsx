@@ -45,7 +45,7 @@ export default function SubscriptionsPage() {
       } else {
         throw new Error("No client secret returned");
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error creating subscription",
         description: error.message || "Something went wrong. Please try again.",
@@ -112,7 +112,7 @@ export default function SubscriptionsPage() {
                     </div>
                     
                     <ul className="space-y-2 mb-6">
-                      {getFeatures(pkg).map((feature, index) => (
+                      {getFeatures(pkg).map((feature: string, index: number) => (
                         <li key={index} className="flex items-start">
                           <Check className="h-5 w-5 text-primary shrink-0 mr-2" />
                           <span>{feature}</span>
