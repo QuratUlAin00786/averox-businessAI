@@ -32,26 +32,25 @@ export function LeadsStatCard({ value, change }: LeadsStatCardProps) {
         variant="ghost"
       >
         <div className="p-5">
-          {/* Responsive layout that works well on all devices */}
-          <div className="flex flex-col sm:flex-row sm:items-center">
+          <div className="flex items-center">
             {/* Icon container */}
-            <div className="flex-shrink-0 mb-3 sm:mb-0">
-              <div className={cn("flex items-center justify-center w-16 h-16 sm:w-14 sm:h-14 rounded-md mx-auto sm:mx-0", bgColorClass)}>
-                <UserPlusIcon className={cn("w-10 h-10 sm:w-8 sm:h-8", textColorClass)} />
+            <div className="flex-shrink-0">
+              <div className={cn("flex items-center justify-center w-12 h-12 rounded-md", bgColorClass)}>
+                <UserPlusIcon className={cn("w-6 h-6", textColorClass)} />
               </div>
             </div>
             
             {/* Content container */}
-            <div className="flex-1 w-full sm:w-0 sm:ml-5 text-center sm:text-left">
+            <div className="flex-1 ml-5">
               <dl>
-                <dt className="text-xl sm:text-sm font-medium text-neutral-500">New Leads</dt>
-                <dd className="mt-1">
-                  <div className="text-3xl sm:text-lg font-semibold text-neutral-700">{value}</div>
-                  <div className="flex flex-wrap items-baseline justify-center sm:justify-start mt-2">
-                    <div className={cn("text-xl sm:text-sm font-semibold", trendClasses[change.trend])}>
+                <dt className="text-sm font-medium text-neutral-500">New Leads</dt>
+                <dd>
+                  <div className="text-lg font-semibold text-neutral-700">{value}</div>
+                  <div className="flex items-baseline mt-1">
+                    <div className={cn("text-sm font-semibold", trendClasses[change.trend])}>
                       {change.value}
                     </div>
-                    <div className="ml-1 text-lg sm:text-xs text-neutral-500">{change.text}</div>
+                    <div className="ml-1 text-xs text-neutral-500">{change.text}</div>
                   </div>
                 </dd>
               </dl>
