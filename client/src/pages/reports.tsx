@@ -95,7 +95,7 @@ export default function Reports() {
   
   // Fetch team performance report data
   const { data: teamReport, isLoading: isTeamLoading } = useQuery<TeamReport, Error>({
-    queryKey: [`/api/reports/team-performance?timeRange=${selectedTimeRange}`],
+    queryKey: [`/api/reports/performance?timeRange=${selectedTimeRange}`],
     enabled: true,
   });
 
@@ -268,14 +268,22 @@ export default function Reports() {
                       // Team performance
                       csvRows.push(["Team Performance"]);
                       csvRows.push(["Team Member", "Deals", "Revenue", "Conversion Rate"]);
-                      teamReport.teamMembers.forEach(member => {
-                        csvRows.push([
-                          member.name,
-                          member.deals,
-                          member.revenue,
-                          `${member.conversion}%`
-                        ]);
-                      });
+                      
+                      // Check if teamMembers array exists before iterating
+                      if (teamReport.teamMembers && Array.isArray(teamReport.teamMembers)) {
+                        teamReport.teamMembers.forEach(member => {
+                          // Make sure all values exist and handle potential nulls
+                          csvRows.push([
+                            member.name || 'Unknown',
+                            member.deals || 0,
+                            member.revenue || 0,
+                            `${member.conversion || 0}%`
+                          ]);
+                        });
+                      } else {
+                        // Add fallback row to prevent empty CSV
+                        csvRows.push(["No team members data available", "", "", ""]);
+                      }
                       break;
                   }
                   

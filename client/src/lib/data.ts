@@ -204,9 +204,10 @@ export async function getRecentActivities(): Promise<DashboardActivity[]> {
       
       // Transform the activities for dashboard display
       return activities.map(activity => {
-        // Get relative time
-        const createdAt = new Date(activity.createdAt);
-        const timeString = getRelativeTimeString(createdAt);
+        // Get relative time - handle null case safely
+        // Convert the timestamp to a string no matter what
+        const createdAtDate = activity.createdAt ? new Date(activity.createdAt) : new Date();
+        const timeString = getRelativeTimeString(createdAtDate);
         
         // Create user info (would come from a users endpoint in a real app)
         const userInfo = {
@@ -215,11 +216,19 @@ export async function getRecentActivities(): Promise<DashboardActivity[]> {
           initials: 'SU'
         };
         
+        // Create a properly typed DashboardActivity object by converting Date to string
         return {
-          ...activity,
+          id: activity.id,
+          action: activity.action || '',
+          detail: activity.detail || undefined,
+          relatedToType: activity.relatedToType || undefined,
+          relatedToId: activity.relatedToId || undefined,
+          // Convert Date to ISO string to match the DashboardActivity interface
+          createdAt: activity.createdAt ? new Date(activity.createdAt).toISOString() : undefined,
+          icon: activity.icon || undefined,
           time: timeString,
           user: userInfo
-        } as DashboardActivity;
+        };
       }).slice(0, 5); // Only take the 5 most recent
       
     } catch (secondError) {
