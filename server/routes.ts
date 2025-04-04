@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword } from "./auth";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -105,6 +105,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
       res.json(user);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  app.patch('/api/users/:id', async (req: Request, res: Response) => {
+    try {
+      // Check if the user is authenticated and has proper permissions
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      // Only allow users to update their own profile or admins to update any profile
+      if (req.user.id !== id && req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Permission denied" });
+      }
+      
+      // Validate the request body using a schema
+      const userData = insertUserSchema.partial().parse(req.body);
+      
+      // Prevent changing the role for security
+      if (userData.role && req.user.role !== 'Admin') {
+        delete userData.role;
+      }
+      
+      const updatedUser = await storage.updateUser(id, userData);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Don't send password back to client
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  app.patch('/api/users/:id/password', async (req: Request, res: Response) => {
+    try {
+      // Check if the user is authenticated
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      // Only allow users to update their own password or admins to update any password
+      if (req.user.id !== id && req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "Permission denied" });
+      }
+      
+      // Require newPassword in the body
+      if (!req.body.newPassword) {
+        return res.status(400).json({ error: "New password is required" });
+      }
+      
+      // Hash the password
+      const password = await hashPassword(req.body.newPassword);
+      
+      const updatedUser = await storage.updateUser(id, { password });
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json({ success: true, message: "Password updated successfully" });
     } catch (error) {
       handleError(res, error);
     }

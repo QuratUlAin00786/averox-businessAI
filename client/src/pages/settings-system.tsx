@@ -1,0 +1,281 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { 
+  ArrowLeft, 
+  BellRing, 
+  Languages, 
+  MailCheck, 
+  Save, 
+  Shield, 
+  Smartphone 
+} from "lucide-react";
+import { Link } from "wouter";
+
+export default function SettingsSystem() {
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    language: "english",
+    timezone: "utc-5",
+    dateFormat: "mm/dd/yyyy",
+    emailNotifications: true,
+    smsNotifications: false,
+    desktopNotifications: true,
+    twoFactorAuth: false,
+    dataExport: false,
+    activityLogging: true,
+  });
+
+  const handleSwitchChange = (field: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: !prev[field as keyof typeof prev]
+    }));
+  };
+
+  const handleSelectChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // In a real app, this would save to the backend
+    toast({
+      title: "Settings Saved",
+      description: "Your system settings have been updated successfully.",
+    });
+  };
+
+  return (
+    <div className="py-6">
+      <div className="px-4 mx-auto max-w-4xl sm:px-6 md:px-8">
+        <div className="flex flex-col space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center space-x-2">
+              <Link href="/settings">
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
+                System Settings
+              </h2>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Languages className="mr-2 h-5 w-5" />
+                    Regional Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="language">Language</Label>
+                        <Select 
+                          value={formData.language} 
+                          onValueChange={(value) => handleSelectChange("language", value)}
+                        >
+                          <SelectTrigger id="language">
+                            <SelectValue placeholder="Select language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="english">English</SelectItem>
+                            <SelectItem value="spanish">Spanish</SelectItem>
+                            <SelectItem value="french">French</SelectItem>
+                            <SelectItem value="german">German</SelectItem>
+                            <SelectItem value="chinese">Chinese</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="timezone">Time Zone</Label>
+                        <Select 
+                          value={formData.timezone} 
+                          onValueChange={(value) => handleSelectChange("timezone", value)}
+                        >
+                          <SelectTrigger id="timezone">
+                            <SelectValue placeholder="Select timezone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="utc-8">UTC-8 Pacific Time</SelectItem>
+                            <SelectItem value="utc-7">UTC-7 Mountain Time</SelectItem>
+                            <SelectItem value="utc-6">UTC-6 Central Time</SelectItem>
+                            <SelectItem value="utc-5">UTC-5 Eastern Time</SelectItem>
+                            <SelectItem value="utc+0">UTC+0 Greenwich Mean Time</SelectItem>
+                            <SelectItem value="utc+1">UTC+1 Central European Time</SelectItem>
+                            <SelectItem value="utc+8">UTC+8 China Standard Time</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="dateFormat">Date Format</Label>
+                        <Select 
+                          value={formData.dateFormat} 
+                          onValueChange={(value) => handleSelectChange("dateFormat", value)}
+                        >
+                          <SelectTrigger id="dateFormat">
+                            <SelectValue placeholder="Select date format" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mm/dd/yyyy">MM/DD/YYYY</SelectItem>
+                            <SelectItem value="dd/mm/yyyy">DD/MM/YYYY</SelectItem>
+                            <SelectItem value="yyyy-mm-dd">YYYY-MM-DD</SelectItem>
+                            <SelectItem value="dd.mm.yyyy">DD.MM.YYYY</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <BellRing className="mr-2 h-5 w-5" />
+                    Notification Preferences
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="emailNotifications">Email Notifications</Label>
+                        <div className="text-sm text-muted-foreground">
+                          Receive email updates about your account activity
+                        </div>
+                      </div>
+                      <Switch
+                        id="emailNotifications"
+                        checked={formData.emailNotifications}
+                        onCheckedChange={() => handleSwitchChange("emailNotifications")}
+                      />
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="smsNotifications">SMS Notifications</Label>
+                        <div className="text-sm text-muted-foreground">
+                          Receive text messages for important alerts
+                        </div>
+                      </div>
+                      <Switch
+                        id="smsNotifications"
+                        checked={formData.smsNotifications}
+                        onCheckedChange={() => handleSwitchChange("smsNotifications")}
+                      />
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="desktopNotifications">Desktop Notifications</Label>
+                        <div className="text-sm text-muted-foreground">
+                          Receive notifications in your browser
+                        </div>
+                      </div>
+                      <Switch
+                        id="desktopNotifications"
+                        checked={formData.desktopNotifications}
+                        onCheckedChange={() => handleSwitchChange("desktopNotifications")}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Shield className="mr-2 h-5 w-5" />
+                    Security & Privacy
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="twoFactorAuth">Two-Factor Authentication</Label>
+                        <div className="text-sm text-muted-foreground">
+                          Add an extra layer of security to your account
+                        </div>
+                      </div>
+                      <Switch
+                        id="twoFactorAuth"
+                        checked={formData.twoFactorAuth}
+                        onCheckedChange={() => handleSwitchChange("twoFactorAuth")}
+                      />
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="dataExport">Data Export</Label>
+                        <div className="text-sm text-muted-foreground">
+                          Allow exporting your data in various formats
+                        </div>
+                      </div>
+                      <Switch
+                        id="dataExport"
+                        checked={formData.dataExport}
+                        onCheckedChange={() => handleSwitchChange("dataExport")}
+                      />
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="activityLogging">Activity Logging</Label>
+                        <div className="text-sm text-muted-foreground">
+                          Keep a record of your actions for security purposes
+                        </div>
+                      </div>
+                      <Switch
+                        id="activityLogging"
+                        checked={formData.activityLogging}
+                        onCheckedChange={() => handleSwitchChange("activityLogging")}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Button type="submit" className="w-full md:w-auto md:ml-auto">
+                <Save className="mr-2 h-4 w-4" />
+                Save Settings
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}

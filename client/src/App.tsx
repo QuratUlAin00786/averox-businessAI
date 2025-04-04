@@ -15,6 +15,8 @@ import Calendar from "@/pages/calendar";
 import Tasks from "@/pages/tasks";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import SettingsProfile from "@/pages/settings-profile";
+import SettingsSystem from "@/pages/settings-system";
 import Intelligence from "@/pages/intelligence";
 import Workflows from "@/pages/workflows";
 import Subscriptions from "@/pages/subscriptions";
@@ -103,6 +105,18 @@ function Router() {
       <ProtectedRoute path="/settings" component={() => (
         <Layout>
           <Settings />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/settings/profile" component={() => (
+        <Layout>
+          <SettingsProfile />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/settings/system" component={() => (
+        <Layout>
+          <SettingsSystem />
         </Layout>
       )} />
       
