@@ -750,7 +750,7 @@ export function VisualWorkflowEditor({ isOpen, onClose, workflow, isNew = false,
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto pb-0">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             {isNew ? "Create New Workflow" : `Edit Workflow: ${workflow?.name || ''}`}
@@ -793,7 +793,7 @@ export function VisualWorkflowEditor({ isOpen, onClose, workflow, isNew = false,
           </div>
           
           {/* Visual Editor Canvas */}
-          <div className="relative border rounded-md bg-slate-50 h-[600px] overflow-auto">
+          <div className="relative border rounded-md bg-slate-50 h-[500px] overflow-auto">
             {/* Action Palette */}
             <div className="absolute left-4 top-4 w-60 z-10 bg-white rounded-md border shadow-sm">
               <div className="p-3 border-b">
@@ -897,7 +897,7 @@ export function VisualWorkflowEditor({ isOpen, onClose, workflow, isNew = false,
           </div>
         </div>
         
-        <DialogFooter className="flex items-center justify-between">
+        <DialogFooter className="flex items-center justify-between mt-4 sticky bottom-0 bg-background px-4 py-3 border-t z-50">
           <div className="flex items-center gap-2">
             <Switch id="activate" />
             <Label htmlFor="activate">Activate workflow after saving</Label>
