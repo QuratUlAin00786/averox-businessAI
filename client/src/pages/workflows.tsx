@@ -14,8 +14,14 @@ import { Switch } from "@/components/ui/switch";
 import { 
   ArrowRight, Plus, PlayCircle, PauseCircle, Clock, CheckCircle, AlertCircle, 
   RotateCcw, Settings, Edit2, Trash2, Copy, Zap, Workflow, Mail, Bell, Calendar,
-  MessageSquare, RefreshCcw, User
+  MessageSquare, RefreshCcw, User, FileText, Layout
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { WorkflowEditor } from "@/components/workflows/workflow-editor";
 import { VisualWorkflowEditor } from "@/components/workflows/visual-workflow-editor";
 import { PageHeader } from "@/components/ui/page-header";
@@ -580,16 +586,22 @@ export default function Workflows() {
   const [activeTab, setActiveTab] = useState("active");
   const [selectedWorkflow, setSelectedWorkflow] = useState<number | null>(null);
   const [isWorkflowDetailOpen, setIsWorkflowDetailOpen] = useState(false);
+  const [isVisualWorkflowDetailOpen, setIsVisualWorkflowDetailOpen] = useState(false);
   const [showNewWorkflowModal, setShowNewWorkflowModal] = useState(false);
   const [activeWorkflowsList, setActiveWorkflowsList] = useState(activeWorkflows);
   const [expandedRunDetails, setExpandedRunDetails] = useState<number | null>(null);
 
-  const openWorkflowDetail = (id: number) => {
-    // This function is used for regular workflows, not templates
-    // Templates use a different click handler in the template cards
-    console.log("Opening workflow detail for ID:", id);
+  const openWorkflowDetail = (id: number, editorType: 'text' | 'visual' = 'text') => {
+    // This function is used for both regular workflows and templates
+    console.log("Opening workflow detail for ID:", id, "using editor type:", editorType);
     setSelectedWorkflow(id);
-    setIsWorkflowDetailOpen(true);
+    if (editorType === 'text') {
+      setIsWorkflowDetailOpen(true);
+      setIsVisualWorkflowDetailOpen(false);
+    } else {
+      setIsVisualWorkflowDetailOpen(true);
+      setIsWorkflowDetailOpen(false);
+    }
   };
   
   const toggleWorkflowStatus = (id: number) => {
@@ -707,14 +719,30 @@ export default function Workflows() {
                     <TableCell>{workflow.runs}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openWorkflowDetail(workflow.id)}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Edit2 className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openWorkflowDetail(workflow.id, 'text')}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              <span>Text Editor</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openWorkflowDetail(workflow.id, 'visual')}>
+                              <Layout className="h-4 w-4 mr-2" />
+                              <span>Visual Editor</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        
+                        <Button variant="ghost" size="icon" onClick={() => openWorkflowDetail(workflow.id, 'text')}>
                           <Settings className="h-4 w-4" />
                           <span className="sr-only">Settings</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => openWorkflowDetail(workflow.id)}>
-                          <Edit2 className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
+                        
                         {workflow.status === "active" ? (
                           <Button variant="ghost" size="icon" onClick={() => toggleWorkflowStatus(workflow.id)}>
                             <PauseCircle className="h-4 w-4" />
@@ -764,25 +792,41 @@ export default function Workflows() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      console.log("Opening template preview:", template);
-                      console.log("Template has nodes:", !!template.nodes);
-                      console.log("Template has connections:", !!template.connections);
-                      if (template.nodes) console.log("Nodes count:", template.nodes.length);
-                      if (template.connections) console.log("Connections count:", template.connections.length);
-                      
-                      // Use the exact template object rather than searching by ID
-                      setSelectedWorkflow(template.id);
-                      // Store the full template data directly
-                      window.currentTemplate = template; 
-                      setIsWorkflowDetailOpen(true);
-                    }}
-                  >
-                    Preview
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        console.log("Opening template preview (text editor):", template);
+                        // Use the exact template object rather than searching by ID
+                        setSelectedWorkflow(template.id);
+                        // Store the full template data directly
+                        window.currentTemplate = template; 
+                        openWorkflowDetail(template.id, 'text');
+                      }}
+                    >
+                      Text Editor
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        console.log("Opening template preview (visual editor):", template);
+                        console.log("Template has nodes:", !!template.nodes);
+                        console.log("Template has connections:", !!template.connections);
+                        if (template.nodes) console.log("Nodes count:", template.nodes.length);
+                        if (template.connections) console.log("Connections count:", template.connections.length);
+                        
+                        // Use the exact template object rather than searching by ID
+                        setSelectedWorkflow(template.id);
+                        // Store the full template data directly
+                        window.currentTemplate = template; 
+                        openWorkflowDetail(template.id, 'visual');
+                      }}
+                    >
+                      Visual Editor
+                    </Button>
+                  </div>
                   <Button 
                     className="flex items-center gap-1"
                     onClick={() => setShowNewWorkflowModal(true)}
@@ -1022,9 +1066,22 @@ export default function Workflows() {
         </CardContent>
       </Card>
       
-      {/* Workflow Editor Modal */}
-      {/* Workflow Detail Modal */}
-      {isWorkflowDetailOpen && selectedWorkflow !== null && (() => {
+      {/* Workflow Editor Modals */}
+      {/* Text-based Workflow Editor (preserved from original) */}
+      <WorkflowEditor
+        isOpen={isWorkflowDetailOpen}
+        onClose={() => setIsWorkflowDetailOpen(false)}
+        workflow={selectedWorkflow !== null ? (
+          selectedWorkflow <= 10 
+            ? workflowTemplates.find(t => t.id === selectedWorkflow) 
+            : activeWorkflowsList.find(w => w.id === selectedWorkflow)
+        ) : null}
+        isNew={false}
+        isTemplate={!!selectedWorkflow && selectedWorkflow <= 10}
+      />
+      
+      {/* Visual Workflow Detail Modal */}
+      {isVisualWorkflowDetailOpen && selectedWorkflow !== null && (() => {
         // Debug wrapper to verify template data is passed correctly
         const templateData = selectedWorkflow !== null ? (
           selectedWorkflow <= 10 
@@ -1046,10 +1103,13 @@ export default function Workflows() {
           console.log("DEBUG - First connection:", templateData.connections[0]);
         }
         
+        // Store the template data for direct access by visual editor
+        window.currentTemplate = templateData;
+        
         return (
           <VisualWorkflowEditor
             isOpen={true}
-            onClose={() => setIsWorkflowDetailOpen(false)}
+            onClose={() => setIsVisualWorkflowDetailOpen(false)}
             workflow={templateData}
             isNew={false}
             isTemplate={!!selectedWorkflow && selectedWorkflow <= 10}
