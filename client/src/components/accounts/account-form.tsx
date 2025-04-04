@@ -184,8 +184,8 @@ export function AccountForm({
                   <FormItem>
                     <FormLabel>Account Owner</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(Number(value) || null)}
-                      value={field.value ? String(field.value) : ""}
+                      onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
+                      value={field.value ? String(field.value) : "none"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -193,7 +193,7 @@ export function AccountForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {users.map((user) => (
                           <SelectItem key={user.id} value={user.id.toString()}>
                             {user.firstName} {user.lastName}
