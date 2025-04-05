@@ -4041,11 +4041,19 @@ export class DatabaseStorage implements IStorage {
 
   async createInventoryTransaction(transaction: InsertInventoryTransaction): Promise<InventoryTransaction> {
     try {
-      const [newTransaction] = await db.insert(inventoryTransactions).values(transaction).returning();
+      // Ensure quantity is a string as required by the database schema
+      const transactionToInsert = {
+        ...transaction,
+        quantity: typeof transaction.quantity === 'number' 
+          ? transaction.quantity.toString() 
+          : transaction.quantity
+      };
+      
+      const [newTransaction] = await db.insert(inventoryTransactions).values(transactionToInsert).returning();
       return newTransaction;
     } catch (error) {
       console.error('Database error in createInventoryTransaction:', error);
-      throw new Error(`Failed to create inventory transaction: ${error.message}`);
+      throw new Error(`Failed to create inventory transaction: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -4190,17 +4198,19 @@ export class DatabaseStorage implements IStorage {
         .returning();
       
       // Handle inventory adjustment if quantity changed
-      if (item.quantity !== undefined && originalItem.productId && originalItem.quantity !== item.quantity) {
+      if (item.quantity !== undefined && originalItem.productId) {
         const invoice = await this.getInvoice(originalItem.invoiceId);
         if (invoice) {
-          // Calculate the quantity difference
-          const quantityDiff = item.quantity - originalItem.quantity;
+          // Calculate the quantity difference - convert string quantities to numbers for calculation
+          const origQty = parseFloat(originalItem.quantity);
+          const newQty = typeof item.quantity === 'number' ? item.quantity : parseFloat(item.quantity);
+          const quantityDiff = newQty - origQty;
           
           // Create adjustment transaction if necessary
           if (quantityDiff !== 0) {
             await this.createInventoryTransaction({
               productId: originalItem.productId,
-              quantity: Math.abs(quantityDiff),
+              quantity: Math.abs(quantityDiff).toString(),
               type: quantityDiff < 0 ? 'Return In' : 'Sale',
               date: new Date(),
               referenceId: `INV-${originalItem.invoiceId}-ADJUST`,
@@ -4232,7 +4242,7 @@ export class DatabaseStorage implements IStorage {
         if (invoice) {
           await this.createInventoryTransaction({
             productId: item.productId,
-            quantity: item.quantity,
+            quantity: item.quantity, // quantity is already a string in the database
             type: 'Return In',
             date: new Date(),
             referenceId: `INV-${item.invoiceId}-DEL`,
@@ -4396,15 +4406,17 @@ export class DatabaseStorage implements IStorage {
           ));
         
         if (item) {
-          // Update received quantity
-          const newReceivedQuantity = (item.receivedQuantity || 0) + received.quantity;
+          // Convert quantity values for calculation - properly handle string to number conversions
+          const currentReceivedQty = item.receivedQuantity ? parseFloat(item.receivedQuantity) : 0;
+          const newReceivedQuantity = (currentReceivedQty + received.quantity).toString();
+          
           await this.updatePurchaseOrderItem(item.id, { receivedQuantity: newReceivedQuantity });
           
           // Create inventory transaction
           if (item.productId) {
             await this.createInventoryTransaction({
               productId: item.productId,
-              quantity: received.quantity,
+              quantity: received.quantity.toString(), // Ensure quantity is a string
               type: 'Purchase',
               date: new Date(),
               referenceId: `PO-${orderId}`,
@@ -4416,8 +4428,16 @@ export class DatabaseStorage implements IStorage {
       
       // Update order status if all items received
       const allItems = await this.listPurchaseOrderItems(orderId);
-      const allReceived = allItems.every(item => (item.receivedQuantity || 0) >= item.quantity);
-      const partiallyReceived = allItems.some(item => (item.receivedQuantity || 0) > 0);
+      const allReceived = allItems.every(item => {
+        const receivedQty = item.receivedQuantity ? parseFloat(item.receivedQuantity) : 0;
+        const orderQty = parseFloat(item.quantity);
+        return receivedQty >= orderQty;
+      });
+      
+      const partiallyReceived = allItems.some(item => {
+        const receivedQty = item.receivedQuantity ? parseFloat(item.receivedQuantity) : 0;
+        return receivedQty > 0;
+      });
       
       let newStatus: 'Received' | 'Partially Received' | undefined;
       
