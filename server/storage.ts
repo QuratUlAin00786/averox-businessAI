@@ -24,7 +24,7 @@ import {
   addCommunicationsToMemStorage,
   addCommunicationsToDatabase
 } from './communication-integration';
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql, gte } from "drizzle-orm";
 import { db } from './db';
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -2439,18 +2439,131 @@ export class DatabaseStorage implements IStorage {
 
   // Dashboard Methods
   async getDashboardStats(): Promise<{ newLeads: number; conversionRate: string; revenue: string; openDeals: number; }> {
-    // Implement with database queries
-    return {
-      newLeads: 0,
-      conversionRate: '0%',
-      revenue: '$0',
-      openDeals: 0
-    };
+    try {
+      // Get new leads from the last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const newLeadsResult = await db.select({ count: sql`count(*)` })
+        .from(leads)
+        .where(
+          and(
+            eq(leads.status, 'New'),
+            gte(leads.createdAt, thirtyDaysAgo)
+          )
+        );
+      
+      const newLeads = Number(newLeadsResult[0]?.count || 0);
+      
+      // Get all leads and count converted ones
+      const allLeadsResult = await db.select({ count: sql`count(*)` }).from(leads);
+      const convertedLeadsResult = await db.select({ count: sql`count(*)` })
+        .from(leads)
+        .where(eq(leads.isConverted, true));
+      
+      const totalLeads = Number(allLeadsResult[0]?.count || 0);
+      const convertedLeads = Number(convertedLeadsResult[0]?.count || 0);
+      
+      const conversionRate = totalLeads > 0
+        ? ((convertedLeads / totalLeads) * 100).toFixed(1) + '%'
+        : '0%';
+      
+      // Calculate revenue from won opportunities
+      const revenueResult = await db.select({
+        total: sql`sum(cast(amount as decimal))` 
+      })
+      .from(opportunities)
+      .where(eq(opportunities.isWon, true));
+      
+      const totalRevenue = Number(revenueResult[0]?.total || 0);
+      
+      const revenue = totalRevenue.toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      });
+      
+      // Count open deals
+      const openDealsResult = await db.select({ count: sql`count(*)` })
+        .from(opportunities)
+        .where(eq(opportunities.isClosed, false));
+      
+      const openDeals = Number(openDealsResult[0]?.count || 0);
+      
+      return {
+        newLeads,
+        conversionRate,
+        revenue,
+        openDeals
+      };
+    } catch (error) {
+      console.error('Error getting dashboard stats:', error);
+      return {
+        newLeads: 0,
+        conversionRate: '0%',
+        revenue: '$0',
+        openDeals: 0
+      };
+    }
   }
 
   async getSalesPipeline(): Promise<{ stages: { name: string; value: string; percentage: number; }[]; }> {
-    // Implement with database queries
-    return { stages: [] };
+    try {
+      // Define the pipeline stages
+      const stageNames = [
+        "Lead Generation",
+        "Qualification",
+        "Proposal",
+        "Negotiation",
+        "Closing"
+      ];
+      
+      // Get total opportunity amount
+      const totalAmountResult = await db.select({
+        total: sql`sum(cast(amount as decimal))`
+      })
+      .from(opportunities)
+      .where(eq(opportunities.isClosed, false));
+      
+      const totalAmount = Number(totalAmountResult[0]?.total || 0);
+      
+      // Calculate amount for each stage
+      const stages = [];
+      for (const stageName of stageNames) {
+        const stageAmountResult = await db.select({
+          total: sql`sum(cast(amount as decimal))`
+        })
+        .from(opportunities)
+        .where(
+          and(
+            eq(opportunities.stage, stageName),
+            eq(opportunities.isClosed, false)
+          )
+        );
+        
+        const stageAmount = Number(stageAmountResult[0]?.total || 0);
+        const percentage = totalAmount > 0 ? Math.round((stageAmount / totalAmount) * 100) : 0;
+        
+        const formattedAmount = stageAmount.toLocaleString('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
+        
+        stages.push({
+          name: stageName,
+          value: formattedAmount,
+          percentage
+        });
+      }
+      
+      return { stages };
+    } catch (error) {
+      console.error('Error getting sales pipeline:', error);
+      return { stages: [] };
+    }
   }
 
   // Report Methods
