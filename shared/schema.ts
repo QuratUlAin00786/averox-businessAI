@@ -68,6 +68,7 @@ export const accounts = pgTable("accounts", {
   industry: text("industry"),
   website: text("website"),
   phone: text("phone"),
+  email: text("email"),
   billingAddress: text("billing_address"),
   billingCity: text("billing_city"),
   billingState: text("billing_state"),
@@ -79,6 +80,8 @@ export const accounts = pgTable("accounts", {
   employeeCount: integer("employee_count"),
   notes: text("notes"),
   isActive: boolean("is_active").default(true),
+  type: text("type"), // Added account type field
+  numberOfEmployees: integer("number_of_employees"), // Added for better UI display
 });
 
 // Leads

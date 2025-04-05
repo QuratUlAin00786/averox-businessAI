@@ -5,6 +5,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { AccountList } from "@/components/accounts/account-list";
 import { AccountForm } from "@/components/accounts/account-form";
 import { DeleteAccountDialog } from "@/components/accounts/delete-account-dialog";
+import { AccountDetail } from "@/components/accounts/account-detail";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -141,12 +142,13 @@ export default function Accounts() {
     }
   };
 
-  // Handle viewing account details - to be implemented in the future
+  // Handle viewing account details
+  const [isViewingAccountDetail, setIsViewingAccountDetail] = useState(false);
+  const [accountToView, setAccountToView] = useState<Account | null>(null);
+  
   const handleViewAccount = (account: Account) => {
-    toast({
-      title: "View Account",
-      description: `Viewing details for ${account.name} will be implemented in a future release.`,
-    });
+    setAccountToView(account);
+    setIsViewingAccountDetail(true);
   };
 
   return (
@@ -192,6 +194,16 @@ export default function Accounts() {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleConfirmDelete}
       />
+
+      {/* Account Detail Dialog */}
+      {accountToView && (
+        <AccountDetail
+          account={accountToView}
+          isOpen={isViewingAccountDetail}
+          onClose={() => setIsViewingAccountDetail(false)}
+          onEdit={handleEditAccount}
+        />
+      )}
     </div>
   );
 }

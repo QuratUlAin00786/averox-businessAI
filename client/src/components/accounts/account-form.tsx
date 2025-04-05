@@ -67,6 +67,7 @@ export function AccountForm({
       name: "",
       industry: null,
       phone: null,
+      email: null,
       website: null,
       billingAddress: null,
       billingCity: null,
@@ -88,6 +89,7 @@ export function AccountForm({
           name: account.name,
           industry: account.industry,
           phone: account.phone,
+          email: account.email,
           website: account.website,
           billingAddress: account.billingAddress,
           billingCity: account.billingCity,
@@ -104,6 +106,7 @@ export function AccountForm({
           name: "",
           industry: null,
           phone: null,
+          email: null,
           website: null,
           billingAddress: null,
           billingCity: null,
@@ -216,6 +219,26 @@ export function AccountForm({
                     <FormControl>
                       <Input 
                         placeholder="Phone number" 
+                        {...field} 
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Email */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Email address" 
                         {...field} 
                         value={field.value || ""}
                         onChange={(e) => field.onChange(e.target.value || null)}
