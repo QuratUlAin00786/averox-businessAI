@@ -4061,7 +4061,7 @@ export class DatabaseStorage implements IStorage {
 
   async listInventoryTransactions(filter?: Partial<InventoryTransaction>): Promise<InventoryTransaction[]> {
     try {
-      let query = db.select().from(inventoryTransactions).orderBy(desc(inventoryTransactions.date));
+      let query = db.select().from(inventoryTransactions).orderBy(desc(inventoryTransactions.createdAt));
       
       if (filter) {
         const whereConditions = [];
@@ -4156,7 +4156,7 @@ export class DatabaseStorage implements IStorage {
 
   async listInvoices(filter?: Partial<Invoice>): Promise<Invoice[]> {
     try {
-      let query = db.select().from(invoices).orderBy(invoices.issueDate);
+      let query = db.select().from(invoices).orderBy(desc(invoices.issueDate));
       
       if (filter) {
         const whereConditions = [];
@@ -4343,7 +4343,7 @@ export class DatabaseStorage implements IStorage {
 
   async listPurchaseOrders(filter?: Partial<PurchaseOrder>): Promise<PurchaseOrder[]> {
     try {
-      let query = db.select().from(purchaseOrders).orderBy(purchaseOrders.orderDate);
+      let query = db.select().from(purchaseOrders).orderBy(desc(purchaseOrders.orderDate));
       
       if (filter) {
         const whereConditions = [];
