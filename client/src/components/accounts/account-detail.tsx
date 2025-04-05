@@ -209,41 +209,6 @@ export function AccountDetail({
                   
                   <TabsContent value="communications">
                     <div className="space-y-4">
-                      {/* Direct communication buttons - Only shown when phone is available */}
-                      {account.phone && (
-                        <div className="grid grid-cols-3 gap-2 mb-4">
-                          <Button 
-                            variant="outline" 
-                            className="flex flex-col items-center justify-center p-3 h-auto border-green-600 hover:bg-green-50"
-                            onClick={() => window.open(`tel:${account.phone}`, '_blank')}
-                          >
-                            <Phone className="h-8 w-8 text-green-600 mb-1" />
-                            <span className="text-xs">Call</span>
-                          </Button>
-                          
-                          <Button 
-                            variant="outline" 
-                            className="flex flex-col items-center justify-center p-3 h-auto border-orange-500 hover:bg-orange-50"
-                            onClick={() => window.open(`sms:${account.phone}`, '_blank')}
-                          >
-                            <FaSms className="h-8 w-8 text-orange-500 mb-1" />
-                            <span className="text-xs">SMS</span>
-                          </Button>
-                          
-                          <Button 
-                            variant="outline" 
-                            className="flex flex-col items-center justify-center p-3 h-auto border-green-500 hover:bg-green-50"
-                            onClick={() => {
-                              const cleanPhone = String(account.phone).replace(/\D/g, '');
-                              window.open(`https://wa.me/${cleanPhone}`, '_blank');
-                            }}
-                          >
-                            <FaWhatsapp className="h-8 w-8 text-green-500 mb-1" />
-                            <span className="text-xs">WhatsApp</span>
-                          </Button>
-                        </div>
-                      )}
-                      
                       <CommunicationPanel 
                         contactId={account.id}
                         contactType="customer"
