@@ -41,6 +41,7 @@ const invoiceItemSchema = z.object({
   discountAmount: z.string().optional(),
   discountPercent: z.string().optional(),
   sortOrder: z.number().optional(),
+  lineTotal: z.string().optional(), // Adding lineTotal, will be calculated before submission
 });
 
 const invoiceSchema = z.object({
@@ -119,6 +120,7 @@ export default function InvoiceForm({ invoiceId, onSuccess }: InvoiceFormProps) 
           productId: null,
           discountAmount: "0",
           discountPercent: "0",
+          lineTotal: "0",
           sortOrder: 0,
         },
       ],
@@ -160,7 +162,7 @@ export default function InvoiceForm({ invoiceId, onSuccess }: InvoiceFormProps) 
       let subtotal = 0;
       let taxTotal = 0;
 
-      items.forEach(item => {
+      items.forEach((item, index) => {
         const quantity = parseFloat(item.quantity) || 0;
         const unitPrice = parseFloat(item.unitPrice) || 0;
         const taxRate = parseFloat(item.taxRate || "0") || 0;
@@ -171,6 +173,9 @@ export default function InvoiceForm({ invoiceId, onSuccess }: InvoiceFormProps) 
         const lineDiscount = discountAmount + (lineSubtotal * (discountPercent / 100));
         const lineTotal = lineSubtotal - lineDiscount;
         const lineTax = lineTotal * (taxRate / 100);
+
+        // Update lineTotal field for each item
+        form.setValue(`items.${index}.lineTotal`, lineTotal.toFixed(2));
 
         subtotal += lineTotal;
         taxTotal += lineTax;
@@ -597,6 +602,7 @@ export default function InvoiceForm({ invoiceId, onSuccess }: InvoiceFormProps) 
                 productId: null,
                 discountAmount: "0",
                 discountPercent: "0",
+                lineTotal: "0",
                 sortOrder: fields.length,
               })}
               className="flex items-center gap-1"
