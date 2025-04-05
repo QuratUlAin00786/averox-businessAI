@@ -2629,10 +2629,11 @@ export class MemStorage implements IStorage {
         if (item.productId) {
           await this.createInventoryTransaction({
             productId: item.productId,
-            quantity: received.quantity,
+            quantity: typeof received.quantity === 'number' ? received.quantity.toString() : received.quantity,
             type: 'Purchase',
             date: new Date(),
-            referenceId: `PO-${orderId}`,
+            referenceId: orderId, // Use numeric ID
+            referenceType: 'purchase-order', // Specify the type in referenceType
             notes: `Received from purchase order #${orderId}`
           });
         }
@@ -4083,12 +4084,26 @@ export class DatabaseStorage implements IStorage {
 
   async createInventoryTransaction(transaction: InsertInventoryTransaction): Promise<InventoryTransaction> {
     try {
+      // Extract numeric part from string IDs like "INV-123" if referenceId is a string
+      let processedReferenceId = transaction.referenceId;
+      if (typeof processedReferenceId === 'string') {
+        // Extract numeric part if it's a string like "INV-123"
+        const match = processedReferenceId.match(/\d+/);
+        if (match) {
+          processedReferenceId = parseInt(match[0], 10);
+        } else {
+          // If no numeric part found, set to null
+          processedReferenceId = null;
+        }
+      }
+
       // Ensure quantity is a string as required by the database schema
       const transactionToInsert = {
         ...transaction,
         quantity: typeof transaction.quantity === 'number' 
           ? transaction.quantity.toString() 
-          : transaction.quantity
+          : transaction.quantity,
+        referenceId: processedReferenceId
       };
       
       const [newTransaction] = await db.insert(inventoryTransactions).values(transactionToInsert).returning();
@@ -4248,7 +4263,8 @@ export class DatabaseStorage implements IStorage {
             quantity: item.quantity,
             type: 'Sale',
             date: invoice.date || new Date(),
-            referenceId: `INV-${item.invoiceId}`,
+            referenceId: item.invoiceId, // Just use the numeric ID
+            referenceType: 'invoice', // Specify the type in the referenceType field
             notes: `Sold on invoice #${item.invoiceId}`
           });
         }
@@ -4291,7 +4307,8 @@ export class DatabaseStorage implements IStorage {
               quantity: Math.abs(quantityDiff).toString(),
               type: quantityDiff < 0 ? 'Return' : 'Sale',
               date: new Date(),
-              referenceId: `INV-${originalItem.invoiceId}-ADJUST`,
+              referenceId: originalItem.invoiceId, // Use numeric ID
+              referenceType: 'invoice-adjustment', // Specify the type in referenceType
               notes: `Adjusted quantity on invoice #${originalItem.invoiceId}`
             });
           }
@@ -4323,7 +4340,8 @@ export class DatabaseStorage implements IStorage {
             quantity: item.quantity, // quantity is already a string in the database
             type: 'Return',
             date: new Date(),
-            referenceId: `INV-${item.invoiceId}-DEL`,
+            referenceId: item.invoiceId, // Use numeric ID
+            referenceType: 'invoice-deletion', // Specify the type in referenceType
             notes: `Returned from deleted invoice item #${id}`
           });
         }
@@ -4497,7 +4515,8 @@ export class DatabaseStorage implements IStorage {
               quantity: received.quantity.toString(), // Ensure quantity is a string
               type: 'Purchase',
               date: new Date(),
-              referenceId: `PO-${orderId}`,
+              referenceId: orderId, // Use numeric ID
+              referenceType: 'purchase-order', // Specify the type in referenceType
               notes: `Received from purchase order #${orderId}`
             });
           }
