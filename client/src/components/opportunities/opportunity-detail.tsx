@@ -299,6 +299,7 @@ export function OpportunityDetail({
                   contactId={opportunity.id}
                   contactType="customer"
                   contactName={opportunity.name}
+                  email={account?.website || ""}
                   phone={account?.phone || ""}
                 />
               </TabsContent>
