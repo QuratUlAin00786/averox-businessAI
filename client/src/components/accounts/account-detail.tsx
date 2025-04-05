@@ -43,10 +43,10 @@ export function AccountDetail({
 
   return (
     <Dialog open={isOpen && !!account} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-4xl p-0 overflow-hidden">
         {account ? (
-          <>
-            <DialogHeader className="px-6 py-4 border-b">
+          <div className="flex flex-col h-[80vh]">
+            <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
               <div className="flex items-center justify-between">
                 <DialogTitle className="text-2xl">{account.name}</DialogTitle>
                 <Badge 
@@ -57,8 +57,8 @@ export function AccountDetail({
               </div>
             </DialogHeader>
 
-            <ScrollArea className="flex-1 h-[calc(90vh-12rem)]">
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-sm font-medium text-neutral-500 mb-2">Account Information</h3>
                   <div className="space-y-4">
@@ -187,7 +187,7 @@ export function AccountDetail({
                 </div>
               </div>
 
-              <div className="px-6 mb-6">
+              <div className="mb-6">
                 <Tabs defaultValue="communications" className="mt-6">
                   <TabsList className="mb-4">
                     <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -255,9 +255,9 @@ export function AccountDetail({
                   </TabsContent>
                 </Tabs>
               </div>
-            </ScrollArea>
+            </div>
 
-            <div className="bg-neutral-50 p-4 flex justify-end gap-2 border-t">
+            <div className="bg-neutral-50 p-4 flex justify-end gap-2 border-t flex-shrink-0">
               <Button variant="outline" onClick={onClose}>
                 Close
               </Button>
@@ -265,7 +265,7 @@ export function AccountDetail({
                 <Pencil className="h-4 w-4 mr-2" /> Edit
               </Button>
             </div>
-          </>
+          </div>
         ) : (
           <div className="flex justify-center items-center py-8">
             <RefreshCw className="h-8 w-8 animate-spin text-neutral-400" />
