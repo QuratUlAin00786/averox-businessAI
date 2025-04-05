@@ -14,7 +14,14 @@ import {
   leadSources, type LeadSource, type InsertLeadSource,
   socialCampaigns, type SocialCampaign, type InsertSocialCampaign,
   apiKeys, type ApiKey, type InsertApiKey,
-  workflows, type Workflow, type InsertWorkflow
+  workflows, type Workflow, type InsertWorkflow,
+  productCategories, type ProductCategory, type InsertProductCategory,
+  products, type Product, type InsertProduct,
+  inventoryTransactions, type InventoryTransaction, type InsertInventoryTransaction,
+  invoices, type Invoice, type InsertInvoice,
+  invoiceItems, type InvoiceItem, type InsertInvoiceItem,
+  purchaseOrders, type PurchaseOrder, type InsertPurchaseOrder,
+  purchaseOrderItems, type PurchaseOrderItem, type InsertPurchaseOrderItem
 } from "@shared/schema";
 import { 
   MemStorageSocialMediaIntegrations, 
@@ -241,11 +248,53 @@ export interface IStorage {
   createWorkflow(workflow: InsertWorkflow): Promise<Workflow>;
   updateWorkflow(id: number, workflow: Partial<InsertWorkflow>): Promise<Workflow | undefined>;
   deleteWorkflow(id: number): Promise<boolean>;
-
+  
   // Communications Center
   getAllCommunications(filter?: Partial<Communication>): Promise<Communication[]>;
   getCommunication(id: number): Promise<Communication | undefined>;
   getContactCommunications(contactId: number): Promise<Communication[]>;
+
+  // Product Categories
+  getProductCategory(id: number): Promise<ProductCategory | undefined>;
+  listProductCategories(filter?: Partial<ProductCategory>): Promise<ProductCategory[]>;
+  createProductCategory(category: InsertProductCategory): Promise<ProductCategory>;
+  updateProductCategory(id: number, category: Partial<InsertProductCategory>): Promise<ProductCategory | undefined>;
+  deleteProductCategory(id: number): Promise<boolean>;
+
+  // Products
+  getProduct(id: number): Promise<Product | undefined>;
+  listProducts(filter?: Partial<Product>): Promise<Product[]>;
+  createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
+  deleteProduct(id: number): Promise<boolean>;
+
+  // Inventory Transactions
+  getInventoryTransaction(id: number): Promise<InventoryTransaction | undefined>;
+  listInventoryTransactions(filter?: Partial<InventoryTransaction>): Promise<InventoryTransaction[]>;
+  createInventoryTransaction(transaction: InsertInventoryTransaction): Promise<InventoryTransaction>;
+  getProductInventory(productId: number): Promise<number>; // Returns current inventory level for a product
+
+  // Invoices
+  getInvoice(id: number): Promise<Invoice | undefined>;
+  listInvoices(filter?: Partial<Invoice>): Promise<Invoice[]>;
+  createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined>;
+  deleteInvoice(id: number): Promise<boolean>;
+  getInvoiceItems(invoiceId: number): Promise<InvoiceItem[]>;
+  createInvoiceItem(item: InsertInvoiceItem): Promise<InvoiceItem>;
+  updateInvoiceItem(id: number, item: Partial<InsertInvoiceItem>): Promise<InvoiceItem | undefined>;
+  deleteInvoiceItem(id: number): Promise<boolean>;
+
+  // Purchase Orders
+  getPurchaseOrder(id: number): Promise<PurchaseOrder | undefined>;
+  listPurchaseOrders(filter?: Partial<PurchaseOrder>): Promise<PurchaseOrder[]>;
+  createPurchaseOrder(order: InsertPurchaseOrder): Promise<PurchaseOrder>;
+  updatePurchaseOrder(id: number, order: Partial<InsertPurchaseOrder>): Promise<PurchaseOrder | undefined>;
+  deletePurchaseOrder(id: number): Promise<boolean>;
+  getPurchaseOrderItems(orderId: number): Promise<PurchaseOrderItem[]>;
+  createPurchaseOrderItem(item: InsertPurchaseOrderItem): Promise<PurchaseOrderItem>;
+  updatePurchaseOrderItem(id: number, item: Partial<InsertPurchaseOrderItem>): Promise<PurchaseOrderItem | undefined>;
+  deletePurchaseOrderItem(id: number): Promise<boolean>;
 
 }
 
@@ -274,6 +323,15 @@ export class MemStorage implements IStorage {
   private workflows: Map<number, Workflow>;
   // Communications map already initialized
   
+  // Business accounting maps
+  private productCategories: Map<number, ProductCategory>;
+  private products: Map<number, Product>;
+  private inventoryTransactions: Map<number, InventoryTransaction>;
+  private invoices: Map<number, Invoice>;
+  private invoiceItems: Map<number, InvoiceItem>;
+  private purchaseOrders: Map<number, PurchaseOrder>;
+  private purchaseOrderItems: Map<number, PurchaseOrderItem>;
+  
   // Counter for IDs
   private userIdCounter: number;
   private contactIdCounter: number;
@@ -292,6 +350,15 @@ export class MemStorage implements IStorage {
   private apiKeyIdCounter: number;
   private workflowIdCounter: number;
   // Communication ID counter already initialized
+  
+  // Business accounting ID counters
+  private productCategoryIdCounter: number;
+  private productIdCounter: number;
+  private inventoryTransactionIdCounter: number;
+  private invoiceIdCounter: number;
+  private invoiceItemIdCounter: number;
+  private purchaseOrderIdCounter: number;
+  private purchaseOrderItemIdCounter: number;
 
   constructor() {
     // Initialize session store
@@ -318,6 +385,15 @@ export class MemStorage implements IStorage {
     this.workflows = new Map();
     // Communications map already initialized in the mixin
     
+    // Initialize business accounting maps
+    this.productCategories = new Map();
+    this.products = new Map();
+    this.inventoryTransactions = new Map();
+    this.invoices = new Map();
+    this.invoiceItems = new Map();
+    this.purchaseOrders = new Map();
+    this.purchaseOrderItems = new Map();
+    
     // Initialize ID counters
     this.userIdCounter = 1;
     this.contactIdCounter = 1;
@@ -336,6 +412,15 @@ export class MemStorage implements IStorage {
     this.apiKeyIdCounter = 1;
     this.workflowIdCounter = 1;
     // Communication ID counter already initialized in the mixin
+    
+    // Initialize business accounting ID counters
+    this.productCategoryIdCounter = 1;
+    this.productIdCounter = 1;
+    this.inventoryTransactionIdCounter = 1;
+    this.invoiceIdCounter = 1;
+    this.invoiceItemIdCounter = 1;
+    this.purchaseOrderIdCounter = 1;
+    this.purchaseOrderItemIdCounter = 1;
     
     // Create default data
     this.initializeData();
@@ -1912,6 +1997,626 @@ export class MemStorage implements IStorage {
     return this.workflows.get(id);
   }
 
+  // Product Category Methods
+  async getProductCategory(id: number): Promise<ProductCategory | undefined> {
+    return this.productCategories.get(id);
+  }
+
+  async listProductCategories(filter?: Partial<ProductCategory>): Promise<ProductCategory[]> {
+    let categories = Array.from(this.productCategories.values());
+    
+    if (filter) {
+      categories = categories.filter(category => {
+        for (const [key, value] of Object.entries(filter)) {
+          if (category[key as keyof ProductCategory] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    
+    return categories;
+  }
+
+  async createProductCategory(insertProductCategory: InsertProductCategory): Promise<ProductCategory> {
+    const id = this.productCategoryIdCounter++;
+    const createdAt = new Date();
+    
+    const productCategory: ProductCategory = {
+      ...insertProductCategory,
+      id,
+      createdAt,
+      parentCategoryId: insertProductCategory.parentCategoryId || null,
+      description: insertProductCategory.description || null,
+      isActive: insertProductCategory.isActive === undefined ? true : insertProductCategory.isActive
+    };
+    
+    this.productCategories.set(id, productCategory);
+    return productCategory;
+  }
+
+  async updateProductCategory(id: number, categoryData: Partial<InsertProductCategory>): Promise<ProductCategory | undefined> {
+    const existingCategory = this.productCategories.get(id);
+    if (!existingCategory) {
+      return undefined;
+    }
+    
+    const updatedCategory = {
+      ...existingCategory,
+      ...categoryData
+    };
+    
+    this.productCategories.set(id, updatedCategory);
+    return updatedCategory;
+  }
+
+  async deleteProductCategory(id: number): Promise<boolean> {
+    return this.productCategories.delete(id);
+  }
+
+  // Product Methods
+  async getProduct(id: number): Promise<Product | undefined> {
+    return this.products.get(id);
+  }
+
+  async listProducts(filter?: Partial<Product>): Promise<Product[]> {
+    let products = Array.from(this.products.values());
+    
+    if (filter) {
+      products = products.filter(product => {
+        for (const [key, value] of Object.entries(filter)) {
+          if (product[key as keyof Product] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    
+    return products;
+  }
+
+  async createProduct(insertProduct: InsertProduct): Promise<Product> {
+    const id = this.productIdCounter++;
+    const createdAt = new Date();
+    
+    const product: Product = {
+      ...insertProduct,
+      id,
+      createdAt,
+      categoryId: insertProduct.categoryId || null,
+      description: insertProduct.description || null,
+      sku: insertProduct.sku || null,
+      price: insertProduct.price || null,
+      cost: insertProduct.cost || null,
+      quantity: insertProduct.quantity || 0,
+      imageUrl: insertProduct.imageUrl || null,
+      isActive: insertProduct.isActive === undefined ? true : insertProduct.isActive,
+      createdBy: insertProduct.createdBy || null,
+      updatedBy: insertProduct.updatedBy || null,
+      updatedAt: null
+    };
+    
+    this.products.set(id, product);
+    return product;
+  }
+
+  async updateProduct(id: number, productData: Partial<InsertProduct>): Promise<Product | undefined> {
+    const existingProduct = this.products.get(id);
+    if (!existingProduct) {
+      return undefined;
+    }
+    
+    const updatedProduct = {
+      ...existingProduct,
+      ...productData,
+      updatedAt: new Date()
+    };
+    
+    this.products.set(id, updatedProduct);
+    return updatedProduct;
+  }
+
+  async deleteProduct(id: number): Promise<boolean> {
+    return this.products.delete(id);
+  }
+
+  // Inventory Transaction Methods
+  async getInventoryTransaction(id: number): Promise<InventoryTransaction | undefined> {
+    return this.inventoryTransactions.get(id);
+  }
+
+  async listInventoryTransactions(filter?: Partial<InventoryTransaction>): Promise<InventoryTransaction[]> {
+    let transactions = Array.from(this.inventoryTransactions.values());
+    
+    if (filter) {
+      transactions = transactions.filter(transaction => {
+        for (const [key, value] of Object.entries(filter)) {
+          if (transaction[key as keyof InventoryTransaction] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    
+    return transactions;
+  }
+
+  async createInventoryTransaction(insertTransaction: InsertInventoryTransaction): Promise<InventoryTransaction> {
+    const id = this.inventoryTransactionIdCounter++;
+    const createdAt = new Date();
+    
+    const transaction: InventoryTransaction = {
+      ...insertTransaction,
+      id,
+      createdAt,
+      notes: insertTransaction.notes || null,
+      referenceId: insertTransaction.referenceId || null,
+      createdBy: insertTransaction.createdBy || null
+    };
+    
+    // Update product quantity based on transaction type
+    if (transaction.productId) {
+      const product = this.products.get(transaction.productId);
+      if (product) {
+        let newQuantity = product.quantity || 0;
+        
+        switch (transaction.type) {
+          case 'Purchase':
+          case 'Return':
+            newQuantity += transaction.quantity;
+            break;
+          case 'Sale':
+          case 'Adjustment':
+            newQuantity -= transaction.quantity;
+            break;
+          case 'Transfer':
+            // Handle transfers separately if there's a source and destination
+            break;
+        }
+        
+        this.updateProduct(product.id, { quantity: newQuantity });
+      }
+    }
+    
+    this.inventoryTransactions.set(id, transaction);
+    return transaction;
+  }
+
+  async updateInventoryTransaction(id: number, transactionData: Partial<InsertInventoryTransaction>): Promise<InventoryTransaction | undefined> {
+    const existingTransaction = this.inventoryTransactions.get(id);
+    if (!existingTransaction) {
+      return undefined;
+    }
+    
+    // Don't allow changing product or quantity as it would affect inventory
+    const { productId, quantity, type, ...allowedChanges } = transactionData;
+    
+    const updatedTransaction = {
+      ...existingTransaction,
+      ...allowedChanges
+    };
+    
+    this.inventoryTransactions.set(id, updatedTransaction);
+    return updatedTransaction;
+  }
+
+  async deleteInventoryTransaction(id: number): Promise<boolean> {
+    // In a real system, we would likely void the transaction rather than delete it
+    // For simplicity, we'll just return false to indicate deletion is not allowed
+    return false;
+  }
+
+  // Invoice Methods
+  async getInvoice(id: number): Promise<Invoice | undefined> {
+    return this.invoices.get(id);
+  }
+
+  async listInvoices(filter?: Partial<Invoice>): Promise<Invoice[]> {
+    let invoices = Array.from(this.invoices.values());
+    
+    if (filter) {
+      invoices = invoices.filter(invoice => {
+        for (const [key, value] of Object.entries(filter)) {
+          if (invoice[key as keyof Invoice] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    
+    return invoices;
+  }
+
+  async createInvoice(insertInvoice: InsertInvoice): Promise<Invoice> {
+    const id = this.invoiceIdCounter++;
+    const createdAt = new Date();
+    
+    const invoice: Invoice = {
+      ...insertInvoice,
+      id,
+      createdAt,
+      accountId: insertInvoice.accountId || null,
+      contactId: insertInvoice.contactId || null,
+      billingAddress: insertInvoice.billingAddress || null,
+      shippingAddress: insertInvoice.shippingAddress || null,
+      notes: insertInvoice.notes || null,
+      dueDate: insertInvoice.dueDate || null,
+      subtotal: insertInvoice.subtotal || 0,
+      taxAmount: insertInvoice.taxAmount || 0,
+      discountAmount: insertInvoice.discountAmount || 0,
+      totalAmount: insertInvoice.totalAmount || 0,
+      paidAmount: insertInvoice.paidAmount || 0,
+      paymentDate: insertInvoice.paymentDate || null,
+      paymentMethod: insertInvoice.paymentMethod || null,
+      createdBy: insertInvoice.createdBy || null,
+      updatedBy: insertInvoice.updatedBy || null,
+      updatedAt: null
+    };
+    
+    this.invoices.set(id, invoice);
+    return invoice;
+  }
+
+  async updateInvoice(id: number, invoiceData: Partial<InsertInvoice>): Promise<Invoice | undefined> {
+    const existingInvoice = this.invoices.get(id);
+    if (!existingInvoice) {
+      return undefined;
+    }
+    
+    const updatedInvoice = {
+      ...existingInvoice,
+      ...invoiceData,
+      updatedAt: new Date()
+    };
+    
+    this.invoices.set(id, updatedInvoice);
+    return updatedInvoice;
+  }
+
+  async deleteInvoice(id: number): Promise<boolean> {
+    return this.invoices.delete(id);
+  }
+
+  // Invoice Item Methods
+  async getInvoiceItem(id: number): Promise<InvoiceItem | undefined> {
+    return this.invoiceItems.get(id);
+  }
+
+  async listInvoiceItems(invoiceId: number): Promise<InvoiceItem[]> {
+    const allItems = Array.from(this.invoiceItems.values());
+    return allItems.filter(item => item.invoiceId === invoiceId);
+  }
+
+  async createInvoiceItem(insertInvoiceItem: InsertInvoiceItem): Promise<InvoiceItem> {
+    const id = this.invoiceItemIdCounter++;
+    
+    const invoiceItem: InvoiceItem = {
+      ...insertInvoiceItem,
+      id,
+      discount: insertInvoiceItem.discount || 0,
+      taxRate: insertInvoiceItem.taxRate || 0,
+      taxAmount: insertInvoiceItem.taxAmount || 0,
+      createdAt: new Date()
+    };
+    
+    this.invoiceItems.set(id, invoiceItem);
+    
+    // Update invoice totals
+    const invoice = this.invoices.get(invoiceItem.invoiceId);
+    if (invoice) {
+      const items = await this.listInvoiceItems(invoice.id);
+      
+      const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+      const taxAmount = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+      const discountAmount = items.reduce((sum, item) => {
+        const itemDiscount = item.discount || 0;
+        return sum + (item.quantity * item.unitPrice * itemDiscount / 100);
+      }, 0);
+      
+      const totalAmount = subtotal + taxAmount - discountAmount;
+      
+      await this.updateInvoice(invoice.id, {
+        subtotal,
+        taxAmount,
+        discountAmount,
+        totalAmount
+      });
+    }
+    
+    return invoiceItem;
+  }
+
+  async updateInvoiceItem(id: number, itemData: Partial<InsertInvoiceItem>): Promise<InvoiceItem | undefined> {
+    const existingItem = this.invoiceItems.get(id);
+    if (!existingItem) {
+      return undefined;
+    }
+    
+    const updatedItem = {
+      ...existingItem,
+      ...itemData
+    };
+    
+    this.invoiceItems.set(id, updatedItem);
+    
+    // Update invoice totals
+    const invoice = this.invoices.get(updatedItem.invoiceId);
+    if (invoice) {
+      const items = await this.listInvoiceItems(invoice.id);
+      
+      const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+      const taxAmount = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+      const discountAmount = items.reduce((sum, item) => {
+        const itemDiscount = item.discount || 0;
+        return sum + (item.quantity * item.unitPrice * itemDiscount / 100);
+      }, 0);
+      
+      const totalAmount = subtotal + taxAmount - discountAmount;
+      
+      await this.updateInvoice(invoice.id, {
+        subtotal,
+        taxAmount,
+        discountAmount,
+        totalAmount
+      });
+    }
+    
+    return updatedItem;
+  }
+
+  async deleteInvoiceItem(id: number): Promise<boolean> {
+    const item = this.invoiceItems.get(id);
+    if (!item) {
+      return false;
+    }
+    
+    const invoiceId = item.invoiceId;
+    const deleted = this.invoiceItems.delete(id);
+    
+    if (deleted) {
+      // Update invoice totals
+      const invoice = this.invoices.get(invoiceId);
+      if (invoice) {
+        const items = await this.listInvoiceItems(invoice.id);
+        
+        const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+        const taxAmount = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+        const discountAmount = items.reduce((sum, item) => {
+          const itemDiscount = item.discount || 0;
+          return sum + (item.quantity * item.unitPrice * itemDiscount / 100);
+        }, 0);
+        
+        const totalAmount = subtotal + taxAmount - discountAmount;
+        
+        await this.updateInvoice(invoice.id, {
+          subtotal,
+          taxAmount,
+          discountAmount,
+          totalAmount
+        });
+      }
+    }
+    
+    return deleted;
+  }
+
+  // Purchase Order Methods
+  async getPurchaseOrder(id: number): Promise<PurchaseOrder | undefined> {
+    return this.purchaseOrders.get(id);
+  }
+
+  async listPurchaseOrders(filter?: Partial<PurchaseOrder>): Promise<PurchaseOrder[]> {
+    let orders = Array.from(this.purchaseOrders.values());
+    
+    if (filter) {
+      orders = orders.filter(order => {
+        for (const [key, value] of Object.entries(filter)) {
+          if (order[key as keyof PurchaseOrder] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    
+    return orders;
+  }
+
+  async createPurchaseOrder(insertPurchaseOrder: InsertPurchaseOrder): Promise<PurchaseOrder> {
+    const id = this.purchaseOrderIdCounter++;
+    const createdAt = new Date();
+    
+    const purchaseOrder: PurchaseOrder = {
+      ...insertPurchaseOrder,
+      id,
+      createdAt,
+      vendorId: insertPurchaseOrder.vendorId || null,
+      expectedDeliveryDate: insertPurchaseOrder.expectedDeliveryDate || null,
+      deliveryAddress: insertPurchaseOrder.deliveryAddress || null,
+      notes: insertPurchaseOrder.notes || null,
+      subtotal: insertPurchaseOrder.subtotal || 0,
+      taxAmount: insertPurchaseOrder.taxAmount || 0,
+      discountAmount: insertPurchaseOrder.discountAmount || 0,
+      totalAmount: insertPurchaseOrder.totalAmount || 0,
+      createdBy: insertPurchaseOrder.createdBy || null,
+      updatedBy: insertPurchaseOrder.updatedBy || null,
+      updatedAt: null
+    };
+    
+    this.purchaseOrders.set(id, purchaseOrder);
+    return purchaseOrder;
+  }
+
+  async updatePurchaseOrder(id: number, orderData: Partial<InsertPurchaseOrder>): Promise<PurchaseOrder | undefined> {
+    const existingOrder = this.purchaseOrders.get(id);
+    if (!existingOrder) {
+      return undefined;
+    }
+    
+    const updatedOrder = {
+      ...existingOrder,
+      ...orderData,
+      updatedAt: new Date()
+    };
+    
+    this.purchaseOrders.set(id, updatedOrder);
+    return updatedOrder;
+  }
+
+  async deletePurchaseOrder(id: number): Promise<boolean> {
+    return this.purchaseOrders.delete(id);
+  }
+
+  // Purchase Order Item Methods
+  async getPurchaseOrderItem(id: number): Promise<PurchaseOrderItem | undefined> {
+    return this.purchaseOrderItems.get(id);
+  }
+
+  async listPurchaseOrderItems(orderId: number): Promise<PurchaseOrderItem[]> {
+    const allItems = Array.from(this.purchaseOrderItems.values());
+    return allItems.filter(item => item.purchaseOrderId === orderId);
+  }
+
+  async createPurchaseOrderItem(insertItem: InsertPurchaseOrderItem): Promise<PurchaseOrderItem> {
+    const id = this.purchaseOrderItemIdCounter++;
+    
+    const orderItem: PurchaseOrderItem = {
+      ...insertItem,
+      id,
+      receivedQuantity: insertItem.receivedQuantity || 0,
+      notes: insertItem.notes || null,
+      createdAt: new Date()
+    };
+    
+    this.purchaseOrderItems.set(id, orderItem);
+    
+    // Update purchase order totals
+    const order = this.purchaseOrders.get(orderItem.purchaseOrderId);
+    if (order) {
+      const items = await this.listPurchaseOrderItems(order.id);
+      
+      const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+      const totalAmount = subtotal; // Add tax calculations if needed
+      
+      await this.updatePurchaseOrder(order.id, {
+        subtotal,
+        totalAmount
+      });
+    }
+    
+    return orderItem;
+  }
+
+  async updatePurchaseOrderItem(id: number, itemData: Partial<InsertPurchaseOrderItem>): Promise<PurchaseOrderItem | undefined> {
+    const existingItem = this.purchaseOrderItems.get(id);
+    if (!existingItem) {
+      return undefined;
+    }
+    
+    const updatedItem = {
+      ...existingItem,
+      ...itemData
+    };
+    
+    this.purchaseOrderItems.set(id, updatedItem);
+    
+    // Update purchase order totals
+    const order = this.purchaseOrders.get(updatedItem.purchaseOrderId);
+    if (order) {
+      const items = await this.listPurchaseOrderItems(order.id);
+      
+      const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+      const totalAmount = subtotal; // Add tax calculations if needed
+      
+      await this.updatePurchaseOrder(order.id, {
+        subtotal,
+        totalAmount
+      });
+    }
+    
+    return updatedItem;
+  }
+
+  async deletePurchaseOrderItem(id: number): Promise<boolean> {
+    const item = this.purchaseOrderItems.get(id);
+    if (!item) {
+      return false;
+    }
+    
+    const orderId = item.purchaseOrderId;
+    const deleted = this.purchaseOrderItems.delete(id);
+    
+    if (deleted) {
+      // Update purchase order totals
+      const order = this.purchaseOrders.get(orderId);
+      if (order) {
+        const items = await this.listPurchaseOrderItems(order.id);
+        
+        const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+        const totalAmount = subtotal; // Add tax calculations if needed
+        
+        await this.updatePurchaseOrder(order.id, {
+          subtotal,
+          totalAmount
+        });
+      }
+    }
+    
+    return deleted;
+  }
+
+  // Receive Purchase Order Items
+  async receivePurchaseOrderItems(orderId: number, receivedItems: { itemId: number, quantity: number }[]): Promise<boolean> {
+    const order = this.purchaseOrders.get(orderId);
+    if (!order) {
+      return false;
+    }
+    
+    for (const received of receivedItems) {
+      const item = this.purchaseOrderItems.get(received.itemId);
+      if (item && item.purchaseOrderId === orderId) {
+        // Update received quantity
+        const newReceivedQuantity = (item.receivedQuantity || 0) + received.quantity;
+        await this.updatePurchaseOrderItem(item.itemId, { receivedQuantity: newReceivedQuantity });
+        
+        // Create inventory transaction
+        if (item.productId) {
+          await this.createInventoryTransaction({
+            productId: item.productId,
+            quantity: received.quantity,
+            type: 'Purchase',
+            date: new Date(),
+            referenceId: `PO-${orderId}`,
+            notes: `Received from purchase order #${orderId}`
+          });
+        }
+      }
+    }
+    
+    // Update order status if all items received
+    const allItems = await this.listPurchaseOrderItems(orderId);
+    const allReceived = allItems.every(item => (item.receivedQuantity || 0) >= item.quantity);
+    const partiallyReceived = allItems.some(item => (item.receivedQuantity || 0) > 0);
+    
+    let newStatus: 'Received' | 'Partially Received' | undefined;
+    
+    if (allReceived) {
+      newStatus = 'Received';
+    } else if (partiallyReceived) {
+      newStatus = 'Partially Received';
+    }
+    
+    if (newStatus) {
+      await this.updatePurchaseOrder(orderId, { status: newStatus });
+    }
+    
+    return true;
+  }
+
   async listWorkflows(filter?: Partial<Workflow>): Promise<Workflow[]> {
     let workflows = Array.from(this.workflows.values());
     
@@ -3137,6 +3842,598 @@ export class DatabaseStorage implements IStorage {
       return result.rowCount > 0;
     } catch (error) {
       console.error('Database error in deleteSocialCampaign:', error);
+      return false;
+    }
+  }
+
+  // Product Category methods
+  async getProductCategory(id: number): Promise<ProductCategory | undefined> {
+    try {
+      const [productCategory] = await db.select().from(productCategories).where(eq(productCategories.id, id));
+      return productCategory;
+    } catch (error) {
+      console.error('Database error in getProductCategory:', error);
+      return undefined;
+    }
+  }
+
+  async listProductCategories(filter?: Partial<ProductCategory>): Promise<ProductCategory[]> {
+    try {
+      let query = db.select().from(productCategories);
+      
+      if (filter) {
+        const whereConditions = [];
+        if (filter.id !== undefined) whereConditions.push(eq(productCategories.id, filter.id));
+        if (filter.name !== undefined) whereConditions.push(eq(productCategories.name, filter.name));
+        if (filter.isActive !== undefined) whereConditions.push(eq(productCategories.isActive, filter.isActive));
+        if (filter.ownerId !== undefined) whereConditions.push(eq(productCategories.ownerId, filter.ownerId));
+        
+        // Apply where conditions if any exist
+        if (whereConditions.length > 0) {
+          query = query.where(and(...whereConditions));
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Database error in listProductCategories:', error);
+      return [];
+    }
+  }
+
+  async createProductCategory(category: InsertProductCategory): Promise<ProductCategory> {
+    try {
+      const [newCategory] = await db.insert(productCategories).values(category).returning();
+      return newCategory;
+    } catch (error) {
+      console.error('Database error in createProductCategory:', error);
+      throw new Error(`Failed to create product category: ${error.message}`);
+    }
+  }
+
+  async updateProductCategory(id: number, category: Partial<InsertProductCategory>): Promise<ProductCategory | undefined> {
+    try {
+      const [updatedCategory] = await db.update(productCategories)
+        .set({
+          ...category,
+          updatedAt: new Date()
+        })
+        .where(eq(productCategories.id, id))
+        .returning();
+      
+      return updatedCategory;
+    } catch (error) {
+      console.error('Database error in updateProductCategory:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProductCategory(id: number): Promise<boolean> {
+    try {
+      // Check if any products use this category
+      const productsWithCategory = await db.select().from(products).where(eq(products.categoryId, id));
+      if (productsWithCategory.length > 0) {
+        // Category in use, don't delete
+        return false;
+      }
+      
+      const result = await db.delete(productCategories).where(eq(productCategories.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deleteProductCategory:', error);
+      return false;
+    }
+  }
+  
+  // Product methods
+  async getProduct(id: number): Promise<Product | undefined> {
+    try {
+      const [product] = await db.select().from(products).where(eq(products.id, id));
+      return product;
+    } catch (error) {
+      console.error('Database error in getProduct:', error);
+      return undefined;
+    }
+  }
+
+  async listProducts(filter?: Partial<Product>): Promise<Product[]> {
+    try {
+      let query = db.select().from(products);
+      
+      if (filter) {
+        const whereConditions = [];
+        if (filter.id !== undefined) whereConditions.push(eq(products.id, filter.id));
+        if (filter.name !== undefined) whereConditions.push(eq(products.name, filter.name));
+        if (filter.categoryId !== undefined) whereConditions.push(eq(products.categoryId, filter.categoryId));
+        if (filter.isActive !== undefined) whereConditions.push(eq(products.isActive, filter.isActive));
+        if (filter.ownerId !== undefined) whereConditions.push(eq(products.ownerId, filter.ownerId));
+        
+        if (whereConditions.length > 0) {
+          query = query.where(and(...whereConditions));
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Database error in listProducts:', error);
+      return [];
+    }
+  }
+
+  async createProduct(product: InsertProduct): Promise<Product> {
+    try {
+      const [newProduct] = await db.insert(products).values(product).returning();
+      return newProduct;
+    } catch (error) {
+      console.error('Database error in createProduct:', error);
+      throw new Error(`Failed to create product: ${error.message}`);
+    }
+  }
+
+  async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined> {
+    try {
+      const [updatedProduct] = await db.update(products)
+        .set({
+          ...product,
+          updatedAt: new Date()
+        })
+        .where(eq(products.id, id))
+        .returning();
+      
+      return updatedProduct;
+    } catch (error) {
+      console.error('Database error in updateProduct:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProduct(id: number): Promise<boolean> {
+    try {
+      // Check if product is used in invoices or purchase orders
+      const invoiceItems = await db.select().from(invoiceItems).where(eq(invoiceItems.productId, id));
+      const purchaseOrderItems = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.productId, id));
+      
+      if (invoiceItems.length > 0 || purchaseOrderItems.length > 0) {
+        // Product in use, don't delete
+        return false;
+      }
+      
+      const result = await db.delete(products).where(eq(products.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deleteProduct:', error);
+      return false;
+    }
+  }
+  
+  // Inventory Transaction methods
+  async getInventoryTransaction(id: number): Promise<InventoryTransaction | undefined> {
+    try {
+      const [transaction] = await db.select().from(inventoryTransactions).where(eq(inventoryTransactions.id, id));
+      return transaction;
+    } catch (error) {
+      console.error('Database error in getInventoryTransaction:', error);
+      return undefined;
+    }
+  }
+
+  async listInventoryTransactions(filter?: Partial<InventoryTransaction>): Promise<InventoryTransaction[]> {
+    try {
+      let query = db.select().from(inventoryTransactions).orderBy(desc(inventoryTransactions.date));
+      
+      if (filter) {
+        const whereConditions = [];
+        if (filter.id !== undefined) whereConditions.push(eq(inventoryTransactions.id, filter.id));
+        if (filter.productId !== undefined) whereConditions.push(eq(inventoryTransactions.productId, filter.productId));
+        if (filter.type !== undefined) whereConditions.push(eq(inventoryTransactions.type, filter.type));
+        
+        if (whereConditions.length > 0) {
+          query = query.where(and(...whereConditions));
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Database error in listInventoryTransactions:', error);
+      return [];
+    }
+  }
+
+  async createInventoryTransaction(transaction: InsertInventoryTransaction): Promise<InventoryTransaction> {
+    try {
+      const [newTransaction] = await db.insert(inventoryTransactions).values(transaction).returning();
+      return newTransaction;
+    } catch (error) {
+      console.error('Database error in createInventoryTransaction:', error);
+      throw new Error(`Failed to create inventory transaction: ${error.message}`);
+    }
+  }
+
+  async getProductInventory(productId: number): Promise<number> {
+    try {
+      // Calculate current inventory using sum of transactions
+      const result = await db.select({
+        total: sql`SUM(CASE WHEN ${inventoryTransactions.type} IN ('Purchase', 'Return In', 'Adjustment In') THEN ${inventoryTransactions.quantity} ELSE -${inventoryTransactions.quantity} END)`
+      }).from(inventoryTransactions)
+        .where(eq(inventoryTransactions.productId, productId));
+      
+      return result[0].total || 0;
+    } catch (error) {
+      console.error('Database error in getProductInventory:', error);
+      return 0;
+    }
+  }
+  
+  // Invoice methods
+  async getInvoice(id: number): Promise<Invoice | undefined> {
+    try {
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+      return invoice;
+    } catch (error) {
+      console.error('Database error in getInvoice:', error);
+      return undefined;
+    }
+  }
+
+  async listInvoices(filter?: Partial<Invoice>): Promise<Invoice[]> {
+    try {
+      let query = db.select().from(invoices).orderBy(desc(invoices.date));
+      
+      if (filter) {
+        const whereConditions = [];
+        if (filter.id !== undefined) whereConditions.push(eq(invoices.id, filter.id));
+        if (filter.customerId !== undefined) whereConditions.push(eq(invoices.customerId, filter.customerId));
+        if (filter.status !== undefined) whereConditions.push(eq(invoices.status, filter.status));
+        if (filter.ownerId !== undefined) whereConditions.push(eq(invoices.ownerId, filter.ownerId));
+        
+        if (whereConditions.length > 0) {
+          query = query.where(and(...whereConditions));
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Database error in listInvoices:', error);
+      return [];
+    }
+  }
+
+  async createInvoice(invoice: InsertInvoice): Promise<Invoice> {
+    try {
+      const [newInvoice] = await db.insert(invoices).values(invoice).returning();
+      return newInvoice;
+    } catch (error) {
+      console.error('Database error in createInvoice:', error);
+      throw new Error(`Failed to create invoice: ${error.message}`);
+    }
+  }
+
+  async updateInvoice(id: number, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined> {
+    try {
+      const [updatedInvoice] = await db.update(invoices)
+        .set({
+          ...invoice,
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, id))
+        .returning();
+      
+      return updatedInvoice;
+    } catch (error) {
+      console.error('Database error in updateInvoice:', error);
+      return undefined;
+    }
+  }
+
+  async deleteInvoice(id: number): Promise<boolean> {
+    try {
+      // First delete all invoice items
+      await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, id));
+      
+      // Then delete the invoice
+      const result = await db.delete(invoices).where(eq(invoices.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deleteInvoice:', error);
+      return false;
+    }
+  }
+  
+  // Invoice Item methods
+  async getInvoiceItems(invoiceId: number): Promise<InvoiceItem[]> {
+    try {
+      return await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+    } catch (error) {
+      console.error('Database error in getInvoiceItems:', error);
+      return [];
+    }
+  }
+
+  async createInvoiceItem(item: InsertInvoiceItem): Promise<InvoiceItem> {
+    try {
+      const [newItem] = await db.insert(invoiceItems).values(item).returning();
+      
+      // Create inventory transaction for sold product
+      if (item.productId) {
+        const invoice = await this.getInvoice(item.invoiceId);
+        if (invoice) {
+          await this.createInventoryTransaction({
+            productId: item.productId,
+            quantity: item.quantity,
+            type: 'Sale',
+            date: invoice.date || new Date(),
+            referenceId: `INV-${item.invoiceId}`,
+            notes: `Sold on invoice #${item.invoiceId}`
+          });
+        }
+      }
+      
+      return newItem;
+    } catch (error) {
+      console.error('Database error in createInvoiceItem:', error);
+      throw new Error(`Failed to create invoice item: ${error.message}`);
+    }
+  }
+
+  async updateInvoiceItem(id: number, item: Partial<InsertInvoiceItem>): Promise<InvoiceItem | undefined> {
+    try {
+      // First get the original item to handle inventory adjustments
+      const [originalItem] = await db.select().from(invoiceItems).where(eq(invoiceItems.id, id));
+      
+      if (!originalItem) {
+        return undefined;
+      }
+      
+      const [updatedItem] = await db.update(invoiceItems)
+        .set(item)
+        .where(eq(invoiceItems.id, id))
+        .returning();
+      
+      // Handle inventory adjustment if quantity changed
+      if (item.quantity !== undefined && originalItem.productId && originalItem.quantity !== item.quantity) {
+        const invoice = await this.getInvoice(originalItem.invoiceId);
+        if (invoice) {
+          // Calculate the quantity difference
+          const quantityDiff = item.quantity - originalItem.quantity;
+          
+          // Create adjustment transaction if necessary
+          if (quantityDiff !== 0) {
+            await this.createInventoryTransaction({
+              productId: originalItem.productId,
+              quantity: Math.abs(quantityDiff),
+              type: quantityDiff < 0 ? 'Return In' : 'Sale',
+              date: new Date(),
+              referenceId: `INV-${originalItem.invoiceId}-ADJUST`,
+              notes: `Adjusted quantity on invoice #${originalItem.invoiceId}`
+            });
+          }
+        }
+      }
+      
+      return updatedItem;
+    } catch (error) {
+      console.error('Database error in updateInvoiceItem:', error);
+      return undefined;
+    }
+  }
+
+  async deleteInvoiceItem(id: number): Promise<boolean> {
+    try {
+      // Get the item first to handle inventory
+      const [item] = await db.select().from(invoiceItems).where(eq(invoiceItems.id, id));
+      
+      if (!item) {
+        return false;
+      }
+      
+      // Handle inventory adjustment - return item to inventory
+      if (item.productId) {
+        const invoice = await this.getInvoice(item.invoiceId);
+        if (invoice) {
+          await this.createInventoryTransaction({
+            productId: item.productId,
+            quantity: item.quantity,
+            type: 'Return In',
+            date: new Date(),
+            referenceId: `INV-${item.invoiceId}-DEL`,
+            notes: `Returned from deleted invoice item #${id}`
+          });
+        }
+      }
+      
+      const result = await db.delete(invoiceItems).where(eq(invoiceItems.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deleteInvoiceItem:', error);
+      return false;
+    }
+  }
+  
+  // Purchase Order methods
+  async getPurchaseOrder(id: number): Promise<PurchaseOrder | undefined> {
+    try {
+      const [order] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id));
+      return order;
+    } catch (error) {
+      console.error('Database error in getPurchaseOrder:', error);
+      return undefined;
+    }
+  }
+
+  async listPurchaseOrders(filter?: Partial<PurchaseOrder>): Promise<PurchaseOrder[]> {
+    try {
+      let query = db.select().from(purchaseOrders).orderBy(desc(purchaseOrders.date));
+      
+      if (filter) {
+        const whereConditions = [];
+        if (filter.id !== undefined) whereConditions.push(eq(purchaseOrders.id, filter.id));
+        if (filter.supplierId !== undefined) whereConditions.push(eq(purchaseOrders.supplierId, filter.supplierId));
+        if (filter.status !== undefined) whereConditions.push(eq(purchaseOrders.status, filter.status));
+        if (filter.ownerId !== undefined) whereConditions.push(eq(purchaseOrders.ownerId, filter.ownerId));
+        
+        if (whereConditions.length > 0) {
+          query = query.where(and(...whereConditions));
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Database error in listPurchaseOrders:', error);
+      return [];
+    }
+  }
+
+  async createPurchaseOrder(order: InsertPurchaseOrder): Promise<PurchaseOrder> {
+    try {
+      const [newOrder] = await db.insert(purchaseOrders).values(order).returning();
+      return newOrder;
+    } catch (error) {
+      console.error('Database error in createPurchaseOrder:', error);
+      throw new Error(`Failed to create purchase order: ${error.message}`);
+    }
+  }
+
+  async updatePurchaseOrder(id: number, order: Partial<InsertPurchaseOrder>): Promise<PurchaseOrder | undefined> {
+    try {
+      const [updatedOrder] = await db.update(purchaseOrders)
+        .set({
+          ...order,
+          updatedAt: new Date()
+        })
+        .where(eq(purchaseOrders.id, id))
+        .returning();
+      
+      return updatedOrder;
+    } catch (error) {
+      console.error('Database error in updatePurchaseOrder:', error);
+      return undefined;
+    }
+  }
+
+  async deletePurchaseOrder(id: number): Promise<boolean> {
+    try {
+      // First delete all purchase order items
+      await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, id));
+      
+      // Then delete the purchase order
+      const result = await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deletePurchaseOrder:', error);
+      return false;
+    }
+  }
+  
+  // Purchase Order Item methods
+  async getPurchaseOrderItems(orderId: number): Promise<PurchaseOrderItem[]> {
+    try {
+      return await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, orderId));
+    } catch (error) {
+      console.error('Database error in getPurchaseOrderItems:', error);
+      return [];
+    }
+  }
+
+  async createPurchaseOrderItem(item: InsertPurchaseOrderItem): Promise<PurchaseOrderItem> {
+    try {
+      const [newItem] = await db.insert(purchaseOrderItems).values(item).returning();
+      return newItem;
+    } catch (error) {
+      console.error('Database error in createPurchaseOrderItem:', error);
+      throw new Error(`Failed to create purchase order item: ${error.message}`);
+    }
+  }
+
+  async updatePurchaseOrderItem(id: number, item: Partial<InsertPurchaseOrderItem>): Promise<PurchaseOrderItem | undefined> {
+    try {
+      const [updatedItem] = await db.update(purchaseOrderItems)
+        .set(item)
+        .where(eq(purchaseOrderItems.id, id))
+        .returning();
+      
+      return updatedItem;
+    } catch (error) {
+      console.error('Database error in updatePurchaseOrderItem:', error);
+      return undefined;
+    }
+  }
+
+  async deletePurchaseOrderItem(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deletePurchaseOrderItem:', error);
+      return false;
+    }
+  }
+  
+  async listPurchaseOrderItems(orderId: number): Promise<PurchaseOrderItem[]> {
+    try {
+      return await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, orderId));
+    } catch (error) {
+      console.error('Database error in listPurchaseOrderItems:', error);
+      return [];
+    }
+  }
+  
+  // Special method for receiving purchase order items and updating inventory
+  async receivePurchaseOrderItems(orderId: number, receivedItems: { itemId: number, quantity: number }[]): Promise<boolean> {
+    try {
+      // Get the purchase order
+      const order = await this.getPurchaseOrder(orderId);
+      if (!order) {
+        return false;
+      }
+      
+      // Process each received item
+      for (const received of receivedItems) {
+        // Get the purchase order item
+        const [item] = await db.select().from(purchaseOrderItems)
+          .where(and(
+            eq(purchaseOrderItems.id, received.itemId),
+            eq(purchaseOrderItems.purchaseOrderId, orderId)
+          ));
+        
+        if (item) {
+          // Update received quantity
+          const newReceivedQuantity = (item.receivedQuantity || 0) + received.quantity;
+          await this.updatePurchaseOrderItem(item.id, { receivedQuantity: newReceivedQuantity });
+          
+          // Create inventory transaction
+          if (item.productId) {
+            await this.createInventoryTransaction({
+              productId: item.productId,
+              quantity: received.quantity,
+              type: 'Purchase',
+              date: new Date(),
+              referenceId: `PO-${orderId}`,
+              notes: `Received from purchase order #${orderId}`
+            });
+          }
+        }
+      }
+      
+      // Update order status if all items received
+      const allItems = await this.listPurchaseOrderItems(orderId);
+      const allReceived = allItems.every(item => (item.receivedQuantity || 0) >= item.quantity);
+      const partiallyReceived = allItems.some(item => (item.receivedQuantity || 0) > 0);
+      
+      let newStatus: 'Received' | 'Partially Received' | undefined;
+      
+      if (allReceived) {
+        newStatus = 'Received';
+      } else if (partiallyReceived) {
+        newStatus = 'Partially Received';
+      }
+      
+      if (newStatus) {
+        await this.updatePurchaseOrder(orderId, { status: newStatus });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Database error in receivePurchaseOrderItems:', error);
       return false;
     }
   }

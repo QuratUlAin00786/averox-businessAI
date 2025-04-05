@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, date, numeric, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, date, numeric, jsonb, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -16,6 +16,10 @@ export const apiProviderEnum = pgEnum('api_provider', ['OpenAI', 'Stripe', 'Face
 export const communicationChannelEnum = pgEnum('communication_channel', ['Email', 'WhatsApp', 'SMS', 'Phone', 'Messenger', 'LinkedIn', 'Twitter', 'Facebook', 'Instagram', 'Other']);
 export const communicationDirectionEnum = pgEnum('communication_direction', ['Inbound', 'Outbound']);
 export const communicationStatusEnum = pgEnum('communication_status', ['Unread', 'Read', 'Replied', 'Archived']);
+export const invoiceStatusEnum = pgEnum('invoice_status', ['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled', 'Refunded']);
+export const inventoryTransactionTypeEnum = pgEnum('inventory_transaction_type', ['Purchase', 'Sale', 'Adjustment', 'Return', 'Transfer']);
+export const paymentMethodEnum = pgEnum('payment_method', ['Cash', 'Credit Card', 'Bank Transfer', 'Check', 'PayPal', 'Other']);
+export const purchaseOrderStatusEnum = pgEnum('purchase_order_status', ['Draft', 'Sent', 'Received', 'Cancelled', 'Partially Received']);
 
 // Users
 export const users = pgTable("users", {
@@ -314,6 +318,143 @@ export const communications = pgTable("communications", {
   contactType: text("contact_type"), // 'lead' or 'customer'
 });
 
+// Product Categories
+export const productCategories = pgTable("product_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  parentId: integer("parent_id").references(() => productCategories.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  image: text("image"), // URL or path to category image
+  attributes: jsonb("attributes"), // Custom attributes for the category
+  ownerId: integer("owner_id").references(() => users.id),
+});
+
+// Products
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  sku: text("sku").notNull().unique(),
+  description: text("description"),
+  price: numeric("price").notNull(),
+  cost: numeric("cost"),
+  categoryId: integer("category_id").references(() => productCategories.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  inStock: boolean("in_stock").default(true),
+  stockQuantity: integer("stock_quantity").default(0),
+  reorderLevel: integer("reorder_level").default(5),
+  attributes: jsonb("attributes"), // Additional product properties
+  images: text("images").array(), // Array of image URLs
+  taxable: boolean("taxable").default(true),
+  taxRate: numeric("tax_rate"),
+  ownerId: integer("owner_id").references(() => users.id),
+  weight: numeric("weight"), // In kg
+  dimensions: jsonb("dimensions"), // {length, width, height} in cm
+  barcode: text("barcode"),
+  tags: text("tags").array(),
+});
+
+// Inventory Transactions
+export const inventoryTransactions = pgTable("inventory_transactions", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  quantity: integer("quantity").notNull(),
+  type: inventoryTransactionTypeEnum("type").notNull(),
+  referenceType: text("reference_type"), // 'sale', 'purchase', 'adjustment', etc.
+  referenceId: integer("reference_id"), // ID of the sale, purchase, etc.
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+  unitCost: numeric("unit_cost"), // Unit cost at time of transaction
+  location: text("location"), // Warehouse or location identifier
+  batchId: text("batch_id"), // For batch tracking
+  expiryDate: date("expiry_date"), // For perishable items
+  serialNumber: text("serial_number"), // For serialized inventory
+});
+
+// Invoices
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  accountId: integer("account_id").references(() => accounts.id).notNull(),
+  contactId: integer("contact_id").references(() => contacts.id),
+  issueDate: date("issue_date").notNull(),
+  dueDate: date("due_date").notNull(),
+  status: invoiceStatusEnum("status").default("Draft"),
+  subtotal: numeric("subtotal").notNull(),
+  taxAmount: numeric("tax_amount").notNull(),
+  discountAmount: numeric("discount_amount").default("0"),
+  totalAmount: numeric("total_amount").notNull(),
+  notes: text("notes"),
+  terms: text("terms"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  ownerId: integer("owner_id").references(() => users.id),
+  paymentMethod: paymentMethodEnum("payment_method"),
+  paymentDate: date("payment_date"),
+  paymentReference: text("payment_reference"),
+  currency: text("currency").default("USD"),
+});
+
+// Invoice Line Items
+export const invoiceItems = pgTable("invoice_items", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").references(() => invoices.id).notNull(),
+  productId: integer("product_id").references(() => products.id),
+  description: text("description").notNull(),
+  quantity: numeric("quantity").notNull(),
+  unitPrice: numeric("unit_price").notNull(),
+  taxRate: numeric("tax_rate"),
+  taxAmount: numeric("tax_amount"),
+  discountPercent: numeric("discount_percent"),
+  discountAmount: numeric("discount_amount"),
+  lineTotal: numeric("line_total").notNull(),
+  sortOrder: integer("sort_order").default(0),
+});
+
+// Purchase Orders
+export const purchaseOrders = pgTable("purchase_orders", {
+  id: serial("id").primaryKey(),
+  poNumber: text("po_number").notNull().unique(),
+  supplierId: integer("supplier_id").references(() => accounts.id).notNull(),
+  status: purchaseOrderStatusEnum("status").default("Draft"),
+  orderDate: date("order_date").notNull(),
+  expectedDeliveryDate: date("expected_delivery_date"),
+  deliveryDate: date("delivery_date"),
+  subtotal: numeric("subtotal").notNull(),
+  taxAmount: numeric("tax_amount"),
+  totalAmount: numeric("total_amount").notNull(),
+  notes: text("notes"),
+  shippingAddress: text("shipping_address"),
+  billingAddress: text("billing_address"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvalDate: date("approval_date"),
+  currency: text("currency").default("USD"),
+});
+
+// Purchase Order Line Items
+export const purchaseOrderItems = pgTable("purchase_order_items", {
+  id: serial("id").primaryKey(),
+  purchaseOrderId: integer("purchase_order_id").references(() => purchaseOrders.id).notNull(),
+  productId: integer("product_id").references(() => products.id),
+  description: text("description").notNull(),
+  quantity: numeric("quantity").notNull(),
+  receivedQuantity: numeric("received_quantity").default("0"),
+  unitPrice: numeric("unit_price").notNull(),
+  taxAmount: numeric("tax_amount"),
+  lineTotal: numeric("line_total").notNull(),
+  expectedDeliveryDate: date("expected_delivery_date"),
+  notes: text("notes"),
+  sortOrder: integer("sort_order").default(0),
+});
+
 // Schema validation for inserts
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -432,6 +573,57 @@ export const insertCommunicationSchema = createInsertSchema(communications).omit
   receivedAt: z.string().or(z.date()).nullable().optional(),
 });
 
+// Product and Inventory schemas
+export const insertProductCategorySchema = createInsertSchema(productCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProductSchema = createInsertSchema(products).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInventoryTransactionSchema = createInsertSchema(inventoryTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Invoice schemas
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  issueDate: z.string().or(z.date()),
+  dueDate: z.string().or(z.date()),
+  paymentDate: z.string().or(z.date()).nullable().optional(),
+});
+
+export const insertInvoiceItemSchema = createInsertSchema(invoiceItems).omit({
+  id: true,
+});
+
+// Purchase order schemas
+export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  orderDate: z.string().or(z.date()),
+  expectedDeliveryDate: z.string().or(z.date()).nullable().optional(),
+  deliveryDate: z.string().or(z.date()).nullable().optional(),
+  approvalDate: z.string().or(z.date()).nullable().optional(),
+});
+
+export const insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems).omit({
+  id: true,
+}).extend({
+  expectedDeliveryDate: z.string().or(z.date()).nullable().optional(),
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -483,3 +675,27 @@ export type Workflow = typeof workflows.$inferSelect;
 
 export type InsertCommunication = z.infer<typeof insertCommunicationSchema>;
 export type Communication = typeof communications.$inferSelect;
+
+// Product and Inventory types
+export type InsertProductCategory = z.infer<typeof insertProductCategorySchema>;
+export type ProductCategory = typeof productCategories.$inferSelect;
+
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type Product = typeof products.$inferSelect;
+
+export type InsertInventoryTransaction = z.infer<typeof insertInventoryTransactionSchema>;
+export type InventoryTransaction = typeof inventoryTransactions.$inferSelect;
+
+// Invoice types
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type Invoice = typeof invoices.$inferSelect;
+
+export type InsertInvoiceItem = z.infer<typeof insertInvoiceItemSchema>;
+export type InvoiceItem = typeof invoiceItems.$inferSelect;
+
+// Purchase order types
+export type InsertPurchaseOrder = z.infer<typeof insertPurchaseOrderSchema>;
+export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+
+export type InsertPurchaseOrderItem = z.infer<typeof insertPurchaseOrderItemSchema>;
+export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
