@@ -650,7 +650,7 @@ export default function PurchaseOrderForm({ purchaseOrderId, onSuccess }: Purcha
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="null">None</SelectItem>
                           {products.map((product: any) => (
                             <SelectItem key={product.id} value={product.id.toString()}>
                               {product.name} (${product.cost || product.price})

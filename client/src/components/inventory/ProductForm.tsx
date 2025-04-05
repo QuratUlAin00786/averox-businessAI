@@ -272,7 +272,7 @@ export default function ProductForm({ productId, onSuccess }: ProductFormProps) 
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="null">None</SelectItem>
                     {categories.map((category: any) => (
                       <SelectItem key={category.id} value={category.id.toString()}>
                         {category.name}
