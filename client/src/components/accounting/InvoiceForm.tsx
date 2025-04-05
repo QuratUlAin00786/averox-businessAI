@@ -642,7 +642,7 @@ export default function InvoiceForm({ invoiceId, onSuccess }: InvoiceFormProps) 
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="null">None</SelectItem>
                           {products.map((product: any) => (
                             <SelectItem key={product.id} value={product.id.toString()}>
                               {product.name} (${product.price})
