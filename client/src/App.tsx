@@ -30,6 +30,7 @@ import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 import NewProduct from "@/pages/inventory/products/new";
 import NewCategory from "@/pages/inventory/categories/new";
+import NewTransaction from "@/pages/inventory/transactions/new";
 import NewInvoice from "@/pages/accounting/invoices/new";
 import NewPurchaseOrder from "@/pages/accounting/purchase-orders/new";
 
@@ -221,6 +222,12 @@ function Router() {
       <ProtectedRoute path="/inventory/products/:id/history" component={({ params }) => (
         <Layout>
           <Inventory subPath={`products/${params.id}/history`} />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/inventory/transactions/new" component={() => (
+        <Layout>
+          <NewTransaction />
         </Layout>
       )} />
       

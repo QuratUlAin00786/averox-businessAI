@@ -36,6 +36,13 @@ import {
   Eye,
   MoreHorizontal,
   Filter,
+  ChevronLeft,
+  CalendarIcon,
+  Settings,
+  DollarSign,
+  Truck,
+  ShoppingCart,
+  LayoutGrid,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -45,6 +52,346 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { formatCurrency, formatDate } from "@/lib/utils";
+
+// Product Detail View Component
+interface ProductDetailViewProps {
+  productId: number;
+  onBack: () => void;
+}
+
+function ProductDetailView({ productId, onBack }: ProductDetailViewProps) {
+  const { data: product, isLoading } = useQuery({
+    queryKey: [`/api/products/${productId}`],
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+          <ChevronLeft size={16} />
+          Back to Products
+        </Button>
+        <h2 className="text-2xl font-bold">Product Details</h2>
+      </div>
+      
+      {isLoading ? (
+        <div className="space-y-3">
+          <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+          <div className="h-24 bg-gray-200 rounded w-full animate-pulse mt-4"></div>
+        </div>
+      ) : product ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-2xl">{product.name}</CardTitle>
+                  <CardDescription>SKU: {product.sku}</CardDescription>
+                </div>
+                <Badge variant={product.isActive ? "default" : "secondary"}>
+                  {product.isActive ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-1">Description</h3>
+                <p className="text-muted-foreground">
+                  {product.description || "No description provided"}
+                </p>
+              </div>
+              
+              {product.attributes && (
+                <div>
+                  <h3 className="font-semibold mb-1">Product Attributes</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(product.attributes).map(([key, value]) => (
+                      <div key={key} className="flex">
+                        <span className="font-medium mr-2">{key}:</span>
+                        <span className="text-muted-foreground">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {product.tags && product.tags.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-1">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.tags.map((tag) => (
+                      <Badge key={tag} variant="outline">{tag}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-between border-t pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setLocation(`/inventory/products/${product.id}/edit`)}
+                className="flex items-center gap-2"
+              >
+                <FileEdit size={16} /> Edit
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setLocation(`/inventory/products/${product.id}/history`)}
+                className="flex items-center gap-2"
+              >
+                <ArrowDownUp size={16} /> View History
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Pricing & Inventory</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <DollarSign size={18} className="text-muted-foreground mr-2" />
+                    <span>Price</span>
+                  </div>
+                  <span className="font-semibold">{formatCurrency(product.price)}</span>
+                </div>
+                
+                {product.cost && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Settings size={18} className="text-muted-foreground mr-2" />
+                      <span>Cost</span>
+                    </div>
+                    <span className="font-semibold">{formatCurrency(product.cost)}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <Package size={18} className="text-muted-foreground mr-2" />
+                    <span>Stock Level</span>
+                  </div>
+                  <Badge variant={product.stockLevel > 10 ? "default" : product.stockLevel > 0 ? "secondary" : "destructive"}>
+                    {product.stockLevel || 0}
+                  </Badge>
+                </div>
+                
+                {product.reorderLevel && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Truck size={18} className="text-muted-foreground mr-2" />
+                      <span>Reorder At</span>
+                    </div>
+                    <span className="font-semibold">{product.reorderLevel}</span>
+                  </div>
+                )}
+                
+                {product.taxable && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <DollarSign size={18} className="text-muted-foreground mr-2" />
+                      <span>Tax Rate</span>
+                    </div>
+                    <span className="font-semibold">{product.taxRate || 0}%</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Additional Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {product.categoryName && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Tag size={18} className="text-muted-foreground mr-2" />
+                      <span>Category</span>
+                    </div>
+                    <span className="font-semibold">{product.categoryName}</span>
+                  </div>
+                )}
+                
+                {product.barcode && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <LayoutGrid size={18} className="text-muted-foreground mr-2" />
+                      <span>Barcode</span>
+                    </div>
+                    <span className="font-semibold">{product.barcode}</span>
+                  </div>
+                )}
+                
+                {product.weight && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <ShoppingCart size={18} className="text-muted-foreground mr-2" />
+                      <span>Weight</span>
+                    </div>
+                    <span className="font-semibold">{product.weight} kg</span>
+                  </div>
+                )}
+                
+                {product.dimensions && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Box size={18} className="text-muted-foreground mr-2" />
+                      <span>Dimensions</span>
+                    </div>
+                    <span className="font-semibold">{product.dimensions}</span>
+                  </div>
+                )}
+                
+                {product.createdAt && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <CalendarIcon size={18} className="text-muted-foreground mr-2" />
+                      <span>Created</span>
+                    </div>
+                    <span className="font-semibold">{formatDate(product.createdAt)}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Button 
+              className="w-full flex items-center justify-center gap-2"
+              onClick={() => setLocation(`/inventory/transactions/new?productId=${product.id}`)}
+            >
+              <ArrowDownUp size={16} /> Record Transaction
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-8 border rounded-lg bg-muted/10">
+          <Package size={48} className="text-muted-foreground mb-4" />
+          <h3 className="text-xl font-medium mb-2">Product Not Found</h3>
+          <p className="text-muted-foreground text-center mb-4">
+            The product you're looking for doesn't exist or has been removed.
+          </p>
+          <Button 
+            onClick={onBack}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft size={16} /> Back to Products
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Product History View Component
+interface ProductHistoryViewProps {
+  productId: number;
+  onBack: () => void;
+}
+
+function ProductHistoryView({ productId, onBack }: ProductHistoryViewProps) {
+  const { data: product } = useQuery({
+    queryKey: [`/api/products/${productId}`],
+  });
+  
+  const { data: history, isLoading } = useQuery({
+    queryKey: [`/api/products/${productId}/inventory-history`],
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+          <ChevronLeft size={16} />
+          Back to Products
+        </Button>
+        <h2 className="text-2xl font-bold">Inventory History</h2>
+      </div>
+      
+      {product && (
+        <div className="flex items-center bg-muted/20 p-4 rounded-lg">
+          <Package size={24} className="text-muted-foreground mr-4" />
+          <div>
+            <h3 className="font-semibold text-lg">{product.name}</h3>
+            <p className="text-muted-foreground">SKU: {product.sku} | Current Stock: {product.stockLevel || 0}</p>
+          </div>
+        </div>
+      )}
+      
+      {isLoading ? (
+        <div className="space-y-3">
+          <div className="h-12 bg-gray-200 rounded w-full animate-pulse"></div>
+          <div className="h-12 bg-gray-200 rounded w-full animate-pulse"></div>
+          <div className="h-12 bg-gray-200 rounded w-full animate-pulse"></div>
+        </div>
+      ) : history && history.length > 0 ? (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Quantity</TableHead>
+                <TableHead>Reference</TableHead>
+                <TableHead>Notes</TableHead>
+                <TableHead>Created By</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {history.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell>{formatDate(transaction.createdAt)}</TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant={
+                        transaction.type === "Purchase" || transaction.type === "Return" ? "default" :
+                        transaction.type === "Sale" ? "destructive" : 
+                        "secondary"
+                      }
+                    >
+                      {transaction.type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <span className={transaction.type === "Sale" ? "text-red-600" : "text-green-600"}>
+                      {transaction.type === "Sale" ? "-" : "+"}
+                      {transaction.quantity}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {transaction.referenceNumber || "—"}
+                  </TableCell>
+                  <TableCell>
+                    {transaction.notes || "—"}
+                  </TableCell>
+                  <TableCell>
+                    {transaction.createdByUser || "System"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-8 border rounded-lg bg-muted/10">
+          <ArrowDownUp size={48} className="text-muted-foreground mb-4" />
+          <h3 className="text-xl font-medium mb-2">No Transaction History</h3>
+          <p className="text-muted-foreground text-center mb-4">
+            There are no recorded transactions for this product yet.
+          </p>
+          <Button 
+            onClick={() => setLocation(`/inventory/transactions/new?productId=${productId}`)}
+            className="flex items-center gap-2"
+          >
+            <PlusCircle size={16} /> Record Transaction
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 type InventoryPageProps = {
   subPath?: string;
@@ -56,6 +403,10 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   
+  // Retrieve single product details if ID is provided
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'detail' | 'edit' | 'history'>('list');
+  
   // Handle subPath for specific routes
   useEffect(() => {
     if (subPath) {
@@ -64,14 +415,25 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
         // Set the active tab based on the first part of the path
         if (pathParts[0] === 'products') {
           setActiveTab('products');
+          if (pathParts.length >= 2 && !isNaN(parseInt(pathParts[1]))) {
+            setSelectedProductId(parseInt(pathParts[1]));
+            if (pathParts.length >= 3) {
+              if (pathParts[2] === 'edit') {
+                setViewMode('edit');
+              } else if (pathParts[2] === 'history') {
+                setViewMode('history');
+              }
+            } else {
+              setViewMode('detail');
+            }
+          } else {
+            setViewMode('list');
+          }
         } else if (pathParts[0] === 'categories') {
           setActiveTab('categories');
         } else if (pathParts[0] === 'transactions') {
           setActiveTab('transactions');
         }
-        
-        // If this is a new item page, we would handle form rendering here
-        // but for now we'll just redirect to proper tab
       }
     }
   }, [subPath]);
@@ -179,42 +541,78 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
           </TabsList>
 
           <TabsContent value="products">
-            <div className="flex justify-between mb-4">
-              <h2 className="text-xl font-semibold">Products</h2>
-              <Button onClick={() => setLocation("/inventory/products/new")} className="flex items-center gap-2">
-                <PlusCircle size={16} /> Add Product
-              </Button>
-            </div>
-
-            {isLoadingProducts ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Stock</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Array(5).fill(0).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell colSpan={7} className="h-16">
-                          <div className="animate-pulse flex space-x-4">
-                            <div className="flex-1 space-y-4 py-1">
-                              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            {selectedProductId && viewMode === 'detail' ? (
+              <ProductDetailView 
+                productId={selectedProductId} 
+                onBack={() => {
+                  setSelectedProductId(null);
+                  setViewMode('list');
+                  setLocation('/inventory');
+                }}
+              />
+            ) : selectedProductId && viewMode === 'history' ? (
+              <ProductHistoryView 
+                productId={selectedProductId} 
+                onBack={() => {
+                  setSelectedProductId(null);
+                  setViewMode('list');
+                  setLocation('/inventory');
+                }}
+              />
+            ) : selectedProductId && viewMode === 'edit' ? (
+              <div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSelectedProductId(null);
+                    setViewMode('list');
+                    setLocation('/inventory');
+                  }}
+                  className="mb-4"
+                >
+                  Back to Products
+                </Button>
+                <h2 className="text-xl font-semibold mb-4">Edit Product</h2>
+                {/* Product edit form will be added here */}
               </div>
+            ) : (
+              <>
+                <div className="flex justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Products</h2>
+                  <Button onClick={() => setLocation("/inventory/products/new")} className="flex items-center gap-2">
+                    <PlusCircle size={16} /> Add Product
+                  </Button>
+                </div>
+
+                {isLoadingProducts ? (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>SKU</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Stock</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Array(5).fill(0).map((_, i) => (
+                          <TableRow key={i}>
+                            <TableCell colSpan={7} className="h-16">
+                              <div className="animate-pulse flex space-x-4">
+                                <div className="flex-1 space-y-4 py-1">
+                                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
             ) : filteredProducts?.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
@@ -546,7 +944,6 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                 ))}
               </div>
             ) : summary ? (
-              <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <Card>
                     <CardHeader className="pb-2">
@@ -683,7 +1080,6 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                     </CardContent>
                   </Card>
                 )}
-              </>
             ) : (
               <div className="flex flex-col items-center justify-center p-8 border rounded-lg bg-muted/10">
                 <Layers size={48} className="text-muted-foreground mb-4" />
