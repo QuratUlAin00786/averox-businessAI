@@ -296,6 +296,9 @@ export interface IStorage {
   createPurchaseOrderItem(item: InsertPurchaseOrderItem): Promise<PurchaseOrderItem>;
   updatePurchaseOrderItem(id: number, item: Partial<InsertPurchaseOrderItem>): Promise<PurchaseOrderItem | undefined>;
   deletePurchaseOrderItem(id: number): Promise<boolean>;
+  
+  // Inventory
+  getInventorySummary(): Promise<{products: Array<{id: number, name: string, sku: string, stock: number, value: number}>}>;
 
 }
 
@@ -2121,6 +2124,44 @@ export class MemStorage implements IStorage {
 
   async deleteProduct(id: number): Promise<boolean> {
     return this.products.delete(id);
+  }
+  
+  async getProductInventory(productId: number): Promise<number> {
+    let totalQuantity = 0;
+    
+    // Calculate based on inventory transactions
+    for (const transaction of this.inventoryTransactions.values()) {
+      if (transaction.productId === productId) {
+        if (['Purchase', 'Return In', 'Adjustment In'].includes(transaction.type)) {
+          totalQuantity += parseInt(transaction.quantity);
+        } else {
+          totalQuantity -= parseInt(transaction.quantity);
+        }
+      }
+    }
+    
+    return totalQuantity;
+  }
+  
+  async getInventorySummary(): Promise<{products: Array<{id: number, name: string, sku: string, stock: number, value: number}>}> {
+    const allProducts = Array.from(this.products.values());
+    
+    const productsWithStock = await Promise.all(
+      allProducts.map(async (product) => {
+        const stock = await this.getProductInventory(product.id);
+        const price = typeof product.price === 'string' ? parseFloat(product.price) : (product.price || 0);
+        
+        return {
+          id: product.id,
+          name: product.name,
+          sku: product.sku || '',
+          stock,
+          value: stock * price
+        };
+      })
+    );
+    
+    return { products: productsWithStock };
   }
 
   // Inventory Transaction Methods
@@ -4115,7 +4156,7 @@ export class DatabaseStorage implements IStorage {
 
   async listInvoices(filter?: Partial<Invoice>): Promise<Invoice[]> {
     try {
-      let query = db.select().from(invoices).orderBy(desc(invoices.date));
+      let query = db.select().from(invoices).orderBy(invoices.date);
       
       if (filter) {
         const whereConditions = [];
@@ -4302,7 +4343,7 @@ export class DatabaseStorage implements IStorage {
 
   async listPurchaseOrders(filter?: Partial<PurchaseOrder>): Promise<PurchaseOrder[]> {
     try {
-      let query = db.select().from(purchaseOrders).orderBy(desc(purchaseOrders.date));
+      let query = db.select().from(purchaseOrders).orderBy(purchaseOrders.date);
       
       if (filter) {
         const whereConditions = [];
