@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Opportunity, User, Account } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,14 @@ export function OpportunityDetail({
     queryKey: ["/api/accounts", opportunity?.accountId ? opportunity.accountId.toString() : undefined],
     enabled: isOpen && !!opportunity?.accountId,
   });
+
+  // Add debug logging via useEffect
+  useEffect(() => {
+    if (account && opportunity) {
+      console.log('Account data for communication panel:', account);
+      console.log('Account phone number:', account.phone);
+    }
+  }, [account, opportunity]);
 
   // Getting stage badge color
   const getStageColor = (stage: string | null) => {
@@ -295,15 +303,23 @@ export function OpportunityDetail({
               </TabsContent>
               
               <TabsContent value="communications">
-                {/* Debug log for account data */}
-                {console.log('Account data for communication panel:', account)}
-                <CommunicationPanel 
-                  contactId={opportunity.id}
-                  contactType="customer"
-                  contactName={opportunity.name}
-                  email={account?.website || ""}
-                  phone={account?.phone || ""}
-                />
+                {/* Debug log for account data (called in useEffect to avoid React node issues) */}
+                <span className="hidden">{account && opportunity ? JSON.stringify({account, opportunity}) : ""}</span>
+                {/* Force a check to ensure account data is available */}
+                {account ? (
+                  <CommunicationPanel 
+                    contactId={opportunity.id}
+                    contactType="customer"
+                    contactName={opportunity.name}
+                    email={account.website || ""}
+                    phone={String(account.phone || "")}
+                  />
+                ) : (
+                  <div className="flex justify-center items-center py-8">
+                    <RefreshCw className="h-8 w-8 animate-spin text-neutral-400" />
+                    <p className="ml-2">Loading account information...</p>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>

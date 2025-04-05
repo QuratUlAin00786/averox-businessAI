@@ -101,15 +101,17 @@ const ChannelIcon = ({ channel }: { channel: string }) => {
 };
 
 export function CommunicationPanel({ contactId, contactType, contactName = '', email = '', phone = '' }: CommunicationPanelProps) {
-  // Debug log with more visibility
+  // Ensure phone is a string and debug log with more visibility
+  const phoneStr = typeof phone === 'string' ? phone : String(phone || '');
   console.log('%c CommunicationPanel props:', 'background: #007bff; color: white; padding: 2px 5px; border-radius: 3px;', { 
     contactId, 
     contactType, 
     contactName, 
     email, 
-    phone,
-    hasPhone: !!phone,  // Explicitly show if phone is truthy
-    phoneLength: phone?.length || 0  // Check length of phone string
+    phone: phoneStr,
+    hasPhone: !!phoneStr,  // Explicitly show if phone is truthy
+    phoneLength: phoneStr.length,  // Check length of phone string
+    phoneType: typeof phone  // Log the type of the phone parameter
   });
   
   const { toast } = useToast();
@@ -195,9 +197,9 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
   // Communication methods available for this contact
   const availableChannels = [
     { id: 'email', name: 'Email', icon: <Mail className="h-4 w-4" />, available: !!email },
-    { id: 'phone', name: 'Phone', icon: <Phone className="h-4 w-4" />, available: !!phone },
-    { id: 'sms', name: 'SMS', icon: <FaSms className="h-4 w-4 text-orange-500" />, available: !!phone },
-    { id: 'whatsapp', name: 'WhatsApp', icon: <FaWhatsapp className="h-4 w-4 text-green-500" />, available: !!phone },
+    { id: 'phone', name: 'Phone', icon: <Phone className="h-4 w-4" />, available: !!phoneStr },
+    { id: 'sms', name: 'SMS', icon: <FaSms className="h-4 w-4 text-orange-500" />, available: !!phoneStr },
+    { id: 'whatsapp', name: 'WhatsApp', icon: <FaWhatsapp className="h-4 w-4 text-green-500" />, available: !!phoneStr },
     { id: 'messenger', name: 'Messenger', icon: <FaFacebookMessenger className="h-4 w-4 text-blue-500" />, available: true },
     { id: 'twitter', name: 'Twitter', icon: <FaTwitter className="h-4 w-4 text-blue-400" />, available: true },
     { id: 'linkedin', name: 'LinkedIn', icon: <FaLinkedin className="h-4 w-4 text-blue-700" />, available: true },
@@ -208,26 +210,26 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
   const handleComposeMessage = (channel: string) => {
     // For direct communication channels like phone, SMS, and WhatsApp,
     // we'll handle them differently
-    if (channel === 'phone' && phone) {
+    if (channel === 'phone' && phoneStr) {
       // Open native phone dialer
-      window.open(`tel:${phone}`, '_blank');
+      window.open(`tel:${phoneStr}`, '_blank');
       // Also log this communication
       logCommunication('phone');
       return;
     }
     
-    if (channel === 'sms' && phone) {
+    if (channel === 'sms' && phoneStr) {
       // Open native SMS app
-      window.open(`sms:${phone}`, '_blank');
+      window.open(`sms:${phoneStr}`, '_blank');
       // Also log this communication
       logCommunication('sms');
       return;
     }
     
-    if (channel === 'whatsapp' && phone) {
+    if (channel === 'whatsapp' && phoneStr) {
       // Open WhatsApp with the phone number
       // Note: We're removing any non-digit characters from the phone number
-      const cleanPhone = phone.replace(/\D/g, '');
+      const cleanPhone = phoneStr.replace(/\D/g, '');
       window.open(`https://wa.me/${cleanPhone}`, '_blank');
       // Also log this communication
       logCommunication('whatsapp');
@@ -445,7 +447,7 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
         <CardContent>
           <div className="space-y-6">
             {/* Phone communication section - Only show if phone is available */}
-            {phone && (
+            {phoneStr && (
               <div className="flex flex-col space-y-2">
                 <h3 className="text-sm font-medium mb-2">Direct Communications</h3>
                 <div className="grid grid-cols-3 gap-2">
@@ -671,7 +673,7 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
             
             <div className="text-center">
               <h3 className="text-xl font-medium">{contactName || 'Unknown Contact'}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{phone}</p>
+              <p className="text-sm text-muted-foreground mt-1">{phoneStr}</p>
               
               {callStatus === 'ongoing' && (
                 <p className="text-sm text-green-600 mt-2 animate-pulse">
