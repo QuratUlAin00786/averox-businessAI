@@ -2132,7 +2132,7 @@ export class MemStorage implements IStorage {
     // Calculate based on inventory transactions
     for (const transaction of this.inventoryTransactions.values()) {
       if (transaction.productId === productId) {
-        if (['Purchase', 'Return In', 'Adjustment In'].includes(transaction.type)) {
+        if (['Purchase', 'Return', 'Adjustment'].includes(transaction.type)) {
           totalQuantity += parseInt(transaction.quantity);
         } else {
           totalQuantity -= parseInt(transaction.quantity);
@@ -4103,7 +4103,14 @@ export class DatabaseStorage implements IStorage {
     try {
       // Calculate current inventory using sum of transactions
       const result = await db.select({
-        total: sql`SUM(CASE WHEN ${inventoryTransactions.type} IN ('Purchase', 'Return In', 'Adjustment In') THEN ${inventoryTransactions.quantity} ELSE -${inventoryTransactions.quantity} END)`
+        total: sql`SUM(CASE 
+          WHEN ${inventoryTransactions.type} = 'Purchase' THEN ${inventoryTransactions.quantity}
+          WHEN ${inventoryTransactions.type} = 'Return' THEN ${inventoryTransactions.quantity}
+          WHEN ${inventoryTransactions.type} = 'Adjustment' THEN 
+            CASE WHEN ${inventoryTransactions.quantity} > 0 THEN ${inventoryTransactions.quantity} ELSE ${inventoryTransactions.quantity} END
+          WHEN ${inventoryTransactions.type} = 'Sale' THEN -${inventoryTransactions.quantity}
+          WHEN ${inventoryTransactions.type} = 'Transfer' THEN -${inventoryTransactions.quantity}
+          ELSE 0 END)`
       }).from(inventoryTransactions)
         .where(eq(inventoryTransactions.productId, productId));
       
@@ -4282,7 +4289,7 @@ export class DatabaseStorage implements IStorage {
             await this.createInventoryTransaction({
               productId: originalItem.productId,
               quantity: Math.abs(quantityDiff).toString(),
-              type: quantityDiff < 0 ? 'Return In' : 'Sale',
+              type: quantityDiff < 0 ? 'Return' : 'Sale',
               date: new Date(),
               referenceId: `INV-${originalItem.invoiceId}-ADJUST`,
               notes: `Adjusted quantity on invoice #${originalItem.invoiceId}`
@@ -4314,7 +4321,7 @@ export class DatabaseStorage implements IStorage {
           await this.createInventoryTransaction({
             productId: item.productId,
             quantity: item.quantity, // quantity is already a string in the database
-            type: 'Return In',
+            type: 'Return',
             date: new Date(),
             referenceId: `INV-${item.invoiceId}-DEL`,
             notes: `Returned from deleted invoice item #${id}`
