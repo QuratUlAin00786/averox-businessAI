@@ -24,6 +24,8 @@ import Subscriptions from "@/pages/subscriptions";
 import AdminSubscriptionPackages from "@/pages/admin-subscription-packages";
 import AdminUsers from "@/pages/admin-users";
 import CommunicationCenter from "@/pages/communication-center";
+import Accounting from "@/pages/accounting";
+import Inventory from "@/pages/inventory";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
@@ -143,6 +145,18 @@ function Router() {
       <ProtectedRoute path="/communication-center" component={() => (
         <Layout>
           <CommunicationCenter />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounting" component={() => (
+        <Layout>
+          <Accounting />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/inventory" component={() => (
+        <Layout>
+          <Inventory />
         </Layout>
       )} />
       

@@ -15,7 +15,15 @@ import {
   insertSubscriptionPackageSchema,
   insertUserSubscriptionSchema,
   insertApiKeySchema,
-  insertCommunicationSchema
+  insertCommunicationSchema,
+  // Accounting and inventory schemas
+  insertProductSchema,
+  insertProductCategorySchema,
+  insertInventoryTransactionSchema,
+  insertInvoiceSchema,
+  insertInvoiceItemSchema,
+  insertPurchaseOrderSchema,
+  insertPurchaseOrderItemSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { 
@@ -1809,6 +1817,512 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.status(201).json(communication);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Product Category Routes
+  app.get('/api/product-categories', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const categories = await storage.listProductCategories();
+      res.json(categories);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/product-categories', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const categoryData = insertProductCategorySchema.parse(req.body);
+      const category = await storage.createProductCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/product-categories/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const category = await storage.getProductCategory(id);
+      if (!category) {
+        return res.status(404).json({ error: "Product category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/product-categories/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const categoryData = insertProductCategorySchema.partial().parse(req.body);
+      const updatedCategory = await storage.updateProductCategory(id, categoryData);
+      if (!updatedCategory) {
+        return res.status(404).json({ error: "Product category not found" });
+      }
+      res.json(updatedCategory);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/product-categories/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteProductCategory(id);
+      if (!success) {
+        return res.status(404).json({ error: "Product category not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Products Routes
+  app.get('/api/products', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const products = await storage.listProducts();
+      res.json(products);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/products', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const productData = insertProductSchema.parse(req.body);
+      const product = await storage.createProduct(productData);
+      res.status(201).json(product);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/products/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const product = await storage.getProduct(id);
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/products/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const productData = insertProductSchema.partial().parse(req.body);
+      const updatedProduct = await storage.updateProduct(id, productData);
+      if (!updatedProduct) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      res.json(updatedProduct);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/products/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteProduct(id);
+      if (!success) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Inventory Transaction Routes
+  app.get('/api/inventory-transactions', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const transactions = await storage.listInventoryTransactions();
+      res.json(transactions);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/inventory-transactions', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const transactionData = insertInventoryTransactionSchema.parse(req.body);
+      const transaction = await storage.createInventoryTransaction(transactionData);
+      res.status(201).json(transaction);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/inventory-transactions/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const transaction = await storage.getInventoryTransaction(id);
+      if (!transaction) {
+        return res.status(404).json({ error: "Inventory transaction not found" });
+      }
+      res.json(transaction);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/products/:id/inventory-history', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const productId = parseInt(req.params.id);
+      const history = await storage.getProductInventoryHistory(productId);
+      res.json(history);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/inventory-summary', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const summary = await storage.getInventorySummary();
+      res.json(summary);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Invoice Routes
+  app.get('/api/invoices', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const invoices = await storage.listInvoices();
+      res.json(invoices);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/invoices', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const invoiceData = insertInvoiceSchema.parse(req.body);
+      const invoice = await storage.createInvoice(invoiceData);
+      res.status(201).json(invoice);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/invoices/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const invoice = await storage.getInvoice(id);
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      res.json(invoice);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/invoices/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const invoiceData = insertInvoiceSchema.partial().parse(req.body);
+      const updatedInvoice = await storage.updateInvoice(id, invoiceData);
+      if (!updatedInvoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      res.json(updatedInvoice);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/invoices/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteInvoice(id);
+      if (!success) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Invoice Items Routes
+  app.get('/api/invoices/:invoiceId/items', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const invoiceId = parseInt(req.params.invoiceId);
+      const items = await storage.getInvoiceItems(invoiceId);
+      res.json(items);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/invoice-items', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const itemData = insertInvoiceItemSchema.parse(req.body);
+      const item = await storage.createInvoiceItem(itemData);
+      res.status(201).json(item);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/invoice-items/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const itemData = insertInvoiceItemSchema.partial().parse(req.body);
+      const updatedItem = await storage.updateInvoiceItem(id, itemData);
+      if (!updatedItem) {
+        return res.status(404).json({ error: "Invoice item not found" });
+      }
+      res.json(updatedItem);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/invoice-items/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteInvoiceItem(id);
+      if (!success) {
+        return res.status(404).json({ error: "Invoice item not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Purchase Order Routes
+  app.get('/api/purchase-orders', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const purchaseOrders = await storage.listPurchaseOrders();
+      res.json(purchaseOrders);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/purchase-orders', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const purchaseOrderData = insertPurchaseOrderSchema.parse(req.body);
+      const purchaseOrder = await storage.createPurchaseOrder(purchaseOrderData);
+      res.status(201).json(purchaseOrder);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/purchase-orders/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const purchaseOrder = await storage.getPurchaseOrder(id);
+      if (!purchaseOrder) {
+        return res.status(404).json({ error: "Purchase order not found" });
+      }
+      res.json(purchaseOrder);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/purchase-orders/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const purchaseOrderData = insertPurchaseOrderSchema.partial().parse(req.body);
+      const updatedPurchaseOrder = await storage.updatePurchaseOrder(id, purchaseOrderData);
+      if (!updatedPurchaseOrder) {
+        return res.status(404).json({ error: "Purchase order not found" });
+      }
+      res.json(updatedPurchaseOrder);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/purchase-orders/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const success = await storage.deletePurchaseOrder(id);
+      if (!success) {
+        return res.status(404).json({ error: "Purchase order not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Purchase Order Items Routes
+  app.get('/api/purchase-orders/:purchaseOrderId/items', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const purchaseOrderId = parseInt(req.params.purchaseOrderId);
+      const items = await storage.getPurchaseOrderItems(purchaseOrderId);
+      res.json(items);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/purchase-order-items', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const itemData = insertPurchaseOrderItemSchema.parse(req.body);
+      const item = await storage.createPurchaseOrderItem(itemData);
+      res.status(201).json(item);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/purchase-order-items/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const itemData = insertPurchaseOrderItemSchema.partial().parse(req.body);
+      const updatedItem = await storage.updatePurchaseOrderItem(id, itemData);
+      if (!updatedItem) {
+        return res.status(404).json({ error: "Purchase order item not found" });
+      }
+      res.json(updatedItem);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/purchase-order-items/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const success = await storage.deletePurchaseOrderItem(id);
+      if (!success) {
+        return res.status(404).json({ error: "Purchase order item not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/purchase-orders/:id/receive', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const { items } = req.body;
+      
+      if (!Array.isArray(items)) {
+        return res.status(400).json({ error: "Items must be an array" });
+      }
+      
+      const result = await storage.receivePurchaseOrderItems(id, items);
+      res.json(result);
     } catch (error) {
       handleError(res, error);
     }
