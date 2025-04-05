@@ -203,10 +203,12 @@ export function LeadDetail({
           </div>
 
           <div className="mb-6">
-            <Tabs defaultValue="notes" className="mt-6">
+            <Tabs defaultValue="communications" className="mt-6">
               <TabsList className="mb-4">
                 <TabsTrigger value="notes">Notes</TabsTrigger>
-                <TabsTrigger value="communications">Communications</TabsTrigger>
+                <TabsTrigger value="communications" title="View all communication channels including phone, SMS, and WhatsApp">
+                  Communications
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="notes">

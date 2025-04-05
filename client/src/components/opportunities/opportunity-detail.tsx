@@ -275,10 +275,12 @@ export function OpportunityDetail({
           </div>
 
           <div className="mb-6">
-            <Tabs defaultValue="notes" className="mt-6">
+            <Tabs defaultValue="communications" className="mt-6">
               <TabsList className="mb-4">
                 <TabsTrigger value="notes">Notes</TabsTrigger>
-                <TabsTrigger value="communications">Communications</TabsTrigger>
+                <TabsTrigger value="communications" title="Click to view all communication channels and history, including phone, SMS, WhatsApp">
+                  Communications
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="notes">

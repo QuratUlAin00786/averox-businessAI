@@ -249,10 +249,12 @@ export function ContactDetail({ contactId, onBack }: ContactDetailProps) {
         
         {/* Notes and History Section */}
         <div className="md:col-span-2">
-          <Tabs defaultValue="notes">
+          <Tabs defaultValue="communications">
             <TabsList className="mb-4">
               <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="communications">Communications</TabsTrigger>
+              <TabsTrigger value="communications" title="View all communication channels including phone, SMS, and WhatsApp">
+                Communications
+              </TabsTrigger>
               <TabsTrigger value="activities">Activities</TabsTrigger>
               <TabsTrigger value="related">Related Records</TabsTrigger>
             </TabsList>
