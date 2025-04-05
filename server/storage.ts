@@ -2166,8 +2166,13 @@ export class DatabaseStorage implements IStorage {
   
   // Contact Methods
   async getContact(id: number): Promise<Contact | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [contact] = await db.select().from(contacts).where(eq(contacts.id, id));
+      return contact || undefined;
+    } catch (error) {
+      console.error('Database error in getContact:', error);
+      return undefined;
+    }
   }
 
   async listContacts(filter?: Partial<Contact>): Promise<Contact[]> {

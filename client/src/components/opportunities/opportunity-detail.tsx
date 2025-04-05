@@ -311,7 +311,7 @@ export function OpportunityDetail({
                     contactId={opportunity.id}
                     contactType="customer"
                     contactName={opportunity.name}
-                    email={account.website || ""}
+                    email={account.email || ""}
                     phone={String(account.phone || "")}
                   />
                 ) : (
