@@ -28,6 +28,10 @@ import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
+import NewProduct from "@/pages/inventory/products/new";
+import NewCategory from "@/pages/inventory/categories/new";
+import NewInvoice from "@/pages/accounting/invoices/new";
+import NewPurchaseOrder from "@/pages/accounting/purchase-orders/new";
 
 function Router() {
   return (
@@ -156,7 +160,7 @@ function Router() {
       
       <ProtectedRoute path="/accounting/invoices/new" component={() => (
         <Layout>
-          <Accounting subPath="invoices/new" />
+          <NewInvoice />
         </Layout>
       )} />
       
@@ -168,7 +172,7 @@ function Router() {
       
       <ProtectedRoute path="/accounting/purchase-orders/new" component={() => (
         <Layout>
-          <Accounting subPath="purchase-orders/new" />
+          <NewPurchaseOrder />
         </Layout>
       )} />
       
@@ -186,7 +190,7 @@ function Router() {
       
       <ProtectedRoute path="/inventory/categories/new" component={() => (
         <Layout>
-          <Inventory subPath="categories/new" />
+          <NewCategory />
         </Layout>
       )} />
       
@@ -198,7 +202,7 @@ function Router() {
       
       <ProtectedRoute path="/inventory/products/new" component={() => (
         <Layout>
-          <Inventory subPath="products/new" />
+          <NewProduct />
         </Layout>
       )} />
       
