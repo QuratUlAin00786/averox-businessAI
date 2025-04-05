@@ -273,6 +273,7 @@ export interface IStorage {
   listInventoryTransactions(filter?: Partial<InventoryTransaction>): Promise<InventoryTransaction[]>;
   createInventoryTransaction(transaction: InsertInventoryTransaction): Promise<InventoryTransaction>;
   getProductInventory(productId: number): Promise<number>; // Returns current inventory level for a product
+  getInventorySummary(): Promise<{products: Array<{id: number, name: string, sku: string, stock: number, value: number}>}>;
 
   // Invoices
   getInvoice(id: number): Promise<Invoice | undefined>;
@@ -4069,6 +4070,35 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Database error in getProductInventory:', error);
       return 0;
+    }
+  }
+
+  async getInventorySummary(): Promise<{products: Array<{id: number, name: string, sku: string, stock: number, value: number}>}> {
+    try {
+      // Get all products
+      const allProducts = await db.select().from(products);
+      
+      // For each product, get the current inventory and calculate value
+      const productsWithStock = await Promise.all(
+        allProducts.map(async (product) => {
+          const stock = await this.getProductInventory(product.id);
+          // Convert price/cost from string to number for calculation
+          const price = typeof product.price === 'string' ? parseFloat(product.price) : (product.price || 0);
+          
+          return {
+            id: product.id,
+            name: product.name,
+            sku: product.sku || '',
+            stock: stock,
+            value: stock * price
+          };
+        })
+      );
+      
+      return { products: productsWithStock };
+    } catch (error) {
+      console.error('Database error in getInventorySummary:', error);
+      return { products: [] };
     }
   }
   
