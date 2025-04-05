@@ -283,12 +283,17 @@ const CommunicationCenter = () => {
   // Filter communications based on tab, search term, and filters
   const filteredCommunications = useMemo(() => {
     return communications.filter(comm => {
+      // Make direction value case-insensitive
+      const direction = typeof comm.direction === 'string' ? comm.direction.toLowerCase() : comm.direction;
+      const contactType = typeof comm.contactType === 'string' ? comm.contactType.toLowerCase() : comm.contactType;
+      const status = typeof comm.status === 'string' ? comm.status.toLowerCase() : comm.status;
+      
       // Filter by tab
-      if (selectedTab === 'unread' && comm.status !== 'unread') return false;
-      if (selectedTab === 'inbound' && comm.direction !== 'inbound') return false;
-      if (selectedTab === 'outbound' && comm.direction !== 'outbound') return false;
-      if (selectedTab === 'leads' && comm.contactType !== 'lead') return false;
-      if (selectedTab === 'customers' && comm.contactType !== 'customer') return false;
+      if (selectedTab === 'unread' && status !== 'unread') return false;
+      if (selectedTab === 'inbound' && direction !== 'inbound') return false;
+      if (selectedTab === 'outbound' && direction !== 'outbound') return false;
+      if (selectedTab === 'leads' && contactType !== 'lead') return false;
+      if (selectedTab === 'customers' && contactType !== 'customer') return false;
 
       // Filter by search term
       if (
@@ -299,8 +304,12 @@ const CommunicationCenter = () => {
         return false;
       }
 
-      // Filter by selected filters
-      if (selectedFilters.length > 0 && !selectedFilters.includes(comm.channel)) {
+      // Filter by selected filters - make channel case-insensitive
+      if (selectedFilters.length > 0 && 
+         !selectedFilters.some(filter => 
+           filter.toLowerCase() === (comm.channel || '').toLowerCase()
+         )
+      ) {
         return false;
       }
 
