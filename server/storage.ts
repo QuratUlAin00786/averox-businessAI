@@ -4156,12 +4156,12 @@ export class DatabaseStorage implements IStorage {
 
   async listInvoices(filter?: Partial<Invoice>): Promise<Invoice[]> {
     try {
-      let query = db.select().from(invoices).orderBy(invoices.date);
+      let query = db.select().from(invoices).orderBy(invoices.issueDate);
       
       if (filter) {
         const whereConditions = [];
         if (filter.id !== undefined) whereConditions.push(eq(invoices.id, filter.id));
-        if (filter.customerId !== undefined) whereConditions.push(eq(invoices.customerId, filter.customerId));
+        if (filter.accountId !== undefined) whereConditions.push(eq(invoices.accountId, filter.accountId));
         if (filter.status !== undefined) whereConditions.push(eq(invoices.status, filter.status));
         if (filter.ownerId !== undefined) whereConditions.push(eq(invoices.ownerId, filter.ownerId));
         
@@ -4343,14 +4343,14 @@ export class DatabaseStorage implements IStorage {
 
   async listPurchaseOrders(filter?: Partial<PurchaseOrder>): Promise<PurchaseOrder[]> {
     try {
-      let query = db.select().from(purchaseOrders).orderBy(purchaseOrders.date);
+      let query = db.select().from(purchaseOrders).orderBy(purchaseOrders.orderDate);
       
       if (filter) {
         const whereConditions = [];
         if (filter.id !== undefined) whereConditions.push(eq(purchaseOrders.id, filter.id));
         if (filter.supplierId !== undefined) whereConditions.push(eq(purchaseOrders.supplierId, filter.supplierId));
         if (filter.status !== undefined) whereConditions.push(eq(purchaseOrders.status, filter.status));
-        if (filter.ownerId !== undefined) whereConditions.push(eq(purchaseOrders.ownerId, filter.ownerId));
+        if (filter.createdBy !== undefined) whereConditions.push(eq(purchaseOrders.createdBy, filter.createdBy));
         
         if (whereConditions.length > 0) {
           query = query.where(and(...whereConditions));
