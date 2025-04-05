@@ -30,7 +30,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, RefreshCw, Send, MessageSquare, Mail, Phone } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Loader2, RefreshCw, Send, MessageSquare, Mail, Phone, PhoneCall, PhoneForwarded, PhoneIncoming, PhoneOff, PhoneOutgoing } from 'lucide-react';
 import { FaWhatsapp, FaFacebookMessenger, FaLinkedin, FaTwitter, FaInstagram, FaSms } from 'react-icons/fa';
 
 // Define types for our components
@@ -102,9 +103,11 @@ const ChannelIcon = ({ channel }: { channel: string }) => {
 export function CommunicationPanel({ contactId, contactType, contactName = '', email = '', phone = '' }: CommunicationPanelProps) {
   const { toast } = useToast();
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [isCallDialogOpen, setIsCallDialogOpen] = useState(false);
   const [selectedCommunication, setSelectedCommunication] = useState<Communication | null>(null);
   const [messageContent, setMessageContent] = useState('');
   const [selectedChannel, setSelectedChannel] = useState('email');
+  const [callStatus, setCallStatus] = useState<'incoming' | 'ongoing' | 'completed' | null>(null);
   const firstNameLastName = contactName?.split(' ') || ['', ''];
   const firstName = firstNameLastName[0] || '';
   const lastName = firstNameLastName.slice(1).join(' ') || '';
@@ -192,9 +195,53 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
   
   // Open compose dialog with a specific channel
   const handleComposeMessage = (channel: string) => {
+    // For direct communication channels like phone, SMS, and WhatsApp,
+    // we'll handle them differently
+    if (channel === 'phone' && phone) {
+      // Open native phone dialer
+      window.open(`tel:${phone}`, '_blank');
+      // Also log this communication
+      logCommunication('phone');
+      return;
+    }
+    
+    if (channel === 'sms' && phone) {
+      // Open native SMS app
+      window.open(`sms:${phone}`, '_blank');
+      // Also log this communication
+      logCommunication('sms');
+      return;
+    }
+    
+    if (channel === 'whatsapp' && phone) {
+      // Open WhatsApp with the phone number
+      // Note: We're removing any non-digit characters from the phone number
+      const cleanPhone = phone.replace(/\D/g, '');
+      window.open(`https://wa.me/${cleanPhone}`, '_blank');
+      // Also log this communication
+      logCommunication('whatsapp');
+      return;
+    }
+    
+    // For other channels, open the compose dialog
     setSelectedChannel(channel);
     setSelectedCommunication(null);
     setIsMessageDialogOpen(true);
+  };
+  
+  // Log direct communications (phone, SMS, WhatsApp)
+  const logCommunication = (channel: string) => {
+    sendMessageMutation.mutate({
+      recipientId: contactId,
+      channel,
+      content: `Initiated ${channel} communication with ${contactName || 'contact'}`,
+      contactType
+    });
+    
+    toast({
+      title: "Communication initiated",
+      description: `${channel.charAt(0).toUpperCase() + channel.slice(1)} communication with ${contactName || 'contact'} has been initiated.`
+    });
   };
 
   // Open reply dialog for a specific communication
@@ -306,6 +353,64 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
     );
   }
 
+  // Handle receiving a call
+  const handleIncomingCall = () => {
+    setCallStatus('incoming');
+    setIsCallDialogOpen(true);
+  };
+  
+  // Handle accepting a call
+  const handleAcceptCall = () => {
+    setCallStatus('ongoing');
+    
+    // Log the incoming call in the system
+    sendMessageMutation.mutate({
+      recipientId: contactId,
+      channel: 'phone',
+      content: `Incoming call from ${contactName || 'contact'} was accepted`,
+      contactType
+    });
+  };
+  
+  // Handle rejecting a call
+  const handleRejectCall = () => {
+    setCallStatus('completed');
+    
+    // Log the rejected call in the system
+    sendMessageMutation.mutate({
+      recipientId: contactId,
+      channel: 'phone',
+      content: `Missed call from ${contactName || 'contact'}`,
+      contactType
+    });
+    
+    setIsCallDialogOpen(false);
+  };
+  
+  // Handle ending an ongoing call
+  const handleEndCall = () => {
+    setCallStatus('completed');
+    
+    // Log the ended call in the system
+    sendMessageMutation.mutate({
+      recipientId: contactId,
+      channel: 'phone',
+      content: `Call with ${contactName || 'contact'} ended`,
+      contactType
+    });
+    
+    // Reset and close the dialog
+    setTimeout(() => {
+      setIsCallDialogOpen(false);
+      setCallStatus(null);
+    }, 1000);
+  };
+  
+  // Simulate an incoming call (for testing)
+  const simulateIncomingCall = () => {
+    handleIncomingCall();
+  };
+
   return (
     <>
       <Card>
@@ -328,7 +433,56 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
+            {/* Phone communication section - Only show if phone is available */}
+            {phone && (
+              <div className="flex flex-col space-y-2">
+                <h3 className="text-sm font-medium mb-2">Direct Communications</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex flex-col items-center justify-center p-3 h-auto border-green-600 hover:bg-green-50"
+                    onClick={() => handleComposeMessage('phone')}
+                  >
+                    <Phone className="h-8 w-8 text-green-600 mb-1" />
+                    <span className="text-xs">Call</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="flex flex-col items-center justify-center p-3 h-auto border-orange-500 hover:bg-orange-50"
+                    onClick={() => handleComposeMessage('sms')}
+                  >
+                    <FaSms className="h-8 w-8 text-orange-500 mb-1" />
+                    <span className="text-xs">SMS</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="flex flex-col items-center justify-center p-3 h-auto border-green-500 hover:bg-green-50"
+                    onClick={() => handleComposeMessage('whatsapp')}
+                  >
+                    <FaWhatsapp className="h-8 w-8 text-green-500 mb-1" />
+                    <span className="text-xs">WhatsApp</span>
+                  </Button>
+                </div>
+                
+                <div className="mt-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={simulateIncomingCall}
+                    className="w-full text-sm"
+                    size="sm"
+                  >
+                    <Phone className="h-4 w-4 mr-2 text-blue-600" />
+                    Simulate Incoming Call (Test)
+                  </Button>
+                </div>
+                <Separator className="my-4" />
+              </div>
+            )}
+            
             <div className="flex flex-wrap gap-2">
+              <h3 className="text-sm font-medium w-full mb-2">All Channels</h3>
               {availableChannels
                 .filter(channel => channel.available)
                 .map(channel => (
@@ -466,6 +620,107 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Phone call dialog */}
+      <Dialog open={isCallDialogOpen} onOpenChange={(open) => {
+        // Only allow closing the dialog when the call is completed
+        if (!open && callStatus !== 'completed') {
+          // If trying to close an active call, treat it as rejecting/ending the call
+          if (callStatus === 'incoming') {
+            handleRejectCall();
+          } else if (callStatus === 'ongoing') {
+            handleEndCall();
+          }
+        } else {
+          setIsCallDialogOpen(open);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="text-center">
+            <div className="flex justify-center mb-2">
+              {callStatus === 'incoming' && <PhoneIncoming className="h-8 w-8 text-blue-600 animate-pulse" />}
+              {callStatus === 'ongoing' && <PhoneCall className="h-8 w-8 text-green-600" />}
+              {callStatus === 'completed' && <PhoneOff className="h-8 w-8 text-red-600" />}
+            </div>
+            <DialogTitle className="text-xl">
+              {callStatus === 'incoming' && "Incoming Call"}
+              {callStatus === 'ongoing' && "On Call"}
+              {callStatus === 'completed' && "Call Ended"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center py-6 space-y-4">
+            <Avatar className="h-24 w-24">
+              <AvatarFallback className="text-3xl bg-blue-100 text-blue-700">
+                {firstName?.[0]}{lastName?.[0]}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="text-center">
+              <h3 className="text-xl font-medium">{contactName || 'Unknown Contact'}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{phone}</p>
+              
+              {callStatus === 'ongoing' && (
+                <p className="text-sm text-green-600 mt-2 animate-pulse">
+                  Call in progress...
+                </p>
+              )}
+              
+              {callStatus === 'completed' && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Call has ended
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex justify-center gap-4 mt-4">
+            {callStatus === 'incoming' && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="rounded-full w-14 h-14 bg-red-100 hover:bg-red-200 border-red-200"
+                  onClick={handleRejectCall}
+                >
+                  <PhoneOff className="h-6 w-6 text-red-600" />
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="rounded-full w-14 h-14 bg-green-100 hover:bg-green-200 border-green-200"
+                  onClick={handleAcceptCall}
+                >
+                  <PhoneCall className="h-6 w-6 text-green-600" />
+                </Button>
+              </>
+            )}
+            
+            {callStatus === 'ongoing' && (
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="rounded-full w-14 h-14 bg-red-100 hover:bg-red-200 border-red-200"
+                onClick={handleEndCall}
+              >
+                <PhoneOff className="h-6 w-6 text-red-600" />
+              </Button>
+            )}
+            
+            {callStatus === 'completed' && (
+              <Button
+                onClick={() => {
+                  setIsCallDialogOpen(false);
+                  setCallStatus(null);
+                }}
+              >
+                Close
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
