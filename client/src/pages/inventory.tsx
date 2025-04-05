@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
@@ -46,11 +46,35 @@ import {
 
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-export default function InventoryPage() {
+type InventoryPageProps = {
+  subPath?: string;
+};
+
+export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
   const [activeTab, setActiveTab] = useState("products");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Handle subPath for specific routes
+  useEffect(() => {
+    if (subPath) {
+      const pathParts = subPath.split('/');
+      if (pathParts.length >= 1) {
+        // Set the active tab based on the first part of the path
+        if (pathParts[0] === 'products') {
+          setActiveTab('products');
+        } else if (pathParts[0] === 'categories') {
+          setActiveTab('categories');
+        } else if (pathParts[0] === 'transactions') {
+          setActiveTab('transactions');
+        }
+        
+        // If this is a new item page, we would handle form rendering here
+        // but for now we'll just redirect to proper tab
+      }
+    }
+  }, [subPath]);
 
   const { 
     data: products, 

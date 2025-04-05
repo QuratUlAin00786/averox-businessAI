@@ -28,10 +28,29 @@ import { Badge } from "@/components/ui/badge";
 
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-export default function AccountingPage() {
+type AccountingPageProps = {
+  subPath?: string;
+};
+
+export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
   const [activeTab, setActiveTab] = useState("invoices");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  
+  // Handle subPath for specific routes
+  useEffect(() => {
+    if (subPath) {
+      const pathParts = subPath.split('/');
+      if (pathParts.length >= 1) {
+        // Set the active tab based on the first part of the path
+        if (pathParts[0] === 'invoices') {
+          setActiveTab('invoices');
+        } else if (pathParts[0] === 'purchase-orders') {
+          setActiveTab('purchase-orders');
+        }
+      }
+    }
+  }, [subPath]);
 
   const { 
     data: invoices, 

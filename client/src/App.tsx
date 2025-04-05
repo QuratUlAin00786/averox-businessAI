@@ -154,9 +154,69 @@ function Router() {
         </Layout>
       )} />
       
+      <ProtectedRoute path="/accounting/invoices/new" component={() => (
+        <Layout>
+          <Accounting subPath="invoices/new" />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounting/invoices/:id" component={({ params }) => (
+        <Layout>
+          <Accounting subPath={`invoices/${params.id}`} />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounting/purchase-orders/new" component={() => (
+        <Layout>
+          <Accounting subPath="purchase-orders/new" />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounting/purchase-orders/:id" component={({ params }) => (
+        <Layout>
+          <Accounting subPath={`purchase-orders/${params.id}`} />
+        </Layout>
+      )} />
+      
       <ProtectedRoute path="/inventory" component={() => (
         <Layout>
           <Inventory />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/inventory/categories/new" component={() => (
+        <Layout>
+          <Inventory subPath="categories/new" />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/inventory/categories/:id" component={({ params }) => (
+        <Layout>
+          <Inventory subPath={`categories/${params.id}`} />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/inventory/products/new" component={() => (
+        <Layout>
+          <Inventory subPath="products/new" />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/inventory/products/:id" component={({ params }) => (
+        <Layout>
+          <Inventory subPath={`products/${params.id}`} />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/inventory/products/:id/edit" component={({ params }) => (
+        <Layout>
+          <Inventory subPath={`products/${params.id}/edit`} />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/inventory/products/:id/history" component={({ params }) => (
+        <Layout>
+          <Inventory subPath={`products/${params.id}/history`} />
         </Layout>
       )} />
       
