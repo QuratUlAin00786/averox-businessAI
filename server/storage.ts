@@ -2223,8 +2223,13 @@ export class DatabaseStorage implements IStorage {
 
   // Account Methods
   async getAccount(id: number): Promise<Account | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [account] = await db.select().from(accounts).where(eq(accounts.id, id));
+      return account || undefined;
+    } catch (error) {
+      console.error("Error fetching account:", error);
+      return undefined;
+    }
   }
 
   async listAccounts(filter?: Partial<Account>): Promise<Account[]> {
