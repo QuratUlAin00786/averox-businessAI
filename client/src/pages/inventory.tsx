@@ -613,7 +613,7 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                       </TableBody>
                     </Table>
                   </div>
-            ) : filteredProducts?.length > 0 ? (
+                ) : filteredProducts?.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -722,6 +722,8 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                 </Button>
               </div>
             )}
+          </>
+          )}
           </TabsContent>
 
           <TabsContent value="categories">
@@ -944,6 +946,7 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                 ))}
               </div>
             ) : summary ? (
+              <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <Card>
                     <CardHeader className="pb-2">
@@ -1080,6 +1083,7 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                     </CardContent>
                   </Card>
                 )}
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center p-8 border rounded-lg bg-muted/10">
                 <Layers size={48} className="text-muted-foreground mb-4" />
