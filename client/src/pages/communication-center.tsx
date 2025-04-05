@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
@@ -60,7 +60,8 @@ import {
   Check, 
   ChevronDown, 
   Users, 
-  User
+  User,
+  MoreVertical
 } from 'lucide-react';
 import { FaWhatsapp, FaFacebookMessenger, FaLinkedin, FaTwitter, FaInstagram, FaSms } from 'react-icons/fa';
 import { format } from 'date-fns';
@@ -279,31 +280,33 @@ const CommunicationCenter = () => {
     }
   });
 
-  // Filter communications based on search term and filters
-  const filteredCommunications = communications.filter(comm => {
-    // Filter by tab
-    if (selectedTab === 'unread' && comm.status !== 'unread') return false;
-    if (selectedTab === 'inbound' && comm.direction !== 'inbound') return false;
-    if (selectedTab === 'outbound' && comm.direction !== 'outbound') return false;
-    if (selectedTab === 'leads' && comm.contactType !== 'lead') return false;
-    if (selectedTab === 'customers' && comm.contactType !== 'customer') return false;
+  // Filter communications based on tab, search term, and filters
+  const filteredCommunications = useMemo(() => {
+    return communications.filter(comm => {
+      // Filter by tab
+      if (selectedTab === 'unread' && comm.status !== 'unread') return false;
+      if (selectedTab === 'inbound' && comm.direction !== 'inbound') return false;
+      if (selectedTab === 'outbound' && comm.direction !== 'outbound') return false;
+      if (selectedTab === 'leads' && comm.contactType !== 'lead') return false;
+      if (selectedTab === 'customers' && comm.contactType !== 'customer') return false;
 
-    // Filter by search term
-    if (
-      searchTerm && 
-      !`${comm.contactDetails.firstName} ${comm.contactDetails.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !comm.content.toLowerCase().includes(searchTerm.toLowerCase())
-    ) {
-      return false;
-    }
+      // Filter by search term
+      if (
+        searchTerm && 
+        !`${comm.contactDetails.firstName} ${comm.contactDetails.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !comm.content.toLowerCase().includes(searchTerm.toLowerCase())
+      ) {
+        return false;
+      }
 
-    // Filter by selected filters
-    if (selectedFilters.length > 0 && !selectedFilters.includes(comm.channel)) {
-      return false;
-    }
+      // Filter by selected filters
+      if (selectedFilters.length > 0 && !selectedFilters.includes(comm.channel)) {
+        return false;
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }, [communications, selectedTab, searchTerm, selectedFilters]);
 
   // Handler for opening compose dialog
   const handleComposeMessage = (contact: ContactDetails, channel: string) => {
@@ -874,35 +877,407 @@ const CommunicationCenter = () => {
 
             {/* Identical structure for other tabs - using the filteredCommunications function to handle filtering */}
             <TabsContent value="inbound" className="mt-4">
-              {/* Same structure, filtered by inbound */}
-              <Card><CardContent className="p-0">
-                {/* Content similar to 'all' tab, filtered differently */}
-                {/* ... */}
-              </CardContent></Card>
+              <Card>
+                <CardContent className="p-0">
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                      <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : filteredCommunications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-center">
+                      <MessageCircle className="h-12 w-12 text-muted-foreground mb-2" />
+                      <h3 className="font-medium text-lg">No Inbound Messages</h3>
+                      <p className="text-muted-foreground">
+                        There are no inbound messages matching your criteria.
+                      </p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[300px]">Contact</TableHead>
+                          <TableHead>Message</TableHead>
+                          <TableHead className="w-[110px]">Date</TableHead>
+                          <TableHead className="w-[120px]">Status</TableHead>
+                          <TableHead className="w-[100px] text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredCommunications.map((comm) => (
+                          <TableRow key={comm.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center space-x-2">
+                                <Avatar className="h-8 w-8">
+                                  {comm.contactDetails.avatarUrl && (
+                                    <AvatarImage src={comm.contactDetails.avatarUrl} alt={`${comm.contactDetails.firstName} ${comm.contactDetails.lastName}`} />
+                                  )}
+                                  <AvatarFallback>{comm.contactDetails.firstName.charAt(0)}{comm.contactDetails.lastName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-semibold">{comm.contactDetails.firstName} {comm.contactDetails.lastName}</div>
+                                  <div className="text-sm text-muted-foreground flex items-center">
+                                    <ChannelIcon channel={comm.channel} /> 
+                                    <span className="ml-1">{comm.channel}</span>
+                                    {comm.contactType === 'lead' ? (
+                                      <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 border-amber-200">Lead</Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="ml-2 bg-emerald-100 text-emerald-700 border-emerald-200">Customer</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-md truncate">{comm.content}</div>
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(new Date(comm.receivedAt || comm.sentAt))}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(comm.status)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleReply(comm)}
+                                >
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                                
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {comm.status !== 'read' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'read' })}>
+                                        Mark as Read
+                                      </DropdownMenuItem>
+                                    )}
+                                    {comm.status !== 'unread' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'unread' })}>
+                                        Mark as Unread
+                                      </DropdownMenuItem>
+                                    )}
+                                    {comm.status !== 'archived' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'archived' })}>
+                                        Archive
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
             
             <TabsContent value="outbound" className="mt-4">
-              {/* Same structure, filtered by outbound */}
-              <Card><CardContent className="p-0">
-                {/* Content similar to 'all' tab, filtered differently */}
-                {/* ... */}
-              </CardContent></Card>
+              <Card>
+                <CardContent className="p-0">
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                      <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : filteredCommunications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-center">
+                      <MessageCircle className="h-12 w-12 text-muted-foreground mb-2" />
+                      <h3 className="font-medium text-lg">No Outbound Messages</h3>
+                      <p className="text-muted-foreground">
+                        There are no outbound messages matching your criteria.
+                      </p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[300px]">Contact</TableHead>
+                          <TableHead>Message</TableHead>
+                          <TableHead className="w-[110px]">Date</TableHead>
+                          <TableHead className="w-[120px]">Status</TableHead>
+                          <TableHead className="w-[100px] text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredCommunications.map((comm) => (
+                          <TableRow key={comm.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center space-x-2">
+                                <Avatar className="h-8 w-8">
+                                  {comm.contactDetails.avatarUrl && (
+                                    <AvatarImage src={comm.contactDetails.avatarUrl} alt={`${comm.contactDetails.firstName} ${comm.contactDetails.lastName}`} />
+                                  )}
+                                  <AvatarFallback>{comm.contactDetails.firstName.charAt(0)}{comm.contactDetails.lastName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-semibold">{comm.contactDetails.firstName} {comm.contactDetails.lastName}</div>
+                                  <div className="text-sm text-muted-foreground flex items-center">
+                                    <ChannelIcon channel={comm.channel} /> 
+                                    <span className="ml-1">{comm.channel}</span>
+                                    {comm.contactType === 'lead' ? (
+                                      <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 border-amber-200">Lead</Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="ml-2 bg-emerald-100 text-emerald-700 border-emerald-200">Customer</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-md truncate">{comm.content}</div>
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(new Date(comm.sentAt))}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(comm.status)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleReply(comm)}
+                                >
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                                
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {comm.status !== 'read' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'read' })}>
+                                        Mark as Read
+                                      </DropdownMenuItem>
+                                    )}
+                                    {comm.status !== 'unread' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'unread' })}>
+                                        Mark as Unread
+                                      </DropdownMenuItem>
+                                    )}
+                                    {comm.status !== 'archived' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'archived' })}>
+                                        Archive
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
             
             <TabsContent value="leads" className="mt-4">
-              {/* Same structure, filtered for leads */}
-              <Card><CardContent className="p-0">
-                {/* Content similar to 'all' tab, filtered differently */}
-                {/* ... */}
-              </CardContent></Card>
+              <Card>
+                <CardContent className="p-0">
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                      <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : filteredCommunications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-center">
+                      <Users className="h-12 w-12 text-muted-foreground mb-2" />
+                      <h3 className="font-medium text-lg">No Lead Messages</h3>
+                      <p className="text-muted-foreground">
+                        There are no lead messages matching your criteria.
+                      </p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[300px]">Lead</TableHead>
+                          <TableHead>Message</TableHead>
+                          <TableHead className="w-[110px]">Date</TableHead>
+                          <TableHead className="w-[120px]">Status</TableHead>
+                          <TableHead className="w-[100px] text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredCommunications.map((comm) => (
+                          <TableRow key={comm.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center space-x-2">
+                                <Avatar className="h-8 w-8">
+                                  {comm.contactDetails.avatarUrl && (
+                                    <AvatarImage src={comm.contactDetails.avatarUrl} alt={`${comm.contactDetails.firstName} ${comm.contactDetails.lastName}`} />
+                                  )}
+                                  <AvatarFallback>{comm.contactDetails.firstName.charAt(0)}{comm.contactDetails.lastName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-semibold">{comm.contactDetails.firstName} {comm.contactDetails.lastName}</div>
+                                  <div className="text-sm text-muted-foreground flex items-center">
+                                    <ChannelIcon channel={comm.channel} /> 
+                                    <span className="ml-1">{comm.channel}</span>
+                                    <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 border-amber-200">Lead</Badge>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-md truncate">{comm.content}</div>
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(new Date(comm.receivedAt || comm.sentAt))}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(comm.status)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleReply(comm)}
+                                >
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                                
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {comm.status !== 'read' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'read' })}>
+                                        Mark as Read
+                                      </DropdownMenuItem>
+                                    )}
+                                    {comm.status !== 'unread' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'unread' })}>
+                                        Mark as Unread
+                                      </DropdownMenuItem>
+                                    )}
+                                    {comm.status !== 'archived' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'archived' })}>
+                                        Archive
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
             
             <TabsContent value="customers" className="mt-4">
-              {/* Same structure, filtered for customers */}
-              <Card><CardContent className="p-0">
-                {/* Content similar to 'all' tab, filtered differently */}
-                {/* ... */}
-              </CardContent></Card>
+              <Card>
+                <CardContent className="p-0">
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                      <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : filteredCommunications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-center">
+                      <User className="h-12 w-12 text-muted-foreground mb-2" />
+                      <h3 className="font-medium text-lg">No Customer Messages</h3>
+                      <p className="text-muted-foreground">
+                        There are no customer messages matching your criteria.
+                      </p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[300px]">Customer</TableHead>
+                          <TableHead>Message</TableHead>
+                          <TableHead className="w-[110px]">Date</TableHead>
+                          <TableHead className="w-[120px]">Status</TableHead>
+                          <TableHead className="w-[100px] text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredCommunications.map((comm) => (
+                          <TableRow key={comm.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center space-x-2">
+                                <Avatar className="h-8 w-8">
+                                  {comm.contactDetails.avatarUrl && (
+                                    <AvatarImage src={comm.contactDetails.avatarUrl} alt={`${comm.contactDetails.firstName} ${comm.contactDetails.lastName}`} />
+                                  )}
+                                  <AvatarFallback>{comm.contactDetails.firstName.charAt(0)}{comm.contactDetails.lastName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-semibold">{comm.contactDetails.firstName} {comm.contactDetails.lastName}</div>
+                                  <div className="text-sm text-muted-foreground flex items-center">
+                                    <ChannelIcon channel={comm.channel} /> 
+                                    <span className="ml-1">{comm.channel}</span>
+                                    <Badge variant="outline" className="ml-2 bg-emerald-100 text-emerald-700 border-emerald-200">Customer</Badge>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-md truncate">{comm.content}</div>
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(new Date(comm.receivedAt || comm.sentAt))}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(comm.status)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleReply(comm)}
+                                >
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                                
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {comm.status !== 'read' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'read' })}>
+                                        Mark as Read
+                                      </DropdownMenuItem>
+                                    )}
+                                    {comm.status !== 'unread' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'unread' })}>
+                                        Mark as Unread
+                                      </DropdownMenuItem>
+                                    )}
+                                    {comm.status !== 'archived' && (
+                                      <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: comm.id, status: 'archived' })}>
+                                        Archive
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
