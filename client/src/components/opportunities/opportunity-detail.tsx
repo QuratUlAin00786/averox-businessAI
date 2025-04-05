@@ -38,6 +38,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
+import { CommunicationPanel } from "@/components/communications/communication-panel";
 
 interface OpportunityDetailProps {
   isOpen: boolean;
@@ -182,7 +183,7 @@ export function OpportunityDetail({
                     <DollarSign className="h-4 w-4 text-neutral-500" />
                     <span className="font-medium">
                       {opportunity.amount 
-                        ? formatCurrency(parseFloat(opportunity.amount)) 
+                        ? formatCurrency(opportunity.amount) 
                         : "No amount set"}
                     </span>
                   </div>
@@ -274,12 +275,32 @@ export function OpportunityDetail({
           </div>
 
           <div className="mb-6">
-            <h3 className="font-medium text-base mb-2">Notes</h3>
-            <Card>
-              <CardContent className="p-4 text-sm min-h-[100px]">
-                {opportunity.notes || "No notes available for this opportunity."}
-              </CardContent>
-            </Card>
+            <Tabs defaultValue="notes" className="mt-6">
+              <TabsList className="mb-4">
+                <TabsTrigger value="notes">Notes</TabsTrigger>
+                <TabsTrigger value="communications">Communications</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="notes">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 text-sm min-h-[100px]">
+                    {opportunity.notes || "No notes available for this opportunity."}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="communications">
+                <CommunicationPanel 
+                  contactId={opportunity.id}
+                  contactType="customer"
+                  contactName={opportunity.name}
+                  phone={account?.phone || ""}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </ScrollArea>
 

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ContactNotes } from "./contact-notes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarDays, Mail, MapPin, Phone, Tag, UserRound, X, Building, ArrowLeft } from "lucide-react";
+import { CommunicationPanel } from "@/components/communications/communication-panel";
 
 interface ContactDetailProps {
   contactId: number;
@@ -251,6 +252,7 @@ export function ContactDetail({ contactId, onBack }: ContactDetailProps) {
           <Tabs defaultValue="notes">
             <TabsList className="mb-4">
               <TabsTrigger value="notes">Notes</TabsTrigger>
+              <TabsTrigger value="communications">Communications</TabsTrigger>
               <TabsTrigger value="activities">Activities</TabsTrigger>
               <TabsTrigger value="related">Related Records</TabsTrigger>
             </TabsList>
@@ -271,6 +273,16 @@ export function ContactDetail({ contactId, onBack }: ContactDetailProps) {
                   />
                 </CardContent>
               </Card>
+            </TabsContent>
+            
+            <TabsContent value="communications">
+              <CommunicationPanel 
+                contactId={contact.id}
+                contactType="customer"
+                contactName={`${contact.firstName} ${contact.lastName}`}
+                email={contact.email || ""}
+                phone={contact.phone || ""}
+              />
             </TabsContent>
             
             <TabsContent value="activities">
