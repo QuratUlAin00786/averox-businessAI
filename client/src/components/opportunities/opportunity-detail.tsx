@@ -295,6 +295,8 @@ export function OpportunityDetail({
               </TabsContent>
               
               <TabsContent value="communications">
+                {/* Debug log for account data */}
+                {console.log('Account data for communication panel:', account)}
                 <CommunicationPanel 
                   contactId={opportunity.id}
                   contactType="customer"

@@ -101,8 +101,16 @@ const ChannelIcon = ({ channel }: { channel: string }) => {
 };
 
 export function CommunicationPanel({ contactId, contactType, contactName = '', email = '', phone = '' }: CommunicationPanelProps) {
-  // Debug log
-  console.log('CommunicationPanel props:', { contactId, contactType, contactName, email, phone });
+  // Debug log with more visibility
+  console.log('%c CommunicationPanel props:', 'background: #007bff; color: white; padding: 2px 5px; border-radius: 3px;', { 
+    contactId, 
+    contactType, 
+    contactName, 
+    email, 
+    phone,
+    hasPhone: !!phone,  // Explicitly show if phone is truthy
+    phoneLength: phone?.length || 0  // Check length of phone string
+  });
   
   const { toast } = useToast();
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
