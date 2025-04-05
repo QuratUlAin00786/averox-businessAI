@@ -101,6 +101,9 @@ const ChannelIcon = ({ channel }: { channel: string }) => {
 };
 
 export function CommunicationPanel({ contactId, contactType, contactName = '', email = '', phone = '' }: CommunicationPanelProps) {
+  // Debug log
+  console.log('CommunicationPanel props:', { contactId, contactType, contactName, email, phone });
+  
   const { toast } = useToast();
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
   const [isCallDialogOpen, setIsCallDialogOpen] = useState(false);
