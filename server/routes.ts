@@ -62,11 +62,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Error handler helper
   const handleError = (res: Response, error: unknown) => {
     console.error('API Error:', error);
+    
+    // Log stack trace if available
+    if (error instanceof Error) {
+      console.error('Error stack trace:', error.stack);
+    }
+    
+    // Log detailed object structure for debugging
+    try {
+      console.error('Error details:', JSON.stringify(error, null, 2));
+    } catch (jsonError) {
+      console.error('Error cannot be stringified:', error);
+    }
+    
     if (error instanceof z.ZodError) {
       return res.status(400).json({ 
         error: "Validation Error", 
         details: error.errors 
       });
+    }
+    
+    // Handle database-specific errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      // PostgreSQL error codes
+      const pgError = error as { code: string; message?: string; detail?: string };
+      console.error('Database error code:', pgError.code);
+      
+      if (pgError.code === '42P01') { // undefined_table
+        return res.status(500).json({
+          error: "Database Error",
+          message: "Table not found. Database schema may be outdated or incomplete.",
+          detail: pgError.detail || pgError.message
+        });
+      }
+      
+      if (pgError.code.startsWith('23')) { // integrity constraint violations
+        return res.status(400).json({
+          error: "Database Constraint Error",
+          message: pgError.message || "Data violates database constraints",
+          detail: pgError.detail
+        });
+      }
     }
     
     return res.status(500).json({ 
@@ -1903,9 +1939,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ error: "Unauthorized" });
       }
+      console.log('Fetching products from storage...');
       const products = await storage.listProducts();
+      console.log('Products fetched:', products);
       res.json(products);
     } catch (error) {
+      console.error('Detailed error when fetching products:', error);
       handleError(res, error);
     }
   });
@@ -2045,9 +2084,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ error: "Unauthorized" });
       }
+      console.log('Fetching invoices from storage...');
       const invoices = await storage.listInvoices();
+      console.log('Invoices fetched:', invoices);
       res.json(invoices);
     } catch (error) {
+      console.error('Detailed error when fetching invoices:', error);
       handleError(res, error);
     }
   });
