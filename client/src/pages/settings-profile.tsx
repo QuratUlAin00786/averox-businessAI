@@ -20,16 +20,51 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 
-// Predefined avatars for users to select from - each with a unique color
+// Predefined avatars for users to select from
 const predefinedAvatars = [
-  { id: 'male1', url: '#3B82F6', colorBg: 'bg-blue-500', label: 'M1' },
-  { id: 'male2', url: '#10B981', colorBg: 'bg-green-500', label: 'M2' },
-  { id: 'male3', url: '#6366F1', colorBg: 'bg-indigo-500', label: 'M3' },
-  { id: 'female1', url: '#F472B6', colorBg: 'bg-pink-500', label: 'F1' },
-  { id: 'female2', url: '#EC4899', colorBg: 'bg-pink-600', label: 'F2' },
-  { id: 'female3', url: '#8B5CF6', colorBg: 'bg-purple-500', label: 'F3' },
-  { id: 'professional1', url: '#1E3A8A', colorBg: 'bg-blue-900', label: 'P1' },
-  { id: 'professional2', url: '#0F766E', colorBg: 'bg-teal-800', label: 'P2' }
+  // Male avatars
+  { 
+    id: 'male1', 
+    url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48ZyBmaWxsPSIjMkE0MTYyIj48Y2lyY2xlIGN4PSIyNTYiIGN5PSIxMTIiIHI9IjExMiIvPjxwYXRoIGQ9Ik0zODQgMzEyYzAtMzUuMzQ3LTI4LjY1My02NC02NC02NGgtOTZoLTk2Yy0zNS4zNDcgMC02NCAyOC42NTMtNjQgNjR2NDhoMzIwdi00OHoiLz48cGF0aCBkPSJNMzg0IDM2MEwxMjggMzYwIDEyOCA1MTIgMzg0IDUxMnoiLz48L2c+PC9zdmc+',
+    gender: 'male'
+  },
+  { 
+    id: 'male2', 
+    url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48Y2lyY2xlIGZpbGw9IiMzNDk4REIiIGN4PSIyNTYiIGN5PSIxMTIiIHI9IjExMiIvPjxwYXRoIGZpbGw9IiMyNDgwQjkiIGQ9Ik0zODQgMzEyYzAtMzUuMzQ3LTI4LjY1My02NC02NC02NGgtOTZoLTk2Yy0zNS4zNDcgMC02NCAyOC42NTMtNjQgNjR2NDhoMzIwdi00OHoiLz48cGF0aCBmaWxsPSIjMzQ5OERCIiBkPSJNMzg0IDM2MEwxMjggMzYwIDEyOCA1MTIgMzg0IDUxMnoiLz48L3N2Zz4=',
+    gender: 'male'
+  },
+  { 
+    id: 'male3', 
+    url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48Y2lyY2xlIGZpbGw9IiNFNkU3RTgiIGN4PSIyNTYiIGN5PSIxMTIiIHI9IjExMiIvPjxwYXRoIGZpbGw9IiM1NUJGQ0IiIGQ9Ik0zODQgMzEyYzAtMzUuMzQ3LTI4LjY1My02NC02NC02NGgtOTZoLTk2Yy0zNS4zNDcgMC02NCAyOC42NTMtNjQgNjR2NDhoMzIwdi00OHoiLz48cGF0aCBmaWxsPSIjNDU5N0I1IiBkPSJNMzg0IDM2MEwxMjggMzYwIDEyOCA1MTIgMzg0IDUxMnoiLz48L3N2Zz4=',
+    gender: 'male'
+  },
+  { 
+    id: 'male4', 
+    url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48Y2lyY2xlIGZpbGw9IiNGRkREQTkiIGN4PSIyNTYiIGN5PSIxMTIiIHI9IjExMiIvPjxwYXRoIGZpbGw9IiM1MkM0MUEiIGQ9Ik0zODQgMzEyYzAtMzUuMzQ3LTI4LjY1My02NC02NC02NGgtOTZoLTk2Yy0zNS4zNDcgMC02NCAyOC42NTMtNjQgNjR2NDhoMzIwdi00OHoiLz48cGF0aCBmaWxsPSIjNDJBMzA2IiBkPSJNMzg0IDM2MEwxMjggMzYwIDEyOCA1MTIgMzg0IDUxMnoiLz48L3N2Zz4=',
+    gender: 'male'
+  },
+  
+  // Female avatars
+  { 
+    id: 'female1', 
+    url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48Y2lyY2xlIGZpbGw9IiNGRkREQTkiIGN4PSIyNTYiIGN5PSIxMTIiIHI9IjExMiIvPjxwYXRoIGZpbGw9IiNGRjc5QzYiIGQ9Ik0xNzYgNDIzYy0xNS40NjQgMC0zMi000LjA1NS00OC0xMmwzMi02MGMxNi0yMCAxNi0yMCAzMi0yMHMxNiAwIDMyIDIwbDMyIDYwYy0xNiA3Ljk0NS0zMi41MzYgMTItNDggMTJoLTMyeiIvPjxwYXRoIGZpbGw9IiNGODU2OEEiIGQ9Ik0zNjggMzQwYzAtNjEuODU2LTUwLjE0NC0xMTItMTEyLTExMlMxNDQgMjc4LjE0NCAxNDQgMzQwdjMyaDE1LjU4bDQ4LTMySDMwNGw0OCAzMkgzNjh2LTMyeiIvPjxwYXRoIGZpbGw9IiNGRjc5QzYiIGQ9Ik0zMDQgMzQwdjE3MmgtOTZ2LTE3MnoiLz48L3N2Zz4=',
+    gender: 'female'
+  },
+  { 
+    id: 'female2', 
+    url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48Y2lyY2xlIGZpbGw9IiNGRkREQTkiIGN4PSIyNTYiIGN5PSIxMTIiIHI9IjExMiIvPjxwYXRoIGZpbGw9IiM3RjRBODgiIGQ9Ik0zNjggMzQwYzAtNjEuODU2LTUwLjE0NC0xMTItMTEyLTExMlMxNDQgMjc4LjE0NCAxNDQgMzQwdjMyaDE1LjU4bDQ4LTMySDMwNGw0OCAzMkgzNjh2LTMyeiIvPjxwYXRoIGZpbGw9IiM5RjU4QTkiIGQ9Ik0zMDQgMzQwdjE3MmgtOTZ2LTE3MnoiLz48cGF0aCBmaWxsPSIjN0Y0QTg4IiBkPSJNMTc2IDQyM2MtMTUuNDY0IDAtMzItNC4wNTUtNDgtMTJsMzItNjBjMTYtMjAgMTYtMjAgMzItMjBzMTYgMCAzMiAyMGwzMiA2MGMtMTYgNy45NDUtMzIuNTM2IDEyLTQ4IDEyaC0zMnoiLz48L3N2Zz4=',
+    gender: 'female'
+  },
+  { 
+    id: 'female3', 
+    url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48Y2lyY2xlIGZpbGw9IiNGRkREQTkiIGN4PSIyNTYiIGN5PSIxMTIiIHI9IjExMiIvPjxwYXRoIGZpbGw9IiMzNEE4QzIiIGQ9Ik0zNjggMzQwYzAtNjEuODU2LTUwLjE0NC0xMTItMTEyLTExMlMxNDQgMjc4LjE0NCAxNDQgMzQwdjMyaDE1LjU4bDQ4LTMySDMwNGw0OCAzMkgzNjh2LTMyeiIvPjxwYXRoIGZpbGw9IiMzMEQ0RkIiIGQ9Ik0zMDQgMzQwdjE3MmgtOTZ2LTE3MnoiLz48cGF0aCBmaWxsPSIjMzRBOEMyIiBkPSJNMTc2IDQyM2MtMTUuNDY0IDAtMzItNC4wNTUtNDgtMTJsMzItNjBjMTYtMjAgMTYtMjAgMzItMjBzMTYgMCAzMiAyMGwzMiA2MGMtMTYgNy45NDUtMzIuNTM2IDEyLTQ4IDEyaC0zMnoiLz48L3N2Zz4=',
+    gender: 'female'
+  },
+  { 
+    id: 'female4', 
+    url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48Y2lyY2xlIGZpbGw9IiNGRkREQTkiIGN4PSIyNTYiIGN5PSIxMTIiIHI9IjExMiIvPjxwYXRoIGZpbGw9IiNGNTM5MkYiIGQ9Ik0zNjggMzQwYzAtNjEuODU2LTUwLjE0NC0xMTItMTEyLTExMlMxNDQgMjc4LjE0NCAxNDQgMzQwdjMyaDE1LjU4bDQ4LTMySDMwNGw0OCAzMkgzNjh2LTMyeiIvPjxwYXRoIGZpbGw9IiNGRjUwNUQiIGQ9Ik0zMDQgMzQwdjE3MmgtOTZ2LTE3MnoiLz48cGF0aCBmaWxsPSIjRjUzOTJGIiBkPSJNMTc2IDQyM2MtMTUuNDY0IDAtMzItNC4wNTUtNDgtMTJsMzItNjBjMTYtMjAgMTYtMjAgMzItMjBzMTYgMCAzMiAyMGwzMiA2MGMtMTYgNy45NDUtMzIuNTM2IDEyLTQ4IDEyaC0zMnoiLz48L3N2Zz4=',
+    gender: 'female'
+  }
 ];
 
 export default function SettingsProfile() {
@@ -182,18 +217,8 @@ export default function SettingsProfile() {
                 <div className="flex flex-col items-center space-y-4">
                   <Avatar className="h-32 w-32 border-4 border-primary">
                     {formData.avatar ? (
-                      formData.avatar.startsWith('#') ? (
-                        // Color-based avatar (from our predefined set)
-                        <AvatarFallback
-                          style={{backgroundColor: formData.avatar}}
-                          className="text-3xl text-white font-bold"
-                        >
-                          {getInitials() || "AV"}
-                        </AvatarFallback>
-                      ) : (
-                        // Image-based avatar (uploaded by user)
-                        <AvatarImage src={formData.avatar} alt={user?.username} className="object-cover" />
-                      )
+                      // Any avatar (from predefined set or uploaded)
+                      <AvatarImage src={formData.avatar} alt={user?.username} className="object-cover" />
                     ) : (
                       // Default avatar if none is selected
                       <AvatarFallback className="text-2xl bg-primary/10 text-primary font-semibold">
@@ -210,13 +235,13 @@ export default function SettingsProfile() {
                         id="avatar-upload"
                         type="file"
                         accept="image/*"
-                        capture="user"
                         className="hidden"
                         onChange={(e) => {
                           try {
                             const files = e.target.files;
                             if (files && files.length > 0) {
                               const file = files[0];
+                              
                               // Check file size (limit to 5MB)
                               if (file.size > 5 * 1024 * 1024) {
                                 toast({
@@ -227,15 +252,40 @@ export default function SettingsProfile() {
                                 return;
                               }
                               
+                              // Check file type for additional validation
+                              const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
+                              if (!validImageTypes.includes(file.type)) {
+                                toast({
+                                  title: "Invalid file type",
+                                  description: "Please select a JPG, PNG, GIF, or SVG image",
+                                  variant: "destructive"
+                                });
+                                return;
+                              }
+                              
+                              // Show loading toast
+                              toast({
+                                title: "Processing image",
+                                description: "Please wait while we process your image...",
+                              });
+                              
                               // Convert to base64 for storage
                               const reader = new FileReader();
+                              
                               reader.onloadend = () => {
                                 try {
                                   const base64String = reader.result as string;
+                                  
+                                  // Ensure we got a valid result
+                                  if (!base64String || typeof base64String !== 'string') {
+                                    throw new Error('Invalid image data received');
+                                  }
+                                  
                                   setFormData(prev => ({ ...prev, avatar: base64String }));
+                                  
                                   toast({
                                     title: "Image uploaded",
-                                    description: "Don't forget to save your changes!",
+                                    description: "Don't forget to click 'Save Changes' to apply!",
                                   });
                                 } catch (error) {
                                   console.error("Error setting image:", error);
@@ -247,7 +297,8 @@ export default function SettingsProfile() {
                                 }
                               };
                               
-                              reader.onerror = () => {
+                              reader.onerror = (event) => {
+                                console.error("FileReader error:", event);
                                 toast({
                                   title: "Upload failed",
                                   description: "There was a problem reading your image.",
@@ -255,13 +306,14 @@ export default function SettingsProfile() {
                                 });
                               };
                               
+                              // Start reading the file
                               reader.readAsDataURL(file);
                             }
                           } catch (error) {
                             console.error("File upload error:", error);
                             toast({
                               title: "Upload failed",
-                              description: "There was a problem with the file upload.",
+                              description: "There was a problem with the file upload. Please try again with a different photo.",
                               variant: "destructive"
                             });
                           }
@@ -302,9 +354,7 @@ export default function SettingsProfile() {
                             }}
                           >
                             <Avatar className="h-24 w-24 mx-auto border-2 border-transparent">
-                              <AvatarFallback className={`text-white font-bold text-lg ${avatar.colorBg}`}>
-                                {avatar.label}
-                              </AvatarFallback>
+                              <AvatarImage src={avatar.url} alt={`${avatar.gender} avatar`} className="object-cover" />
                             </Avatar>
                             
                             {formData.avatar === avatar.url && (
