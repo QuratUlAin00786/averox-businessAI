@@ -13,9 +13,15 @@ async function throwIfResNotOk(res: Response) {
         throw new Error(`OpenAI API Error: ${json.details}`);
       }
       
-      throw new Error(json.error || json.details || `${res.status}: API error`);
+      // Support standardized response format
+      if (json.success === false) {
+        throw new Error(json.message || json.error || `${res.status}: API error`);
+      }
+      
+      // Legacy error format support
+      throw new Error(json.error || json.details || json.message || `${res.status}: API error`);
     } catch (e) {
-      if (e instanceof Error && (json.error || json.details)) {
+      if (e instanceof Error && (json.error || json.details || json.message)) {
         throw e;
       }
       const text = await res.text() || res.statusText;
@@ -54,7 +60,10 @@ export async function apiRequestJson<T = any>(
   data?: unknown,
 ): Promise<T> {
   const res = await apiRequest(method, url, data);
-  return await res.json();
+  const result = await res.json();
+  
+  // Handle both standardized and legacy response formats
+  return (result.success !== undefined ? result.data : result) as T;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -78,9 +87,11 @@ export const getQueryFn: <T>(options: {
       }
 
       await throwIfResNotOk(res);
-      const data = await res.json();
-      console.log(`Query data from ${queryKey[0]}:`, data);
-      return data;
+      const result = await res.json();
+      console.log(`Query data from ${queryKey[0]}:`, result);
+      
+      // Handle both standardized and legacy response formats
+      return result.success !== undefined ? result.data : result;
     } catch (error) {
       console.error(`Query error for ${queryKey[0]}:`, error);
       throw error;

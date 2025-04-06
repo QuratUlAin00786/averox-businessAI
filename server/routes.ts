@@ -95,7 +95,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (error instanceof z.ZodError) {
       return res.status(400).json({ 
+        success: false,
         error: "Validation Error", 
+        message: "The provided data does not meet validation requirements",
         details: error.errors 
       });
     }
@@ -108,24 +110,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (pgError.code === '42P01') { // undefined_table
         return res.status(500).json({
+          success: false,
           error: "Database Error",
           message: "Table not found. Database schema may be outdated or incomplete.",
-          detail: pgError.detail || pgError.message
+          details: pgError.detail || pgError.message
         });
       }
       
       if (pgError.code.startsWith('23')) { // integrity constraint violations
         return res.status(400).json({
+          success: false,
           error: "Database Constraint Error",
           message: pgError.message || "Data violates database constraints",
-          detail: pgError.detail
+          details: pgError.detail
         });
       }
     }
     
     return res.status(500).json({ 
+      success: false,
       error: "Server Error", 
-      message: error instanceof Error ? error.message : "Unknown error" 
+      message: error instanceof Error ? error.message : "Unknown error",
+      ...(process.env.NODE_ENV !== 'production' && error instanceof Error && { 
+        stack: error.stack 
+      })
     });
   };
   
@@ -3159,13 +3167,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/proposals/:proposalId/elements', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ 
+          success: false,
+          error: "Unauthorized",
+          message: "You must be logged in to view proposal elements"
+        });
       }
       
       const proposalId = parseInt(req.params.proposalId);
       const elements = await storage.listProposalElements(proposalId);
       
-      res.json(elements);
+      // Return standardized response format
+      res.status(200).json({
+        success: true,
+        data: elements,
+        metadata: {
+          count: elements.length,
+          proposalId: proposalId,
+          timestamp: new Date()
+        }
+      });
     } catch (error) {
       handleError(res, error);
     }
@@ -3269,13 +3290,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/proposals/:proposalId/collaborators', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({
+          success: false,
+          error: "Unauthorized",
+          message: "You must be logged in to view proposal collaborators"
+        });
       }
       
       const proposalId = parseInt(req.params.proposalId);
       const collaborators = await storage.getProposalCollaborators(proposalId);
       
-      res.json(collaborators);
+      // Return standardized response format
+      res.status(200).json({
+        success: true,
+        data: collaborators,
+        metadata: {
+          count: collaborators.length,
+          proposalId: proposalId,
+          timestamp: new Date()
+        }
+      });
     } catch (error) {
       handleError(res, error);
     }
@@ -3347,13 +3381,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/proposals/:proposalId/comments', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({
+          success: false,
+          error: "Unauthorized",
+          message: "You must be logged in to view proposal comments"
+        });
       }
       
       const proposalId = parseInt(req.params.proposalId);
       const comments = await storage.getProposalComments(proposalId);
       
-      res.json(comments);
+      // Return standardized response format
+      res.status(200).json({
+        success: true,
+        data: comments,
+        metadata: {
+          count: comments.length,
+          proposalId: proposalId,
+          timestamp: new Date()
+        }
+      });
     } catch (error) {
       handleError(res, error);
     }
@@ -3362,20 +3409,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/proposals/:proposalId/comments', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({
+          success: false,
+          error: "Unauthorized",
+          message: "You must be logged in to add comments to proposals"
+        });
       }
       
       const proposalId = parseInt(req.params.proposalId);
       
-      // Validate comment data
-      const commentData = insertProposalCommentSchema.parse({
-        ...req.body,
-        proposalId,
-        userId: req.user.id
-      });
+      // Check if proposal exists
+      const proposal = await storage.getProposal(proposalId);
+      if (!proposal) {
+        return res.status(404).json({
+          success: false,
+          error: "Not Found",
+          message: "The proposal you're trying to comment on does not exist",
+          details: { proposalId }
+        });
+      }
       
-      const comment = await storage.createProposalComment(commentData);
-      res.status(201).json(comment);
+      try {
+        // Validate comment data
+        const commentData = insertProposalCommentSchema.parse({
+          ...req.body,
+          proposalId,
+          userId: req.user.id
+        });
+        
+        const comment = await storage.createProposalComment(commentData);
+        
+        return res.status(201).json({
+          success: true,
+          data: comment,
+          message: "Comment created successfully"
+        });
+      } catch (validationError: any) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Invalid comment data provided",
+          details: validationError?.errors || validationError?.message
+        });
+      }
     } catch (error) {
       handleError(res, error);
     }
@@ -3384,26 +3460,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/proposal-comments/:id', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({
+          success: false,
+          error: "Unauthorized",
+          message: "You must be logged in to update proposal comments"
+        });
       }
       
       const id = parseInt(req.params.id);
       
-      // If resolving a comment, add the resolver
-      let commentData = req.body;
-      if (commentData.resolved === true) {
-        commentData.resolvedBy = req.user.id;
+      // Validate ID
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Valid comment ID is required",
+          details: { id: req.params.id }
+        });
       }
       
-      commentData = insertProposalCommentSchema.partial().parse(commentData);
-      
-      const comment = await storage.updateProposalComment(id, commentData);
-      
-      if (!comment) {
-        return res.status(404).json({ error: "Comment not found" });
+      try {
+        // If resolving a comment, add the resolver
+        let commentData = req.body;
+        if (commentData.resolved === true) {
+          commentData.resolvedBy = req.user.id;
+        }
+        
+        commentData = insertProposalCommentSchema.partial().parse(commentData);
+        
+        const comment = await storage.updateProposalComment(id, commentData);
+        
+        if (!comment) {
+          return res.status(404).json({
+            success: false,
+            error: "Not Found",
+            message: "Comment not found",
+            details: { id }
+          });
+        }
+        
+        return res.status(200).json({
+          success: true,
+          data: comment,
+          message: "Comment updated successfully"
+        });
+      } catch (validationError: any) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Invalid comment data provided",
+          details: validationError?.errors || validationError?.message
+        });
       }
-      
-      res.json(comment);
     } catch (error) {
       handleError(res, error);
     }
@@ -3412,17 +3520,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/proposal-comments/:id', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({
+          success: false,
+          error: "Unauthorized",
+          message: "You must be logged in to delete proposal comments"
+        });
       }
       
       const id = parseInt(req.params.id);
-      const success = await storage.deleteProposalComment(id);
       
-      if (!success) {
-        return res.status(404).json({ error: "Comment not found" });
+      // Validate ID
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Valid comment ID is required",
+          details: { id: req.params.id }
+        });
       }
       
-      res.status(204).end();
+      const deleteSuccess = await storage.deleteProposalComment(id);
+      
+      if (!deleteSuccess) {
+        return res.status(404).json({
+          success: false,
+          error: "Not Found",
+          message: "Comment not found or already deleted",
+          details: { id }
+        });
+      }
+      
+      // Return 200 with success message instead of 204 no content
+      // This provides better feedback to the client
+      return res.status(200).json({
+        success: true,
+        message: "Comment deleted successfully",
+        data: { id }
+      });
     } catch (error) {
       handleError(res, error);
     }
@@ -3433,6 +3567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({
+          success: false,
           error: "Unauthorized",
           message: "You must be logged in to view proposal activities"
         });
@@ -3443,6 +3578,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate id is a number
       if (isNaN(proposalId)) {
         return res.status(400).json({ 
+          success: false,
           error: "Validation Error", 
           message: "Valid proposal ID is required",
           details: { id: req.params.proposalId }
@@ -3454,6 +3590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const proposal = await storage.getProposal(proposalId);
         if (!proposal) {
           return res.status(404).json({
+            success: false,
             error: "Not Found",
             message: "Proposal not found",
             details: { proposalId }
@@ -3465,6 +3602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Return with some metadata about the proposal
         return res.status(200).json({
+          success: true,
           data: activities,
           metadata: {
             proposalId,
@@ -3477,6 +3615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Database error getting proposal activities:", databaseError);
         
         return res.status(500).json({
+          success: false,
           error: "Database Error",
           message: databaseError?.message || "Failed to retrieve proposal activities",
           // Include the stack trace in development for debugging
@@ -3490,6 +3629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Unexpected error getting proposal activities:", error);
       
       return res.status(500).json({
+        success: false,
         error: "Internal Server Error",
         message: error?.message || "An unexpected error occurred while retrieving proposal activities",
         // Only include details in development for security
