@@ -3154,8 +3154,13 @@ export class DatabaseStorage implements IStorage {
 
   // Lead Methods
   async getLead(id: number): Promise<Lead | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+      return lead;
+    } catch (error) {
+      console.error("Error retrieving lead:", error);
+      return undefined;
+    }
   }
 
   async listLeads(filter?: Partial<Lead>): Promise<Lead[]> {
@@ -3216,8 +3221,13 @@ export class DatabaseStorage implements IStorage {
 
   // Opportunity Methods
   async getOpportunity(id: number): Promise<Opportunity | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [opportunity] = await db.select().from(opportunities).where(eq(opportunities.id, id));
+      return opportunity;
+    } catch (error) {
+      console.error("Error retrieving opportunity:", error);
+      return undefined;
+    }
   }
 
   async listOpportunities(filter?: Partial<Opportunity>): Promise<Opportunity[]> {
