@@ -3260,11 +3260,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Prepare request body with proper JSON content
+      const requestBody = { ...req.body };
+      
+      // If content is provided, ensure it's valid JSON format
+      if (requestBody.content !== undefined) {
+        try {
+          // If it's already a string, validate that it's proper JSON
+          if (typeof requestBody.content === 'string') {
+            // Try parsing it to validate
+            JSON.parse(requestBody.content);
+          } else {
+            // If it's an object, stringify it properly
+            requestBody.content = JSON.stringify(requestBody.content);
+          }
+        } catch (jsonError) {
+          return res.status(400).json({
+            success: false,
+            error: "Validation Error",
+            message: "Element content must be valid JSON",
+            details: { contentError: jsonError.message }
+          });
+        }
+      }
+      
       // Validate element data
       const elementData = insertProposalElementSchema.parse({
-        ...req.body,
+        ...requestBody,
         proposalId,
-        createdBy: req.body.createdBy || 2 // Default to user ID 2 if not provided
+        createdBy: requestBody.createdBy || 2 // Default to user ID 2 if not provided
       });
       
       const element = await storage.createProposalElement(elementData);
@@ -3305,13 +3329,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // }
       
       const id = parseInt(req.params.id);
+      
+      // Validate ID
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Valid element ID is required",
+          details: { id: req.params.id }
+        });
+      }
+      
       const element = await storage.getProposalElement(id);
       
       if (!element) {
-        return res.status(404).json({ error: "Proposal element not found" });
+        return res.status(404).json({
+          success: false,
+          error: "Not Found",
+          message: "Proposal element not found",
+          details: { id }
+        });
       }
       
-      res.json(element);
+      // Return standardized response format
+      return res.status(200).json({
+        success: true,
+        data: element
+      });
     } catch (error) {
       handleError(res, error);
     }
@@ -3348,10 +3392,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
+        // Ensure content is properly formatted if it exists in the request
+        const requestBody = { ...req.body };
+        
+        // If content is provided, ensure it's valid JSON format
+        if (requestBody.content !== undefined) {
+          try {
+            // If it's already a string, validate that it's proper JSON
+            if (typeof requestBody.content === 'string') {
+              // Try parsing it to validate
+              JSON.parse(requestBody.content);
+            } else {
+              // If it's an object, stringify it properly
+              requestBody.content = JSON.stringify(requestBody.content);
+            }
+          } catch (jsonError) {
+            return res.status(400).json({
+              success: false,
+              error: "Validation Error",
+              message: "Element content must be valid JSON",
+              details: { contentError: jsonError.message }
+            });
+          }
+        }
+        
         // Validate the update data
         const elementData = insertProposalElementSchema.partial().parse({
-          ...req.body,
-          updatedBy: req.body.updatedBy || 2, // Default to user ID 2 if not provided
+          ...requestBody,
+          updatedBy: requestBody.updatedBy || 2, // Default to user ID 2 if not provided
           // Ensure proposalId is included for activity log
           proposalId: currentElement.proposalId
         });

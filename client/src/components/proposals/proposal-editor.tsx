@@ -33,7 +33,7 @@ import {
   LockIcon,
   ChevronUp,
   ChevronDown,
-  DragVerticalIcon,
+  GripVertical as GripVerticalIcon,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
@@ -434,11 +434,16 @@ export function ProposalEditor({
     if (isReadOnly) return;
     
     console.log(`Adding new ${type} element to proposal ${proposal.id}`);
+    
+    // Get the default content for this element type and stringify it
+    const defaultContent = getDefaultElementContent(type);
+    const jsonContent = JSON.stringify(defaultContent);
+    
     const elementData = {
       proposalId: proposal.id,
       name: `New ${type}`,
       elementType: type,
-      content: getDefaultElementContent(type),
+      content: jsonContent, // Send serialized content to match API expectations
       isActive: true,
     };
     
@@ -456,12 +461,31 @@ export function ProposalEditor({
     if (!selectedElement || isReadOnly) return;
     
     console.log(`Saving element ${selectedElement.id} with updated data`);
+    
+    // Ensure content is properly formatted for API
+    // If it's an object, stringify it to ensure proper JSON format for storage
+    // If it's already a string, make sure it's valid JSON by parsing and re-stringifying
+    let processedContent;
+    try {
+      processedContent = typeof selectedElement.content === 'string' 
+        ? JSON.stringify(JSON.parse(selectedElement.content)) // Validate and normalize JSON string
+        : JSON.stringify(selectedElement.content); // Convert object to JSON string
+    } catch (error) {
+      console.error("Error processing content:", error);
+      toast({
+        title: 'Error',
+        description: 'Invalid content format. Please check your input.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     const updateData = {
       name: selectedElement.name,
-      content: selectedElement.content,
+      content: processedContent,
     };
     
-    console.log("Update data being sent:", updateData);
+    console.log("Update data being sent:", JSON.stringify(updateData, null, 2));
     updateElementMutation.mutate({
       id: selectedElement.id,
       data: updateData
@@ -529,24 +553,35 @@ export function ProposalEditor({
   const getElementDisplay = (element: ProposalElement) => {
     const isSelected = selectedElement?.id === element.id;
     
+    // Parse content if it's a string with error handling
+    let content;
+    try {
+      content = typeof element.content === 'string' 
+        ? JSON.parse(element.content) 
+        : element.content || {};
+    } catch (error) {
+      console.error("Error parsing element content:", error, element);
+      content = {}; // Default to empty object if parsing fails
+    }
+    
     // Basic preview of the element based on type
     switch (element.elementType) {
       case 'Header':
         return (
           <div className={cn("text-xl font-bold", isSelected && "bg-primary/5 p-2 rounded")}>
-            {element.content.text || 'Header Text'}
+            {content.text || 'Header Text'}
           </div>
         );
       case 'Text':
         return (
           <div className={cn("text-sm line-clamp-3", isSelected && "bg-primary/5 p-2 rounded")}>
-            {element.content.text || 'Text content...'}
+            {content.text || 'Text content...'}
           </div>
         );
       case 'Image':
         return (
           <div className={cn("text-center text-sm text-neutral-500", isSelected && "bg-primary/5 p-2 rounded")}>
-            {element.content.url ? (
+            {content.url ? (
               <div className="flex flex-col items-center">
                 <div className="w-20 h-12 border flex items-center justify-center bg-neutral-50">
                   <EyeIcon className="h-4 w-4 text-neutral-400" />
@@ -562,26 +597,26 @@ export function ProposalEditor({
         return (
           <div className={cn("text-center text-sm text-neutral-500", isSelected && "bg-primary/5 p-2 rounded")}>
             <div className="border-2 border-neutral-200 w-full h-10 flex items-center justify-center">
-              Table: {element.content.headers?.length || 0} columns × {element.content.rows?.length || 0} rows
+              Table: {content.headers?.length || 0} columns × {content.rows?.length || 0} rows
             </div>
           </div>
         );
       case 'List':
         return (
           <div className={cn("text-sm", isSelected && "bg-primary/5 p-2 rounded")}>
-            {element.content.ordered ? (
+            {content.ordered ? (
               <ol className="list-decimal list-inside">
-                {(element.content.items || ['List item']).slice(0, 3).map((item, i) => (
+                {(content.items || ['List item']).slice(0, 3).map((item: string, i: number) => (
                   <li key={i}>{item}</li>
                 ))}
-                {(element.content.items?.length || 0) > 3 && <li>...</li>}
+                {(content.items?.length || 0) > 3 && <li>...</li>}
               </ol>
             ) : (
               <ul className="list-disc list-inside">
-                {(element.content.items || ['List item']).slice(0, 3).map((item, i) => (
+                {(content.items || ['List item']).slice(0, 3).map((item: string, i: number) => (
                   <li key={i}>{item}</li>
                 ))}
-                {(element.content.items?.length || 0) > 3 && <li>...</li>}
+                {(content.items?.length || 0) > 3 && <li>...</li>}
               </ul>
             )}
           </div>
@@ -589,9 +624,9 @@ export function ProposalEditor({
       case 'Quote':
         return (
           <div className={cn("border-l-4 pl-4 italic", isSelected && "bg-primary/5 p-2 rounded")}>
-            "{element.content.text || 'Quote text'}"
-            {element.content.attribution && (
-              <div className="text-right text-sm">— {element.content.attribution}</div>
+            "{content.text || 'Quote text'}"
+            {content.attribution && (
+              <div className="text-right text-sm">— {content.attribution}</div>
             )}
           </div>
         );
@@ -605,9 +640,9 @@ export function ProposalEditor({
         return (
           <div className={cn("text-sm", isSelected && "bg-primary/5 p-2 rounded")}>
             <div className="border-b mt-4 mb-2 w-40"></div>
-            <div>{element.content.name || 'Signature'}</div>
-            <div className="text-neutral-500 text-xs">{element.content.role || 'Title'}</div>
-            {element.content.date && <div className="text-neutral-500 text-xs">Date</div>}
+            <div>{content.name || 'Signature'}</div>
+            <div className="text-neutral-500 text-xs">{content.role || 'Title'}</div>
+            {content.date && <div className="text-neutral-500 text-xs">Date</div>}
           </div>
         );
       default:
@@ -622,6 +657,17 @@ export function ProposalEditor({
   const renderElementEditor = () => {
     if (!selectedElement) return null;
     
+    // Parse content if it's a string
+    let content;
+    try {
+      content = typeof selectedElement.content === 'string' 
+        ? JSON.parse(selectedElement.content) 
+        : selectedElement.content || {};
+    } catch (error) {
+      console.error("Error parsing content:", error);
+      content = {}; // Default to empty object if parsing fails
+    }
+    
     switch (selectedElement.elementType) {
       case 'Header':
         return (
@@ -629,14 +675,19 @@ export function ProposalEditor({
             <div>
               <label className="text-sm font-medium">Header Text</label>
               <Input 
-                value={selectedElement.content.text || ''}
+                value={(content as any).text || ''}
                 onChange={e => {
                   setSelectedElement({
                     ...selectedElement,
-                    content: {
-                      ...selectedElement.content,
-                      text: e.target.value,
-                    }
+                    content: typeof selectedElement.content === 'string' 
+                      ? JSON.stringify({
+                          ...content,
+                          text: e.target.value,
+                        })
+                      : {
+                          ...content,
+                          text: e.target.value,
+                        }
                   });
                 }}
                 disabled={isReadOnly}
@@ -645,14 +696,19 @@ export function ProposalEditor({
             <div>
               <label className="text-sm font-medium">Header Level</label>
               <Select 
-                value={String(selectedElement.content.level || 1)}
+                value={String((content as any).level || 1)}
                 onValueChange={value => {
                   setSelectedElement({
                     ...selectedElement,
-                    content: {
-                      ...selectedElement.content,
-                      level: parseInt(value),
-                    }
+                    content: typeof selectedElement.content === 'string' 
+                      ? JSON.stringify({
+                          ...content,
+                          level: parseInt(value),
+                        })
+                      : {
+                          ...content,
+                          level: parseInt(value),
+                        }
                   });
                 }}
                 disabled={isReadOnly}
@@ -675,14 +731,19 @@ export function ProposalEditor({
           <div>
             <label className="text-sm font-medium">Text Content</label>
             <Textarea
-              value={selectedElement.content.text || ''}
+              value={(content as any).text || ''}
               onChange={e => {
                 setSelectedElement({
                   ...selectedElement,
-                  content: {
-                    ...selectedElement.content,
-                    text: e.target.value,
-                  }
+                  content: typeof selectedElement.content === 'string' 
+                    ? JSON.stringify({
+                        ...content,
+                        text: e.target.value,
+                      })
+                    : {
+                        ...content,
+                        text: e.target.value,
+                      }
                 });
               }}
               className="min-h-[200px]"
@@ -725,7 +786,7 @@ export function ProposalEditor({
           </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "editor" | "collaborators" | "comments")} className="w-full">
           <div className="px-6 pt-2">
             <TabsList className="grid grid-cols-3 mb-4">
               <TabsTrigger value="editor">Content</TabsTrigger>

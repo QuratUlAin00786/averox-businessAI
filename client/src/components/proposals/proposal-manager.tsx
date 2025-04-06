@@ -244,15 +244,27 @@ export function ProposalManager({
   // Create proposal mutation
   const createProposalMutation = useMutation({
     mutationFn: async (data: InsertProposal) => {
-      console.log("Making API request to create proposal with data:", data);
+      console.log("Making API request to create proposal with data:", JSON.stringify(data, null, 2));
       try {
+        // Ensure content is a valid JSON object
+        const validatedData = {
+          ...data,
+          content: typeof data.content === 'string' ? JSON.parse(data.content) : (data.content || {}),
+          // Ensure IDs are numbers
+          opportunityId: Number(data.opportunityId),
+          accountId: Number(data.accountId),
+          createdBy: Number(data.createdBy || 2)
+        };
+        
+        console.log("Sending validated data:", JSON.stringify(validatedData, null, 2));
+        
         // Use apiRequestJson to ensure credentials are included
         // The server returns a standardized response format {success: true, data: Proposal}
         // apiRequestJson extracts the data property from that response
         const proposal = await apiRequestJson<Proposal>(
           'POST', 
           '/api/proposals', 
-          data
+          validatedData
         );
         console.log("Received proposal from server after extraction:", proposal);
         return proposal;
@@ -288,8 +300,24 @@ export function ProposalManager({
   // Update proposal mutation
   const updateProposalMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertProposal> }) => {
-      console.log("Making API request to update proposal with ID:", id, "and data:", data);
-      const proposal = await apiRequestJson<Proposal>('PATCH', `/api/proposals/${id}`, data);
+      console.log("Making API request to update proposal with ID:", id, "and data:", JSON.stringify(data, null, 2));
+      
+      // Process the data to ensure content is properly formatted
+      const processedData = {
+        ...data,
+        // Ensure content is a valid JSON object if it exists
+        ...(data.content && {
+          content: typeof data.content === 'string' ? JSON.parse(data.content) : data.content
+        }),
+        // Ensure IDs are numbers if they exist
+        ...(data.opportunityId && { opportunityId: Number(data.opportunityId) }),
+        ...(data.accountId && { accountId: Number(data.accountId) }),
+        ...(data.createdBy && { createdBy: Number(data.createdBy) })
+      };
+      
+      console.log("Sending processed data:", JSON.stringify(processedData, null, 2));
+      
+      const proposal = await apiRequestJson<Proposal>('PATCH', `/api/proposals/${id}`, processedData);
       console.log("Received updated proposal from server after extraction:", proposal);
       return proposal;
     },
@@ -410,13 +438,13 @@ export function ProposalManager({
         accountId: accountIdValue,
         opportunityId: opportunityIdValue,
         createdBy: 2, // Using user ID 2 for now
-        content: data.content || {}, // Ensure content is an object
+        content: typeof data.content === 'string' ? JSON.parse(data.content) : (data.content || {}), // Ensure content is a valid JSON object
         status: data.status || 'Draft',
         expiresAt: data.expiresAt,
         templateId: data.templateId
       };
       
-      console.log("Creating proposal with data:", proposalData);
+      console.log("Creating proposal with data:", JSON.stringify(proposalData, null, 2));
       
       // Debug the mutation object
       console.log("Mutation status before call:", { 
