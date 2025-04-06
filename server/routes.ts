@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, hashPassword } from "./auth";
+import { registerPermissionRoutes } from "./permission-routes";
+import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from "./permissions-manager";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -52,6 +54,15 @@ function handleOpenAIError(res: Response, errorData: any) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
+  
+  // Set up permission system and register routes
+  registerPermissionRoutes(app);
+  
+  // Add permission methods to storage
+  if ('initializePermissions' in storage) {
+    // Initialize default permissions
+    await storage.initializePermissions();
+  }
   
   // Set up Stripe client for payment processing
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');

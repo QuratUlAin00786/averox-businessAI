@@ -10,6 +10,7 @@ export const taskStatusEnum = pgEnum('task_status', ['Not Started', 'In Progress
 export const eventTypeEnum = pgEnum('event_type', ['Meeting', 'Call', 'Demonstration', 'Follow-up', 'Other']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['Active', 'Pending', 'Expired', 'Canceled', 'Trial']);
 export const userRoleEnum = pgEnum('user_role', ['Admin', 'Manager', 'User', 'ReadOnly']);
+export const permissionActionEnum = pgEnum('permission_action', ['view', 'create', 'update', 'delete', 'export', 'import', 'assign']);
 export const socialPlatformEnum = pgEnum('social_platform', ['Facebook', 'LinkedIn', 'Twitter', 'Instagram', 'WhatsApp', 'Email', 'Messenger', 'Other']);
 export const messageStatusEnum = pgEnum('message_status', ['Unread', 'Read', 'Replied', 'Archived']);
 export const apiProviderEnum = pgEnum('api_provider', ['OpenAI', 'Stripe', 'Facebook', 'LinkedIn', 'Twitter', 'WhatsApp', 'Other']);
@@ -318,12 +319,20 @@ export const communications = pgTable("communications", {
   contactType: text("contact_type"), // 'lead' or 'customer'
 });
 
+// Forward declaration for self-references
+const productCategoriesRef = pgTable("product_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  parentId: integer("parent_id"),
+});
+
 // Product Categories
 export const productCategories = pgTable("product_categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
-  parentId: integer("parent_id").references(() => productCategories.id),
+  parentId: integer("parent_id").references((): typeof productCategoriesRef.id => productCategoriesRef.id),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at"),
@@ -359,6 +368,74 @@ export const products = pgTable("products", {
 });
 
 // Inventory Transactions
+// Permission Module
+export const modulePermissions = pgTable("module_permissions", {
+  id: serial("id").primaryKey(),
+  moduleName: text("module_name").notNull(), // 'contacts', 'accounts', 'leads', 'opportunities', 'tasks', etc.
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  order: integer("order").default(0),
+  icon: text("icon"),
+});
+
+// Role Permissions
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  role: userRoleEnum("role").notNull(),
+  moduleId: integer("module_id").references(() => modulePermissions.id).notNull(),
+  action: permissionActionEnum("action").notNull(),
+  isAllowed: boolean("is_allowed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// User-specific permissions that override role-based permissions
+export const userPermissions = pgTable("user_permissions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  moduleId: integer("module_id").references(() => modulePermissions.id).notNull(),
+  action: permissionActionEnum("action").notNull(),
+  isAllowed: boolean("is_allowed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// Team assignment management
+export const teams = pgTable("teams", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  leaderId: integer("leader_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  isActive: boolean("is_active").default(true),
+});
+
+// Team members
+export const teamMembers = pgTable("team_members", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").references(() => teams.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  role: text("role").default("Member"), // 'Leader', 'Member'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// Assignment records
+export const assignments = pgTable("assignments", {
+  id: serial("id").primaryKey(),
+  entityType: text("entity_type").notNull(), // 'lead', 'contact', 'account', 'opportunity'
+  entityId: integer("entity_id").notNull(),
+  assignedToType: text("assigned_to_type").notNull(), // 'user' or 'team'
+  assignedToId: integer("assigned_to_id").notNull(),
+  assignedById: integer("assigned_by_id").references(() => users.id).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  notes: text("notes"),
+});
+
 export const inventoryTransactions = pgTable("inventory_transactions", {
   id: serial("id").primaryKey(),
   productId: integer("product_id").references(() => products.id).notNull(),
@@ -699,3 +776,57 @@ export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
 
 export type InsertPurchaseOrderItem = z.infer<typeof insertPurchaseOrderItemSchema>;
 export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
+
+// Permission and team types
+export const insertModulePermissionSchema = createInsertSchema(modulePermissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserPermissionSchema = createInsertSchema(userPermissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTeamSchema = createInsertSchema(teams).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAssignmentSchema = createInsertSchema(assignments).omit({
+  id: true,
+  assignedAt: true,
+});
+
+export type InsertModulePermission = z.infer<typeof insertModulePermissionSchema>;
+export type ModulePermission = typeof modulePermissions.$inferSelect;
+
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+
+export type InsertUserPermission = z.infer<typeof insertUserPermissionSchema>;
+export type UserPermission = typeof userPermissions.$inferSelect;
+
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
+export type Team = typeof teams.$inferSelect;
+
+export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
+export type TeamMember = typeof teamMembers.$inferSelect;
+
+export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
+export type Assignment = typeof assignments.$inferSelect;

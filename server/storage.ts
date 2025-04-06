@@ -21,7 +21,14 @@ import {
   invoices, type Invoice, type InsertInvoice,
   invoiceItems, type InvoiceItem, type InsertInvoiceItem,
   purchaseOrders, type PurchaseOrder, type InsertPurchaseOrder,
-  purchaseOrderItems, type PurchaseOrderItem, type InsertPurchaseOrderItem
+  purchaseOrderItems, type PurchaseOrderItem, type InsertPurchaseOrderItem,
+  // Permission schemas
+  modulePermissions, type ModulePermission, type InsertModulePermission,
+  rolePermissions, type RolePermission, type InsertRolePermission,
+  userPermissions, type UserPermission, type InsertUserPermission,
+  teams, type Team, type InsertTeam,
+  teamMembers, type TeamMember, type InsertTeamMember,
+  assignments, type Assignment, type InsertAssignment
 } from "@shared/schema";
 import { 
   MemStorageSocialMediaIntegrations, 
@@ -299,7 +306,77 @@ export interface IStorage {
   
   // Inventory
   getInventorySummary(): Promise<{products: Array<{id: number, name: string, sku: string, stock: number, value: number}>}>;
-
+  
+  // Permission Management
+  getModuleByName(moduleName: string): Promise<ModulePermission | undefined>;
+  getUserPermission(userId: number, moduleId: number, action: string): Promise<UserPermission | undefined>;
+  getRolePermission(role: string, moduleId: number, action: string): Promise<RolePermission | undefined>;
+  checkUserEntityAccess(userId: number, entityType: string, entityId: number): Promise<boolean>;
+  checkTeamEntityAccess(userId: number, entityType: string, entityId: number): Promise<boolean>;
+  getEntityById(entityType: string, entityId: number): Promise<any>;
+  initializePermissions(): Promise<void>;
+  
+  // Module Permissions
+  listModules(): Promise<ModulePermission[]>;
+  createModule(module: InsertModulePermission): Promise<ModulePermission>;
+  updateModule(id: number, module: Partial<InsertModulePermission>): Promise<ModulePermission | undefined>;
+  
+  // Role Permissions
+  listRolePermissions(role: string): Promise<RolePermission[]>;
+  createRolePermission(permission: InsertRolePermission): Promise<RolePermission>;
+  updateRolePermission(id: number, permission: Partial<InsertRolePermission>): Promise<RolePermission | undefined>;
+  
+  // User Permissions
+  listUserPermissions(userId: number): Promise<UserPermission[]>;
+  createUserPermission(permission: InsertUserPermission): Promise<UserPermission>;
+  updateUserPermission(id: number, permission: Partial<InsertUserPermission>): Promise<UserPermission | undefined>;
+  
+  // Teams Management
+  getTeam(id: number): Promise<Team | undefined>;
+  listTeams(): Promise<Team[]>;
+  createTeam(team: InsertTeam): Promise<Team>;
+  updateTeam(id: number, team: Partial<InsertTeam>): Promise<Team | undefined>;
+  deleteTeam(id: number): Promise<boolean>;
+  
+  // Team Members
+  getTeamMember(id: number): Promise<TeamMember | undefined>;
+  listTeamMembers(teamId: number): Promise<TeamMember[]>;
+  createTeamMember(member: InsertTeamMember): Promise<TeamMember>;
+  updateTeamMember(id: number, member: Partial<InsertTeamMember>): Promise<TeamMember | undefined>;
+  deleteTeamMember(id: number): Promise<boolean>;
+  
+  // Assignments
+  getAssignment(id: number): Promise<Assignment | undefined>;
+  listAssignments(entityType: string, entityId: number): Promise<Assignment[]>;
+  createAssignment(assignment: InsertAssignment): Promise<Assignment>;
+  deleteAssignment(id: number): Promise<boolean>;
+  
+  // Module Permissions
+  getModulePermissions(): Promise<ModulePermission[]>;
+  getModuleByName(moduleName: string): Promise<ModulePermission | undefined>;
+  createModulePermission(moduleData: Partial<ModulePermission>): Promise<ModulePermission>;
+  updateModulePermission(id: number, moduleData: Partial<ModulePermission>): Promise<ModulePermission | undefined>;
+  deleteModulePermission(id: number): Promise<boolean>;
+  
+  // Role Permissions
+  getRolePermissions(role: string): Promise<RolePermission[]>;
+  getRolePermission(role: string, moduleId: number, action: string): Promise<RolePermission | undefined>;
+  createRolePermission(permissionData: Partial<RolePermission>): Promise<RolePermission>;
+  updateRolePermission(id: number, permissionData: Partial<RolePermission>): Promise<RolePermission | undefined>;
+  deleteRolePermission(id: number): Promise<boolean>;
+  
+  // User Permissions
+  getUserPermissions(userId: number): Promise<UserPermission[]>;
+  getUserPermission(userId: number, moduleId: number, action: string): Promise<UserPermission | undefined>;
+  createUserPermission(permissionData: Partial<UserPermission>): Promise<UserPermission>;
+  updateUserPermission(id: number, permissionData: Partial<UserPermission>): Promise<UserPermission | undefined>;
+  deleteUserPermission(id: number): Promise<boolean>;
+  
+  // Entity Access
+  checkUserEntityAccess(userId: number, entityType: string, entityId: number): Promise<boolean>;
+  checkTeamEntityAccess(userId: number, entityType: string, entityId: number): Promise<boolean>;
+  getEntityById(entityType: string, entityId: number): Promise<any>;
+  initializePermissions(): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -336,6 +413,14 @@ export class MemStorage implements IStorage {
   private purchaseOrders: Map<number, PurchaseOrder>;
   private purchaseOrderItems: Map<number, PurchaseOrderItem>;
   
+  // Permission management maps
+  private modulePermissions: Map<number, ModulePermission>;
+  private rolePermissions: Map<number, RolePermission>;
+  private userPermissions: Map<number, UserPermission>;
+  private teams: Map<number, Team>;
+  private teamMembers: Map<number, TeamMember>;
+  private assignments: Map<number, Assignment>;
+  
   // Counter for IDs
   private userIdCounter: number;
   private contactIdCounter: number;
@@ -363,6 +448,14 @@ export class MemStorage implements IStorage {
   private invoiceItemIdCounter: number;
   private purchaseOrderIdCounter: number;
   private purchaseOrderItemIdCounter: number;
+  
+  // Permission management ID counters
+  private modulePermissionIdCounter: number;
+  private rolePermissionIdCounter: number;
+  private userPermissionIdCounter: number;
+  private teamIdCounter: number;
+  private teamMemberIdCounter: number;
+  private assignmentIdCounter: number;
 
   constructor() {
     // Initialize session store
@@ -398,6 +491,14 @@ export class MemStorage implements IStorage {
     this.purchaseOrders = new Map();
     this.purchaseOrderItems = new Map();
     
+    // Initialize permission management maps
+    this.modulePermissions = new Map();
+    this.rolePermissions = new Map();
+    this.userPermissions = new Map();
+    this.teams = new Map();
+    this.teamMembers = new Map();
+    this.assignments = new Map();
+    
     // Initialize ID counters
     this.userIdCounter = 1;
     this.contactIdCounter = 1;
@@ -425,6 +526,14 @@ export class MemStorage implements IStorage {
     this.invoiceItemIdCounter = 1;
     this.purchaseOrderIdCounter = 1;
     this.purchaseOrderItemIdCounter = 1;
+    
+    // Initialize permission management ID counters
+    this.modulePermissionIdCounter = 1;
+    this.rolePermissionIdCounter = 1;
+    this.userPermissionIdCounter = 1;
+    this.teamIdCounter = 1;
+    this.teamMemberIdCounter = 1;
+    this.assignmentIdCounter = 1;
     
     // Create default data
     this.initializeData();
@@ -521,6 +630,11 @@ export class MemStorage implements IStorage {
       country: "USA",
       notes: "Interested in our premium plan",
       isActive: true
+    });
+    
+    // Initialize permissions
+    this.initializePermissions().catch(error => {
+      console.error("Failed to initialize permissions:", error);
     });
   }
 
@@ -4554,12 +4668,478 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  // Permission Management Methods
+  async getModulePermissions(): Promise<ModulePermission[]> {
+    return Array.from(this.modulePermissions.values());
+  }
+
+  async getModuleByName(moduleName: string): Promise<ModulePermission | undefined> {
+    for (const module of this.modulePermissions.values()) {
+      if (module.moduleName === moduleName) {
+        return module;
+      }
+    }
+    return undefined;
+  }
+
+  async createModulePermission(moduleData: Partial<ModulePermission>): Promise<ModulePermission> {
+    const id = this.modulePermissionIdCounter++;
+    const createdAt = new Date();
+    
+    const module: ModulePermission = {
+      id,
+      createdAt,
+      moduleName: moduleData.moduleName || '',
+      displayName: moduleData.displayName || moduleData.moduleName || '',
+      description: moduleData.description || '',
+      icon: moduleData.icon || 'box',
+      isActive: moduleData.isActive !== undefined ? moduleData.isActive : true,
+      order: moduleData.order || 0
+    };
+    
+    this.modulePermissions.set(id, module);
+    return module;
+  }
+
+  async updateModulePermission(id: number, moduleData: Partial<ModulePermission>): Promise<ModulePermission | undefined> {
+    const existingModule = this.modulePermissions.get(id);
+    if (!existingModule) {
+      return undefined;
+    }
+    
+    const updatedModule = {
+      ...existingModule,
+      ...moduleData
+    };
+    
+    this.modulePermissions.set(id, updatedModule);
+    return updatedModule;
+  }
+
+  async deleteModulePermission(id: number): Promise<boolean> {
+    return this.modulePermissions.delete(id);
+  }
+  
+  async getRolePermissions(role: string): Promise<RolePermission[]> {
+    const permissions: RolePermission[] = [];
+    
+    for (const permission of this.rolePermissions.values()) {
+      if (permission.role === role) {
+        permissions.push(permission);
+      }
+    }
+    
+    return permissions;
+  }
+  
+  async getRolePermission(role: string, moduleId: number, action: string): Promise<RolePermission | undefined> {
+    for (const permission of this.rolePermissions.values()) {
+      if (permission.role === role && permission.moduleId === moduleId && permission.action === action) {
+        return permission;
+      }
+    }
+    return undefined;
+  }
+  
+  async createRolePermission(permissionData: Partial<RolePermission>): Promise<RolePermission> {
+    const id = this.rolePermissionIdCounter++;
+    const createdAt = new Date();
+    
+    const permission: RolePermission = {
+      id,
+      moduleId: permissionData.moduleId || 0,
+      action: permissionData.action || '',
+      isAllowed: permissionData.isAllowed !== undefined ? permissionData.isAllowed : false,
+      role: permissionData.role || 'User',
+      createdAt
+    };
+    
+    this.rolePermissions.set(id, permission);
+    return permission;
+  }
+  
+  async updateRolePermission(id: number, permissionData: Partial<RolePermission>): Promise<RolePermission | undefined> {
+    const existingPermission = this.rolePermissions.get(id);
+    if (!existingPermission) {
+      return undefined;
+    }
+    
+    const updatedPermission = {
+      ...existingPermission,
+      ...permissionData,
+      // Ensure we don't overwrite these fields even if provided
+      id: existingPermission.id,
+      createdAt: existingPermission.createdAt
+    };
+    
+    this.rolePermissions.set(id, updatedPermission);
+    return updatedPermission;
+  }
+  
+  async deleteRolePermission(id: number): Promise<boolean> {
+    return this.rolePermissions.delete(id);
+  }
+  
+  async getUserPermissions(userId: number): Promise<UserPermission[]> {
+    const permissions: UserPermission[] = [];
+    
+    for (const permission of this.userPermissions.values()) {
+      if (permission.userId === userId) {
+        permissions.push(permission);
+      }
+    }
+    
+    return permissions;
+  }
+  
+  async getUserPermission(userId: number, moduleId: number, action: string): Promise<UserPermission | undefined> {
+    for (const permission of this.userPermissions.values()) {
+      if (permission.userId === userId && permission.moduleId === moduleId && permission.action === action) {
+        return permission;
+      }
+    }
+    return undefined;
+  }
+  
+  async createUserPermission(permissionData: Partial<UserPermission>): Promise<UserPermission> {
+    const id = this.userPermissionIdCounter++;
+    const createdAt = new Date();
+    
+    const permission: UserPermission = {
+      id,
+      userId: permissionData.userId || 0,
+      moduleId: permissionData.moduleId || 0,
+      action: permissionData.action || '',
+      isAllowed: permissionData.isAllowed !== undefined ? permissionData.isAllowed : false,
+      createdAt
+    };
+    
+    this.userPermissions.set(id, permission);
+    return permission;
+  }
+  
+  async updateUserPermission(id: number, permissionData: Partial<UserPermission>): Promise<UserPermission | undefined> {
+    const existingPermission = this.userPermissions.get(id);
+    if (!existingPermission) {
+      return undefined;
+    }
+    
+    const updatedPermission = {
+      ...existingPermission,
+      ...permissionData,
+      // Ensure we don't overwrite these fields even if provided
+      id: existingPermission.id,
+      createdAt: existingPermission.createdAt
+    };
+    
+    this.userPermissions.set(id, updatedPermission);
+    return updatedPermission;
+  }
+  
+  async deleteUserPermission(id: number): Promise<boolean> {
+    return this.userPermissions.delete(id);
+  }
+  
+  async getTeams(): Promise<Team[]> {
+    return Array.from(this.teams.values());
+  }
+  
+  async getTeam(id: number): Promise<Team | undefined> {
+    return this.teams.get(id);
+  }
+  
+  async createTeam(teamData: Partial<Team>): Promise<Team> {
+    const id = this.teamIdCounter++;
+    const createdAt = new Date();
+    
+    const team: Team = {
+      id,
+      name: teamData.name || '',
+      description: teamData.description || '',
+      leaderId: teamData.leaderId || 0,
+      isActive: teamData.isActive !== undefined ? teamData.isActive : true,
+      createdAt
+    };
+    
+    this.teams.set(id, team);
+    return team;
+  }
+  
+  async updateTeam(id: number, teamData: Partial<Team>): Promise<Team | undefined> {
+    const existingTeam = this.teams.get(id);
+    if (!existingTeam) {
+      return undefined;
+    }
+    
+    const updatedTeam = {
+      ...existingTeam,
+      ...teamData,
+      // Ensure we don't overwrite these fields even if provided
+      id: existingTeam.id,
+      createdAt: existingTeam.createdAt
+    };
+    
+    this.teams.set(id, updatedTeam);
+    return updatedTeam;
+  }
+  
+  async deleteTeam(id: number): Promise<boolean> {
+    return this.teams.delete(id);
+  }
+  
+  async getTeamMembers(teamId: number): Promise<TeamMember[]> {
+    const members: TeamMember[] = [];
+    
+    for (const member of this.teamMembers.values()) {
+      if (member.teamId === teamId) {
+        members.push(member);
+      }
+    }
+    
+    return members;
+  }
+  
+  async getTeamMember(id: number): Promise<TeamMember | undefined> {
+    return this.teamMembers.get(id);
+  }
+  
+  async createTeamMember(memberData: Partial<TeamMember>): Promise<TeamMember> {
+    const id = this.teamMemberIdCounter++;
+    const createdAt = new Date();
+    
+    const member: TeamMember = {
+      id,
+      teamId: memberData.teamId || 0,
+      userId: memberData.userId || 0,
+      role: memberData.role || 'Member',
+      createdAt
+    };
+    
+    this.teamMembers.set(id, member);
+    return member;
+  }
+  
+  async updateTeamMember(id: number, memberData: Partial<TeamMember>): Promise<TeamMember | undefined> {
+    const existingMember = this.teamMembers.get(id);
+    if (!existingMember) {
+      return undefined;
+    }
+    
+    const updatedMember = {
+      ...existingMember,
+      ...memberData,
+      // Ensure we don't overwrite these fields even if provided
+      id: existingMember.id,
+      createdAt: existingMember.createdAt
+    };
+    
+    this.teamMembers.set(id, updatedMember);
+    return updatedMember;
+  }
+  
+  async deleteTeamMember(id: number): Promise<boolean> {
+    return this.teamMembers.delete(id);
+  }
+  
+  async getAssignments(entityType: string, entityId: number): Promise<Assignment[]> {
+    const assignments: Assignment[] = [];
+    
+    for (const assignment of this.assignments.values()) {
+      if (assignment.entityType === entityType && assignment.entityId === entityId) {
+        assignments.push(assignment);
+      }
+    }
+    
+    return assignments;
+  }
+  
+  async createAssignment(assignmentData: Partial<Assignment>): Promise<Assignment> {
+    const id = this.assignmentIdCounter++;
+    const assignedAt = new Date();
+    
+    const assignment: Assignment = {
+      id,
+      entityType: assignmentData.entityType || '',
+      entityId: assignmentData.entityId || 0,
+      assignedToType: assignmentData.assignedToType || 'User',
+      assignedToId: assignmentData.assignedToId || 0,
+      assignedAt
+    };
+    
+    this.assignments.set(id, assignment);
+    return assignment;
+  }
+  
+  async deleteAssignment(id: number): Promise<boolean> {
+    return this.assignments.delete(id);
+  }
+  
+  async checkUserEntityAccess(userId: number, entityType: string, entityId: number): Promise<boolean> {
+    // Check if user is an admin or the entity owner
+    const user = await this.getUser(userId);
+    if (!user) {
+      return false;
+    }
+    
+    // Admins have access to everything
+    if (user.role === 'Administrator') {
+      return true;
+    }
+    
+    // Get the entity and check ownership
+    const entity = await this.getEntityById(entityType, entityId);
+    if (!entity) {
+      return false;
+    }
+    
+    // If the entity has an ownerId field and it matches the userId, allow access
+    if (entity.ownerId === userId) {
+      return true;
+    }
+    
+    // Check if the entity is assigned to the user
+    const assignments = await this.getAssignments(entityType, entityId);
+    const isAssignedToUser = assignments.some(
+      (a) => a.assignedToType === 'User' && a.assignedToId === userId
+    );
+    if (isAssignedToUser) {
+      return true;
+    }
+    
+    // Check if the entity is assigned to any team the user is a member of
+    const isAssignedToUserTeam = await this.checkTeamEntityAccess(userId, entityType, entityId);
+    if (isAssignedToUserTeam) {
+      return true;
+    }
+    
+    return false;
+  }
+  
+  async checkTeamEntityAccess(userId: number, entityType: string, entityId: number): Promise<boolean> {
+    // Get all teams the user is a member of
+    const userTeams: number[] = [];
+    for (const member of this.teamMembers.values()) {
+      if (member.userId === userId) {
+        userTeams.push(member.teamId);
+      }
+    }
+    
+    if (userTeams.length === 0) {
+      return false;
+    }
+    
+    // Check if the entity is assigned to any of these teams
+    const assignments = await this.getAssignments(entityType, entityId);
+    const isAssignedToUserTeam = assignments.some(
+      (a) => a.assignedToType === 'Team' && userTeams.includes(a.assignedToId)
+    );
+    
+    return isAssignedToUserTeam;
+  }
+  
+  async getEntityById(entityType: string, entityId: number): Promise<any> {
+    switch(entityType.toLowerCase()) {
+      case 'contact':
+        return this.getContact(entityId);
+      case 'account':
+        return this.getAccount(entityId);
+      case 'lead':
+        return this.getLead(entityId);
+      case 'opportunity':
+        return this.getOpportunity(entityId);
+      case 'task':
+        return this.getTask(entityId);
+      case 'event':
+        return this.getEvent(entityId);
+      case 'product':
+        return this.getProduct(entityId);
+      case 'invoice':
+        return this.getInvoice(entityId);
+      case 'purchaseorder':
+        return this.getPurchaseOrder(entityId);
+      default:
+        return undefined;
+    }
+  }
+  
+  async initializePermissions(): Promise<void> {
+    // Create default modules
+    const modules = [
+      { moduleName: 'dashboard', displayName: 'Dashboard', icon: 'home', order: 1 },
+      { moduleName: 'contacts', displayName: 'Contacts', icon: 'users', order: 2 },
+      { moduleName: 'accounts', displayName: 'Accounts', icon: 'briefcase', order: 3 },
+      { moduleName: 'leads', displayName: 'Leads', icon: 'user-plus', order: 4 },
+      { moduleName: 'opportunities', displayName: 'Opportunities', icon: 'target', order: 5 },
+      { moduleName: 'tasks', displayName: 'Tasks', icon: 'check-square', order: 6 },
+      { moduleName: 'calendar', displayName: 'Calendar', icon: 'calendar', order: 7 },
+      { moduleName: 'communications', displayName: 'Communications', icon: 'message-circle', order: 8 },
+      { moduleName: 'reports', displayName: 'Reports', icon: 'bar-chart-2', order: 9 },
+      { moduleName: 'products', displayName: 'Products', icon: 'package', order: 10 },
+      { moduleName: 'inventory', displayName: 'Inventory', icon: 'database', order: 11 },
+      { moduleName: 'invoices', displayName: 'Invoices', icon: 'file-text', order: 12 },
+      { moduleName: 'purchaseorders', displayName: 'Purchase Orders', icon: 'shopping-cart', order: 13 },
+      { moduleName: 'settings', displayName: 'Settings', icon: 'settings', order: 14 },
+      { moduleName: 'workflows', displayName: 'Workflows', icon: 'git-branch', order: 15 },
+      { moduleName: 'api', displayName: 'API Management', icon: 'code', order: 16 }
+    ];
+    
+    for (const module of modules) {
+      await this.createModulePermission(module);
+    }
+    
+    // Setup default role permissions
+    const actions = ['view', 'create', 'update', 'delete', 'export', 'import', 'assign'];
+    const roles = ['Administrator', 'Manager', 'User', 'ReadOnly'];
+    
+    for (const modulePermission of this.modulePermissions.values()) {
+      for (const role of roles) {
+        for (const action of actions) {
+          // Admins can do everything
+          let isAllowed = role === 'Administrator';
+          
+          // Managers can do everything except delete in some modules
+          if (role === 'Manager') {
+            isAllowed = action !== 'delete' || 
+              !['settings', 'api', 'workflows'].includes(modulePermission.moduleName);
+          }
+          
+          // Regular users have limited permissions
+          if (role === 'User') {
+            if (['settings', 'api', 'workflows'].includes(modulePermission.moduleName)) {
+              isAllowed = false;
+            } else if (action === 'view' || action === 'create') {
+              isAllowed = true;
+            } else if (action === 'update' || action === 'assign') {
+              isAllowed = !['reports'].includes(modulePermission.moduleName);
+            } else {
+              isAllowed = false;
+            }
+          }
+          
+          // Read-only users can only view
+          if (role === 'ReadOnly') {
+            isAllowed = action === 'view';
+          }
+          
+          await this.createRolePermission({
+            role,
+            moduleId: modulePermission.id,
+            action,
+            isAllowed
+          });
+        }
+      }
+    }
+  }
 }
 
 // Import social integration helper functions
 import { addSocialIntegrationsToMemStorage, addSocialIntegrationsToDatabaseStorage } from './social-integrations';
 // Import API key integration helper functions
 import { addApiKeysToMemStorage, addApiKeysToDatabaseStorage } from './api-keys-integration';
+// Import permission helper functions
+import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from './permissions-manager';
 
 // Create the appropriate storage implementation
 // For development, you can switch between MemStorage and DatabaseStorage
@@ -4576,6 +5156,8 @@ if (useDatabase) {
   addApiKeysToDatabaseStorage(dbStorage);
   // Add communication methods to database storage
   addCommunicationsToDatabase(dbStorage);
+  // Add permission methods to database storage
+  addPermissionsToDatabaseStorage(dbStorage);
   storage = dbStorage;
 } else {
   // Use in-memory storage for development/testing
@@ -4586,6 +5168,8 @@ if (useDatabase) {
   addApiKeysToMemStorage(memStorage);
   // Add communication methods to memory storage
   addCommunicationsToMemStorage(memStorage);
+  // Add permission methods to memory storage
+  addPermissionsToMemStorage(memStorage);
   storage = memStorage;
   // Initialize sample subscription packages for in-memory storage
   initializeSubscriptionPackages(storage);
