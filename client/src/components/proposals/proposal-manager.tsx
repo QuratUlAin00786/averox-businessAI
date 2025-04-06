@@ -262,13 +262,30 @@ export function ProposalManager({
         return;
       }
       
+      // Ensure accountId and opportunityId are numbers
+      const accountIdValue = Number(data.accountId || accountId);
+      const opportunityIdValue = Number(data.opportunityId || opportunityId);
+      
+      if (isNaN(accountIdValue) || isNaN(opportunityIdValue)) {
+        console.error("Invalid ID values:", { accountId: accountIdValue, opportunityId: opportunityIdValue });
+        toast({
+          title: "Error",
+          description: "Invalid account or opportunity ID",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Create proposal data with required fields
       const proposalData = {
-        ...data,
-        accountId: accountId || data.accountId,
-        opportunityId: opportunityId || data.opportunityId,
+        name: data.name,  // Required by schema
+        accountId: accountIdValue,
+        opportunityId: opportunityIdValue,
         createdBy: 2, // Using user ID 2 for now
-        // Make sure content is an object not undefined
-        content: data.content || {},
+        content: data.content || {}, // Ensure content is an object
+        status: data.status || 'Draft',
+        expiresAt: data.expiresAt,
+        templateId: data.templateId
       };
       
       console.log("Creating proposal with data:", proposalData);

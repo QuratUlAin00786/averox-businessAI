@@ -127,14 +127,25 @@ export function ProposalForm({
       // Make sure required fields are present
       const submissionData = {
         ...values,
-        // Set default empty content object if not provided
+        // Set default empty content object if not provided - MUST be a JSON object
         content: {},
-        // Ensure opportunity and account IDs are set
-        opportunityId: opportunityId || values.opportunityId,
-        accountId: accountId || values.accountId,
+        // Ensure opportunity and account IDs are set as numbers
+        opportunityId: Number(opportunityId) || Number(values.opportunityId),
+        accountId: Number(accountId) || Number(values.accountId),
         // Set creator to current user
         createdBy: 2 // Default to user ID 2 (can be replaced with actual user ID from context)
       };
+      
+      // Ensure the IDs are present and valid numbers
+      if (!submissionData.opportunityId || isNaN(submissionData.opportunityId)) {
+        console.error("Invalid opportunity ID:", submissionData.opportunityId);
+        throw new Error("Invalid opportunity ID");
+      }
+      
+      if (!submissionData.accountId || isNaN(submissionData.accountId)) {
+        console.error("Invalid account ID:", submissionData.accountId);
+        throw new Error("Invalid account ID");
+      }
       
       console.log("Submitting proposal data:", submissionData);
       onSubmit(submissionData);

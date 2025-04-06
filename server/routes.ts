@@ -2578,6 +2578,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Unauthorized" });
       }
       
+      console.log("Creating proposal with data:", req.body);
+      
+      // Make sure content is an object if it's not provided
+      if (!req.body.content) {
+        req.body.content = {};
+      }
+      
+      // Parse and validate the proposal data
       const proposalData = insertProposalSchema.parse(req.body);
       
       // Add current user as creator if not specified
@@ -2585,9 +2593,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         proposalData.createdBy = req.user.id;
       }
       
+      // Make sure opportunityId and accountId are numbers
+      proposalData.opportunityId = Number(proposalData.opportunityId);
+      proposalData.accountId = Number(proposalData.accountId);
+      
+      // Ensure content is a valid JSON object
+      if (!proposalData.content) {
+        proposalData.content = {};
+      }
+      
+      console.log("Validated proposal data:", proposalData);
       const proposal = await storage.createProposal(proposalData);
+      console.log("Created proposal:", proposal);
       res.status(201).json(proposal);
     } catch (error) {
+      console.error("Error creating proposal:", error);
       handleError(res, error);
     }
   });
