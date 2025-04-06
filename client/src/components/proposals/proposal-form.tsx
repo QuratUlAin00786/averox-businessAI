@@ -90,7 +90,17 @@ export function ProposalForm({
 
   // Update form values when editing a proposal
   useEffect(() => {
+    console.log("ProposalForm useEffect triggered with:", {
+      isEditing,
+      hasProposal: !!proposal,
+      accountId,
+      opportunityId,
+      accountIdType: typeof accountId,
+      opportunityIdType: typeof opportunityId
+    });
+    
     if (isEditing && proposal) {
+      console.log("Resetting form for editing proposal:", proposal);
       form.reset({
         name: proposal.name,
         accountId: proposal.accountId,
@@ -100,13 +110,34 @@ export function ProposalForm({
       });
     } else if (!isEditing) {
       // Reset form for new proposal
-      form.reset({
+      console.log("Resetting form for NEW proposal with context:", { 
+        accountId, 
+        opportunityId,
+        accountIdType: typeof accountId,
+        opportunityIdType: typeof opportunityId 
+      });
+      
+      const formData = {
         name: '',
         accountId: accountId || null,
         opportunityId: opportunityId || null,
-        status: 'Draft',
+        status: 'Draft' as const,
         expiresAt: addDays(new Date(), 30), // Default expiry is 30 days
-      });
+      };
+      
+      console.log("Form reset data:", formData);
+      form.reset(formData);
+      
+      // Verify form values were correctly set
+      setTimeout(() => {
+        console.log("Form values after reset:", {
+          name: form.getValues('name'),
+          accountId: form.getValues('accountId'),
+          opportunityId: form.getValues('opportunityId'),
+          status: form.getValues('status'),
+          expiresAt: form.getValues('expiresAt'),
+        });
+      }, 0);
     }
   }, [form, isEditing, proposal, accountId, opportunityId]);
 
@@ -131,8 +162,8 @@ export function ProposalForm({
         name: values.name || "New Proposal",
         status: values.status || "Draft",
         // Convert to numbers explicitly and verify they exist
-        opportunityId: opportunityId ? Number(opportunityId) : (values.opportunityId ? Number(values.opportunityId) : null),
-        accountId: accountId ? Number(accountId) : (values.accountId ? Number(values.accountId) : null),
+        opportunityId: Number(opportunityId || values.opportunityId || 0),
+        accountId: Number(accountId || values.accountId || 0),
         // Other fields
         expiresAt: values.expiresAt,
         createdBy: 2, // Default to user ID 2 (would normally come from auth context)
@@ -163,12 +194,12 @@ export function ProposalForm({
         throw new Error("Proposal name is required");
       }
       
-      if (!proposalData.opportunityId || isNaN(proposalData.opportunityId)) {
+      if (proposalData.opportunityId <= 0 || isNaN(proposalData.opportunityId)) {
         console.error("Invalid opportunity ID:", proposalData.opportunityId);
         throw new Error("Valid opportunity ID is required");
       }
       
-      if (!proposalData.accountId || isNaN(proposalData.accountId)) {
+      if (proposalData.accountId <= 0 || isNaN(proposalData.accountId)) {
         console.error("Invalid account ID:", proposalData.accountId);
         throw new Error("Valid account ID is required");
       }

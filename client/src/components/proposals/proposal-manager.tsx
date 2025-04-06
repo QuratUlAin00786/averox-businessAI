@@ -105,19 +105,62 @@ export function ProposalManager({
 
   // Reset state when dialog is closed
   useEffect(() => {
+    console.log("Visibility changed to:", isVisible ? "visible" : "hidden", "- Current form mode:", formMode);
     if (!isVisible) {
+      console.log("ProposalManager hidden - resetting all state");
       setFormMode(null);
       setSelectedProposal(null);
       setSearchQuery('');
       setSelectedProposalId(null);
       setEditorVisible(false);
     }
+    
+    // Cleanup function that runs when component is unmounted or when dependencies change
+    return () => {
+      if (formMode) {
+        console.log("Cleanup: Resetting form mode from:", formMode);
+        setFormMode(null);
+      }
+    };
   }, [isVisible]);
+  
+  // Comprehensive cleanup effect for all state values when component unmounts
+  useEffect(() => {
+    // Only run this cleanup if the component unmounts
+    return () => {
+      console.log("Complete cleanup on component unmount");
+      setFormMode(null);
+      setSelectedProposal(null);
+      setSelectedProposalId(null);
+      setSearchQuery('');
+      setFilter('all');
+      setEditorVisible(false);
+    };
+  }, []);
   
   // Debug log when form mode changes
   useEffect(() => {
     console.log("Form mode changed to:", formMode);
   }, [formMode]);
+  
+  // Debug log when component is mounted or when key props change
+  useEffect(() => {
+    console.log("ProposalManager rendered with props:", { 
+      opportunityId, 
+      accountId, 
+      isVisible 
+    });
+    
+    // If this is the first render and we have context IDs, log them explicitly
+    if (isVisible && (opportunityId || accountId)) {
+      console.log("Context data available on mount:", {
+        opportunityId: opportunityId || "Not provided",
+        opportunityIdType: typeof opportunityId,
+        accountId: accountId || "Not provided",
+        accountIdType: typeof accountId
+      });
+    }
+  }, [opportunityId, accountId, isVisible]);
 
   // Fetch all templates
   const {
@@ -214,9 +257,15 @@ export function ProposalManager({
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Create mutation succeeded with response:", data);
       refetchProposals();
+      
+      // Clear all form state to prevent stale data
       setFormMode(null);
+      setSelectedProposal(null);
+      setSelectedProposalId(null);
+      
       toast({
         title: 'Success',
         description: 'Proposal created successfully',
@@ -235,18 +284,25 @@ export function ProposalManager({
   // Update proposal mutation
   const updateProposalMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertProposal> }) => {
+      console.log("Making API request to update proposal with ID:", id, "and data:", data);
       return apiRequestJson<Proposal>('PATCH', `/api/proposals/${id}`, data);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Update mutation succeeded with response:", data);
       refetchProposals();
+      
+      // Clear all form state to prevent stale data
       setFormMode(null);
       setSelectedProposal(null);
+      setSelectedProposalId(null);
+      
       toast({
         title: 'Success',
         description: 'Proposal updated successfully',
       });
     },
     onError: (error: Error) => {
+      console.error("Update mutation error:", error);
       toast({
         title: 'Error',
         description: `Failed to update proposal: ${error.message}`,
@@ -258,17 +314,25 @@ export function ProposalManager({
   // Delete proposal mutation
   const deleteProposalMutation = useMutation({
     mutationFn: async (id: number) => {
+      console.log("Making API request to delete proposal with ID:", id);
       return apiRequestJson<void>('DELETE', `/api/proposals/${id}`);
     },
     onSuccess: () => {
+      console.log("Delete mutation succeeded");
       refetchProposals();
+      
+      // Clear all form state to prevent stale data
       setSelectedProposalId(null);
+      setSelectedProposal(null);
+      setFormMode(null);
+      
       toast({
         title: 'Success',
         description: 'Proposal deleted successfully',
       });
     },
     onError: (error: Error) => {
+      console.error("Delete mutation error:", error);
       toast({
         title: 'Error',
         description: `Failed to delete proposal: ${error.message}`,
@@ -279,8 +343,16 @@ export function ProposalManager({
 
   const handleCreateProposal = (data: InsertProposal) => {
     try {
+      console.log("=== CREATE PROPOSAL START ===");
       console.log("Proposal data received:", data);
+      console.log("Form mode:", formMode);
       console.log("Context data - accountId:", accountId, "opportunityId:", opportunityId);
+      console.log("Data types:", {
+        dataAccountIdType: typeof data.accountId,
+        opportunityIdType: typeof data.opportunityId,
+        contextAccountIdType: typeof accountId,
+        contextOpportunityIdType: typeof opportunityId
+      });
       
       // Make sure required data is present
       if (!data.accountId && !accountId) {
@@ -345,9 +417,30 @@ export function ProposalManager({
         error: createProposalMutation.error
       });
       
-      createProposalMutation.mutate(proposalData);
+      // Set state to remember we're creating a proposal
+      // This ensures we don't lose the context while async operations are pending
+      createProposalMutation.mutate(proposalData, {
+        onSuccess: (data) => {
+          console.log("Proposal creation succeeded:", data);
+          toast({
+            title: "Success",
+            description: "Proposal created successfully",
+          });
+          refetchProposals();
+          setFormMode(null);
+        },
+        onError: (error) => {
+          console.error("Proposal creation failed:", error);
+          toast({
+            title: "Error",
+            description: `Failed to create proposal: ${error.message}`,
+            variant: "destructive",
+          });
+        }
+      });
       
       console.log("Mutation called - observe network request in DevTools");
+      console.log("=== CREATE PROPOSAL END ===");
     } catch (error) {
       console.error("Error creating proposal:", error);
       toast({
