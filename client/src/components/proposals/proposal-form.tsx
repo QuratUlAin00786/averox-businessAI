@@ -118,13 +118,30 @@ export function ProposalForm({
   }, [isOpen, isEditing]);
 
   const handleFormSubmit = (values: ProposalFormValues) => {
-    // If we're creating a new proposal and a template is selected, add it
-    if (!isEditing && selectedTemplateId) {
-      values.templateId = selectedTemplateId;
+    try {
+      // If we're creating a new proposal and a template is selected, add it
+      if (!isEditing && selectedTemplateId) {
+        values.templateId = selectedTemplateId;
+      }
+
+      // Make sure required fields are present
+      const submissionData = {
+        ...values,
+        // Set default empty content object if not provided
+        content: {},
+        // Ensure opportunity and account IDs are set
+        opportunityId: opportunityId || values.opportunityId,
+        accountId: accountId || values.accountId,
+        // Set creator to current user
+        createdBy: 2 // Default to user ID 2 (can be replaced with actual user ID from context)
+      };
+      
+      console.log("Submitting proposal data:", submissionData);
+      onSubmit(submissionData);
+      form.reset();
+    } catch (error) {
+      console.error("Error in form submission:", error);
     }
-    
-    onSubmit(values);
-    form.reset();
   };
 
   // Go to the info step after template selection

@@ -240,17 +240,77 @@ export function ProposalManager({
   });
 
   const handleCreateProposal = (data: InsertProposal) => {
-    createProposalMutation.mutate({
-      ...data,
-      accountId: accountId || data.accountId,
-      opportunityId: opportunityId || data.opportunityId,
-      createdBy: 1, // TODO: get actual user ID from auth context
-      content: {},
-    });
+    try {
+      console.log("Proposal data received:", data);
+      
+      // Make sure required data is present
+      if (!data.accountId && !accountId) {
+        toast({
+          title: "Error",
+          description: "Account ID is required",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!data.opportunityId && !opportunityId) {
+        toast({
+          title: "Error",
+          description: "Opportunity ID is required",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const proposalData = {
+        ...data,
+        accountId: accountId || data.accountId,
+        opportunityId: opportunityId || data.opportunityId,
+        createdBy: 2, // Using user ID 2 for now
+        // Make sure content is an object not undefined
+        content: data.content || {},
+      };
+      
+      console.log("Creating proposal with data:", proposalData);
+      createProposalMutation.mutate(proposalData);
+    } catch (error) {
+      console.error("Error creating proposal:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while creating the proposal",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleUpdateProposal = (id: number, data: Partial<InsertProposal>) => {
-    updateProposalMutation.mutate({ id, data });
+    try {
+      console.log("Updating proposal with ID:", id, "Data:", data);
+      
+      // Handle metadata with timestamps
+      let updatedData = { ...data };
+      
+      // Handle various timestamps in metadata
+      if (data.status === 'Sent' && !data.metadata) {
+        updatedData.metadata = { sentAt: new Date().toISOString() };
+      } else if (data.status === 'Accepted' && !data.metadata) {
+        updatedData.metadata = { acceptedAt: new Date().toISOString() };
+      } else if (data.status === 'Rejected' && !data.metadata) {
+        updatedData.metadata = { rejectedAt: new Date().toISOString() };
+      }
+      
+      updateProposalMutation.mutate({ 
+        id, 
+        data: updatedData 
+      });
+    } catch (error) {
+      console.error("Error updating proposal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update proposal",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteProposal = (id: number) => {
@@ -331,7 +391,7 @@ export function ProposalManager({
     // and handle the actual sending process
     handleUpdateProposal(proposal.id, {
       status: 'Sent',
-      sentAt: new Date().toISOString(), // This would be handled by the backend
+      metadata: { sentAt: new Date().toISOString() }
     });
 
     toast({
@@ -469,7 +529,7 @@ export function ProposalManager({
                         e.stopPropagation();
                         handleUpdateProposal(proposal.id, {
                           status: 'Accepted',
-                          acceptedAt: new Date().toISOString(),
+                          metadata: { acceptedAt: new Date().toISOString() }
                         });
                       }}
                     >
@@ -483,7 +543,7 @@ export function ProposalManager({
                         e.stopPropagation();
                         handleUpdateProposal(proposal.id, {
                           status: 'Rejected',
-                          rejectedAt: new Date().toISOString(),
+                          metadata: { rejectedAt: new Date().toISOString() }
                         });
                       }}
                     >
