@@ -33,6 +33,10 @@ import NewCategory from "@/pages/inventory/categories/new";
 import NewTransaction from "@/pages/inventory/transactions/new";
 import NewInvoice from "@/pages/accounting/invoices/new";
 import NewPurchaseOrder from "@/pages/accounting/purchase-orders/new";
+import RevenueReport from "@/pages/accounting/reports/revenue";
+import ExpensesReport from "@/pages/accounting/reports/expenses";
+import ProfitLossReport from "@/pages/accounting/reports/profit-loss";
+import TransactionsPage from "@/pages/accounting/transactions";
 
 function Router() {
   return (
@@ -180,6 +184,30 @@ function Router() {
       <ProtectedRoute path="/accounting/purchase-orders/:id" component={({ params }) => (
         <Layout>
           <Accounting subPath={`purchase-orders/${params.id}`} />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounting/reports/revenue" component={() => (
+        <Layout>
+          <RevenueReport />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounting/reports/expenses" component={() => (
+        <Layout>
+          <ExpensesReport />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounting/reports/profit-loss" component={() => (
+        <Layout>
+          <ProfitLossReport />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounting/transactions" component={() => (
+        <Layout>
+          <TransactionsPage />
         </Layout>
       )} />
       

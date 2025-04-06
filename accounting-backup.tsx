@@ -337,13 +337,7 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setLocation("/accounting/reports/revenue")}
-                  >
-                    View Detailed Report
-                  </Button>
+                  <Button variant="outline" className="w-full">View Detailed Report</Button>
                 </CardFooter>
               </Card>
 
@@ -373,49 +367,7 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setLocation("/accounting/reports/expenses")}
-                  >
-                    View Detailed Report
-                  </Button>
-                </CardFooter>
-              </Card>
-
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign size={18} /> Profit & Loss Overview
-                  </CardTitle>
-                  <CardDescription>Summary of your financial performance</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Total Revenue</span>
-                      <span className="font-medium">$24,500.00</span>
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Total Expenses</span>
-                      <span className="font-medium">$18,650.00</span>
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Net Profit</span>
-                      <span className="font-medium text-green-600">$5,850.00</span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setLocation("/accounting/reports/profit-loss")}
-                  >
-                    View Detailed Report
-                  </Button>
+                  <Button variant="outline" className="w-full">View Detailed Report</Button>
                 </CardFooter>
               </Card>
 
@@ -458,13 +410,7 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setLocation("/accounting/transactions")}
-                  >
-                    View All Transactions
-                  </Button>
+                  <Button variant="outline" className="w-full">View All Transactions</Button>
                 </CardFooter>
               </Card>
             </div>
