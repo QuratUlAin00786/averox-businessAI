@@ -247,11 +247,15 @@ export function ProposalManager({
       console.log("Making API request to create proposal with data:", data);
       try {
         // Use apiRequestJson to ensure credentials are included
-        return await apiRequestJson<InsertProposal>(
+        // The server returns a standardized response format {success: true, data: Proposal}
+        // apiRequestJson extracts the data property from that response
+        const proposal = await apiRequestJson<Proposal>(
           'POST', 
           '/api/proposals', 
           data
         );
+        console.log("Received proposal from server after extraction:", proposal);
+        return proposal;
       } catch (error) {
         console.error("Error in API request:", error);
         throw error;
@@ -285,7 +289,9 @@ export function ProposalManager({
   const updateProposalMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertProposal> }) => {
       console.log("Making API request to update proposal with ID:", id, "and data:", data);
-      return apiRequestJson<Proposal>('PATCH', `/api/proposals/${id}`, data);
+      const proposal = await apiRequestJson<Proposal>('PATCH', `/api/proposals/${id}`, data);
+      console.log("Received updated proposal from server after extraction:", proposal);
+      return proposal;
     },
     onSuccess: (data) => {
       console.log("Update mutation succeeded with response:", data);
@@ -315,7 +321,9 @@ export function ProposalManager({
   const deleteProposalMutation = useMutation({
     mutationFn: async (id: number) => {
       console.log("Making API request to delete proposal with ID:", id);
-      return apiRequestJson<void>('DELETE', `/api/proposals/${id}`);
+      const result = await apiRequestJson<void>('DELETE', `/api/proposals/${id}`);
+      console.log("Received delete response from server:", result);
+      return result;
     },
     onSuccess: () => {
       console.log("Delete mutation succeeded");
@@ -428,6 +436,8 @@ export function ProposalManager({
           });
           refetchProposals();
           setFormMode(null);
+          setSelectedProposal(null);
+          setSelectedProposalId(null);
         },
         onError: (error) => {
           console.error("Proposal creation failed:", error);
