@@ -3176,8 +3176,20 @@ export class MemStorage implements IStorage {
     const id = this.proposalActivityIdCounter++;
     const createdAt = new Date();
     
-    const proposalActivity: ProposalActivity = {
+    // Normalize field names to match schema (activityType and description)
+    const normalizedActivity = {
       ...activity,
+      // If old field names are used, map them to new field names
+      activityType: activity.activityType || activity['action'],
+      description: activity.description || activity['detail'],
+    };
+    
+    // Remove old field names if present
+    if ('action' in normalizedActivity) delete normalizedActivity['action'];
+    if ('detail' in normalizedActivity) delete normalizedActivity['detail'];
+    
+    const proposalActivity: ProposalActivity = {
+      ...normalizedActivity,
       id,
       createdAt
     };
@@ -5256,8 +5268,8 @@ export class DatabaseStorage implements IStorage {
         await this.createProposalActivity({
           proposalId: newProposal.id,
           userId: proposal.createdBy,
-          action: 'Created',
-          detail: 'Proposal was created'
+          activityType: 'Created',
+          description: 'Proposal was created'
         });
       } catch (activityError) {
         console.error("Failed to create activity log, but proposal was created:", activityError);
@@ -5327,8 +5339,8 @@ export class DatabaseStorage implements IStorage {
         await this.createProposalActivity({
           proposalId: id,
           userId: proposal.updatedBy || null,
-          action: 'Status Changed',
-          detail: `Status changed from ${originalProposal.status} to ${proposal.status}`
+          activityType: 'Status Changed',
+          description: `Status changed from ${originalProposal.status} to ${proposal.status}`
         });
       }
       
@@ -5402,8 +5414,8 @@ export class DatabaseStorage implements IStorage {
       await this.createProposalActivity({
         proposalId: element.proposalId,
         userId: element.createdBy || null,
-        action: 'Element Added',
-        detail: `Added ${element.elementType} element`
+        activityType: 'Element Added',
+        description: `Added ${element.elementType} element`
       });
       
       return newElement;
@@ -5428,8 +5440,8 @@ export class DatabaseStorage implements IStorage {
         await this.createProposalActivity({
           proposalId: element.proposalId,
           userId: element.updatedBy || null,
-          action: 'Element Updated',
-          detail: `Updated ${updatedElement.elementType} element`
+          activityType: 'Element Updated',
+          description: `Updated ${updatedElement.elementType} element`
         });
       }
       
@@ -5456,8 +5468,8 @@ export class DatabaseStorage implements IStorage {
         await this.createProposalActivity({
           proposalId: element.proposalId,
           userId: null, // No user ID available in this context
-          action: 'Element Removed',
-          detail: `Removed ${element.elementType} element`
+          activityType: 'Element Removed',
+          description: `Removed ${element.elementType} element`
         });
         return true;
       }
@@ -5523,8 +5535,8 @@ export class DatabaseStorage implements IStorage {
       await this.createProposalActivity({
         proposalId: collaborator.proposalId,
         userId: collaborator.addedBy,
-        action: 'Collaborator Added',
-        detail: `Added ${user?.firstName} ${user?.lastName} as ${collaborator.role} collaborator`
+        activityType: 'Collaborator Added',
+        description: `Added ${user?.firstName} ${user?.lastName} as ${collaborator.role} collaborator`
       });
       
       return newCollaborator;
@@ -5558,8 +5570,8 @@ export class DatabaseStorage implements IStorage {
         await this.createProposalActivity({
           proposalId: originalCollaborator.proposalId,
           userId: null, // No user ID available in this context
-          action: 'Collaborator Updated',
-          detail: `Changed ${user?.firstName} ${user?.lastName}'s role from ${originalCollaborator.role} to ${collaborator.role}`
+          activityType: 'Collaborator Updated',
+          description: `Changed ${user?.firstName} ${user?.lastName}'s role from ${originalCollaborator.role} to ${collaborator.role}`
         });
       }
       
@@ -5592,8 +5604,8 @@ export class DatabaseStorage implements IStorage {
         await this.createProposalActivity({
           proposalId: collaborator.proposalId,
           userId: null, // No user ID available in this context
-          action: 'Collaborator Removed',
-          detail: `Removed ${user?.firstName} ${user?.lastName} as collaborator`
+          activityType: 'Collaborator Removed',
+          description: `Removed ${user?.firstName} ${user?.lastName} as collaborator`
         });
         
         return true;
@@ -5650,8 +5662,8 @@ export class DatabaseStorage implements IStorage {
       await this.createProposalActivity({
         proposalId: comment.proposalId,
         userId: comment.userId,
-        action: 'Comment Added',
-        detail: comment.parentId ? 'Added reply to comment' : 'Added new comment'
+        activityType: 'Comment Added',
+        description: comment.parentId ? 'Added reply to comment' : 'Added new comment'
       });
       
       return newComment;
@@ -5690,8 +5702,8 @@ export class DatabaseStorage implements IStorage {
         await this.createProposalActivity({
           proposalId: originalComment.proposalId,
           userId: comment.resolvedBy || null,
-          action: 'Comment Resolved',
-          detail: 'Resolved comment'
+          activityType: 'Comment Resolved',
+          description: 'Resolved comment'
         });
       }
       
@@ -5722,8 +5734,8 @@ export class DatabaseStorage implements IStorage {
         await this.createProposalActivity({
           proposalId: comment.proposalId,
           userId: null, // No user ID available in this context
-          action: 'Comment Deleted',
-          detail: 'Deleted comment'
+          activityType: 'Comment Deleted',
+          description: 'Deleted comment'
         });
         
         return true;
