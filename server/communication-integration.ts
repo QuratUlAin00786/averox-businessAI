@@ -388,13 +388,78 @@ export function addCommunicationsToDatabase(dbStorage: any) {
         )
         .orderBy(desc(socialMessages.createdAt));
 
-      // The rest of the function is similar to getAllCommunications
-      // but specifically for this contact
-      
-      // Implementation details would be similar to the getAllCommunications method
-      // but focused on a specific contact
-      
-      return [];  // Placeholder for now
+      // Process the results into our unified Communication format
+      const result: Communication[] = [];
+
+      for (const msg of messages) {
+        // Skip deleted messages
+        if (msg.social_messages.isDeleted) continue;
+
+        let contactDetails: CommunicationContact | null = null;
+
+        // Get contact details based on the contact type
+        if (contactType === 'lead') {
+          const [lead] = await db
+            .select()
+            .from(leads)
+            .where(eq(leads.id, contactId));
+
+          if (lead) {
+            contactDetails = {
+              id: lead.id,
+              firstName: lead.firstName || '',
+              lastName: lead.lastName || '',
+              email: lead.email || undefined,
+              phone: lead.phone || undefined,
+              company: lead.company || undefined,
+              type: 'lead',
+              socialProfiles: {}
+            };
+          }
+        } else {
+          const [contactRecord] = await db
+            .select()
+            .from(contacts)
+            .where(eq(contacts.id, contactId));
+
+          if (contactRecord) {
+            contactDetails = {
+              id: contactRecord.id,
+              firstName: contactRecord.firstName || '',
+              lastName: contactRecord.lastName || '',
+              email: contactRecord.email || undefined,
+              phone: contactRecord.phone || undefined,
+              type: 'customer',
+              socialProfiles: {}
+            };
+          }
+        }
+
+        // Skip if we couldn't find a contact
+        if (!contactDetails) continue;
+
+        // Determine channel from integration platform
+        const channel = msg.social_integrations?.platform?.toLowerCase() || 'unknown';
+
+        result.push({
+          id: msg.social_messages.id,
+          contactId: contactDetails.id,
+          contactType,
+          channel,
+          // Determine direction based on sender field
+          direction: msg.social_messages.sender === 'system' ? 'outbound' : 'inbound',
+          // In the database the message field is used instead of content
+          content: msg.social_messages.message || '',
+          status: (msg.social_messages.status?.toLowerCase() || 'unread') as 'unread' | 'read' | 'replied' | 'archived',
+          // We use createdAt for the sentAt field since our database schema doesn't have sent_at
+          sentAt: msg.social_messages.createdAt,
+          receivedAt: msg.social_messages.receivedAt || undefined,
+          attachments: msg.social_messages.attachments as any || [],
+          contactDetails
+        });
+      }
+
+      return result;
     } catch (error) {
       console.error('Database error in getContactCommunications:', error);
       return [];
@@ -428,10 +493,84 @@ export function addCommunicationsToDatabase(dbStorage: any) {
         return null;
       }
 
-      // We would normally fetch the full contact details here
-      // and return a complete Communication object
+      // Fetch the updated message with its integration
+      const [msg] = await db
+        .select({
+          social_messages: socialMessages,
+          social_integrations: socialIntegrations
+        })
+        .from(socialMessages)
+        .leftJoin(socialIntegrations, eq(socialMessages.integrationId, socialIntegrations.id))
+        .where(eq(socialMessages.id, id));
       
-      return null;  // Placeholder for now
+      if (!msg) return null;
+
+      // Get contact details based on the contact type
+      let contactDetails: CommunicationContact | null = null;
+      let contactType: 'lead' | 'customer' = 'lead';
+      let contactId = 0;
+
+      if (msg.social_messages.leadId) {
+        const [lead] = await db
+          .select()
+          .from(leads)
+          .where(eq(leads.id, msg.social_messages.leadId));
+
+        if (lead) {
+          contactDetails = {
+            id: lead.id,
+            firstName: lead.firstName || '',
+            lastName: lead.lastName || '',
+            email: lead.email || undefined,
+            phone: lead.phone || undefined,
+            company: lead.company || undefined,
+            type: 'lead',
+            socialProfiles: {}
+          };
+          contactType = 'lead';
+          contactId = lead.id;
+        }
+      } else if (msg.social_messages.contactId) {
+        const [contactRecord] = await db
+          .select()
+          .from(contacts)
+          .where(eq(contacts.id, msg.social_messages.contactId));
+
+        if (contactRecord) {
+          contactDetails = {
+            id: contactRecord.id,
+            firstName: contactRecord.firstName || '',
+            lastName: contactRecord.lastName || '',
+            email: contactRecord.email || undefined,
+            phone: contactRecord.phone || undefined,
+            type: 'customer',
+            socialProfiles: {}
+          };
+          contactType = 'customer';
+          contactId = contactRecord.id;
+        }
+      }
+
+      // If we couldn't find contact details, return null
+      if (!contactDetails) return null;
+
+      // Determine channel from integration platform
+      const channel = msg.social_integrations?.platform?.toLowerCase() || 'unknown';
+
+      // Create the complete Communication object
+      return {
+        id: msg.social_messages.id,
+        contactId: contactId,
+        contactType,
+        channel,
+        direction: msg.social_messages.sender === 'system' ? 'outbound' : 'inbound',
+        content: msg.social_messages.message || '',
+        status: status,
+        sentAt: msg.social_messages.createdAt,
+        receivedAt: msg.social_messages.receivedAt || undefined,
+        attachments: msg.social_messages.attachments as any || [],
+        contactDetails
+      };
     } catch (error) {
       console.error('Database error in updateCommunicationStatus:', error);
       return null;
@@ -505,10 +644,63 @@ export function addCommunicationsToDatabase(dbStorage: any) {
         return null;
       }
 
-      // We would fetch the complete contact details here
-      // and return a complete Communication object
-      
-      return null;  // Placeholder for now
+      // Get contact details based on contact type
+      let contactDetails: CommunicationContact | null = null;
+
+      if (data.contactType === 'lead') {
+        const [lead] = await db
+          .select()
+          .from(leads)
+          .where(eq(leads.id, data.contactId));
+
+        if (lead) {
+          contactDetails = {
+            id: lead.id,
+            firstName: lead.firstName || '',
+            lastName: lead.lastName || '',
+            email: lead.email || undefined,
+            phone: lead.phone || undefined,
+            company: lead.company || undefined,
+            type: 'lead',
+            socialProfiles: {}
+          };
+        }
+      } else {
+        const [contactRecord] = await db
+          .select()
+          .from(contacts)
+          .where(eq(contacts.id, data.contactId));
+
+        if (contactRecord) {
+          contactDetails = {
+            id: contactRecord.id,
+            firstName: contactRecord.firstName || '',
+            lastName: contactRecord.lastName || '',
+            email: contactRecord.email || undefined,
+            phone: contactRecord.phone || undefined,
+            type: 'customer',
+            socialProfiles: {}
+          };
+        }
+      }
+
+      // If we couldn't find contact details, return null
+      if (!contactDetails) return null;
+
+      // Create and return the complete Communication object
+      return {
+        id: newMessage.id,
+        contactId: data.contactId,
+        contactType: data.contactType,
+        channel: data.channel,
+        direction: data.direction,
+        content: data.content,
+        status: data.status || 'unread',
+        sentAt: newMessage.createdAt,
+        receivedAt: data.receivedAt,
+        attachments: data.attachments,
+        contactDetails
+      };
     } catch (error) {
       console.error('Database error in createCommunication:', error);
       return null;
