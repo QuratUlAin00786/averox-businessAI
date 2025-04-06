@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save, Users, Package2, Settings as SettingsIcon, User, Shield } from "lucide-react";
+import { Save, Users, Package2, Settings as SettingsIcon, User, Shield, UserCog } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
@@ -163,6 +163,30 @@ export default function Settings() {
               <Link href="/subscriptions">
                 <Button variant="outline" className="w-full flex items-center justify-center">
                   <Package2 className="mr-2 h-4 w-4" /> Manage Subscription
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <UserCog className="w-5 h-5 mr-2" />
+                Team Management
+              </CardTitle>
+              <CardDescription>
+                Organize users into teams
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Create and manage teams, assign members and set team permissions
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Link href="/settings/teams">
+                <Button variant="outline" className="w-full flex items-center justify-center">
+                  <UserCog className="mr-2 h-4 w-4" /> Manage Teams
                 </Button>
               </Link>
             </CardFooter>
