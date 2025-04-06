@@ -149,7 +149,7 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
             <div className="relative">
               <Bell className="w-6 h-6" />
               {/* Dynamic notification count - The count here could come from an API in a real app */}
-              <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-destructive rounded-full">3</span>
+              <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-destructive rounded-full">3</span>
             </div>
           </Button>
           
@@ -159,7 +159,7 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
             <div className="relative">
               <MessageCircle className="w-6 h-6" />
               {/* Dynamic message count - The count here could come from an API in a real app */}
-              <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-primary rounded-full">5</span>
+              <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-primary rounded-full">5</span>
             </div>
           </Button>
           
@@ -167,14 +167,14 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
           <div className="relative ml-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="flex items-center max-w-xs text-sm bg-white rounded-full focus:ring-primary" id="user-menu-button">
+                <Button variant="ghost" size="icon" className="flex items-center max-w-xs text-sm bg-white rounded-full focus:ring-primary hover:bg-gray-100" id="user-menu-button">
                   <span className="sr-only">Open user menu</span>
-                  <Avatar className="w-8 h-8">
+                  <Avatar className="w-10 h-10 border-2 border-primary">
                     <AvatarImage 
                       src={user?.avatar || ""} 
                       alt={`${user?.firstName || ""} ${user?.lastName || ""}`} 
                     />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                       {user?.firstName && user?.lastName 
                         ? `${user.firstName[0]}${user.lastName[0]}`
                         : user?.username?.[0]?.toUpperCase() || "U"}

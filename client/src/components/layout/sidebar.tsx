@@ -128,12 +128,12 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       </ScrollArea>
       
       <div className="flex items-center p-4 border-t border-neutral-200">
-        <Avatar className="w-9 h-9">
+        <Avatar className="w-10 h-10 border-2 border-primary">
           <AvatarImage 
             src={user?.avatar || ""} 
             alt={`${user?.firstName || ""} ${user?.lastName || ""}`} 
           />
-          <AvatarFallback>
+          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
             {user?.firstName && user?.lastName 
               ? `${user.firstName[0]}${user.lastName[0]}`
               : user?.username?.[0]?.toUpperCase() || "U"}
@@ -151,9 +151,9 @@ export default function Sidebar({ className = "" }: SidebarProps) {
         </div>
         <Link href="/settings/profile">
           <Button 
-            variant="ghost" 
+            variant="outline" 
             size="icon" 
-            className="p-1 ml-auto text-neutral-400 hover:text-neutral-500"
+            className="p-1 ml-auto text-primary hover:text-primary hover:bg-primary/10 hover:border-primary"
           >
             <Settings className="w-5 h-5" />
           </Button>
