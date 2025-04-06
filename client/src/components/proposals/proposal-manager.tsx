@@ -323,19 +323,35 @@ export function ProposalManager({
       console.log("Create mutation succeeded with response:", data);
       
       // Handle the standardized API response format
-      // TypeScript fix: check if data is an API response or direct proposal object
-      const proposal = (data && typeof data === 'object' && 'success' in data && 'data' in data) 
-        ? data.data 
-        : data;
+      console.log("Raw creation response:", data);
+      
+      // Define a type guard for API responses
+      const isApiResponse = (obj: any): obj is ApiResponse<Proposal> => {
+        return obj && typeof obj === 'object' && 'success' in obj && 'data' in obj;
+      };
+      
+      // Extract proposal data carefully
+      let proposal: Proposal | null = null;
+      
+      if (isApiResponse(data)) {
+        console.log("Response is wrapped in API response structure");
+        proposal = data.data as Proposal;
+      } else if (data && typeof data === 'object') {
+        console.log("Response is direct proposal object");
+        proposal = data as Proposal;
+      }
+      
       console.log("Extracted proposal data:", proposal);
       
       // Refresh the proposals list to show the newly created item
       refetchProposals();
       
       // If the response contains a valid proposal ID, set it as selected
-      if (proposal && typeof proposal === 'object' && 'id' in proposal && proposal.id) {
-        // Update UI to show the newly created proposal
+      if (proposal && proposal.id) {
+        console.log("Setting selected proposal ID to:", proposal.id);
         setSelectedProposalId(proposal.id);
+      } else {
+        console.warn("Created proposal doesn't have a valid ID");
       }
       
       // Clear form state
@@ -445,19 +461,35 @@ export function ProposalManager({
       console.log("Update mutation succeeded with response:", data);
       
       // Handle the standardized API response format
-      // TypeScript fix: check if data is an API response or direct proposal object
-      const proposal = (data && typeof data === 'object' && 'success' in data && 'data' in data) 
-        ? data.data 
-        : data;
+      console.log("Raw update response:", data);
+      
+      // Define a type guard for API responses
+      const isApiResponse = (obj: any): obj is ApiResponse<Proposal> => {
+        return obj && typeof obj === 'object' && 'success' in obj && 'data' in obj;
+      };
+      
+      // Extract proposal data carefully
+      let proposal: Proposal | null = null;
+      
+      if (isApiResponse(data)) {
+        console.log("Response is wrapped in API response structure");
+        proposal = data.data as Proposal;
+      } else if (data && typeof data === 'object') {
+        console.log("Response is direct proposal object");
+        proposal = data as Proposal;
+      }
+      
       console.log("Extracted proposal data from update response:", proposal);
       
       // Refresh the proposals list with updated data
       refetchProposals();
       
       // If the response contains a valid proposal ID, set it as selected
-      if (proposal && typeof proposal === 'object' && 'id' in proposal && proposal.id) {
-        // Update UI to show the updated proposal
+      if (proposal && proposal.id) {
+        console.log("Setting selected proposal ID to:", proposal.id);
         setSelectedProposalId(proposal.id);
+      } else {
+        console.warn("Updated proposal doesn't have a valid ID");
       }
       
       // Clear form state but keep the proposal selected
@@ -506,11 +538,26 @@ export function ProposalManager({
     onSuccess: (data) => {
       console.log("Delete mutation succeeded with response:", data);
       
-      // Ensure we're handling both response formats correctly
-      // For delete operations, we may just get a success message
-      if (data && data.success !== undefined) {
-        console.log("Delete operation success status:", data.success);
+      // Handle the standardized API response format
+      console.log("Raw delete response:", data);
+      
+      // Define a type guard for API responses
+      const isApiResponse = (obj: any): obj is ApiResponse<void> => {
+        return obj && typeof obj === 'object' && 'success' in obj;
+      };
+      
+      // Check for success status in response
+      let success = false;
+      
+      if (isApiResponse(data)) {
+        console.log("Response is wrapped in API response structure");
+        success = data.success;
+      } else if (data && typeof data === 'object') {
+        console.log("Response is direct object");
+        success = true;  // Assume success if we got a response without error
       }
+      
+      console.log("Delete operation success status:", success);
       
       // Refresh the proposals list to remove the deleted item
       refetchProposals();
