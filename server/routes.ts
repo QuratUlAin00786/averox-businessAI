@@ -1893,7 +1893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/communications/send', async (req: Request, res: Response) => {
     try {
-      const { recipientId, channel, content, contactType } = req.body;
+      const { recipientId, channel, content, contactType, relatedToType, relatedToId } = req.body;
       
       if (!recipientId || !channel || !content || !contactType) {
         return res.status(400).json({ error: "Required fields missing: recipientId, channel, content, contactType" });
@@ -1907,13 +1907,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contactId: recipientId,
         contactType,
         channel,
-        direction: 'inbound',
+        direction: 'outbound', // Changed from 'inbound' to 'outbound' since this is for sending
         content,
         status: 'read',
         sentAt: new Date(),
+        relatedToType: relatedToType, // Optional relation to account, opportunity, etc.
+        relatedToId: relatedToId     // Optional ID of the related entity
       });
       
+      // Create an activity record when a message is sent
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: `Sent ${channel} message`,
+          detail: `Sent ${channel} to ${contactType} ${recipientId}`,
+          relatedToType: contactType,
+          relatedToId: recipientId,
+          createdAt: new Date(),
+          icon: 'sent'
+        });
+      }
+      
       res.status(201).json(communication);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  // Get communications related to a specific entity (account, opportunity, etc.)
+  app.get('/api/communications/related/:type/:id', async (req: Request, res: Response) => {
+    try {
+      const relatedToType = req.params.type;
+      const relatedToId = parseInt(req.params.id);
+      
+      if (!relatedToType || !relatedToId) {
+        return res.status(400).json({ error: "Invalid entity type or ID" });
+      }
+      
+      const communications = await storage.getRelatedCommunications(relatedToType, relatedToId);
+      res.status(200).json(communications);
     } catch (error) {
       handleError(res, error);
     }

@@ -41,6 +41,9 @@ export type Communication = {
   receivedAt?: Date;
   attachments?: Array<{name: string, url: string}>;
   contactDetails: CommunicationContact;
+  // New fields for entity relationships
+  relatedToType?: string; // 'account', 'opportunity', 'contact', etc.
+  relatedToId?: number;   // ID of the related entity
 };
 
 // Function to add communication-related methods to the MemStorage class
@@ -76,6 +79,20 @@ export function addCommunicationsToMemStorage(storage: MemStorage) {
         return dateB.getTime() - dateA.getTime();
       });
   };
+  
+  // Method to get communications related to a specific entity
+  storage.getRelatedCommunications = async function(
+    relatedToType: string,
+    relatedToId: number
+  ): Promise<Communication[]> {
+    return Array.from(this.communications.values())
+      .filter(comm => comm.relatedToType === relatedToType && comm.relatedToId === relatedToId)
+      .sort((a, b) => {
+        const dateA = a.receivedAt || a.sentAt;
+        const dateB = b.receivedAt || b.sentAt;
+        return dateB.getTime() - dateA.getTime();
+      });
+  };
 
   // Method to update communication status
   storage.updateCommunicationStatus = async function(
@@ -85,9 +102,12 @@ export function addCommunicationsToMemStorage(storage: MemStorage) {
     const communication = this.communications.get(id);
     if (!communication) return null;
 
+    // Normalize the status to lowercase to handle case sensitivity
+    const normalizedStatus = status.toLowerCase() as 'unread' | 'read' | 'replied' | 'archived';
+
     const updatedCommunication = {
       ...communication,
-      status
+      status: normalizedStatus
     };
 
     this.communications.set(id, updatedCommunication);
@@ -106,6 +126,8 @@ export function addCommunicationsToMemStorage(storage: MemStorage) {
       sentAt?: Date;
       receivedAt?: Date;
       attachments?: Array<{name: string, url: string}>;
+      relatedToType?: string; // 'account', 'opportunity', etc.
+      relatedToId?: number;   // ID of the related entity
     }
   ): Promise<Communication> {
     const id = ++this.communicationIdCounter;
@@ -158,14 +180,17 @@ export function addCommunicationsToMemStorage(storage: MemStorage) {
       id,
       contactId: data.contactId,
       contactType: data.contactType,
-      channel: data.channel,
-      direction: data.direction,
+      channel: data.channel.toLowerCase(), // Ensure consistent lowercase storage for channel
+      direction: data.direction.toLowerCase() as 'inbound' | 'outbound', // Ensure consistent lowercase storage
       content: data.content,
-      status: data.status || 'unread',
+      status: (data.status || 'unread').toLowerCase() as 'unread' | 'read' | 'replied' | 'archived', // Ensure consistent lowercase storage
       sentAt: data.sentAt || new Date(),
       receivedAt: data.receivedAt,
       attachments: data.attachments,
-      contactDetails
+      contactDetails,
+      // Add the relationship fields if provided
+      relatedToType: data.relatedToType,
+      relatedToId: data.relatedToId
     };
 
     // Store it in the map
@@ -365,6 +390,115 @@ export function addCommunicationsToDatabase(dbStorage: any) {
   };
 
   // Method to get communications for a specific contact
+  // Method to get communications related to a specific entity
+  dbStorage.getRelatedCommunications = async function(
+    relatedToType: string,
+    relatedToId: number
+  ): Promise<Communication[]> {
+    try {
+      // Query based on related entity
+      const messages = await db
+        .select({
+          social_messages: socialMessages,
+          social_integrations: socialIntegrations
+        })
+        .from(socialMessages)
+        .leftJoin(socialIntegrations, eq(socialMessages.integrationId, socialIntegrations.id))
+        .where(
+          and(
+            eq(socialMessages.relatedToType, relatedToType),
+            eq(socialMessages.relatedToId, relatedToId),
+            eq(socialMessages.isDeleted, false)
+          )
+        )
+        .orderBy(desc(socialMessages.createdAt));
+
+      // Process the results into our unified Communication format
+      const result: Communication[] = [];
+
+      for (const msg of messages) {
+        // Skip deleted messages
+        if (msg.social_messages.isDeleted) continue;
+
+        let contactDetails: CommunicationContact | null = null;
+        let contactType: 'lead' | 'customer' = 'lead';
+        let contactId = 0;
+
+        // Try to get lead or contact information
+        if (msg.social_messages.leadId) {
+          const [lead] = await db
+            .select()
+            .from(leads)
+            .where(eq(leads.id, msg.social_messages.leadId));
+
+          if (lead) {
+            contactDetails = {
+              id: lead.id,
+              firstName: lead.firstName || '',
+              lastName: lead.lastName || '',
+              email: lead.email || undefined,
+              phone: lead.phone || undefined,
+              company: lead.company || undefined,
+              type: 'lead',
+              socialProfiles: {}
+            };
+            contactType = 'lead';
+            contactId = lead.id;
+          }
+        } else if (msg.social_messages.contactId) {
+          const [contactRecord] = await db
+            .select()
+            .from(contacts)
+            .where(eq(contacts.id, msg.social_messages.contactId));
+
+          if (contactRecord) {
+            contactDetails = {
+              id: contactRecord.id,
+              firstName: contactRecord.firstName || '',
+              lastName: contactRecord.lastName || '',
+              email: contactRecord.email || undefined,
+              phone: contactRecord.phone || undefined,
+              type: 'customer',
+              socialProfiles: {}
+            };
+            contactType = 'customer';
+            contactId = contactRecord.id;
+          }
+        }
+
+        // Skip if we couldn't find a contact
+        if (!contactDetails) continue;
+
+        // Determine channel from integration platform
+        const channel = msg.social_integrations?.platform?.toLowerCase() || 'unknown';
+
+        result.push({
+          id: msg.social_messages.id,
+          contactId,
+          contactType,
+          channel,
+          // Determine direction based on sender field
+          direction: msg.social_messages.sender === 'system' ? 'outbound' : 'inbound',
+          // In the database the message field is used instead of content
+          content: msg.social_messages.message || '',
+          status: (msg.social_messages.status?.toLowerCase() || 'unread') as 'unread' | 'read' | 'replied' | 'archived',
+          // We use createdAt for the sentAt field since our database schema doesn't have sent_at
+          sentAt: msg.social_messages.createdAt,
+          receivedAt: msg.social_messages.receivedAt || undefined,
+          attachments: msg.social_messages.attachments as any || [],
+          contactDetails,
+          relatedToType: msg.social_messages.relatedToType || undefined,
+          relatedToId: msg.social_messages.relatedToId || undefined
+        });
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Database error in getRelatedCommunications:', error);
+      return [];
+    }
+  };
+
   dbStorage.getContactCommunications = async function(
     contactId: number, 
     contactType: 'lead' | 'customer'
@@ -472,9 +606,12 @@ export function addCommunicationsToDatabase(dbStorage: any) {
     status: 'unread' | 'read' | 'replied' | 'archived'
   ): Promise<Communication | null> {
     try {
+      // Normalize the status to lowercase first to handle case sensitivity
+      const normalizedStatus = status.toLowerCase() as 'unread' | 'read' | 'replied' | 'archived';
+
       // Map our status values to the database enum values
       let dbStatus: 'Unread' | 'Read' | 'Replied' | 'Archived';
-      switch (status) {
+      switch (normalizedStatus) {
         case 'unread': dbStatus = 'Unread'; break;
         case 'read': dbStatus = 'Read'; break;
         case 'replied': dbStatus = 'Replied'; break;
@@ -565,7 +702,7 @@ export function addCommunicationsToDatabase(dbStorage: any) {
         channel,
         direction: msg.social_messages.sender === 'system' ? 'outbound' : 'inbound',
         content: msg.social_messages.message || '',
-        status: status,
+        status: normalizedStatus,
         sentAt: msg.social_messages.createdAt,
         receivedAt: msg.social_messages.receivedAt || undefined,
         attachments: msg.social_messages.attachments as any || [],
@@ -589,6 +726,8 @@ export function addCommunicationsToDatabase(dbStorage: any) {
       sentAt?: Date;
       receivedAt?: Date;
       attachments?: Array<{name: string, url: string}>;
+      relatedToType?: string; // 'account', 'opportunity', etc.
+      relatedToId?: number;   // ID of the related entity
     }
   ): Promise<Communication | null> {
     try {
@@ -605,7 +744,8 @@ export function addCommunicationsToDatabase(dbStorage: any) {
 
       // Map our status values to the database enum values
       let dbStatus: 'Unread' | 'Read' | 'Replied' | 'Archived';
-      switch (data.status) {
+      const statusLower = (data.status || '').toLowerCase();
+      switch (statusLower) {
         case 'read': dbStatus = 'Read'; break;
         case 'replied': dbStatus = 'Replied'; break;
         case 'archived': dbStatus = 'Archived'; break;
@@ -619,13 +759,17 @@ export function addCommunicationsToDatabase(dbStorage: any) {
         // Use message field instead of content since that's what exists in the database
         message: data.content,
         // For direction, use sender/recipient fields
-        sender: data.direction === 'outbound' ? 'system' : 'user',
-        recipient: data.direction === 'outbound' ? 'user' : 'system',
+        // Normalize direction to lowercase for consistent handling
+        sender: data.direction.toLowerCase() === 'outbound' ? 'system' : 'user',
+        recipient: data.direction.toLowerCase() === 'outbound' ? 'user' : 'system',
         status: dbStatus,
         // Don't use sentAt as it doesn't exist in the database schema
         // createdAt will be set automatically by Drizzle's defaultNow()
         receivedAt: data.receivedAt,
         attachments: data.attachments || null,
+        // Add the relationship fields if provided
+        relatedToType: data.relatedToType || null,
+        relatedToId: data.relatedToId || null,
       };
 
       // Set the correct contact ID based on type
@@ -688,18 +832,27 @@ export function addCommunicationsToDatabase(dbStorage: any) {
       if (!contactDetails) return null;
 
       // Create and return the complete Communication object
+      // Make sure to normalize the status to lowercase to match the interface type
+      let normalizedStatus = 'unread';
+      if (data.status) {
+        normalizedStatus = data.status.toLowerCase() as 'unread' | 'read' | 'replied' | 'archived';
+      }
+      
       return {
         id: newMessage.id,
         contactId: data.contactId,
         contactType: data.contactType,
         channel: data.channel,
-        direction: data.direction,
+        // Return direction in lowercase to match the interface type
+        direction: data.direction.toLowerCase() as 'inbound' | 'outbound',
         content: data.content,
-        status: data.status || 'unread',
+        status: normalizedStatus,
         sentAt: newMessage.createdAt,
         receivedAt: data.receivedAt,
         attachments: data.attachments,
-        contactDetails
+        contactDetails,
+        relatedToType: data.relatedToType,
+        relatedToId: data.relatedToId
       };
     } catch (error) {
       console.error('Database error in createCommunication:', error);

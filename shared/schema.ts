@@ -246,6 +246,9 @@ export const socialMessages = pgTable("social_messages", {
   receivedAt: timestamp("received_at"),
   createdAt: timestamp("created_at").defaultNow(),
   isDeleted: boolean("is_deleted").default(false),
+  // Fields for relating messages to different entities
+  relatedToType: text("related_to_type"), // 'account', 'opportunity', etc.
+  relatedToId: integer("related_to_id"), // ID of the related entity
 });
 
 // Lead Source Tracking

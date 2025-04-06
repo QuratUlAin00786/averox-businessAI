@@ -72,6 +72,7 @@ export interface IStorage {
   // Communication center methods
   getAllCommunications(): Promise<Communication[]>;
   getContactCommunications(contactId: number, contactType: 'lead' | 'customer'): Promise<Communication[]>;
+  getRelatedCommunications(relatedToType: string, relatedToId: number): Promise<Communication[]>;
   updateCommunicationStatus(id: number, status: 'unread' | 'read' | 'replied' | 'archived'): Promise<Communication | null>;
   createCommunication(data: {
     contactId: number;
@@ -83,6 +84,8 @@ export interface IStorage {
     sentAt?: Date;
     receivedAt?: Date;
     attachments?: Array<{name: string, url: string}>;
+    relatedToType?: string;
+    relatedToId?: number;
   }): Promise<Communication>;
   
   // Contacts
