@@ -21,23 +21,26 @@ import { UpcomingEvents } from "@/components/dashboard/upcoming-events";
 import { getDashboardData } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/hooks/use-language";
 
 export default function Dashboard() {
   const [currentDate, setCurrentDate] = useState<string>("");
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const { t, language } = useLanguage();
 
   // Function to get a greeting based on time of day
   const getGreeting = (): string => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
+    if (hour < 12) return t.dashboard.goodMorning;
+    if (hour < 18) return t.dashboard.goodAfternoon;
+    return t.dashboard.goodEvening;
   };
 
   useEffect(() => {
+    // Format date based on language
     setCurrentDate(format(new Date(), "MMMM d, yyyy"));
-  }, []);
+  }, [language]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/dashboard'],
@@ -58,7 +61,7 @@ export default function Dashboard() {
                 <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-neutral-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                 </svg>
-                Today, <span>{currentDate}</span>
+                {t.dashboard.today}, <span>{currentDate}</span>
               </div>
             </div>
           </div>
@@ -149,7 +152,7 @@ export default function Dashboard() {
               type="button"
             >
               <Download className="-ml-1 mr-2 h-5 w-5 text-primary" />
-              <span>Export</span>
+              <span>{t.buttons.export}</span>
             </SimpleButton>
             <SimpleButton 
               className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white"
@@ -181,7 +184,7 @@ export default function Dashboard() {
               type="button"
             >
               <Plus className="-ml-1 mr-2 h-5 w-5" />
-              <span>Add Report</span>
+              <span>{t.buttons.add} {t.navigation.reports}</span>
             </SimpleButton>
           </div>
         </div>
