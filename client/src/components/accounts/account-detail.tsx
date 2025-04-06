@@ -12,7 +12,8 @@ import {
   RefreshCw, 
   Pencil, 
   X,
-  CheckCircle
+  CheckCircle,
+  CreditCard
 } from "lucide-react";
 import { FaWhatsapp, FaSms } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
@@ -113,15 +114,31 @@ export function AccountDetail({
                     )}
                     {(account.billingAddress || account.billingCity || account.billingState || account.billingCountry) && (
                       <div className="flex items-start">
-                        <MapPin className="h-5 w-5 text-neutral-400 mt-0.5 mr-3" />
+                        <CreditCard className="h-5 w-5 text-neutral-400 mt-0.5 mr-3" />
                         <div>
-                          <p className="text-sm font-medium text-neutral-700">Address</p>
+                          <p className="text-sm font-medium text-neutral-700">Billing Address</p>
                           <p className="text-sm text-neutral-600">
                             {account.billingAddress && <>{account.billingAddress}<br /></>}
                             {account.billingCity && account.billingCity}
                             {account.billingState && `, ${account.billingState}`} 
                             {account.billingZip && ` ${account.billingZip}`}
                             {account.billingCountry && <><br />{account.billingCountry}</>}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(account.address || account.city || account.state || account.country) && (
+                      <div className="flex items-start">
+                        <MapPin className="h-5 w-5 text-neutral-400 mt-0.5 mr-3" />
+                        <div>
+                          <p className="text-sm font-medium text-neutral-700">Physical Location</p>
+                          <p className="text-sm text-neutral-600">
+                            {account.address && <>{account.address}<br /></>}
+                            {account.city && account.city}
+                            {account.state && `, ${account.state}`} 
+                            {account.zip && ` ${account.zip}`}
+                            {account.country && <><br />{account.country}</>}
                           </p>
                         </div>
                       </div>

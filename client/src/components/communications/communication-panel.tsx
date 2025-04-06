@@ -446,11 +446,12 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {/* Phone communication section - Only show if phone is available */}
-            {phoneStr && (
-              <div className="flex flex-col space-y-2">
-                <h3 className="text-sm font-medium mb-2">Direct Communications</h3>
-                <div className="grid grid-cols-3 gap-2">
+            {/* Communication options - Always show */}
+            <div className="flex flex-col space-y-2">
+              <h3 className="text-sm font-medium mb-2">Direct Communications</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {/* Phone button - only show if phone is available */}
+                {phoneStr && (
                   <Button 
                     variant="outline" 
                     className="flex flex-col items-center justify-center p-3 h-auto border-green-600 hover:bg-green-50"
@@ -459,7 +460,10 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
                     <Phone className="h-8 w-8 text-green-600 mb-1" />
                     <span className="text-xs">Call</span>
                   </Button>
-                  
+                )}
+                
+                {/* SMS button - only show if phone is available */}
+                {phoneStr && (
                   <Button 
                     variant="outline" 
                     className="flex flex-col items-center justify-center p-3 h-auto border-orange-500 hover:bg-orange-50"
@@ -468,7 +472,10 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
                     <FaSms className="h-8 w-8 text-orange-500 mb-1" />
                     <span className="text-xs">SMS</span>
                   </Button>
-                  
+                )}
+                
+                {/* WhatsApp button - only show if phone is available */}
+                {phoneStr && (
                   <Button 
                     variant="outline" 
                     className="flex flex-col items-center justify-center p-3 h-auto border-green-500 hover:bg-green-50"
@@ -477,8 +484,40 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
                     <FaWhatsapp className="h-8 w-8 text-green-500 mb-1" />
                     <span className="text-xs">WhatsApp</span>
                   </Button>
-                </div>
+                )}
                 
+                {/* Email button - always show */}
+                <Button 
+                  variant="outline" 
+                  className="flex flex-col items-center justify-center p-3 h-auto border-blue-500 hover:bg-blue-50"
+                  onClick={() => handleComposeMessage('email')}
+                >
+                  <Mail className="h-8 w-8 text-blue-500 mb-1" />
+                  <span className="text-xs">Email</span>
+                </Button>
+                
+                {/* Facebook Messenger button */}
+                <Button 
+                  variant="outline" 
+                  className="flex flex-col items-center justify-center p-3 h-auto border-blue-600 hover:bg-blue-50"
+                  onClick={() => handleComposeMessage('messenger')}
+                >
+                  <FaFacebookMessenger className="h-8 w-8 text-blue-600 mb-1" />
+                  <span className="text-xs">Messenger</span>
+                </Button>
+                
+                {/* LinkedIn button */}
+                <Button 
+                  variant="outline" 
+                  className="flex flex-col items-center justify-center p-3 h-auto border-blue-700 hover:bg-blue-50"
+                  onClick={() => handleComposeMessage('linkedin')}
+                >
+                  <FaLinkedin className="h-8 w-8 text-blue-700 mb-1" />
+                  <span className="text-xs">LinkedIn</span>
+                </Button>
+              </div>
+              
+              {phoneStr && (
                 <div className="mt-2">
                   <Button 
                     variant="outline" 
@@ -490,9 +529,9 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
                     Simulate Incoming Call (Test)
                   </Button>
                 </div>
-                <Separator className="my-4" />
-              </div>
-            )}
+              )}
+              <Separator className="my-4" />
+            </div>
             
             <div className="flex flex-wrap gap-2">
               <h3 className="text-sm font-medium w-full mb-2">All Channels</h3>

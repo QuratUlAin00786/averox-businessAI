@@ -74,6 +74,13 @@ export function AccountForm({
       billingState: null,
       billingZip: null,
       billingCountry: null,
+      // Location fields
+      address: null,
+      city: null,
+      state: null,
+      zip: null,
+      country: null,
+      // Other fields
       notes: null,
       ownerId: null,
       isActive: true,
@@ -96,6 +103,13 @@ export function AccountForm({
           billingState: account.billingState,
           billingZip: account.billingZip,
           billingCountry: account.billingCountry,
+          // Location fields
+          address: account.address,
+          city: account.city,
+          state: account.state,
+          zip: account.zip,
+          country: account.country,
+          // Other fields
           notes: account.notes,
           ownerId: account.ownerId,
           isActive: account.isActive !== false, // Default to true if not set
@@ -113,6 +127,13 @@ export function AccountForm({
           billingState: null,
           billingZip: null,
           billingCountry: null,
+          // Location fields
+          address: null,
+          city: null,
+          state: null,
+          zip: null,
+          country: null,
+          // Other fields
           notes: null,
           ownerId: null,
           isActive: true,
@@ -355,6 +376,113 @@ export function AccountForm({
               <FormField
                 control={form.control}
                 name="billingCountry"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Country" 
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Location Fields - Physical Address */}
+              <div className="md:col-span-2 mt-6">
+                <h3 className="text-base font-medium mb-2">Physical Location</h3>
+              </div>
+
+              {/* Address */}
+              <div className="md:col-span-2">
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Street address" 
+                          {...field}
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value || null)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* City */}
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="City" 
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* State */}
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>State/Province</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="State or province" 
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Zip */}
+              <FormField
+                control={form.control}
+                name="zip"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Postal/Zip Code</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Postal code" 
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Country */}
+              <FormField
+                control={form.control}
+                name="country"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Country</FormLabel>

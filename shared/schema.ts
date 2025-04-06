@@ -81,6 +81,13 @@ export const accounts = pgTable("accounts", {
   billingState: text("billing_state"),
   billingZip: text("billing_zip"),
   billingCountry: text("billing_country"),
+  // Location fields
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zip: text("zip"),
+  country: text("country"),
+  // Other fields
   ownerId: integer("owner_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   annualRevenue: numeric("annual_revenue"),
