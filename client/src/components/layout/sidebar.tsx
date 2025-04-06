@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/hooks/use-language";
 
 interface SidebarProps {
   className?: string;
@@ -30,23 +31,24 @@ interface SidebarProps {
 export default function Sidebar({ className = "" }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { name: 'Contacts', path: '/contacts', icon: <Users className="w-5 h-5" /> },
-    { name: 'Accounts', path: '/accounts', icon: <Briefcase className="w-5 h-5" /> },
-    { name: 'Leads', path: '/leads', icon: <UserPlus className="w-5 h-5" /> },
-    { name: 'Opportunities', path: '/opportunities', icon: <TrendingUp className="w-5 h-5" /> },
-    { name: 'Calendar', path: '/calendar', icon: <Calendar className="w-5 h-5" /> },
-    { name: 'Tasks', path: '/tasks', icon: <CheckSquare className="w-5 h-5" /> },
-    { name: 'Communication Center', path: '/communication-center', icon: <MessageSquare className="w-5 h-5" /> },
-    { name: 'Accounting', path: '/accounting', icon: <Calculator className="w-5 h-5" /> },
-    { name: 'Inventory', path: '/inventory', icon: <PackageOpen className="w-5 h-5" /> },
-    { name: 'Reports', path: '/reports', icon: <BarChart2 className="w-5 h-5" /> },
-    { name: 'Intelligence', path: '/intelligence', icon: <BrainCircuit className="w-5 h-5" /> },
-    { name: 'Workflows', path: '/workflows', icon: <Workflow className="w-5 h-5" /> },
-    { name: 'Subscriptions', path: '/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
-    { name: 'Settings', path: '/settings', icon: <Settings className="w-5 h-5" /> }
+    { name: t.navigation.dashboard, path: '/', icon: <LayoutDashboard className="w-5 h-5" /> },
+    { name: t.navigation.contacts, path: '/contacts', icon: <Users className="w-5 h-5" /> },
+    { name: t.navigation.accounts, path: '/accounts', icon: <Briefcase className="w-5 h-5" /> },
+    { name: t.navigation.leads, path: '/leads', icon: <UserPlus className="w-5 h-5" /> },
+    { name: t.navigation.opportunities, path: '/opportunities', icon: <TrendingUp className="w-5 h-5" /> },
+    { name: t.navigation.calendar, path: '/calendar', icon: <Calendar className="w-5 h-5" /> },
+    { name: t.navigation.tasks, path: '/tasks', icon: <CheckSquare className="w-5 h-5" /> },
+    { name: t.navigation.communicationCenter, path: '/communication-center', icon: <MessageSquare className="w-5 h-5" /> },
+    { name: t.navigation.accounting, path: '/accounting', icon: <Calculator className="w-5 h-5" /> },
+    { name: t.navigation.inventory, path: '/inventory', icon: <PackageOpen className="w-5 h-5" /> },
+    { name: t.navigation.reports, path: '/reports', icon: <BarChart2 className="w-5 h-5" /> },
+    { name: t.navigation.intelligence, path: '/intelligence', icon: <BrainCircuit className="w-5 h-5" /> },
+    { name: t.navigation.workflows, path: '/workflows', icon: <Workflow className="w-5 h-5" /> },
+    { name: t.navigation.subscriptions, path: '/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
+    { name: t.navigation.settings, path: '/settings', icon: <Settings className="w-5 h-5" /> }
   ];
 
   const isActive = (path: string) => {

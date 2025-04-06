@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { 
   Select, 
@@ -22,9 +22,12 @@ import {
   Smartphone 
 } from "lucide-react";
 import { Link } from "wouter";
+import { useLanguage } from "@/hooks/use-language";
 
 export default function SettingsSystem() {
   const { toast } = useToast();
+  const { language, isRTL, setLanguage, setRTL, t } = useLanguage();
+  
   const [formData, setFormData] = useState({
     language: "english",
     timezone: "utc-5",
@@ -37,12 +40,28 @@ export default function SettingsSystem() {
     activityLogging: true,
     rtlLayout: false,
   });
-
-  const handleSwitchChange = (field: string) => {
+  
+  // Initialize form data from language context
+  useEffect(() => {
     setFormData(prev => ({
       ...prev,
-      [field]: !prev[field as keyof typeof prev]
+      language,
+      rtlLayout: isRTL
     }));
+  }, []);
+
+  const handleSwitchChange = (field: string) => {
+    const newValue = !formData[field as keyof typeof formData];
+    
+    setFormData(prev => ({
+      ...prev,
+      [field]: newValue
+    }));
+    
+    // If toggling RTL layout, update the language context
+    if (field === "rtlLayout") {
+      setRTL(newValue);
+    }
   };
 
   const handleSelectChange = (field: string, value: string) => {
@@ -53,6 +72,10 @@ export default function SettingsSystem() {
         [field]: value,
         rtlLayout: true
       }));
+      
+      // Update application language and RTL setting
+      setLanguage(value as any);
+      setRTL(true);
       
       toast({
         title: "RTL Layout Enabled",
@@ -67,6 +90,10 @@ export default function SettingsSystem() {
         rtlLayout: false
       }));
       
+      // Update application language and RTL setting
+      setLanguage(value as any);
+      setRTL(false);
+      
       toast({
         title: "RTL Layout Disabled",
         description: "Right-to-left layout has been disabled as it's not needed for the selected language.",
@@ -78,6 +105,11 @@ export default function SettingsSystem() {
         ...prev,
         [field]: value
       }));
+      
+      // If it's a language change, update the application language
+      if (field === "language") {
+        setLanguage(value as any);
+      }
     }
   };
 
