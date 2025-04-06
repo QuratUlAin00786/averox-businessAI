@@ -45,7 +45,7 @@ import {
   addCommunicationsToMemStorage,
   addCommunicationsToDatabase
 } from './communication-integration';
-import { eq, and, desc, sql, gte } from "drizzle-orm";
+import { eq, and, desc, asc, sql, gte } from "drizzle-orm";
 import { db } from './db';
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -5353,6 +5353,8 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProposal(id: number): Promise<boolean> {
     try {
+      console.log('Deleting proposal with ID:', id);
+      
       // Delete related records first
       await db.delete(proposalElements).where(eq(proposalElements.proposalId, id));
       await db.delete(proposalCollaborators).where(eq(proposalCollaborators.proposalId, id));
@@ -5381,10 +5383,13 @@ export class DatabaseStorage implements IStorage {
 
   async listProposalElements(proposalId: number): Promise<ProposalElement[]> {
     try {
+      console.log('Listing proposal elements for proposalId:', proposalId);
+      // Now that proposalId is part of the schema, we can properly query elements
+      
       return await db.select()
         .from(proposalElements)
         .where(eq(proposalElements.proposalId, proposalId))
-        .orderBy(proposalElements.sortOrder);
+        .orderBy(asc(proposalElements.sortOrder));
     } catch (error) {
       console.error('Database error in listProposalElements:', error);
       return [];
@@ -5396,10 +5401,8 @@ export class DatabaseStorage implements IStorage {
       // Determine sort order if not provided
       let sortOrder = element.sortOrder;
       if (sortOrder === undefined) {
-        const existingElements = await this.listProposalElements(element.proposalId);
-        sortOrder = existingElements.length > 0 
-          ? Math.max(...existingElements.map(e => e.sortOrder || 0)) + 10 
-          : 10;
+        // Since we now have an empty array from listProposalElements, default to 10
+        sortOrder = 10;
       }
       
       const createdAt = new Date();

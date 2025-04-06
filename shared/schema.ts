@@ -367,6 +367,8 @@ export const proposalElements = pgTable("proposal_elements", {
   name: text("name").notNull(),
   elementType: proposalElementTypeEnum("element_type").notNull(),
   content: jsonb("content").notNull(), // JSON structure for element content
+  proposalId: integer("proposal_id").references(() => proposals.id).notNull(),
+  sortOrder: integer("sort_order").default(0),
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at"),
