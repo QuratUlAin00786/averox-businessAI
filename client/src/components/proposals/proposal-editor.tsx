@@ -129,7 +129,12 @@ export function ProposalEditor({
       if (!response.ok) {
         throw new Error('Failed to fetch proposal elements');
       }
-      return response.json();
+      
+      const result = await response.json();
+      console.log('Fetched proposal elements:', result);
+      
+      // Handle both standardized and legacy response formats
+      return result.data || result;
     },
     enabled: isOpen,
   });
@@ -146,7 +151,12 @@ export function ProposalEditor({
       if (!response.ok) {
         throw new Error('Failed to fetch proposal collaborators');
       }
-      return response.json();
+      
+      const result = await response.json();
+      console.log('Fetched proposal collaborators:', result);
+      
+      // Handle both standardized and legacy response formats
+      return result.data || result;
     },
     enabled: isOpen && activeTab === 'collaborators',
   });
@@ -163,7 +173,12 @@ export function ProposalEditor({
       if (!response.ok) {
         throw new Error('Failed to fetch proposal comments');
       }
-      return response.json();
+      
+      const result = await response.json();
+      console.log('Fetched proposal comments:', result);
+      
+      // Handle both standardized and legacy response formats
+      return result.data || result;
     },
     enabled: isOpen && activeTab === 'comments',
   });

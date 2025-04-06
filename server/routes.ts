@@ -2598,14 +2598,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get the proposals with the filter
         const proposals = await storage.listProposals(filter);
         
-        // Return with metadata about the query
+        // Return with standardized format including metadata about the query
+        console.log(`Sending proposals list with ${proposals.length} items`);
         return res.status(200).json({
+          success: true,
           data: proposals,
           metadata: {
             count: proposals.length,
             filters: queryParams,
             timestamp: new Date()
-          }
+          },
+          message: "Proposals retrieved successfully"
         });
       } catch (databaseError: any) {
         console.error("Database error retrieving proposals:", databaseError);
@@ -2685,21 +2688,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.warn("Failed to log proposal view activity:", activityError);
           }
           
-          // Return the proposal with additional metadata
+          // Return the proposal with additional metadata - use consistent response format
+          console.log(`Sending proposal ${id} response:`, proposal.name);
           return res.status(200).json({
-            ...proposal,
-            _metadata: {
-              elementsCount: elements.length,
-              commentsCount: comments.length,
-              collaboratorsCount: collaborators.length,
-              activitiesCount: activities.length
-            }
+            success: true,
+            data: {
+              ...proposal,
+              _metadata: {
+                elementsCount: elements.length,
+                commentsCount: comments.length,
+                collaboratorsCount: collaborators.length,
+                activitiesCount: activities.length
+              }
+            },
+            message: "Proposal details retrieved successfully"
           });
         } catch (relatedDataError: any) {
           console.error("Error fetching related proposal data:", relatedDataError);
           
-          // Still return the proposal even if we can't get related data
-          return res.status(200).json(proposal);
+          // Still return the proposal even if we can't get related data - use consistent format
+          return res.status(200).json({
+            success: true,
+            data: proposal,
+            message: "Proposal details retrieved successfully (without related data)"
+          });
         }
       } catch (databaseError: any) {
         console.error("Database error retrieving proposal:", databaseError);
@@ -2728,6 +2740,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/proposals', async (req: Request, res: Response) => {
     try {
+      // Log the incoming request for debugging purposes
+      console.log("POST /api/proposals received with body:", JSON.stringify(req.body, null, 2));
+      
       if (!req.isAuthenticated()) {
         return res.status(401).json({ 
           error: "Unauthorized", 
@@ -2748,6 +2763,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           templateId: req.body.templateId ? Number(req.body.templateId) : undefined,
           expiresAt: req.body.expiresAt
         };
+        
+        console.log("Processed proposal data:", JSON.stringify(proposalToCreate, null, 2));
         
         // Validate required fields
         if (!proposalToCreate.name) {
@@ -2809,8 +2826,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           proposalToCreate.content = template.content;
         }
         
+        console.log("Creating proposal with data:", JSON.stringify(proposalToCreate, null, 2));
+        
         // Create the proposal
         const proposal = await storage.createProposal(proposalToCreate);
+        
+        console.log("Proposal created successfully:", JSON.stringify(proposal, null, 2));
         
         // Record activity for the creation
         try {
@@ -2831,11 +2852,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.warn("Failed to log proposal creation activity:", activityError);
         }
         
-        return res.status(201).json({
+        // Return a standardized response format
+        const response = {
           success: true,
           data: proposal,
           message: "Proposal created successfully"
-        });
+        };
+        
+        console.log("Sending successful response:", JSON.stringify(response, null, 2));
+        return res.status(201).json(response);
       } catch (databaseError: any) {
         console.error("Database error creating proposal:", databaseError);
         
