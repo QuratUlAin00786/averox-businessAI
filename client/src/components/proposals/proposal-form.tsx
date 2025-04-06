@@ -171,8 +171,8 @@ export function ProposalForm({
         metadata: {} // Empty metadata object
       };
       
-      console.log("Constructed proposalData:", proposalData);
-      console.log("Types check:", {
+      console.log("DEBUG - Constructed proposalData:", JSON.stringify(proposalData, null, 2));
+      console.log("DEBUG - Types check:", {
         nameType: typeof proposalData.name,
         statusType: typeof proposalData.status,
         opportunityIdType: typeof proposalData.opportunityId,

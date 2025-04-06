@@ -244,32 +244,69 @@ export function ProposalManager({
   // Create proposal mutation
   const createProposalMutation = useMutation({
     mutationFn: async (data: InsertProposal) => {
-      console.log("Making API request to create proposal with data:", JSON.stringify(data, null, 2));
+      console.log("DEBUG - Making API request to create proposal with data:", JSON.stringify(data, null, 2));
       try {
-        // Ensure content is a valid JSON object
+        // Ensure content is a valid JSON object - validate to make sure it's not a string
+        let validatedContent = data.content || {};
+        if (typeof data.content === 'string') {
+          try {
+            validatedContent = JSON.parse(data.content);
+            console.log("DEBUG - Parsed content from string to object:", validatedContent);
+          } catch (parseError) {
+            console.error("DEBUG - Error parsing content string:", parseError);
+            // Use empty object if parsing fails
+            validatedContent = {};
+          }
+        }
+        
+        // Create a validated proposal object with correct types
         const validatedData = {
           ...data,
-          content: typeof data.content === 'string' ? JSON.parse(data.content) : (data.content || {}),
+          content: validatedContent,
           // Ensure IDs are numbers
           opportunityId: Number(data.opportunityId),
           accountId: Number(data.accountId),
-          createdBy: Number(data.createdBy || 2)
+          createdBy: Number(data.createdBy || 2),
+          // Ensure metadata is an object
+          metadata: data.metadata || {}
         };
         
-        console.log("Sending validated data:", JSON.stringify(validatedData, null, 2));
+        console.log("DEBUG - Sending validated data:", JSON.stringify(validatedData, null, 2));
         
-        // Use apiRequestJson to ensure credentials are included
-        // The server returns a standardized response format {success: true, data: Proposal}
-        // apiRequestJson extracts the data property from that response
-        const proposal = await apiRequestJson<Proposal>(
-          'POST', 
-          '/api/proposals', 
-          validatedData
-        );
-        console.log("Received proposal from server after extraction:", proposal);
-        return proposal;
+        // Make a direct fetch call to debug response handling
+        const response = await fetch('/api/proposals', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(validatedData)
+        });
+        
+        console.log("DEBUG - Raw response status:", response.status);
+        const responseText = await response.text();
+        console.log("DEBUG - Raw response text:", responseText);
+        
+        let responseData;
+        try {
+          responseData = JSON.parse(responseText);
+          console.log("DEBUG - Parsed response:", responseData);
+        } catch (parseError) {
+          console.error("DEBUG - Error parsing response:", parseError);
+          throw new Error(`Failed to parse server response: ${responseText}`);
+        }
+        
+        // Check for standardized response format
+        if (responseData.success === true && responseData.data) {
+          console.log("DEBUG - Successful response with data:", responseData.data);
+          return responseData.data;
+        } else if (responseData.error || responseData.message) {
+          throw new Error(responseData.message || responseData.error || "Unknown server error");
+        }
+        
+        return responseData;
       } catch (error) {
-        console.error("Error in API request:", error);
+        console.error("DEBUG - Error in API request:", error);
         throw error;
       }
     },
