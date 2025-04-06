@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { setupAuth, hashPassword } from "./auth";
 import { registerPermissionRoutes } from "./permission-routes";
 import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from "./permissions-manager";
+import { migrationRouter } from "./migrations/migration-routes";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -4183,6 +4184,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Register data migration routes
+  app.use('/api/migration', migrationRouter);
 
   // Create HTTP server
   const server = createServer(app);
