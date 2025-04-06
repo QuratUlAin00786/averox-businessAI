@@ -647,8 +647,12 @@ export function ProposalManager({
       console.log(`[${timestamp}] Data types - accountId: ${typeof proposalData.accountId}, opportunityId: ${typeof proposalData.opportunityId}, templateId: ${typeof proposalData.templateId}`);
       
       // Add timestamp to metadata for tracking
-      if (!proposalData.metadata) proposalData.metadata = {};
-      proposalData.metadata.clientSubmissionTime = timestamp;
+      // Ensure metadata is an object
+      if (typeof proposalData.metadata !== 'object' || proposalData.metadata === null) {
+        proposalData.metadata = {};
+      }
+      // Now safely add properties to the metadata object
+      (proposalData.metadata as Record<string, any>).clientSubmissionTime = timestamp;
       
       // Execute mutation with error handling in the callbacks
       createProposalMutation.mutate(proposalData);
@@ -677,12 +681,21 @@ export function ProposalManager({
       // Handle status-related metadata (timestamps for different statuses)
       const updatedData: Partial<InsertProposal> = { ...data };
       
-      if (data.status === 'Sent' && !data.metadata) {
-        updatedData.metadata = { sentAt: new Date().toISOString() };
-      } else if (data.status === 'Accepted' && !data.metadata) {
-        updatedData.metadata = { acceptedAt: new Date().toISOString() };
-      } else if (data.status === 'Rejected' && !data.metadata) {
-        updatedData.metadata = { rejectedAt: new Date().toISOString() };
+      if (data.status === 'Sent') {
+        if (!updatedData.metadata || typeof updatedData.metadata !== 'object') {
+          updatedData.metadata = {};
+        }
+        (updatedData.metadata as Record<string, any>).sentAt = new Date().toISOString();
+      } else if (data.status === 'Accepted') {
+        if (!updatedData.metadata || typeof updatedData.metadata !== 'object') {
+          updatedData.metadata = {};
+        }
+        (updatedData.metadata as Record<string, any>).acceptedAt = new Date().toISOString();
+      } else if (data.status === 'Rejected') {
+        if (!updatedData.metadata || typeof updatedData.metadata !== 'object') {
+          updatedData.metadata = {};
+        }
+        (updatedData.metadata as Record<string, any>).rejectedAt = new Date().toISOString();
       }
       
       // Ensure IDs are properly formatted as numbers
@@ -824,15 +837,19 @@ export function ProposalManager({
       // such as email addresses, message, etc. before triggering the send operation
       
       // Update proposal status and add timestamp to metadata
-      handleUpdateProposal(proposal.id, {
+      // Create an object to hold the updated data
+      const updatedProposalData: Partial<InsertProposal> = {
         status: 'Sent',
-        metadata: { 
-          sentAt: new Date().toISOString(),
-          // In a real application, you might add recipient info here
-          // recipients: ['example@client.com'],
-          // message: 'Please review the attached proposal'
-        }
-      });
+        metadata: {}
+      };
+      
+      // Safely add properties to metadata
+      (updatedProposalData.metadata as Record<string, any>).sentAt = new Date().toISOString();
+      // In a real application, you might add recipient info here
+      // (updatedProposalData.metadata as Record<string, any>).recipients = ['example@client.com'];
+      // (updatedProposalData.metadata as Record<string, any>).message = 'Please review the attached proposal';
+      
+      handleUpdateProposal(proposal.id, updatedProposalData);
       
       // Show success message
       toast({
@@ -983,10 +1000,12 @@ export function ProposalManager({
                       className="h-7 text-xs border-green-600 text-green-600 hover:bg-green-50"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleUpdateProposal(proposal.id, {
+                        const acceptedData: Partial<InsertProposal> = {
                           status: 'Accepted',
-                          metadata: { acceptedAt: new Date().toISOString() }
-                        });
+                          metadata: {}
+                        };
+                        (acceptedData.metadata as Record<string, any>).acceptedAt = new Date().toISOString();
+                        handleUpdateProposal(proposal.id, acceptedData);
                       }}
                     >
                       <CheckCircle className="h-3 w-3 mr-1" /> Mark Accepted
@@ -997,10 +1016,12 @@ export function ProposalManager({
                       className="h-7 text-xs border-red-600 text-red-600 hover:bg-red-50"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleUpdateProposal(proposal.id, {
+                        const rejectedData: Partial<InsertProposal> = {
                           status: 'Rejected',
-                          metadata: { rejectedAt: new Date().toISOString() }
-                        });
+                          metadata: {}
+                        };
+                        (rejectedData.metadata as Record<string, any>).rejectedAt = new Date().toISOString();
+                        handleUpdateProposal(proposal.id, rejectedData);
                       }}
                     >
                       <XCircle className="h-3 w-3 mr-1" /> Mark Rejected
@@ -1043,6 +1064,9 @@ export function ProposalManager({
               try {
                 setFormMode('create');
                 console.log('Form mode set to create');
+                // Make sure ProposalForm is rendered
+                setSelectedProposalId(null);
+                setSelectedProposal(null);
               } catch (error) {
                 console.error('Error setting form mode:', error);
               }
@@ -1229,6 +1253,9 @@ export function ProposalManager({
                 try {
                   setFormMode('create');
                   console.log('Form mode set to create');
+                  // Make sure ProposalForm is rendered
+                  setSelectedProposalId(null);
+                  setSelectedProposal(null);
                 } catch (error) {
                   console.error('Error setting form mode:', error);
                 }
