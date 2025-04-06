@@ -11,7 +11,9 @@ import {
   Trash2, 
   BarChart, 
   Eye, 
-  EyeOff 
+  EyeOff,
+  Mail,
+  Phone
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +72,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Provider-specific additional field schemas
+const sendGridFieldsSchema = z.object({
+  fromEmail: z.string().email("Must be a valid email").optional(),
+  fromName: z.string().min(1, "From name is required").optional(),
+  replyToEmail: z.string().email("Must be a valid email").optional(),
+});
+
+const twilioFieldsSchema = z.object({
+  accountSid: z.string().min(1, "Account SID is required").optional(),
+  phoneNumber: z.string().min(1, "Phone number is required").optional(),
+  messagingServiceSid: z.string().optional(),
+});
+
 // API key type matching the server schema
 interface ApiKey {
   id: number;
@@ -83,6 +98,19 @@ interface ApiKey {
   updatedAt: Date | null;
   usageCount: number | null;
   lastUsed: Date | null;
+  additionalFields?: {
+    sendgrid?: {
+      fromEmail?: string;
+      fromName?: string;
+      replyToEmail?: string;
+    };
+    twilio?: {
+      accountSid?: string;
+      phoneNumber?: string;
+      messagingServiceSid?: string;
+    };
+    [key: string]: any;
+  };
 }
 
 // Form schema for creating/editing API keys
@@ -91,6 +119,7 @@ const apiKeyFormSchema = z.object({
   provider: z.string().min(2, "Provider must be at least 2 characters"),
   key: z.string().min(5, "Key must be at least 5 characters"),
   secret: z.string().optional(),
+  additionalFields: z.record(z.any()).optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -221,6 +250,7 @@ export default function ApiKeysManagement() {
       key: apiKey.key,
       secret: apiKey.secret || "",
       isActive: apiKey.isActive || false,
+      additionalFields: apiKey.additionalFields || {},
     });
     setIsEditDialogOpen(true);
   };
@@ -296,7 +326,30 @@ export default function ApiKeysManagement() {
                       <FormItem>
                         <FormLabel>Provider</FormLabel>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Reset additional fields when changing provider
+                            createForm.setValue('additionalFields', {});
+                            
+                            // Set appropriate defaults for provider-specific fields
+                            if (value === "SendGrid") {
+                              createForm.setValue('additionalFields', {
+                                sendgrid: {
+                                  fromEmail: "",
+                                  fromName: "",
+                                  replyToEmail: ""
+                                }
+                              });
+                            } else if (value === "Twilio") {
+                              createForm.setValue('additionalFields', {
+                                twilio: {
+                                  accountSid: "",
+                                  phoneNumber: "",
+                                  messagingServiceSid: ""
+                                }
+                              });
+                            }
+                          }}
                           defaultValue={field.value}
                         >
                           <FormControl>
@@ -307,6 +360,8 @@ export default function ApiKeysManagement() {
                           <SelectContent>
                             <SelectItem value="OpenAI">OpenAI</SelectItem>
                             <SelectItem value="Stripe">Stripe</SelectItem>
+                            <SelectItem value="SendGrid">SendGrid</SelectItem>
+                            <SelectItem value="Twilio">Twilio</SelectItem>
                             <SelectItem value="Google">Google</SelectItem>
                             <SelectItem value="AWS">AWS</SelectItem>
                             <SelectItem value="Twitter">Twitter</SelectItem>
@@ -354,6 +409,126 @@ export default function ApiKeysManagement() {
                       </FormItem>
                     )}
                   />
+                  {/* SendGrid specific fields */}
+                  {createForm.watch('provider') === 'SendGrid' && (
+                    <div className="space-y-4">
+                      <div className="mt-2 mb-3">
+                        <h4 className="text-sm font-medium mb-2">SendGrid Configuration</h4>
+                        <div className="text-sm text-muted-foreground">
+                          Configure sender details for email communications
+                        </div>
+                      </div>
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.sendgrid.fromEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>From Email</FormLabel>
+                            <FormControl>
+                              <Input placeholder="noreply@yourcompany.com" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Email address that will appear as the sender
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.sendgrid.fromName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>From Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Your Company Name" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Name that will appear as the sender
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.sendgrid.replyToEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Reply-To Email (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="support@yourcompany.com" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Email address for recipients to reply to
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
+                  {/* Twilio specific fields */}
+                  {createForm.watch('provider') === 'Twilio' && (
+                    <div className="space-y-4">
+                      <div className="mt-2 mb-3">
+                        <h4 className="text-sm font-medium mb-2">Twilio Configuration</h4>
+                        <div className="text-sm text-muted-foreground">
+                          Configure Twilio for SMS and WhatsApp communications
+                        </div>
+                      </div>
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.twilio.accountSid"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Account SID</FormLabel>
+                            <FormControl>
+                              <Input placeholder="AC1234567890abcdef1234567890abcdef" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your Twilio Account SID (starts with AC)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.twilio.phoneNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+12345678901" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Twilio phone number for sending messages (with country code)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.twilio.messagingServiceSid"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Messaging Service SID (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="MG1234567890abcdef1234567890abcdef" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your Twilio Messaging Service SID (starts with MG)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
                   <FormField
                     control={createForm.control}
                     name="isActive"
@@ -568,7 +743,30 @@ export default function ApiKeysManagement() {
                     <FormItem>
                       <FormLabel>Provider</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // Reset additional fields when changing provider
+                          editForm.setValue('additionalFields', {});
+                          
+                          // Set appropriate defaults for provider-specific fields
+                          if (value === "SendGrid") {
+                            editForm.setValue('additionalFields', {
+                              sendgrid: {
+                                fromEmail: editingApiKey?.additionalFields?.sendgrid?.fromEmail || "",
+                                fromName: editingApiKey?.additionalFields?.sendgrid?.fromName || "",
+                                replyToEmail: editingApiKey?.additionalFields?.sendgrid?.replyToEmail || ""
+                              }
+                            });
+                          } else if (value === "Twilio") {
+                            editForm.setValue('additionalFields', {
+                              twilio: {
+                                accountSid: editingApiKey?.additionalFields?.twilio?.accountSid || "",
+                                phoneNumber: editingApiKey?.additionalFields?.twilio?.phoneNumber || "",
+                                messagingServiceSid: editingApiKey?.additionalFields?.twilio?.messagingServiceSid || ""
+                              }
+                            });
+                          }
+                        }}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -579,6 +777,8 @@ export default function ApiKeysManagement() {
                         <SelectContent>
                           <SelectItem value="OpenAI">OpenAI</SelectItem>
                           <SelectItem value="Stripe">Stripe</SelectItem>
+                          <SelectItem value="SendGrid">SendGrid</SelectItem>
+                          <SelectItem value="Twilio">Twilio</SelectItem>
                           <SelectItem value="Google">Google</SelectItem>
                           <SelectItem value="AWS">AWS</SelectItem>
                           <SelectItem value="Twitter">Twitter</SelectItem>
@@ -620,6 +820,126 @@ export default function ApiKeysManagement() {
                     </FormItem>
                   )}
                 />
+                {/* SendGrid specific fields */}
+                {editForm.watch('provider') === 'SendGrid' && (
+                  <div className="space-y-4">
+                    <div className="mt-2 mb-3">
+                      <h4 className="text-sm font-medium mb-2">SendGrid Configuration</h4>
+                      <div className="text-sm text-muted-foreground">
+                        Configure sender details for email communications
+                      </div>
+                    </div>
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.sendgrid.fromEmail"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>From Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="noreply@yourcompany.com" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Email address that will appear as the sender
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.sendgrid.fromName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>From Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your Company Name" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Name that will appear as the sender
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.sendgrid.replyToEmail"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Reply-To Email (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="support@yourcompany.com" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Email address for recipients to reply to
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+
+                {/* Twilio specific fields */}
+                {editForm.watch('provider') === 'Twilio' && (
+                  <div className="space-y-4">
+                    <div className="mt-2 mb-3">
+                      <h4 className="text-sm font-medium mb-2">Twilio Configuration</h4>
+                      <div className="text-sm text-muted-foreground">
+                        Configure Twilio for SMS and WhatsApp communications
+                      </div>
+                    </div>
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.twilio.accountSid"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Account SID</FormLabel>
+                          <FormControl>
+                            <Input placeholder="AC1234567890abcdef1234567890abcdef" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Your Twilio Account SID (starts with AC)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.twilio.phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+12345678901" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Twilio phone number for sending messages (with country code)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.twilio.messagingServiceSid"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Messaging Service SID (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="MG1234567890abcdef1234567890abcdef" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Your Twilio Messaging Service SID (starts with MG)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+
                 <FormField
                   control={editForm.control}
                   name="isActive"

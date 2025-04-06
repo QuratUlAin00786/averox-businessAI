@@ -278,12 +278,15 @@ export const apiKeys = pgTable("api_keys", {
   provider: text("provider").notNull(),
   key: text("key").notNull(),
   secret: text("secret"),
+  additionalFields: jsonb("additional_fields"), // For service-specific fields like TWILIO_PHONE_NUMBER
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at"),
   usageCount: integer("usage_count").default(0),
   lastUsed: timestamp("last_used"),
   ownerId: integer("owner_id").references(() => users.id).notNull(),
+  // Added userId to track which subscriber owns this key
+  userId: integer("user_id").references(() => users.id).notNull(),
 });
 
 // Workflows
