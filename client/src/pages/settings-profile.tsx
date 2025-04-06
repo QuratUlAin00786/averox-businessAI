@@ -180,11 +180,11 @@ export default function SettingsProfile() {
             <CardContent>
               <div className="flex flex-col md:flex-row gap-8">
                 <div className="flex flex-col items-center space-y-4">
-                  <Avatar className="h-32 w-32">
+                  <Avatar className="h-32 w-32 border-4 border-primary">
                     {formData.avatar ? (
-                      <AvatarImage src={formData.avatar} alt={user?.username} />
+                      <AvatarImage src={formData.avatar} alt={user?.username} className="object-cover" />
                     ) : (
-                      <AvatarFallback className="text-2xl">
+                      <AvatarFallback className="text-2xl bg-primary/10 text-primary font-semibold">
                         {getInitials() || <User className="h-16 w-16" />}
                       </AvatarFallback>
                     )}
@@ -237,22 +237,22 @@ export default function SettingsProfile() {
                         {predefinedAvatars.map((avatar) => (
                           <div 
                             key={avatar.id} 
-                            className={`relative cursor-pointer rounded-md border-2 p-2 transition-all hover:shadow-md ${
+                            className={`relative cursor-pointer rounded-md border-2 p-3 transition-all hover:shadow-md ${
                               formData.avatar === avatar.url 
-                                ? 'border-primary bg-primary/5' 
+                                ? 'border-primary bg-primary/10 shadow-md' 
                                 : 'border-neutral-200 hover:border-primary/50'
                             }`}
                             onClick={() => {
                               setFormData(prev => ({ ...prev, avatar: avatar.url }));
                             }}
                           >
-                            <Avatar className="h-full w-full">
-                              <AvatarImage src={avatar.url} alt={avatar.id} />
-                              <AvatarFallback>...</AvatarFallback>
+                            <Avatar className="h-24 w-24 mx-auto border-2 border-transparent">
+                              <AvatarImage src={avatar.url} alt={avatar.id} className="object-cover" />
+                              <AvatarFallback>Loading...</AvatarFallback>
                             </Avatar>
                             
                             {formData.avatar === avatar.url && (
-                              <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full p-1">
+                              <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full p-1 shadow-md ring-2 ring-white">
                                 <Check className="h-4 w-4" />
                               </div>
                             )}

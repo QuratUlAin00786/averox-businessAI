@@ -170,15 +170,18 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
                 <Button variant="ghost" size="icon" className="flex items-center max-w-xs text-sm bg-white rounded-full focus:ring-primary hover:bg-gray-100" id="user-menu-button">
                   <span className="sr-only">Open user menu</span>
                   <Avatar className="w-10 h-10 border-2 border-primary">
-                    <AvatarImage 
-                      src={user?.avatar || ""} 
-                      alt={`${user?.firstName || ""} ${user?.lastName || ""}`} 
-                    />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                      {user?.firstName && user?.lastName 
-                        ? `${user.firstName[0]}${user.lastName[0]}`
-                        : user?.username?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
+                    {user?.avatar ? (
+                      <AvatarImage 
+                        src={user.avatar} 
+                        alt={`${user?.firstName || ""} ${user?.lastName || ""}`} 
+                      />
+                    ) : (
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {user?.firstName && user?.lastName 
+                          ? `${user.firstName[0]}${user.lastName[0]}`
+                          : user?.username?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>

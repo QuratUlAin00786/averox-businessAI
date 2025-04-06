@@ -129,15 +129,18 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       
       <div className="flex items-center p-4 border-t border-neutral-200">
         <Avatar className="w-10 h-10 border-2 border-primary">
-          <AvatarImage 
-            src={user?.avatar || ""} 
-            alt={`${user?.firstName || ""} ${user?.lastName || ""}`} 
-          />
-          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-            {user?.firstName && user?.lastName 
-              ? `${user.firstName[0]}${user.lastName[0]}`
-              : user?.username?.[0]?.toUpperCase() || "U"}
-          </AvatarFallback>
+          {user?.avatar ? (
+            <AvatarImage 
+              src={user.avatar} 
+              alt={`${user?.firstName || ""} ${user?.lastName || ""}`} 
+            />
+          ) : (
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+              {user?.firstName && user?.lastName 
+                ? `${user.firstName[0]}${user.lastName[0]}`
+                : user?.username?.[0]?.toUpperCase() || "U"}
+            </AvatarFallback>
+          )}
         </Avatar>
         <div className="ml-3 overflow-hidden">
           <p className="text-sm font-medium text-neutral-700 truncate">
