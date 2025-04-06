@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CommunicationPanel } from "@/components/communications/communication-panel";
+import { AccountCommunications } from "@/components/accounts/account-communications";
 import AssignmentManager from "@/components/assignment/assignment-manager";
 
 interface AccountDetailProps {
@@ -230,13 +231,23 @@ export function AccountDetail({
                   
                   <TabsContent value="communications">
                     <div className="space-y-4">
-                      <CommunicationPanel 
-                        contactId={account.id}
-                        contactType="customer"
-                        contactName={account.name || ""}
-                        email={account.email || ""}
-                        phone={String(account.phone || "")}
-                      />
+                      {/* Account communications component */}
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-md">Communications</CardTitle>
+                          <CardDescription>
+                            Message history related to this account
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <AccountCommunications 
+                            accountId={account.id}
+                            accountName={account.name || ""}
+                            email={account.email || ""}
+                            phone={String(account.phone || "")}
+                          />
+                        </CardContent>
+                      </Card>
                     </div>
                   </TabsContent>
                   
