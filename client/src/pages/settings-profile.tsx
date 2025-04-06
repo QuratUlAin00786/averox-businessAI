@@ -234,159 +234,261 @@ export default function SettingsProfile() {
                     )}
                   </Avatar>
                   <div className="flex flex-col space-y-2 w-full">
-                    <div className="w-full">
-                      <Button 
-                        variant="outline" 
-                        className="w-full cursor-pointer" 
-                        type="button"
-                        onClick={() => {
-                          // Create a temporary file input and click it
-                          const input = document.createElement('input');
-                          input.type = 'file';
-                          input.accept = 'image/*';
-                          
-                          input.onchange = (e) => {
-                            try {
-                              const files = (e.target as HTMLInputElement).files;
-                              if (files && files.length > 0) {
-                                const file = files[0];
-                                
-                                // Check file size (limit to 5MB)
-                                if (file.size > 5 * 1024 * 1024) {
-                                  toast({
-                                    title: "File too large",
-                                    description: "Please select an image under 5MB",
-                                    variant: "destructive"
-                                  });
-                                  return;
-                                }
-                                
-                                // Show loading toast
-                                toast({
-                                  title: "Processing image",
-                                  description: "Please wait while we process your image...",
-                                });
-                                
-                                // Convert to base64 for storage
-                                const reader = new FileReader();
-                                
-                                reader.onload = () => {
-                                  try {
-                                    const base64String = reader.result as string;
+                    <div className="w-full space-y-3">
+                      {/* Photo upload section with preview */}
+                      <div className="p-4 border-2 border-dashed rounded-lg border-neutral-300 hover:border-primary/70 transition-colors">
+                        <div className="text-center mb-3">
+                          <Upload className="h-8 w-8 mx-auto text-primary mb-2" />
+                          <h3 className="text-sm font-medium text-neutral-700">Upload Photo</h3>
+                          <p className="text-xs text-neutral-500 mt-1">PNG, JPG or SVG (max. 5MB)</p>
+                        </div>
+                        
+                        <div className="flex justify-center">
+                          <Button 
+                            variant="secondary" 
+                            className="relative cursor-pointer"
+                            onClick={() => {
+                              // Create a temporary file input and click it
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'image/*';
+                              
+                              input.onchange = (e) => {
+                                try {
+                                  const files = (e.target as HTMLInputElement).files;
+                                  if (files && files.length > 0) {
+                                    const file = files[0];
                                     
-                                    // Ensure we got a valid result
-                                    if (!base64String || typeof base64String !== 'string') {
-                                      throw new Error('Invalid image data received');
+                                    // Check file size (limit to 5MB)
+                                    if (file.size > 5 * 1024 * 1024) {
+                                      toast({
+                                        title: "File too large",
+                                        description: "Please select an image under 5MB",
+                                        variant: "destructive"
+                                      });
+                                      return;
                                     }
                                     
-                                    setFormData(prev => ({ ...prev, avatar: base64String }));
+                                    // Show loading toast
+                                    toast({
+                                      title: "Processing image",
+                                      description: "Please wait while we process your image...",
+                                    });
                                     
-                                    toast({
-                                      title: "Image uploaded",
-                                      description: "Don't forget to click 'Save Changes' to apply!",
-                                    });
-                                  } catch (error) {
-                                    console.error("Error setting image:", error);
-                                    toast({
-                                      title: "Upload failed",
-                                      description: "There was a problem processing your image.",
-                                      variant: "destructive"
-                                    });
+                                    // Store the original avatar in case user wants to cancel
+                                    const originalAvatar = formData.avatar;
+                                    
+                                    // Convert to base64 for storage
+                                    const reader = new FileReader();
+                                    
+                                    reader.onload = () => {
+                                      try {
+                                        const base64String = reader.result as string;
+                                        
+                                        // Ensure we got a valid result
+                                        if (!base64String || typeof base64String !== 'string') {
+                                          throw new Error('Invalid image data received');
+                                        }
+                                        
+                                        // Set the new avatar in formData for preview
+                                        setFormData(prev => ({ ...prev, avatar: base64String }));
+                                        
+                                        // Display preview confirmation with save/cancel options
+                                        toast({
+                                          title: "Image preview ready",
+                                          description: (
+                                            <div className="flex flex-col space-y-2">
+                                              <p>Your uploaded photo is ready for preview. Save changes to confirm or discard to cancel.</p>
+                                              <div className="flex space-x-2 mt-2">
+                                                <Button 
+                                                  size="sm" 
+                                                  variant="destructive"
+                                                  onClick={() => {
+                                                    // Restore the original avatar
+                                                    setFormData(prev => ({ ...prev, avatar: originalAvatar }));
+                                                    toast({
+                                                      title: "Upload cancelled",
+                                                      description: "Photo upload has been discarded."
+                                                    });
+                                                  }}
+                                                >
+                                                  Discard
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          ),
+                                          duration: 10000,
+                                        });
+                                      } catch (error) {
+                                        console.error("Error processing image:", error);
+                                        toast({
+                                          title: "Upload failed",
+                                          description: "There was a problem processing your image.",
+                                          variant: "destructive"
+                                        });
+                                      }
+                                    };
+                                    
+                                    reader.onerror = () => {
+                                      toast({
+                                        title: "Upload failed",
+                                        description: "There was a problem reading your image.",
+                                        variant: "destructive"
+                                      });
+                                    };
+                                    
+                                    // Start reading the file
+                                    reader.readAsDataURL(file);
                                   }
-                                };
-                                
-                                reader.onerror = () => {
+                                } catch (error) {
+                                  console.error("File upload error:", error);
                                   toast({
                                     title: "Upload failed",
-                                    description: "There was a problem reading your image.",
+                                    description: "There was a problem with the file upload.",
                                     variant: "destructive"
                                   });
-                                };
-                                
-                                // Start reading the file
-                                reader.readAsDataURL(file);
-                              }
-                            } catch (error) {
-                              console.error("File upload error:", error);
-                              toast({
-                                title: "Upload failed",
-                                description: "There was a problem with the file upload.",
-                                variant: "destructive"
-                              });
-                            }
-                          };
-                          
-                          // Trigger the file selection dialog
-                          input.click();
-                        }}
-                      >
-                        <Upload className="mr-2 h-4 w-4" /> Upload Photo
-                      </Button>
+                                }
+                              };
+                              
+                              // Trigger the file selection dialog
+                              input.click();
+                            }}
+                          >
+                            Choose File
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Avatar selection option */}
+                      <div className="rounded-lg border-2 border-neutral-200 p-4 hover:border-primary/70 transition-colors">
+                        <div className="text-center mb-3">
+                          <User className="h-8 w-8 mx-auto text-primary mb-2" />
+                          <h3 className="text-sm font-medium text-neutral-700">Use Avatar</h3>
+                          <p className="text-xs text-neutral-500 mt-1">Choose from our professional avatar collection</p>
+                        </div>
+                        
+                        <div className="flex justify-center">
+                          <Button 
+                            variant="secondary"
+                            onClick={() => setIsAvatarDialogOpen(true)}
+                          >
+                            Select Avatar
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => setIsAvatarDialogOpen(true)}
-                    >
-                      <User className="mr-2 h-4 w-4" /> Select Avatar
-                    </Button>
                   </div>
                   
                   {/* Avatar Selection Dialog */}
                   <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
                     <DialogContent className="max-w-4xl">
                       <DialogHeader>
-                        <DialogTitle>Choose an Avatar</DialogTitle>
+                        <DialogTitle>Choose a Professional Avatar</DialogTitle>
                         <DialogDescription>
-                          Select one of the pre-defined avatars for your profile
+                          Select from our collection of professional avatars for your profile
                         </DialogDescription>
                       </DialogHeader>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
-                        {predefinedAvatars.map((avatar) => (
-                          <div 
-                            key={avatar.id} 
-                            className={`relative cursor-pointer rounded-md border-2 p-3 transition-all hover:shadow-md ${
-                              formData.avatar === avatar.url 
-                                ? 'border-primary bg-primary/10 shadow-md' 
-                                : 'border-neutral-200 hover:border-primary/50'
-                            }`}
-                            onClick={() => {
-                              setFormData(prev => ({ ...prev, avatar: avatar.url }));
-                            }}
-                          >
-                            <Avatar className="h-24 w-24 mx-auto border-2 border-transparent">
-                              <AvatarImage src={avatar.url} alt={`${avatar.gender} avatar`} className="object-cover" />
-                            </Avatar>
-                            
-                            {formData.avatar === avatar.url && (
-                              <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full p-1 shadow-md ring-2 ring-white">
-                                <Check className="h-4 w-4" />
-                              </div>
+                      <div className="space-y-6 py-4">
+                        {/* Male avatars section */}
+                        <div>
+                          <h3 className="text-sm font-medium text-primary mb-3">Male Avatars</h3>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {predefinedAvatars
+                              .filter(avatar => avatar.gender === 'male')
+                              .map((avatar) => (
+                                <div 
+                                  key={avatar.id} 
+                                  className={`relative cursor-pointer rounded-md border-2 p-3 transition-all hover:shadow-md ${
+                                    formData.avatar === avatar.url 
+                                      ? 'border-primary bg-primary/10 shadow-md' 
+                                      : 'border-neutral-200 hover:border-primary/50'
+                                  }`}
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, avatar: avatar.url }));
+                                  }}
+                                >
+                                  <Avatar className="h-24 w-24 mx-auto border-2 border-transparent">
+                                    <AvatarImage src={avatar.url} alt={`Male avatar option`} className="object-cover" />
+                                  </Avatar>
+                                  
+                                  {formData.avatar === avatar.url && (
+                                    <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full p-1 shadow-md ring-2 ring-white">
+                                      <Check className="h-4 w-4" />
+                                    </div>
+                                  )}
+                                </div>
+                              ))
+                            }
+                          </div>
+                        </div>
+                        
+                        {/* Female avatars section */}
+                        <div>
+                          <h3 className="text-sm font-medium text-primary mb-3">Female Avatars</h3>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {predefinedAvatars
+                              .filter(avatar => avatar.gender === 'female')
+                              .map((avatar) => (
+                                <div 
+                                  key={avatar.id} 
+                                  className={`relative cursor-pointer rounded-md border-2 p-3 transition-all hover:shadow-md ${
+                                    formData.avatar === avatar.url 
+                                      ? 'border-primary bg-primary/10 shadow-md' 
+                                      : 'border-neutral-200 hover:border-primary/50'
+                                  }`}
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, avatar: avatar.url }));
+                                  }}
+                                >
+                                  <Avatar className="h-24 w-24 mx-auto border-2 border-transparent">
+                                    <AvatarImage src={avatar.url} alt={`Female avatar option`} className="object-cover" />
+                                  </Avatar>
+                                  
+                                  {formData.avatar === avatar.url && (
+                                    <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full p-1 shadow-md ring-2 ring-white">
+                                      <Check className="h-4 w-4" />
+                                    </div>
+                                  )}
+                                </div>
+                              ))
+                            }
+                          </div>
+                        </div>
+                        
+                        <Separator className="my-2" />
+                        
+                        <div className="flex justify-between items-center pt-2">
+                          <div className="text-xs text-neutral-500">
+                            {formData.avatar && (
+                              <span>Avatar selected: {
+                                predefinedAvatars.find(a => a.url === formData.avatar)?.gender === 'male' 
+                                  ? 'Male Professional Avatar' 
+                                  : 'Female Professional Avatar'
+                              }</span>
                             )}
                           </div>
-                        ))}
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setIsAvatarDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          onClick={() => {
-                            setIsAvatarDialogOpen(false);
-                            toast({
-                              title: "Avatar Selected",
-                              description: "Don't forget to save your changes!",
-                            });
-                          }}
-                        >
-                          Use Selected Avatar
-                        </Button>
+                          
+                          <div className="flex space-x-2">
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setIsAvatarDialogOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                setIsAvatarDialogOpen(false);
+                                toast({
+                                  title: "Avatar Selected",
+                                  description: "Don't forget to click Save Changes to apply your selection!",
+                                });
+                              }}
+                            >
+                              Use Selected Avatar
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>
