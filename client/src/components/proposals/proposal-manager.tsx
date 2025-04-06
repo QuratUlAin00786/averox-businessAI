@@ -8,6 +8,13 @@ import {
   Opportunity
 } from '@shared/schema';
 import { apiRequestJson } from '@/lib/queryClient';
+
+// Define a standardized API response interface
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -179,13 +186,15 @@ export function ProposalManager({
     enabled: isVisible,
   });
 
+  // Using the standardized ApiResponse interface defined at the top of the file
+
   // Fetch all proposals for the opportunity
   const {
     data: proposalsResponse,
     isLoading: isLoadingProposals,
     error: proposalsError,
     refetch: refetchProposals,
-  } = useQuery<{data: Proposal[], metadata: any}>({
+  } = useQuery<ApiResponse<Proposal[]>>({
     queryKey: ['/api/proposals', { opportunityId }],
     queryFn: async () => {
       let url = '/api/proposals';
@@ -219,7 +228,7 @@ export function ProposalManager({
     data: fullProposalResponse,
     isLoading: isLoadingFullProposal,
     error: fullProposalError,
-  } = useQuery<{data: Proposal}>({
+  } = useQuery<ApiResponse<Proposal>>({
     queryKey: ['/api/proposals', selectedProposalId?.toString()],
     queryFn: async () => {
       console.log("Fetching proposal details for ID:", selectedProposalId);
@@ -313,15 +322,18 @@ export function ProposalManager({
     onSuccess: (data) => {
       console.log("Create mutation succeeded with response:", data);
       
-      // Ensure we're handling both response formats correctly
-      const proposal = data.data ? data.data : data;
+      // Handle the standardized API response format
+      // TypeScript fix: check if data is an API response or direct proposal object
+      const proposal = (data && typeof data === 'object' && 'success' in data && 'data' in data) 
+        ? data.data 
+        : data;
       console.log("Extracted proposal data:", proposal);
       
       // Refresh the proposals list to show the newly created item
       refetchProposals();
       
       // If the response contains a valid proposal ID, set it as selected
-      if (proposal && proposal.id) {
+      if (proposal && typeof proposal === 'object' && 'id' in proposal && proposal.id) {
         // Update UI to show the newly created proposal
         setSelectedProposalId(proposal.id);
       }
@@ -346,7 +358,7 @@ export function ProposalManager({
   });
 
   // Update proposal mutation
-  const updateProposalMutation = useMutation({
+  const updateProposalMutation = useMutation<Proposal, Error, { id: number; data: Partial<InsertProposal> }>({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertProposal> }) => {
       console.log("Making API request to update proposal with ID:", id, "and data:", JSON.stringify(data, null, 2));
       
@@ -399,9 +411,31 @@ export function ProposalManager({
         
         console.log("Sending processed data:", JSON.stringify(processedData, null, 2));
         
-        const response = await apiRequestJson<Proposal>('PATCH', `/api/proposals/${id}`, processedData);
-        console.log("Received updated proposal from server:", response);
-        return response;
+        // Use direct fetch for consistency with other mutations and better control
+        const response = await fetch(`/api/proposals/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(processedData),
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Server returned error:", errorData);
+          throw new Error(errorData.message || errorData.error || `Server error: ${response.status}`);
+        }
+        
+        const responseData = await response.json();
+        console.log("Received updated proposal from server:", responseData);
+        
+        // Handle both response formats
+        if (responseData.success === true && responseData.data) {
+          return responseData.data;
+        }
+        
+        return responseData;
       } catch (error: any) {
         console.error("Error in update API request:", error);
         throw error;
@@ -410,15 +444,18 @@ export function ProposalManager({
     onSuccess: (data) => {
       console.log("Update mutation succeeded with response:", data);
       
-      // Ensure we're handling both response formats correctly
-      const proposal = data.data ? data.data : data;
+      // Handle the standardized API response format
+      // TypeScript fix: check if data is an API response or direct proposal object
+      const proposal = (data && typeof data === 'object' && 'success' in data && 'data' in data) 
+        ? data.data 
+        : data;
       console.log("Extracted proposal data from update response:", proposal);
       
       // Refresh the proposals list with updated data
       refetchProposals();
       
       // If the response contains a valid proposal ID, set it as selected
-      if (proposal && proposal.id) {
+      if (proposal && typeof proposal === 'object' && 'id' in proposal && proposal.id) {
         // Update UI to show the updated proposal
         setSelectedProposalId(proposal.id);
       }
@@ -443,12 +480,28 @@ export function ProposalManager({
   });
 
   // Delete proposal mutation
-  const deleteProposalMutation = useMutation({
+  const deleteProposalMutation = useMutation<ApiResponse<void>, Error, number>({
     mutationFn: async (id: number) => {
       console.log("Making API request to delete proposal with ID:", id);
-      const result = await apiRequestJson<void>('DELETE', `/api/proposals/${id}`);
-      console.log("Received delete response from server:", result);
-      return result;
+      
+      // Use direct fetch for consistency with other mutations and better control
+      const response = await fetch(`/api/proposals/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Server returned error on delete:", errorData);
+        throw new Error(errorData.message || errorData.error || `Server error: ${response.status}`);
+      }
+      
+      const responseData = await response.json();
+      console.log("Received delete response from server:", responseData);
+      return responseData;
     },
     onSuccess: (data) => {
       console.log("Delete mutation succeeded with response:", data);
