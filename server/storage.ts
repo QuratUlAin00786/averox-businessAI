@@ -219,6 +219,24 @@ export interface IStorage {
   updateSocialIntegration(id: number, integration: Partial<InsertSocialIntegration>): Promise<SocialIntegration | undefined>;
   deleteSocialIntegration(id: number): Promise<boolean>;
   
+  // Team Management
+  getAllTeams(): Promise<Team[]>;
+  getTeamById(id: number): Promise<Team | undefined>;
+  createTeam(team: InsertTeam): Promise<Team>;
+  updateTeam(id: number, updates: Partial<InsertTeam>): Promise<Team>;
+  deleteTeam(id: number): Promise<boolean>;
+  
+  // Team Members
+  getTeamMembers(teamId: number): Promise<(TeamMember & { user?: User })[]>;
+  addTeamMember(member: InsertTeamMember): Promise<TeamMember>;
+  updateTeamMember(id: number, updates: Partial<InsertTeamMember>): Promise<TeamMember>;
+  removeTeamMember(id: number): Promise<boolean>;
+  
+  // Assignments
+  createAssignment(assignment: InsertAssignment): Promise<Assignment>;
+  getAssignmentsByEntity(entityType: string, entityId: number): Promise<Assignment[]>;
+  deleteAssignment(id: number): Promise<boolean>;
+  
   // Social Media Messages
   getSocialMessage(id: number): Promise<SocialMessage | undefined>;
   listSocialMessages(filter?: Partial<SocialMessage>): Promise<SocialMessage[]>;
