@@ -280,18 +280,31 @@ export function ProposalManager({
         
         console.log("Sending validated data:", JSON.stringify(validatedData, null, 2));
         
-        // Use the standardized API request helper
-        const response = await apiRequestJson('POST', '/api/proposals', validatedData);
+        // Make a direct fetch request to guarantee control over the process
+        const response = await fetch('/api/proposals', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(validatedData),
+          credentials: 'include',
+        });
         
-        // Check for standardized response format
-        if (response.success === true && response.data) {
-          console.log("Successful response with data:", response.data);
-          return response.data;
-        } else if (response.error || response.message) {
-          throw new Error(response.message || response.error || "Unknown server error");
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Server returned error:", errorData);
+          throw new Error(errorData.message || errorData.error || `Server error: ${response.status}`);
         }
         
-        return response;
+        const responseData = await response.json();
+        console.log("Server response:", responseData);
+        
+        // Handle both response formats
+        if (responseData.success === true && responseData.data) {
+          return responseData.data;
+        }
+        
+        return responseData;
       } catch (error: any) {
         console.error("Error in API request:", error);
         throw error;
@@ -299,12 +312,23 @@ export function ProposalManager({
     },
     onSuccess: (data) => {
       console.log("Create mutation succeeded with response:", data);
+      
+      // Ensure we're handling both response formats correctly
+      const proposal = data.data ? data.data : data;
+      console.log("Extracted proposal data:", proposal);
+      
+      // Refresh the proposals list to show the newly created item
       refetchProposals();
       
-      // Clear all form state to prevent stale data
+      // If the response contains a valid proposal ID, set it as selected
+      if (proposal && proposal.id) {
+        // Update UI to show the newly created proposal
+        setSelectedProposalId(proposal.id);
+      }
+      
+      // Clear form state
       setFormMode(null);
       setSelectedProposal(null);
-      setSelectedProposalId(null);
       
       toast({
         title: 'Success',
@@ -385,12 +409,23 @@ export function ProposalManager({
     },
     onSuccess: (data) => {
       console.log("Update mutation succeeded with response:", data);
+      
+      // Ensure we're handling both response formats correctly
+      const proposal = data.data ? data.data : data;
+      console.log("Extracted proposal data from update response:", proposal);
+      
+      // Refresh the proposals list with updated data
       refetchProposals();
       
-      // Clear all form state to prevent stale data
+      // If the response contains a valid proposal ID, set it as selected
+      if (proposal && proposal.id) {
+        // Update UI to show the updated proposal
+        setSelectedProposalId(proposal.id);
+      }
+      
+      // Clear form state but keep the proposal selected
       setFormMode(null);
       setSelectedProposal(null);
-      setSelectedProposalId(null);
       
       toast({
         title: 'Success',
@@ -415,8 +450,16 @@ export function ProposalManager({
       console.log("Received delete response from server:", result);
       return result;
     },
-    onSuccess: () => {
-      console.log("Delete mutation succeeded");
+    onSuccess: (data) => {
+      console.log("Delete mutation succeeded with response:", data);
+      
+      // Ensure we're handling both response formats correctly
+      // For delete operations, we may just get a success message
+      if (data && data.success !== undefined) {
+        console.log("Delete operation success status:", data.success);
+      }
+      
+      // Refresh the proposals list to remove the deleted item
       refetchProposals();
       
       // Clear all form state to prevent stale data
@@ -441,6 +484,8 @@ export function ProposalManager({
 
   const handleCreateProposal = (data: InsertProposal) => {
     try {
+      console.log("handleCreateProposal called with data:", data);
+      
       // Get account and opportunity IDs either from form data or from the component context
       const accountIdValue = Number(data.accountId || accountId);
       const opportunityIdValue = Number(data.opportunityId || opportunityId);
@@ -492,9 +537,12 @@ export function ProposalManager({
         expiresAt: data.expiresAt
       };
       
+      console.log("Submitting validated proposalData:", proposalData);
+      
       // Execute mutation with error handling in the callbacks
       createProposalMutation.mutate(proposalData);
     } catch (error: any) {
+      console.error("Error in handleCreateProposal:", error);
       toast({
         title: "Error",
         description: `An unexpected error occurred: ${error.message || "Unknown error"}`,
