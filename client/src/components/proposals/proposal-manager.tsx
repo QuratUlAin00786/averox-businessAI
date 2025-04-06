@@ -133,11 +133,11 @@ export function ProposalManager({
 
   // Fetch all proposals for the opportunity
   const {
-    data: proposals = [],
+    data: proposalsResponse,
     isLoading: isLoadingProposals,
     error: proposalsError,
     refetch: refetchProposals,
-  } = useQuery<Proposal[]>({
+  } = useQuery<{data: Proposal[], metadata: any}>({
     queryKey: ['/api/proposals', { opportunityId }],
     queryFn: async () => {
       let url = '/api/proposals';
@@ -146,31 +146,52 @@ export function ProposalManager({
       } else if (accountId) {
         url += `?accountId=${accountId}`;
       }
+      
+      console.log("Fetching proposals from:", url);
       const response = await fetch(url);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch proposals');
+        const errorText = await response.text();
+        console.error("Error fetching proposals:", errorText);
+        throw new Error('Failed to fetch proposals: ' + errorText);
       }
-      return response.json();
+      
+      const data = await response.json();
+      console.log("Received proposals data:", data);
+      return data;
     },
     enabled: isVisible && (!!opportunityId || !!accountId),
   });
+  
+  // Extract proposals array from the response
+  const proposals = proposalsResponse?.data || [];
 
   // Fetch selected proposal
   const {
-    data: fullProposal,
+    data: fullProposalResponse,
     isLoading: isLoadingFullProposal,
     error: fullProposalError,
-  } = useQuery<Proposal>({
+  } = useQuery<{data: Proposal}>({
     queryKey: ['/api/proposals', selectedProposalId?.toString()],
     queryFn: async () => {
+      console.log("Fetching proposal details for ID:", selectedProposalId);
       const response = await fetch(`/api/proposals/${selectedProposalId}`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch proposal details');
+        const errorText = await response.text();
+        console.error("Error fetching proposal details:", errorText);
+        throw new Error('Failed to fetch proposal details: ' + errorText);
       }
-      return response.json();
+      
+      const data = await response.json();
+      console.log("Received proposal details:", data);
+      return data;
     },
     enabled: isVisible && !!selectedProposalId,
   });
+  
+  // Extract the single proposal from the response
+  const fullProposal = fullProposalResponse?.data;
 
   // Create proposal mutation
   const createProposalMutation = useMutation({
@@ -185,15 +206,33 @@ export function ProposalManager({
           body: JSON.stringify(data),
         });
         
+        // Try to read the response as text first to properly debug any issues
+        const responseText = await response.text();
+        console.log("Raw server response:", responseText);
+        
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Server returned error:", errorData);
-          throw new Error(errorData.error || errorData.message || 'Server error creating proposal');
+          // Try to parse as JSON if possible
+          let errorMessage = 'Server error creating proposal';
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch (parseError) {
+            errorMessage = responseText || errorMessage;
+          }
+          
+          console.error("Server returned error:", errorMessage);
+          throw new Error(errorMessage);
         }
         
-        const result = await response.json();
-        console.log("Server returned successful result:", result);
-        return result;
+        // Parse the successful response
+        try {
+          const result = JSON.parse(responseText);
+          console.log("Server returned successful result:", result);
+          return result.data; // Extract the data property from the standardized response
+        } catch (parseError) {
+          console.error("Error parsing successful response:", parseError);
+          throw new Error('Invalid response format from server');
+        }
       } catch (error) {
         console.error("Error in API request:", error);
         throw error;
