@@ -19,6 +19,7 @@ import SettingsProfile from "@/pages/settings-profile";
 import SettingsSystem from "@/pages/settings-system";
 import SettingsApiKeys from "@/pages/settings-api-keys";
 import SettingsTeams from "@/pages/settings-teams";
+import SettingsDataMigration from "@/pages/settings-data-migration";
 import Intelligence from "@/pages/intelligence";
 import Workflows from "@/pages/workflows";
 import Subscriptions from "@/pages/subscriptions";
@@ -146,6 +147,12 @@ function Router() {
         </Layout>
       )} />
       
+      <ProtectedRoute path="/settings/data-migration" component={() => (
+        <Layout>
+          <SettingsDataMigration />
+        </Layout>
+      )} />
+      
       <ProtectedRoute path="/admin/subscription-packages" component={() => (
         <Layout>
           <AdminSubscriptionPackages />
@@ -176,7 +183,7 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/accounting/invoices/:id" component={({ params }) => (
+      <ProtectedRoute path="/accounting/invoices/:id" component={({ params }: { params: { id: string } }) => (
         <Layout>
           <Accounting subPath={`invoices/${params.id}`} />
         </Layout>
@@ -188,7 +195,7 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/accounting/purchase-orders/:id" component={({ params }) => (
+      <ProtectedRoute path="/accounting/purchase-orders/:id" component={({ params }: { params: { id: string } }) => (
         <Layout>
           <Accounting subPath={`purchase-orders/${params.id}`} />
         </Layout>
@@ -230,7 +237,7 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/inventory/categories/:id" component={({ params }) => (
+      <ProtectedRoute path="/inventory/categories/:id" component={({ params }: { params: { id: string } }) => (
         <Layout>
           <Inventory subPath={`categories/${params.id}`} />
         </Layout>
@@ -242,19 +249,19 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/inventory/products/:id" component={({ params }) => (
+      <ProtectedRoute path="/inventory/products/:id" component={({ params }: { params: { id: string } }) => (
         <Layout>
           <Inventory subPath={`products/${params.id}`} />
         </Layout>
       )} />
       
-      <ProtectedRoute path="/inventory/products/:id/edit" component={({ params }) => (
+      <ProtectedRoute path="/inventory/products/:id/edit" component={({ params }: { params: { id: string } }) => (
         <Layout>
           <Inventory subPath={`products/${params.id}/edit`} />
         </Layout>
       )} />
       
-      <ProtectedRoute path="/inventory/products/:id/history" component={({ params }) => (
+      <ProtectedRoute path="/inventory/products/:id/history" component={({ params }: { params: { id: string } }) => (
         <Layout>
           <Inventory subPath={`products/${params.id}/history`} />
         </Layout>

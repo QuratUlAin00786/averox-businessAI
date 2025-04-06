@@ -33,8 +33,8 @@ import {
   Loader2,
   CheckSquare
 } from "lucide-react";
-import { FaSalesforce, FaHubspot } from "react-icons/fa";
-import { SiZoho, SiMicrosoftdynamics365 } from "react-icons/si";
+import { FaSalesforce, FaHubspot, FaMicrosoft } from "react-icons/fa";
+import { SiZoho } from "react-icons/si";
 
 const crmSystems = [
   { 
@@ -71,7 +71,7 @@ const crmSystems = [
   { 
     id: "dynamics", 
     name: "Microsoft Dynamics", 
-    icon: <SiMicrosoftdynamics365 className="h-6 w-6" />,
+    icon: <FaMicrosoft className="h-6 w-6" />,
     description: "Import contacts, accounts, opportunities, and activities from Microsoft Dynamics",
     color: "bg-purple-100 text-purple-800 border-purple-300",
     apiUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
@@ -126,6 +126,7 @@ export default function DataMigrationPage() {
   const [processingLog, setProcessingLog] = useState<string[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authToken, setAuthToken] = useState("");
+  const [fieldMappings, setFieldMappings] = useState<any>({}); // Add missing state variable
   
   const selectedCrm = crmSystems.find(crm => crm.id === selectedSystem);
   const maxStep = 5;
@@ -178,11 +179,7 @@ export default function DataMigrationPage() {
       toast({
         title: "Authentication Successful!",
         description: `Successfully connected to ${selectedCrm?.name}`,
-        variant: "success", 
-        custom: {
-          variant: "success",
-          hasCloseButton: true
-        }
+        variant: "default"
       });
     },
     onError: (error: any) => {
@@ -305,11 +302,7 @@ export default function DataMigrationPage() {
       toast({
         title: "Migration Completed!",
         description: `Successfully migrated data from ${selectedCrm?.name}`,
-        variant: "success",
-        custom: {
-          variant: "success",
-          hasCloseButton: true
-        }
+        variant: "default"
       });
     },
     onError: (error: any) => {
@@ -384,62 +377,60 @@ export default function DataMigrationPage() {
         
         const data = await response.json();
         
+        // Get migration ID from response
+        const migrationId = data.migrationId;
+        
         // Migration is now running on the server, poll for status updates
         let migrationComplete = false;
         let progress = 0;
-        const migrationId = data.migrationId;
+        
+        while (!migrationComplete) {
+          // Wait a bit between status checks
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check migration status
+          const statusResponse = await apiRequest('GET', `/api/migration/status/${migrationId}`);
+          const statusData = await statusResponse.json();
+          
+          if (statusData.error) {
+            throw new Error(statusData.error);
+          }
+          
+          // Update progress
+          if (statusData.progress !== progress) {
+            progress = statusData.progress;
+            setMigrationProgress(progress);
+          }
+          
+          // Show specific step messages
+          if (statusData.currentStep && statusData.currentStep !== '') {
+            addToProcessingLog(statusData.currentStep);
+          }
+          
+          // Check if migration is complete
+          if (statusData.status === 'completed') {
+            migrationComplete = true;
+            addToProcessingLog("File import completed successfully!");
+            return {
+              entitiesProcessed: statusData.entitiesProcessed || 1,
+              recordsCreated: statusData.recordsCreated || 0
+            };
+          } else if (statusData.status === 'failed') {
+            throw new Error(statusData.error || 'File import failed');
+          }
+        }
+        
+        return { success: true };
       } catch (error) {
         console.error("Error during file upload:", error);
         throw error;
       }
-      
-      while (!migrationComplete) {
-        // Wait a bit between status checks
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Check migration status
-        const statusResponse = await apiRequest('GET', `/api/migration/status/${migrationId}`);
-        const statusData = await statusResponse.json();
-        
-        if (statusData.error) {
-          throw new Error(statusData.error);
-        }
-        
-        // Update progress
-        if (statusData.progress !== progress) {
-          progress = statusData.progress;
-          setMigrationProgress(progress);
-        }
-        
-        // Show specific step messages
-        if (statusData.currentStep && statusData.currentStep !== '') {
-          addToProcessingLog(statusData.currentStep);
-        }
-        
-        // Check if migration is complete
-        if (statusData.status === 'completed') {
-          migrationComplete = true;
-          addToProcessingLog("File import completed successfully!");
-          return {
-            entitiesProcessed: statusData.entitiesProcessed || 1,
-            recordsCreated: statusData.recordsCreated || 0
-          };
-        } else if (statusData.status === 'failed') {
-          throw new Error(statusData.error || 'File import failed');
-        }
-      }
-      
-      return { success: true };
     },
     onSuccess: (data: any) => {
       toast({
         title: "File Import Completed!",
         description: `Successfully imported data from file with ${data.recordsCreated || 0} records created`,
-        variant: "success", 
-        custom: {
-          variant: "success",
-          hasCloseButton: true
-        }
+        variant: "default"
       });
     },
     onError: (error: any) => {
@@ -673,7 +664,7 @@ export default function DataMigrationPage() {
               </div>
             </RadioGroup>
             
-            <Alert variant="info" className="bg-blue-50 text-blue-800 border-blue-200">
+            <Alert className="bg-blue-50 text-blue-800 border-blue-200">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Setup Instructions</AlertTitle>
               <AlertDescription>

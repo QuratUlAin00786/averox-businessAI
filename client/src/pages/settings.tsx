@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save, Users, Package2, Settings as SettingsIcon, User, Shield, UserCog } from "lucide-react";
+import { Save, Users, Package2, Settings as SettingsIcon, User, Shield, UserCog, FileUp, Database } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
@@ -47,11 +47,7 @@ export default function Settings() {
                 toast({
                   title: "Settings Saved",
                   description: "Your settings have been successfully saved.",
-                  variant: "success",
-                  custom: {
-                    variant: "success",
-                    hasCloseButton: true
-                  }
+                  variant: "default"
                 });
               }}
             >
@@ -187,6 +183,30 @@ export default function Settings() {
               <Link href="/settings/teams">
                 <Button variant="outline" className="w-full flex items-center justify-center">
                   <UserCog className="mr-2 h-4 w-4" /> Manage Teams
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Database className="w-5 h-5 mr-2" />
+                Data Migration
+              </CardTitle>
+              <CardDescription>
+                Import data from other CRM systems
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Migrate your data from Salesforce, HubSpot, Zoho, or Microsoft Dynamics with one click
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Link href="/settings/data-migration">
+                <Button variant="outline" className="w-full flex items-center justify-center">
+                  <FileUp className="mr-2 h-4 w-4" /> Start Migration
                 </Button>
               </Link>
             </CardFooter>
