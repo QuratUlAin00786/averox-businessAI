@@ -113,6 +113,11 @@ export function ProposalManager({
       setEditorVisible(false);
     }
   }, [isVisible]);
+  
+  // Debug log when form mode changes
+  useEffect(() => {
+    console.log("Form mode changed to:", formMode);
+  }, [formMode]);
 
   // Fetch all templates
   const {
@@ -275,9 +280,11 @@ export function ProposalManager({
   const handleCreateProposal = (data: InsertProposal) => {
     try {
       console.log("Proposal data received:", data);
+      console.log("Context data - accountId:", accountId, "opportunityId:", opportunityId);
       
       // Make sure required data is present
       if (!data.accountId && !accountId) {
+        console.error("Account ID missing in both form data and context");
         toast({
           title: "Error",
           description: "Account ID is required",
@@ -287,6 +294,7 @@ export function ProposalManager({
       }
       
       if (!data.opportunityId && !opportunityId) {
+        console.error("Opportunity ID missing in both form data and context");
         toast({
           title: "Error",
           description: "Opportunity ID is required",
@@ -298,6 +306,13 @@ export function ProposalManager({
       // Ensure accountId and opportunityId are numbers
       const accountIdValue = Number(data.accountId || accountId);
       const opportunityIdValue = Number(data.opportunityId || opportunityId);
+      
+      console.log("Converted IDs:", { 
+        accountIdValue, 
+        opportunityIdValue,
+        isAccountIdValid: !isNaN(accountIdValue),
+        isOpportunityIdValid: !isNaN(opportunityIdValue) 
+      });
       
       if (isNaN(accountIdValue) || isNaN(opportunityIdValue)) {
         console.error("Invalid ID values:", { accountId: accountIdValue, opportunityId: opportunityIdValue });
@@ -322,7 +337,17 @@ export function ProposalManager({
       };
       
       console.log("Creating proposal with data:", proposalData);
+      
+      // Debug the mutation object
+      console.log("Mutation status before call:", { 
+        isPending: createProposalMutation.isPending,
+        isError: createProposalMutation.isError,
+        error: createProposalMutation.error
+      });
+      
       createProposalMutation.mutate(proposalData);
+      
+      console.log("Mutation called - observe network request in DevTools");
     } catch (error) {
       console.error("Error creating proposal:", error);
       toast({
@@ -876,10 +901,18 @@ export function ProposalManager({
           templates={templates}
           onClose={() => setFormMode(null)}
           onSubmit={(data) => {
+            console.log("Form submission received in ProposalManager with data:", data);
+            console.log("Current formMode:", formMode);
+            console.log("Context values - opportunityId:", opportunityId, "accountId:", accountId);
+            
             if (formMode === 'create') {
+              console.log("Calling handleCreateProposal with data");
               handleCreateProposal(data as InsertProposal);
             } else if (formMode === 'edit' && selectedProposal) {
+              console.log("Calling handleUpdateProposal with ID:", selectedProposal.id);
               handleUpdateProposal(selectedProposal.id, data);
+            } else {
+              console.error("Unexpected form state - formMode:", formMode, "selectedProposal:", selectedProposal);
             }
           }}
         />

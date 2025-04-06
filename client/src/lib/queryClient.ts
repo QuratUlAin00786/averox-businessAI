@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -53,6 +54,16 @@ export async function apiRequest(
   }
 }
 
+// Types for standardized API responses
+export interface StandardResponse<T = any> {
+  success: boolean;
+  data: T;
+  message?: string;
+  error?: string;
+  metadata?: Record<string, any>;
+  details?: any;
+}
+
 // Helper function to make API requests with JSON response
 export async function apiRequestJson<T = any>(
   method: string,
@@ -64,6 +75,27 @@ export async function apiRequestJson<T = any>(
   
   // Handle both standardized and legacy response formats
   return (result.success !== undefined ? result.data : result) as T;
+}
+
+// Function to extract metadata from standardized responses
+export async function apiRequestWithMetadata<T = any>(
+  method: string,
+  url: string,
+  data?: unknown,
+): Promise<{ data: T; metadata?: Record<string, any>; message?: string }> {
+  const res = await apiRequest(method, url, data);
+  const result = await res.json() as StandardResponse<T>;
+  
+  if (result.success !== undefined) {
+    return {
+      data: result.data as T,
+      metadata: result.metadata,
+      message: result.message
+    };
+  }
+  
+  // Legacy format doesn't have metadata, so return just the data
+  return { data: result as T };
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -103,6 +135,102 @@ export const createMutation = <TData = unknown, TError = Error, TVariables = unk
   return {
     mutationFn: async (variables: TVariables) => {
       const { url, method, data } = variables as any;
+      return apiRequestJson<TData>(method, url, data);
+    }
+  };
+};
+
+/**
+ * Enhanced Query hook that returns both data and metadata from standardized API responses
+ */
+export function useEnhancedQuery<TData = unknown, TError = Error>(
+  options: UseQueryOptions<TData, TError, TData, any>
+) {
+  const { queryKey, queryFn, ...restOptions } = options;
+  
+  // Use the original useQuery but with a custom fetcher for the metadata
+  return useQuery({
+    queryKey,
+    queryFn: async (context) => {
+      // If custom queryFn is provided, use it
+      if (queryFn && typeof queryFn === 'function') {
+        const result = await queryFn(context);
+        return result;
+      }
+      
+      // Otherwise use our standardized fetcher with metadata
+      try {
+        const url = context.queryKey[0] as string;
+        const result = await apiRequestWithMetadata<TData>("GET", url);
+        
+        // Store metadata in non-enumerable properties so they don't interfere with normal data usage
+        if (result.data && typeof result.data === 'object') {
+          Object.defineProperty(result.data, '_metadata', {
+            value: result.metadata || {},
+            enumerable: false,
+            configurable: true
+          });
+          
+          Object.defineProperty(result.data, '_message', {
+            value: result.message || '',
+            enumerable: false,
+            configurable: true
+          });
+        }
+        
+        return result.data;
+      } catch (error) {
+        console.error('Enhanced query error:', error);
+        throw error;
+      }
+    },
+    ...restOptions
+  });
+}
+
+/**
+ * Extract metadata from a query result returned by useEnhancedQuery
+ */
+export function extractMetadata<T = any>(data: T | undefined): Record<string, any> | undefined {
+  if (!data || typeof data !== 'object') return undefined;
+  return (data as any)._metadata;
+}
+
+/**
+ * Extract message from a query result returned by useEnhancedQuery
+ */
+export function extractMessage(data: any | undefined): string | undefined {
+  if (!data || typeof data !== 'object') return undefined;
+  return (data as any)._message;
+}
+
+// Enhanced mutation creator that can preserve metadata
+export const createEnhancedMutation = <TData = unknown, TError = Error, TVariables = unknown, TContext = unknown>() => {
+  return {
+    mutationFn: async (variables: TVariables & { preserveMetadata?: boolean }) => {
+      const { url, method, data, preserveMetadata } = variables as any;
+      
+      if (preserveMetadata) {
+        const result = await apiRequestWithMetadata<TData>(method, url, data);
+        
+        // Store metadata in non-enumerable properties
+        if (result.data && typeof result.data === 'object') {
+          Object.defineProperty(result.data, '_metadata', {
+            value: result.metadata || {},
+            enumerable: false,
+            configurable: true
+          });
+          
+          Object.defineProperty(result.data, '_message', {
+            value: result.message || '',
+            enumerable: false,
+            configurable: true
+          });
+        }
+        
+        return result.data;
+      }
+      
       return apiRequestJson<TData>(method, url, data);
     }
   };

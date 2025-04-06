@@ -123,6 +123,8 @@ export function ProposalForm({
   const handleFormSubmit = (values: ProposalFormValues) => {
     try {
       console.log("Form values:", values);
+      console.log("Form context - opportunityId:", opportunityId, "accountId:", accountId);
+      console.log("Form state - isEditing:", isEditing, "selectedTemplateId:", selectedTemplateId);
       
       // Create a clean proposal object with explicit typing to avoid Zod validation issues
       const proposalData = {
@@ -138,9 +140,21 @@ export function ProposalForm({
         metadata: {} // Empty metadata object
       };
       
+      console.log("Constructed proposalData:", proposalData);
+      console.log("Types check:", {
+        nameType: typeof proposalData.name,
+        statusType: typeof proposalData.status,
+        opportunityIdType: typeof proposalData.opportunityId,
+        opportunityIdValue: proposalData.opportunityId,
+        accountIdType: typeof proposalData.accountId,
+        accountIdValue: proposalData.accountId,
+        expiresAtType: proposalData.expiresAt ? 'Date object' : 'null',
+      });
+      
       // Add template if selected
       if (!isEditing && selectedTemplateId) {
         proposalData.templateId = selectedTemplateId;
+        console.log("Added templateId:", selectedTemplateId);
       }
       
       // Final validation before submitting
@@ -159,18 +173,24 @@ export function ProposalForm({
         throw new Error("Valid account ID is required");
       }
       
-      console.log("Submitting proposal data:", proposalData);
+      console.log("Validation passed, submitting proposal data:", proposalData);
       
       // Skip schema validation on the way out - let the server handle it
-      onSubmit(proposalData as any);
-      form.reset();
-      
-      // Show success toast
-      toast({
-        title: isEditing ? "Proposal Updated" : "Proposal Created",
-        description: `Successfully ${isEditing ? 'updated' : 'created'} proposal "${proposalData.name}"`,
-        variant: "default"
-      });
+      try {
+        onSubmit(proposalData as any);
+        console.log("onSubmit callback executed successfully");
+        form.reset();
+        
+        // Show success toast
+        toast({
+          title: isEditing ? "Proposal Updated" : "Proposal Created",
+          description: `Successfully ${isEditing ? 'updated' : 'created'} proposal "${proposalData.name}"`,
+          variant: "default"
+        });
+      } catch (submitError) {
+        console.error("Error in onSubmit callback:", submitError);
+        throw submitError; // Re-throw to be caught by the outer catch
+      }
     } catch (error: any) {
       console.error("Error in form submission:", error);
       // Present error to user
