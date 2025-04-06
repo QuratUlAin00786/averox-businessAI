@@ -2524,136 +2524,609 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/proposals', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({
+          error: "Unauthorized",
+          message: "You must be logged in to view proposals"
+        });
       }
       
-      // Parse filter params
-      const filter: Record<string, any> = {};
-      
-      if (req.query.accountId) {
-        filter.accountId = parseInt(req.query.accountId as string);
+      try {
+        // Parse filter params
+        const filter: Record<string, any> = {};
+        const queryParams: Record<string, any> = {};
+        const parsedErrors: Record<string, string> = {};
+        
+        // Helper function to safely parse numeric parameters
+        const parseNumericParam = (name: string, value: string): number | null => {
+          const parsed = parseInt(value);
+          if (isNaN(parsed)) {
+            parsedErrors[name] = `Invalid ${name}: ${value} is not a number`;
+            return null;
+          }
+          return parsed;
+        };
+        
+        // Parse account ID filter
+        if (req.query.accountId) {
+          const accountId = parseNumericParam('accountId', req.query.accountId as string);
+          if (accountId !== null) {
+            filter.accountId = accountId;
+            queryParams.accountId = accountId;
+          }
+        }
+        
+        // Parse opportunity ID filter
+        if (req.query.opportunityId) {
+          const opportunityId = parseNumericParam('opportunityId', req.query.opportunityId as string);
+          if (opportunityId !== null) {
+            filter.opportunityId = opportunityId;
+            queryParams.opportunityId = opportunityId;
+          }
+        }
+        
+        // Parse status filter (string enum validation)
+        if (req.query.status) {
+          const status = req.query.status as string;
+          const validStatuses = ["Draft", "Sent", "Accepted", "Rejected", "Expired", "Revoked"];
+          
+          if (validStatuses.includes(status)) {
+            filter.status = status;
+            queryParams.status = status;
+          } else {
+            parsedErrors.status = `Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`;
+          }
+        }
+        
+        // Parse creator filter
+        if (req.query.createdBy) {
+          const createdBy = parseNumericParam('createdBy', req.query.createdBy as string);
+          if (createdBy !== null) {
+            filter.createdBy = createdBy;
+            queryParams.createdBy = createdBy;
+          }
+        }
+        
+        // Check if there were any parsing errors
+        if (Object.keys(parsedErrors).length > 0) {
+          return res.status(400).json({
+            error: "Validation Error",
+            message: "Invalid filter parameters",
+            details: parsedErrors
+          });
+        }
+        
+        // Get the proposals with the filter
+        const proposals = await storage.listProposals(filter);
+        
+        // Return with metadata about the query
+        return res.status(200).json({
+          data: proposals,
+          metadata: {
+            count: proposals.length,
+            filters: queryParams,
+            timestamp: new Date()
+          }
+        });
+      } catch (databaseError: any) {
+        console.error("Database error retrieving proposals:", databaseError);
+        
+        return res.status(500).json({
+          error: "Database Error",
+          message: databaseError?.message || "Failed to retrieve proposals from database",
+          // Include the stack trace in development for debugging
+          ...(process.env.NODE_ENV !== 'production' && { 
+            stack: databaseError?.stack,
+            details: databaseError
+          })
+        });
       }
+    } catch (error: any) {
+      console.error("Unexpected error retrieving proposals:", error);
       
-      if (req.query.opportunityId) {
-        filter.opportunityId = parseInt(req.query.opportunityId as string);
-      }
-      
-      if (req.query.status) {
-        filter.status = req.query.status as string;
-      }
-      
-      if (req.query.createdBy) {
-        filter.createdBy = parseInt(req.query.createdBy as string);
-      }
-      
-      const proposals = await storage.listProposals(filter);
-      res.json(proposals);
-    } catch (error) {
-      handleError(res, error);
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: error?.message || "An unexpected error occurred while retrieving proposals",
+        // Only include details in development for security
+        ...(process.env.NODE_ENV !== 'production' && { details: error })
+      });
     }
   });
 
   app.get('/api/proposals/:id', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({
+          error: "Unauthorized",
+          message: "You must be logged in to view proposal details"
+        });
       }
       
       const id = parseInt(req.params.id);
-      const proposal = await storage.getProposal(id);
       
-      if (!proposal) {
-        return res.status(404).json({ error: "Proposal not found" });
+      // Validate id is a number
+      if (isNaN(id)) {
+        return res.status(400).json({ 
+          error: "Validation Error", 
+          message: "Valid proposal ID is required",
+          details: { id: req.params.id }
+        });
       }
       
-      res.json(proposal);
-    } catch (error) {
-      handleError(res, error);
+      try {
+        const proposal = await storage.getProposal(id);
+        
+        if (!proposal) {
+          return res.status(404).json({
+            error: "Not Found",
+            message: "Proposal not found",
+            details: { id }
+          });
+        }
+        
+        try {
+          // Get related counts to include in response
+          const elements = await storage.listProposalElements(id);
+          const comments = await storage.getProposalComments(id);
+          const collaborators = await storage.getProposalCollaborators(id);
+          const activities = await storage.getProposalActivities(id);
+          
+          // Log access activity
+          try {
+            if (req.user) {
+              await storage.createProposalActivity({
+                proposalId: id,
+                userId: req.user.id,
+                action: "view",
+                detail: `Proposal viewed by ${req.user.username || 'user'}`
+              });
+            }
+          } catch (activityError) {
+            // Log but don't fail the request if activity logging fails
+            console.warn("Failed to log proposal view activity:", activityError);
+          }
+          
+          // Return the proposal with additional metadata
+          return res.status(200).json({
+            ...proposal,
+            _metadata: {
+              elementsCount: elements.length,
+              commentsCount: comments.length,
+              collaboratorsCount: collaborators.length,
+              activitiesCount: activities.length
+            }
+          });
+        } catch (relatedDataError: any) {
+          console.error("Error fetching related proposal data:", relatedDataError);
+          
+          // Still return the proposal even if we can't get related data
+          return res.status(200).json(proposal);
+        }
+      } catch (databaseError: any) {
+        console.error("Database error retrieving proposal:", databaseError);
+        
+        return res.status(500).json({
+          error: "Database Error",
+          message: databaseError?.message || "Failed to retrieve proposal from database",
+          // Include the stack trace in development for debugging
+          ...(process.env.NODE_ENV !== 'production' && { 
+            stack: databaseError?.stack,
+            details: databaseError
+          })
+        });
+      }
+    } catch (error: any) {
+      console.error("Unexpected error retrieving proposal:", error);
+      
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: error?.message || "An unexpected error occurred while retrieving the proposal",
+        // Only include details in development for security
+        ...(process.env.NODE_ENV !== 'production' && { details: error })
+      });
     }
   });
 
   app.post('/api/proposals', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ 
+          error: "Unauthorized", 
+          message: "You must be logged in to create a proposal" 
+        });
       }
       
-      console.log("Creating proposal with data:", req.body);
-      
-      // Make sure content is an object if it's not provided
-      if (!req.body.content) {
-        req.body.content = {};
+      try {
+        // Manually construct the required proposal data with proper types
+        const proposalToCreate = {
+          name: req.body.name || "New Proposal",
+          opportunityId: Number(req.body.opportunityId),
+          accountId: Number(req.body.accountId),
+          createdBy: req.body.createdBy || req.user.id,
+          status: req.body.status || "Draft",
+          content: req.body.content || {},
+          metadata: req.body.metadata || {},
+          templateId: req.body.templateId ? Number(req.body.templateId) : undefined,
+          expiresAt: req.body.expiresAt
+        };
+        
+        // Validate required fields
+        if (!proposalToCreate.name) {
+          return res.status(400).json({ 
+            error: "Validation Error", 
+            message: "Proposal name is required" 
+          });
+        }
+        
+        if (isNaN(proposalToCreate.opportunityId)) {
+          return res.status(400).json({ 
+            error: "Validation Error", 
+            message: "Valid opportunity ID is required",
+            field: "opportunityId",
+            value: req.body.opportunityId
+          });
+        }
+        
+        if (isNaN(proposalToCreate.accountId)) {
+          return res.status(400).json({ 
+            error: "Validation Error", 
+            message: "Valid account ID is required",
+            field: "accountId",
+            value: req.body.accountId
+          });
+        }
+        
+        // Check if relationships exist
+        const opportunity = await storage.getOpportunity(proposalToCreate.opportunityId);
+        if (!opportunity) {
+          return res.status(400).json({ 
+            error: "Validation Error", 
+            message: "The specified opportunity does not exist",
+            field: "opportunityId"
+          });
+        }
+        
+        const account = await storage.getAccount(proposalToCreate.accountId);
+        if (!account) {
+          return res.status(400).json({ 
+            error: "Validation Error", 
+            message: "The specified account does not exist",
+            field: "accountId"
+          });
+        }
+        
+        // If template ID is provided, check if template exists and apply content
+        if (proposalToCreate.templateId) {
+          const template = await storage.getProposalTemplate(proposalToCreate.templateId);
+          if (!template) {
+            return res.status(400).json({
+              error: "Validation Error",
+              message: "The specified template does not exist",
+              field: "templateId"
+            });
+          }
+          
+          // Apply template content to proposal
+          proposalToCreate.content = template.content;
+        }
+        
+        // Create the proposal
+        const proposal = await storage.createProposal(proposalToCreate);
+        
+        // Record activity for the creation
+        try {
+          await storage.createProposalActivity({
+            proposalId: proposal.id,
+            userId: req.user.id,
+            action: "create",
+            detail: `Proposal "${proposal.name}" created by ${req.user.username || 'user'}`,
+            metadata: {
+              createdAt: new Date(),
+              fromTemplate: !!proposalToCreate.templateId,
+              opportunityName: opportunity.name,
+              accountName: account.name
+            }
+          });
+        } catch (activityError) {
+          // Log but don't fail the request if activity logging fails
+          console.warn("Failed to log proposal creation activity:", activityError);
+        }
+        
+        return res.status(201).json({
+          success: true,
+          data: proposal,
+          message: "Proposal created successfully"
+        });
+      } catch (databaseError: any) {
+        console.error("Database error creating proposal:", databaseError);
+        
+        // Provide more specific error messages based on the error
+        const errorMessage = databaseError?.message || "Failed to create proposal in database";
+        const statusCode = errorMessage.includes("does not exist") ? 400 : 500;
+        
+        return res.status(statusCode).json({ 
+          error: statusCode === 400 ? "Validation Error" : "Database Error", 
+          message: errorMessage,
+          // Include the stack trace in development for debugging
+          ...(process.env.NODE_ENV !== 'production' && { 
+            stack: databaseError?.stack,
+            details: databaseError
+          })
+        });
       }
+    } catch (error: any) {
+      console.error("Unexpected error creating proposal:", error);
       
-      // Parse and validate the proposal data
-      const proposalData = insertProposalSchema.parse(req.body);
-      
-      // Add current user as creator if not specified
-      if (!proposalData.createdBy) {
-        proposalData.createdBy = req.user.id;
-      }
-      
-      // Make sure opportunityId and accountId are numbers
-      proposalData.opportunityId = Number(proposalData.opportunityId);
-      proposalData.accountId = Number(proposalData.accountId);
-      
-      // Ensure content is a valid JSON object
-      if (!proposalData.content) {
-        proposalData.content = {};
-      }
-      
-      console.log("Validated proposal data:", proposalData);
-      const proposal = await storage.createProposal(proposalData);
-      console.log("Created proposal:", proposal);
-      res.status(201).json(proposal);
-    } catch (error) {
-      console.error("Error creating proposal:", error);
-      handleError(res, error);
+      return res.status(500).json({ 
+        error: "Internal Server Error", 
+        message: error?.message || "An unexpected error occurred while creating the proposal",
+        // Only include details in development for security
+        ...(process.env.NODE_ENV !== 'production' && { details: error })
+      });
     }
   });
 
   app.patch('/api/proposals/:id', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ 
+          error: "Unauthorized", 
+          message: "You must be logged in to update a proposal" 
+        });
       }
       
       const id = parseInt(req.params.id);
-      const proposalData = insertProposalSchema.partial().parse(req.body);
       
-      // Add current user as updater
-      if (!proposalData.updatedBy) {
-        proposalData.updatedBy = req.user.id;
+      // Validate id is a number
+      if (isNaN(id)) {
+        return res.status(400).json({ 
+          error: "Validation Error", 
+          message: "Valid proposal ID is required",
+          details: { id: req.params.id }
+        });
       }
       
-      const proposal = await storage.updateProposal(id, proposalData);
-      
-      if (!proposal) {
-        return res.status(404).json({ error: "Proposal not found" });
+      try {
+        // Get the current proposal to ensure it exists
+        const existingProposal = await storage.getProposal(id);
+        if (!existingProposal) {
+          return res.status(404).json({ 
+            error: "Not Found", 
+            message: "Proposal not found",
+            details: { id }
+          });
+        }
+  
+        try {
+          // Parse and validate the update data
+          const proposalData = insertProposalSchema.partial().parse(req.body);
+          
+          // Add current user as updater
+          if (!proposalData.updatedBy) {
+            proposalData.updatedBy = req.user.id;
+          }
+          
+          // Special handling for status changes to track metadata
+          if (proposalData.status && proposalData.status !== existingProposal.status) {
+            if (!proposalData.metadata) {
+              proposalData.metadata = existingProposal.metadata || {};
+            }
+            
+            // Track timestamps based on status changes
+            const now = new Date();
+            if (proposalData.status === 'Sent') {
+              proposalData.metadata.sentAt = now;
+            } else if (proposalData.status === 'Accepted') {
+              proposalData.metadata.acceptedAt = now;
+            } else if (proposalData.status === 'Rejected') {
+              proposalData.metadata.rejectedAt = now;
+            }
+            
+            // Log status change activity
+            try {
+              await storage.createProposalActivity({
+                proposalId: id,
+                userId: req.user.id,
+                action: "status_change",
+                detail: `Proposal status changed from "${existingProposal.status}" to "${proposalData.status}" by ${req.user.username || 'user'}`,
+                metadata: {
+                  previousStatus: existingProposal.status,
+                  newStatus: proposalData.status,
+                  changedAt: now
+                }
+              });
+            } catch (activityError) {
+              // Log but don't fail the request if activity logging fails
+              console.warn("Failed to log proposal status change activity:", activityError);
+            }
+          }
+          
+          // Update the proposal
+          const proposal = await storage.updateProposal(id, proposalData);
+          
+          if (!proposal) {
+            return res.status(500).json({ 
+              error: "Database Error", 
+              message: "Failed to update proposal" 
+            });
+          }
+          
+          return res.status(200).json({
+            success: true,
+            data: proposal,
+            message: "Proposal updated successfully"
+          });
+        } catch (validationError: any) {
+          // Handle validation errors specifically
+          if (validationError.name === 'ZodError') {
+            return res.status(400).json({
+              error: "Validation Error",
+              message: "Invalid proposal data provided",
+              details: validationError.errors
+            });
+          }
+          
+          throw validationError; // Re-throw for the outer catch block
+        }
+      } catch (databaseError: any) {
+        console.error("Database error updating proposal:", databaseError);
+        
+        // Provide more specific error messages based on the error
+        const errorMessage = databaseError?.message || "Failed to update proposal in database";
+        const statusCode = errorMessage.includes("does not exist") ? 400 : 500;
+        
+        return res.status(statusCode).json({ 
+          error: statusCode === 400 ? "Validation Error" : "Database Error", 
+          message: errorMessage,
+          // Include the stack trace in development for debugging
+          ...(process.env.NODE_ENV !== 'production' && { 
+            stack: databaseError?.stack,
+            details: databaseError
+          })
+        });
       }
+    } catch (error: any) {
+      console.error("Unexpected error updating proposal:", error);
       
-      res.json(proposal);
-    } catch (error) {
-      handleError(res, error);
+      return res.status(500).json({ 
+        error: "Internal Server Error", 
+        message: error?.message || "An unexpected error occurred while updating the proposal",
+        // Only include details in development for security
+        ...(process.env.NODE_ENV !== 'production' && { details: error })
+      });
     }
   });
 
   app.delete('/api/proposals/:id', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ 
+          error: "Unauthorized", 
+          message: "You must be logged in to delete a proposal"
+        });
       }
       
       const id = parseInt(req.params.id);
-      const success = await storage.deleteProposal(id);
       
-      if (!success) {
-        return res.status(404).json({ error: "Proposal not found" });
+      // Validate id is a number
+      if (isNaN(id)) {
+        return res.status(400).json({ 
+          error: "Validation Error", 
+          message: "Valid proposal ID is required",
+          details: { id: req.params.id }
+        });
       }
       
-      res.status(204).end();
-    } catch (error) {
-      handleError(res, error);
+      try {
+        // Check if proposal exists first
+        const existingProposal = await storage.getProposal(id);
+        if (!existingProposal) {
+          return res.status(404).json({ 
+            error: "Not Found", 
+            message: "Proposal not found",
+            details: { id }
+          });
+        }
+        
+        // For proposals in certain statuses, don't allow deletion
+        if (existingProposal.status === 'Accepted') {
+          return res.status(400).json({
+            error: "Validation Error",
+            message: "Cannot delete an accepted proposal",
+            details: { 
+              id,
+              status: existingProposal.status,
+              note: "Proposals that have been accepted cannot be deleted for record-keeping purposes"
+            }
+          });
+        }
+        
+        try {
+          // Check if any related elements, comments, or collaborators exist
+          const elements = await storage.listProposalElements(id);
+          const comments = await storage.getProposalComments(id);
+          const collaborators = await storage.getProposalCollaborators(id);
+          
+          // Log proposal deletion activity before actual deletion
+          try {
+            await storage.createProposalActivity({
+              proposalId: id,
+              userId: req.user.id,
+              action: "delete",
+              detail: `Proposal "${existingProposal.name}" deleted by ${req.user.username || 'user'}`,
+              metadata: {
+                deletedAt: new Date(),
+                hadElements: elements.length > 0,
+                hadComments: comments.length > 0,
+                hadCollaborators: collaborators.length > 0,
+                opportunityId: existingProposal.opportunityId,
+                accountId: existingProposal.accountId,
+                status: existingProposal.status
+              }
+            });
+          } catch (activityError) {
+            // Log but don't fail the request if activity logging fails
+            console.warn("Failed to log proposal deletion activity:", activityError);
+          }
+          
+          // Delete the proposal
+          const success = await storage.deleteProposal(id);
+          
+          if (!success) {
+            return res.status(500).json({ 
+              error: "Database Error", 
+              message: "Failed to delete proposal"
+            });
+          }
+          
+          return res.status(200).json({
+            success: true,
+            message: "Proposal deleted successfully",
+            data: {
+              id,
+              name: existingProposal.name
+            }
+          });
+        } catch (databaseError: any) {
+          console.error("Database error deleting proposal:", databaseError);
+          
+          // Check for specific database errors
+          if (databaseError.message && databaseError.message.includes('foreign key constraint')) {
+            return res.status(400).json({
+              error: "Constraint Error",
+              message: "Cannot delete this proposal because it has related records in other tables",
+              details: { 
+                id,
+                suggestion: "Make sure all related elements, comments, and collaborators are removed first"
+              }
+            });
+          }
+          
+          return res.status(500).json({ 
+            error: "Database Error", 
+            message: databaseError?.message || "Failed to delete proposal from database",
+            // Include the stack trace in development for debugging
+            ...(process.env.NODE_ENV !== 'production' && { 
+              stack: databaseError?.stack,
+              details: databaseError
+            })
+          });
+        }
+      } catch (error: any) {
+        console.error("Error processing proposal deletion:", error);
+        return res.status(500).json({ 
+          error: "Processing Error", 
+          message: error?.message || "Failed to process proposal deletion request"
+        });
+      }
+    } catch (error: any) {
+      console.error("Unexpected error deleting proposal:", error);
+      
+      return res.status(500).json({ 
+        error: "Internal Server Error", 
+        message: error?.message || "An unexpected error occurred while deleting the proposal",
+        // Only include details in development for security
+        ...(process.env.NODE_ENV !== 'production' && { details: error })
+      });
     }
   });
 
@@ -2934,15 +3407,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/proposals/:proposalId/activities', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({
+          error: "Unauthorized",
+          message: "You must be logged in to view proposal activities"
+        });
       }
       
       const proposalId = parseInt(req.params.proposalId);
-      const activities = await storage.getProposalActivities(proposalId);
       
-      res.json(activities);
-    } catch (error) {
-      handleError(res, error);
+      // Validate id is a number
+      if (isNaN(proposalId)) {
+        return res.status(400).json({ 
+          error: "Validation Error", 
+          message: "Valid proposal ID is required",
+          details: { id: req.params.proposalId }
+        });
+      }
+      
+      try {
+        // First verify the proposal exists
+        const proposal = await storage.getProposal(proposalId);
+        if (!proposal) {
+          return res.status(404).json({
+            error: "Not Found",
+            message: "Proposal not found",
+            details: { proposalId }
+          });
+        }
+        
+        // Then get its activities
+        const activities = await storage.getProposalActivities(proposalId);
+        
+        // Return with some metadata about the proposal
+        return res.status(200).json({
+          data: activities,
+          metadata: {
+            proposalId,
+            proposalName: proposal.name,
+            totalCount: activities.length,
+            status: proposal.status
+          }
+        });
+      } catch (databaseError: any) {
+        console.error("Database error getting proposal activities:", databaseError);
+        
+        return res.status(500).json({
+          error: "Database Error",
+          message: databaseError?.message || "Failed to retrieve proposal activities",
+          // Include the stack trace in development for debugging
+          ...(process.env.NODE_ENV !== 'production' && { 
+            stack: databaseError?.stack,
+            details: databaseError
+          })
+        });
+      }
+    } catch (error: any) {
+      console.error("Unexpected error getting proposal activities:", error);
+      
+      return res.status(500).json({
+        error: "Internal Server Error",
+        message: error?.message || "An unexpected error occurred while retrieving proposal activities",
+        // Only include details in development for security
+        ...(process.env.NODE_ENV !== 'production' && { details: error })
+      });
     }
   });
 

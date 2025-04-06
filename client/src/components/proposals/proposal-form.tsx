@@ -37,6 +37,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProposalFormProps {
   isOpen: boolean;
@@ -117,41 +118,67 @@ export function ProposalForm({
     }
   }, [isOpen, isEditing]);
 
+  const { toast } = useToast();
+  
   const handleFormSubmit = (values: ProposalFormValues) => {
     try {
-      // If we're creating a new proposal and a template is selected, add it
-      if (!isEditing && selectedTemplateId) {
-        values.templateId = selectedTemplateId;
-      }
-
-      // Make sure required fields are present
-      const submissionData = {
-        ...values,
-        // Set default empty content object if not provided - MUST be a JSON object
-        content: {},
-        // Ensure opportunity and account IDs are set as numbers
-        opportunityId: Number(opportunityId) || Number(values.opportunityId),
-        accountId: Number(accountId) || Number(values.accountId),
-        // Set creator to current user
-        createdBy: 2 // Default to user ID 2 (can be replaced with actual user ID from context)
+      console.log("Form values:", values);
+      
+      // Create a clean proposal object with explicit typing to avoid Zod validation issues
+      const proposalData = {
+        name: values.name || "New Proposal",
+        status: values.status || "Draft",
+        // Convert to numbers explicitly and verify they exist
+        opportunityId: opportunityId ? Number(opportunityId) : (values.opportunityId ? Number(values.opportunityId) : null),
+        accountId: accountId ? Number(accountId) : (values.accountId ? Number(values.accountId) : null),
+        // Other fields
+        expiresAt: values.expiresAt,
+        createdBy: 2, // Default to user ID 2 (would normally come from auth context)
+        content: {}, // Empty content object
+        metadata: {} // Empty metadata object
       };
       
-      // Ensure the IDs are present and valid numbers
-      if (!submissionData.opportunityId || isNaN(submissionData.opportunityId)) {
-        console.error("Invalid opportunity ID:", submissionData.opportunityId);
-        throw new Error("Invalid opportunity ID");
+      // Add template if selected
+      if (!isEditing && selectedTemplateId) {
+        proposalData.templateId = selectedTemplateId;
       }
       
-      if (!submissionData.accountId || isNaN(submissionData.accountId)) {
-        console.error("Invalid account ID:", submissionData.accountId);
-        throw new Error("Invalid account ID");
+      // Final validation before submitting
+      if (!proposalData.name) {
+        console.error("Proposal name is required");
+        throw new Error("Proposal name is required");
       }
       
-      console.log("Submitting proposal data:", submissionData);
-      onSubmit(submissionData);
+      if (!proposalData.opportunityId || isNaN(proposalData.opportunityId)) {
+        console.error("Invalid opportunity ID:", proposalData.opportunityId);
+        throw new Error("Valid opportunity ID is required");
+      }
+      
+      if (!proposalData.accountId || isNaN(proposalData.accountId)) {
+        console.error("Invalid account ID:", proposalData.accountId);
+        throw new Error("Valid account ID is required");
+      }
+      
+      console.log("Submitting proposal data:", proposalData);
+      
+      // Skip schema validation on the way out - let the server handle it
+      onSubmit(proposalData as any);
       form.reset();
-    } catch (error) {
+      
+      // Show success toast
+      toast({
+        title: isEditing ? "Proposal Updated" : "Proposal Created",
+        description: `Successfully ${isEditing ? 'updated' : 'created'} proposal "${proposalData.name}"`,
+        variant: "default"
+      });
+    } catch (error: any) {
       console.error("Error in form submission:", error);
+      // Present error to user
+      toast({
+        title: "Form Error",
+        description: error.message || "Please check form data and try again",
+        variant: "destructive"
+      });
     }
   };
 

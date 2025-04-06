@@ -175,7 +175,29 @@ export function ProposalManager({
   // Create proposal mutation
   const createProposalMutation = useMutation({
     mutationFn: async (data: InsertProposal) => {
-      return apiRequestJson<Proposal>('POST', '/api/proposals', data);
+      console.log("Making API request to create proposal with data:", data);
+      try {
+        const response = await fetch('/api/proposals', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Server returned error:", errorData);
+          throw new Error(errorData.error || errorData.message || 'Server error creating proposal');
+        }
+        
+        const result = await response.json();
+        console.log("Server returned successful result:", result);
+        return result;
+      } catch (error) {
+        console.error("Error in API request:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       refetchProposals();
@@ -186,6 +208,7 @@ export function ProposalManager({
       });
     },
     onError: (error: Error) => {
+      console.error("Mutation error:", error);
       toast({
         title: 'Error',
         description: `Failed to create proposal: ${error.message}`,

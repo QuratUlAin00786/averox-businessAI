@@ -5213,26 +5213,80 @@ export class DatabaseStorage implements IStorage {
 
   async createProposal(proposal: InsertProposal): Promise<Proposal> {
     try {
+      console.log("Storage.createProposal called with:", JSON.stringify(proposal, null, 2));
+      
+      // Validate required fields
+      if (!proposal.name) {
+        throw new Error("Proposal name is required");
+      }
+      
+      if (!proposal.opportunityId || typeof proposal.opportunityId !== 'number') {
+        throw new Error("Valid opportunity ID is required");
+      }
+      
+      if (!proposal.accountId || typeof proposal.accountId !== 'number') {
+        throw new Error("Valid account ID is required");
+      }
+      
+      // Set default values if missing
       const createdAt = new Date();
-      const [newProposal] = await db.insert(proposals).values({
-        ...proposal,
+      const proposalData = {
+        name: proposal.name,
+        opportunityId: proposal.opportunityId,
+        accountId: proposal.accountId,
+        createdBy: proposal.createdBy,
+        status: proposal.status || 'Draft',
+        content: proposal.content || {},
+        metadata: proposal.metadata || {},
+        templateId: proposal.templateId,
+        expiresAt: proposal.expiresAt,
         createdAt,
-        updatedAt: createdAt,
-        status: proposal.status || 'Draft'
-      }).returning();
+        updatedAt: createdAt
+      };
+      
+      console.log("Validated proposal data for DB insert:", JSON.stringify(proposalData, null, 2));
+      
+      // Insert into database
+      const [newProposal] = await db.insert(proposals).values(proposalData).returning();
+      
+      console.log("New proposal created successfully:", JSON.stringify(newProposal, null, 2));
       
       // Create activity record for proposal creation
-      await this.createProposalActivity({
-        proposalId: newProposal.id,
-        userId: proposal.createdBy,
-        action: 'Created',
-        detail: 'Proposal was created'
-      });
+      try {
+        await this.createProposalActivity({
+          proposalId: newProposal.id,
+          userId: proposal.createdBy,
+          action: 'Created',
+          detail: 'Proposal was created'
+        });
+      } catch (activityError) {
+        console.error("Failed to create activity log, but proposal was created:", activityError);
+        // Continue even if activity creation fails
+      }
       
       return newProposal;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Database error in createProposal:', error);
-      throw new Error('Failed to create proposal');
+      
+      // Provide more useful error message
+      const errorMessage = error.message || 'Failed to create proposal';
+      
+      // Check for known error codes
+      if (error.code) {
+        if (error.code === '23503') { // Foreign key violation
+          if (error.detail?.includes('opportunityId')) {
+            throw new Error('The specified opportunity does not exist');
+          } else if (error.detail?.includes('accountId')) {
+            throw new Error('The specified account does not exist');
+          } else if (error.detail?.includes('createdBy')) {
+            throw new Error('The specified user does not exist');
+          }
+        } else if (error.code === '23502') { // Not null violation
+          throw new Error(`Required field missing: ${error.column || errorMessage}`);
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
   }
 
