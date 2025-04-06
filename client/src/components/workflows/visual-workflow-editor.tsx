@@ -31,7 +31,15 @@ import {
   Clock,
   Loader2,
   MoveHorizontal,
-  ArrowRight
+  ArrowRight,
+  FileBarChart,
+  AlertTriangle,
+  ClipboardList,
+  PackageCheck,
+  Bell,
+  ClipboardCheck,
+  Edit,
+  CircleDot
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +85,59 @@ interface VisualWorkflowEditorProps {
 }
 
 const TRIGGER_TYPES = [
+  // Accounting triggers
+  {
+    id: "invoice_created",
+    name: "Invoice Created or Updated",
+    category: "Accounting",
+    description: "Trigger when a new invoice is created or payment status changes"
+  },
+  {
+    id: "invoice_due",
+    name: "Invoice Due",
+    category: "Accounting",
+    description: "Trigger when an invoice reaches its due date"
+  },
+  {
+    id: "invoice_overdue",
+    name: "Invoice Overdue",
+    category: "Accounting",
+    description: "Trigger when an invoice becomes overdue by specified days"
+  },
+  {
+    id: "payment_received",
+    name: "Payment Received",
+    category: "Accounting",
+    description: "Trigger when a payment is received against an invoice"
+  },
+  
+  // Inventory triggers
+  {
+    id: "inventory_threshold",
+    name: "Inventory Below Threshold",
+    category: "Inventory",
+    description: "Trigger when product inventory falls below defined threshold"
+  },
+  {
+    id: "product_added",
+    name: "Product Added to Inventory",
+    category: "Inventory",
+    description: "Trigger when new products are added to inventory"
+  },
+  {
+    id: "stock_updated",
+    name: "Stock Levels Updated",
+    category: "Inventory",
+    description: "Trigger when inventory quantities are updated"
+  },
+  {
+    id: "purchase_order_status",
+    name: "Purchase Order Status Changed",
+    category: "Inventory",
+    description: "Trigger when purchase order status changes"
+  },
+  
+  // Original CRM triggers
   {
     id: "new_lead",
     name: "New Lead Created",
@@ -122,6 +183,59 @@ const TRIGGER_TYPES = [
 ];
 
 const ACTION_TYPES = [
+  // Accounting Actions
+  {
+    id: "send_invoice_reminder",
+    name: "Send Invoice Reminder",
+    category: "Accounting",
+    description: "Send an automated reminder for invoice payment"
+  },
+  {
+    id: "update_invoice_status",
+    name: "Update Invoice Status",
+    category: "Accounting",
+    description: "Automatically update the status of an invoice"
+  },
+  {
+    id: "generate_financial_report",
+    name: "Generate Financial Report",
+    category: "Accounting",
+    description: "Generate a financial report based on specified parameters"
+  },
+  {
+    id: "tag_delinquent_account",
+    name: "Tag Delinquent Account",
+    category: "Accounting",
+    description: "Mark an account as delinquent after specified overdue period"
+  },
+  
+  // Inventory Actions
+  {
+    id: "create_purchase_order",
+    name: "Create Purchase Order",
+    category: "Inventory",
+    description: "Automatically generate a purchase order for low stock items"
+  },
+  {
+    id: "update_stock_levels",
+    name: "Update Stock Levels",
+    category: "Inventory",
+    description: "Update inventory quantity for specified products"
+  },
+  {
+    id: "send_inventory_alert",
+    name: "Send Inventory Alert",
+    category: "Inventory",
+    description: "Send alert to inventory manager about stock levels"
+  },
+  {
+    id: "schedule_stocktake",
+    name: "Schedule Stocktake",
+    category: "Inventory",
+    description: "Create a scheduled stocktake task for the inventory team"
+  },
+  
+  // Communication Actions
   {
     id: "send_email",
     name: "Send Email",
@@ -129,28 +243,32 @@ const ACTION_TYPES = [
     description: "Send an automated email to contacts"
   },
   {
+    id: "send_notification",
+    name: "Send Notification",
+    category: "Communication",
+    description: "Send an in-app notification to users"
+  },
+  
+  // Task & Event Actions
+  {
     id: "create_task",
     name: "Create Task",
     category: "Tasks",
     description: "Create a task assigned to a team member"
   },
   {
-    id: "update_record",
-    name: "Update Record",
-    category: "Data",
-    description: "Update a field value on a record"
-  },
-  {
-    id: "send_notification",
-    name: "Send Notification",
-    category: "Communication",
-    description: "Send an in-app notification to users"
-  },
-  {
     id: "create_event",
     name: "Create Calendar Event",
     category: "Events",
     description: "Schedule a calendar event"
+  },
+  
+  // Data & Flow Actions
+  {
+    id: "update_record",
+    name: "Update Record",
+    category: "Data",
+    description: "Update a field value on a record"
   },
   {
     id: "wait",
@@ -576,20 +694,48 @@ export function VisualWorkflowEditor({ isOpen, onClose, workflow, isNew = false,
     if (!actionType) return null;
     
     switch (actionType) {
+      // Accounting actions
+      case "send_invoice_reminder":
+        return <Mail className="h-4 w-4 text-blue-500" />;
+      case "update_invoice_status":
+        return <Check className="h-4 w-4 text-green-500" />;
+      case "generate_financial_report":
+        return <FileBarChart className="h-4 w-4 text-indigo-500" />;
+      case "tag_delinquent_account":
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      
+      // Inventory actions
+      case "create_purchase_order":
+        return <ClipboardList className="h-4 w-4 text-blue-500" />;
+      case "update_stock_levels":
+        return <PackageCheck className="h-4 w-4 text-green-500" />;
+      case "send_inventory_alert":
+        return <Bell className="h-4 w-4 text-red-500" />;
+      case "schedule_stocktake":
+        return <ClipboardCheck className="h-4 w-4 text-purple-500" />;
+      
+      // Communication actions
       case "send_email":
         return <Mail className="h-4 w-4 text-blue-500" />;
-      case "create_task":
-        return <Check className="h-4 w-4 text-green-500" />;
       case "send_notification":
         return <AlertCircle className="h-4 w-4 text-red-500" />;
+      
+      // Task & Event actions
+      case "create_task":
+        return <Check className="h-4 w-4 text-green-500" />;
       case "create_event":
         return <Calendar className="h-4 w-4 text-purple-500" />;
+      
+      // Data & Flow actions
+      case "update_record":
+        return <Edit className="h-4 w-4 text-blue-500" />;
       case "wait":
         return <Clock className="h-4 w-4 text-amber-500" />;
       case "condition":
         return <Zap className="h-4 w-4 text-orange-500" />;
+      
       default:
-        return <ArrowRight className="h-4 w-4 text-gray-500" />;
+        return <CircleDot className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -750,6 +896,126 @@ export function VisualWorkflowEditor({ isOpen, onClose, workflow, isNew = false,
                     value={node.config?.taskName || ""} 
                     onChange={(e) => updateNodeConfig(node.id, { taskName: e.target.value })} 
                     placeholder="Follow up with customer"
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Accounting action configurations */}
+            {node.actionType === 'send_invoice_reminder' && (
+              <div className="space-y-2">
+                <Label htmlFor="daysOverdue">Days Overdue</Label>
+                <Input 
+                  id="daysOverdue" 
+                  type="number"
+                  min="1"
+                  value={node.config?.daysOverdue || "7"} 
+                  onChange={(e) => updateNodeConfig(node.id, { daysOverdue: e.target.value })} 
+                />
+                
+                <div className="pt-2">
+                  <Label htmlFor="reminderTemplate">Reminder Template</Label>
+                  <Select 
+                    value={node.config?.reminderTemplate || ""} 
+                    onValueChange={(value) => updateNodeConfig(node.id, { reminderTemplate: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="first_reminder">First Payment Reminder</SelectItem>
+                      <SelectItem value="second_reminder">Second Payment Reminder</SelectItem>
+                      <SelectItem value="final_reminder">Final Payment Notice</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            
+            {node.actionType === 'update_invoice_status' && (
+              <div className="space-y-2">
+                <Label htmlFor="newStatus">New Status</Label>
+                <Select 
+                  value={node.config?.newStatus || ""} 
+                  onValueChange={(value) => updateNodeConfig(node.id, { newStatus: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="partially_paid">Partially Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {/* Inventory action configurations */}
+            {node.actionType === 'create_purchase_order' && (
+              <div className="space-y-2">
+                <Label htmlFor="supplier">Supplier</Label>
+                <Select 
+                  value={node.config?.supplier || ""} 
+                  onValueChange={(value) => updateNodeConfig(node.id, { supplier: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Auto-select from product</SelectItem>
+                    <SelectItem value="preferred">Preferred Supplier</SelectItem>
+                    <SelectItem value="lowest_price">Lowest Price Supplier</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <div className="pt-2">
+                  <Label htmlFor="orderQuantity">Order Quantity</Label>
+                  <Select 
+                    value={node.config?.orderQuantity || ""} 
+                    onValueChange={(value) => updateNodeConfig(node.id, { orderQuantity: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select quantity method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="restock_to_max">Restock to Maximum Level</SelectItem>
+                      <SelectItem value="fixed">Fixed Quantity</SelectItem>
+                      <SelectItem value="optimal">Calculate Optimal (based on history)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            
+            {node.actionType === 'update_stock_levels' && (
+              <div className="space-y-2">
+                <Label htmlFor="updateMethod">Update Method</Label>
+                <Select 
+                  value={node.config?.updateMethod || ""} 
+                  onValueChange={(value) => updateNodeConfig(node.id, { updateMethod: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="increment">Increment Quantity</SelectItem>
+                    <SelectItem value="decrement">Decrement Quantity</SelectItem>
+                    <SelectItem value="set">Set to Specific Value</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <div className="pt-2">
+                  <Label htmlFor="quantityValue">Quantity</Label>
+                  <Input 
+                    id="quantityValue" 
+                    type="number"
+                    min="0"
+                    value={node.config?.quantityValue || "0"} 
+                    onChange={(e) => updateNodeConfig(node.id, { quantityValue: e.target.value })} 
                   />
                 </div>
               </div>

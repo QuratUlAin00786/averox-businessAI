@@ -6,6 +6,47 @@ declare global {
     currentTemplate: any;
   }
 }
+
+// Template and workflow interfaces
+interface WorkflowTemplate {
+  id: number;
+  name: string;
+  description: string;
+  category: string;
+  triggers: string[];
+  steps: number;
+  popular?: boolean;
+  trigger: {
+    id: string;
+    name: string;
+    category: string;
+    description: string;
+  };
+  actions?: any[];
+  triggerType?: string;
+  nodes?: any[];
+  connections?: any[];
+}
+
+interface ActiveWorkflow {
+  id: number;
+  name: string;
+  description: string;
+  status: string;
+  lastRun: string;
+  runs: number;
+  created: string;
+  trigger: {
+    id: string;
+    name: string;
+    category: string;
+    description: string;
+  };
+  triggerType: string;
+  nodes?: any[];
+  connections?: any[];
+}
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,7 +76,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const workflowTemplates = [
+const workflowTemplates: WorkflowTemplate[] = [
   {
     id: 7,
     name: "Invoice Payment Reminder",
@@ -488,7 +529,7 @@ const workflowTemplates = [
   }
 ];
 
-const activeWorkflows = [
+const activeWorkflows: ActiveWorkflow[] = [
   {
     id: 107,
     name: "Automated Invoice Reminders",
@@ -678,6 +719,7 @@ export default function Workflows() {
   const [isVisualWorkflowDetailOpen, setIsVisualWorkflowDetailOpen] = useState(false);
   const [showNewWorkflowModal, setShowNewWorkflowModal] = useState(false);
   const [activeWorkflowsList, setActiveWorkflowsList] = useState(activeWorkflows);
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [expandedRunDetails, setExpandedRunDetails] = useState<number | null>(null);
 
   const openWorkflowDetail = (id: number, editorType: 'text' | 'visual' = 'text') => {
@@ -711,6 +753,11 @@ export default function Workflows() {
     }
   };
   
+  // Filter templates based on selected category
+  const filteredTemplates = selectedCategory === "all"
+    ? workflowTemplates
+    : workflowTemplates.filter(template => template.category === selectedCategory);
+
   const viewRunDetails = (id: number) => {
     setExpandedRunDetails(expandedRunDetails === id ? null : id);
   };
@@ -856,8 +903,22 @@ export default function Workflows() {
         
         {/* Templates Tab */}
         <TabsContent value="templates" className="space-y-4">
+          {/* Category filter */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {["all", "Accounting", "Inventory", "Sales", "Customer Success", "Productivity"].map(category => (
+              <Badge 
+                key={category} 
+                variant={selectedCategory === category ? "default" : "outline"}
+                className={`cursor-pointer ${selectedCategory === category ? "" : "hover:bg-gray-100"}`}
+                onClick={() => setSelectedCategory(category)}
+              >
+                {category === "all" ? "All Categories" : category}
+              </Badge>
+            ))}
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {workflowTemplates.map((template) => (
+            {filteredTemplates.map((template) => (
               <Card key={template.id} className={template.popular ? "border-blue-200" : ""}>
                 <CardHeader className="pb-2">
                   <div className="flex justify-between">
@@ -1174,7 +1235,7 @@ export default function Workflows() {
       {/* Visual Workflow Detail Modal */}
       {isVisualWorkflowDetailOpen && selectedWorkflow !== null && (() => {
         // Debug wrapper to verify template data is passed correctly
-        const templateData = selectedWorkflow !== null ? (
+        const templateData: WorkflowTemplate | ActiveWorkflow | null = selectedWorkflow !== null ? (
           selectedWorkflow <= 10 
             ? workflowTemplates.find(t => t.id === selectedWorkflow) 
             : activeWorkflowsList.find(w => w.id === selectedWorkflow)
@@ -1184,12 +1245,16 @@ export default function Workflows() {
         console.log("DEBUG - Has nodes property:", !!templateData?.nodes);
         console.log("DEBUG - Has connections property:", !!templateData?.connections);
         
-        if (templateData?.nodes) {
+        // Safe type checking for properties
+        const hasNodes = 'nodes' in (templateData || {});
+        const hasConnections = 'connections' in (templateData || {});
+        
+        if (hasNodes && templateData?.nodes) {
           console.log("DEBUG - Nodes length:", templateData.nodes.length);
           console.log("DEBUG - First node:", templateData.nodes[0]);
         }
         
-        if (templateData?.connections) {
+        if (hasConnections && templateData?.connections) {
           console.log("DEBUG - Connections length:", templateData.connections.length);
           console.log("DEBUG - First connection:", templateData.connections[0]);
         }

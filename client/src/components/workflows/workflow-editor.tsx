@@ -27,7 +27,15 @@ import {
   AlertCircle,
   Calendar,
   Clock,
-  Loader2
+  Loader2,
+  FileBarChart,
+  AlertTriangle,
+  ClipboardList,
+  PackageCheck,
+  Bell,
+  ClipboardCheck,
+  Edit,
+  CircleDot
 } from "lucide-react";
 import {
   Accordion,
@@ -63,6 +71,59 @@ interface WorkflowEditorProps {
 }
 
 const TRIGGER_TYPES: WorkflowTrigger[] = [
+  // Accounting triggers
+  {
+    id: "invoice_created",
+    name: "Invoice Created or Updated",
+    category: "Accounting",
+    description: "Trigger when a new invoice is created or payment status changes"
+  },
+  {
+    id: "invoice_due",
+    name: "Invoice Due",
+    category: "Accounting",
+    description: "Trigger when an invoice reaches its due date"
+  },
+  {
+    id: "invoice_overdue",
+    name: "Invoice Overdue",
+    category: "Accounting",
+    description: "Trigger when an invoice becomes overdue by specified days"
+  },
+  {
+    id: "payment_received",
+    name: "Payment Received",
+    category: "Accounting",
+    description: "Trigger when a payment is received against an invoice"
+  },
+  
+  // Inventory triggers
+  {
+    id: "inventory_threshold",
+    name: "Inventory Below Threshold",
+    category: "Inventory",
+    description: "Trigger when product inventory falls below defined threshold"
+  },
+  {
+    id: "product_added",
+    name: "Product Added to Inventory",
+    category: "Inventory",
+    description: "Trigger when new products are added to inventory"
+  },
+  {
+    id: "stock_updated",
+    name: "Stock Levels Updated",
+    category: "Inventory",
+    description: "Trigger when inventory quantities are updated"
+  },
+  {
+    id: "purchase_order_status",
+    name: "Purchase Order Status Changed",
+    category: "Inventory",
+    description: "Trigger when purchase order status changes"
+  },
+  
+  // Original CRM triggers
   {
     id: "new_lead",
     name: "New Lead Created",
@@ -108,6 +169,59 @@ const TRIGGER_TYPES: WorkflowTrigger[] = [
 ];
 
 const ACTION_TYPES: WorkflowAction[] = [
+  // Accounting Actions
+  {
+    id: "send_invoice_reminder",
+    name: "Send Invoice Reminder",
+    category: "Accounting",
+    description: "Send an automated reminder for invoice payment"
+  },
+  {
+    id: "update_invoice_status",
+    name: "Update Invoice Status",
+    category: "Accounting",
+    description: "Automatically update the status of an invoice"
+  },
+  {
+    id: "generate_financial_report",
+    name: "Generate Financial Report",
+    category: "Accounting",
+    description: "Generate a financial report based on specified parameters"
+  },
+  {
+    id: "tag_delinquent_account",
+    name: "Tag Delinquent Account",
+    category: "Accounting",
+    description: "Mark an account as delinquent after specified overdue period"
+  },
+  
+  // Inventory Actions
+  {
+    id: "create_purchase_order",
+    name: "Create Purchase Order",
+    category: "Inventory",
+    description: "Automatically generate a purchase order for low stock items"
+  },
+  {
+    id: "update_stock_levels",
+    name: "Update Stock Levels",
+    category: "Inventory",
+    description: "Update inventory quantity for specified products"
+  },
+  {
+    id: "send_inventory_alert",
+    name: "Send Inventory Alert",
+    category: "Inventory",
+    description: "Send alert to inventory manager about stock levels"
+  },
+  {
+    id: "schedule_stocktake",
+    name: "Schedule Stocktake",
+    category: "Inventory",
+    description: "Create a scheduled stocktake task for the inventory team"
+  },
+  
+  // Communication Actions
   {
     id: "send_email",
     name: "Send Email",
@@ -115,28 +229,32 @@ const ACTION_TYPES: WorkflowAction[] = [
     description: "Send an automated email to contacts"
   },
   {
+    id: "send_notification",
+    name: "Send Notification",
+    category: "Communication",
+    description: "Send an in-app notification to users"
+  },
+  
+  // Task & Event Actions
+  {
     id: "create_task",
     name: "Create Task",
     category: "Tasks",
     description: "Create a task assigned to a team member"
   },
   {
-    id: "update_record",
-    name: "Update Record",
-    category: "Data",
-    description: "Update a field value on a record"
-  },
-  {
-    id: "send_notification",
-    name: "Send Notification",
-    category: "Communication",
-    description: "Send an in-app notification to users"
-  },
-  {
     id: "create_event",
     name: "Create Calendar Event",
     category: "Events",
     description: "Schedule a calendar event"
+  },
+  
+  // Data & Flow Actions
+  {
+    id: "update_record",
+    name: "Update Record",
+    category: "Data",
+    description: "Update a field value on a record"
   },
   {
     id: "wait",
@@ -234,20 +352,48 @@ export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false, isTem
 
   const getActionIcon = (actionType: string) => {
     switch (actionType) {
+      // Accounting actions
+      case "send_invoice_reminder":
+        return <Mail className="h-4 w-4 text-blue-500" />;
+      case "update_invoice_status":
+        return <Check className="h-4 w-4 text-green-500" />;
+      case "generate_financial_report":
+        return <FileBarChart className="h-4 w-4 text-indigo-500" />;
+      case "tag_delinquent_account":
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      
+      // Inventory actions
+      case "create_purchase_order":
+        return <ClipboardList className="h-4 w-4 text-blue-500" />;
+      case "update_stock_levels":
+        return <PackageCheck className="h-4 w-4 text-green-500" />;
+      case "send_inventory_alert":
+        return <Bell className="h-4 w-4 text-red-500" />;
+      case "schedule_stocktake":
+        return <ClipboardCheck className="h-4 w-4 text-purple-500" />;
+      
+      // Communication actions
       case "send_email":
         return <Mail className="h-4 w-4 text-blue-500" />;
-      case "create_task":
-        return <Check className="h-4 w-4 text-green-500" />;
       case "send_notification":
         return <AlertCircle className="h-4 w-4 text-red-500" />;
+      
+      // Task & Event actions
+      case "create_task":
+        return <Check className="h-4 w-4 text-green-500" />;
       case "create_event":
         return <Calendar className="h-4 w-4 text-purple-500" />;
+      
+      // Data & Flow actions
+      case "update_record":
+        return <Edit className="h-4 w-4 text-blue-500" />;
       case "wait":
         return <Clock className="h-4 w-4 text-amber-500" />;
       case "condition":
         return <Zap className="h-4 w-4 text-orange-500" />;
+      
       default:
-        return null;
+        return <CircleDot className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -425,9 +571,190 @@ export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false, isTem
                             <div className="bg-gray-50 p-3 rounded-md text-sm">
                               <p>{ACTION_TYPES.find(a => a.id === action.actionType)?.description}</p>
                               
-                              {/* Display configuration for template or custom workflow */}
+                              {/* Display configuration UI based on action type */}
                               <div className="mt-3 pt-3 border-t border-gray-200">
-                                {action.config && Object.keys(action.config).length > 0 ? (
+                                {/* Accounting action configurations */}
+                                {action.actionType === 'send_invoice_reminder' && (
+                                  <div className="space-y-3 mt-2">
+                                    <div>
+                                      <Label htmlFor={`${action.id}-daysOverdue`} className="text-xs">Days Overdue</Label>
+                                      <Input 
+                                        id={`${action.id}-daysOverdue`} 
+                                        type="number"
+                                        min="1"
+                                        className="h-8 text-xs"
+                                        value={action.config?.daysOverdue || "7"}
+                                        onChange={(e) => {
+                                          const newActions = [...actions];
+                                          newActions[index].config = { 
+                                            ...newActions[index].config, 
+                                            daysOverdue: e.target.value 
+                                          };
+                                          setActions(newActions);
+                                        }}
+                                      />
+                                    </div>
+                                    
+                                    <div>
+                                      <Label htmlFor={`${action.id}-reminderTemplate`} className="text-xs">Reminder Template</Label>
+                                      <Select 
+                                        value={action.config?.reminderTemplate || "first_reminder"}
+                                        onValueChange={(value) => {
+                                          const newActions = [...actions];
+                                          newActions[index].config = { 
+                                            ...newActions[index].config, 
+                                            reminderTemplate: value 
+                                          };
+                                          setActions(newActions);
+                                        }}
+                                      >
+                                        <SelectTrigger id={`${action.id}-reminderTemplate`} className="h-8 text-xs">
+                                          <SelectValue placeholder="Select template" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="first_reminder">First Payment Reminder</SelectItem>
+                                          <SelectItem value="second_reminder">Second Payment Reminder</SelectItem>
+                                          <SelectItem value="final_reminder">Final Payment Notice</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {action.actionType === 'update_invoice_status' && (
+                                  <div className="space-y-3 mt-2">
+                                    <div>
+                                      <Label htmlFor={`${action.id}-newStatus`} className="text-xs">New Status</Label>
+                                      <Select 
+                                        value={action.config?.newStatus || ""}
+                                        onValueChange={(value) => {
+                                          const newActions = [...actions];
+                                          newActions[index].config = { 
+                                            ...newActions[index].config, 
+                                            newStatus: value 
+                                          };
+                                          setActions(newActions);
+                                        }}
+                                      >
+                                        <SelectTrigger id={`${action.id}-newStatus`} className="h-8 text-xs">
+                                          <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="draft">Draft</SelectItem>
+                                          <SelectItem value="sent">Sent</SelectItem>
+                                          <SelectItem value="overdue">Overdue</SelectItem>
+                                          <SelectItem value="paid">Paid</SelectItem>
+                                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                                          <SelectItem value="partially_paid">Partially Paid</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Inventory action configurations */}
+                                {action.actionType === 'create_purchase_order' && (
+                                  <div className="space-y-3 mt-2">
+                                    <div>
+                                      <Label htmlFor={`${action.id}-supplier`} className="text-xs">Supplier</Label>
+                                      <Select 
+                                        value={action.config?.supplier || ""}
+                                        onValueChange={(value) => {
+                                          const newActions = [...actions];
+                                          newActions[index].config = { 
+                                            ...newActions[index].config, 
+                                            supplier: value 
+                                          };
+                                          setActions(newActions);
+                                        }}
+                                      >
+                                        <SelectTrigger id={`${action.id}-supplier`} className="h-8 text-xs">
+                                          <SelectValue placeholder="Select supplier" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="auto">Auto-select from product</SelectItem>
+                                          <SelectItem value="preferred">Preferred Supplier</SelectItem>
+                                          <SelectItem value="lowest_price">Lowest Price Supplier</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    
+                                    <div>
+                                      <Label htmlFor={`${action.id}-orderQuantity`} className="text-xs">Order Quantity</Label>
+                                      <Select 
+                                        value={action.config?.orderQuantity || ""}
+                                        onValueChange={(value) => {
+                                          const newActions = [...actions];
+                                          newActions[index].config = { 
+                                            ...newActions[index].config, 
+                                            orderQuantity: value 
+                                          };
+                                          setActions(newActions);
+                                        }}
+                                      >
+                                        <SelectTrigger id={`${action.id}-orderQuantity`} className="h-8 text-xs">
+                                          <SelectValue placeholder="Select quantity method" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="restock_to_max">Restock to Maximum Level</SelectItem>
+                                          <SelectItem value="fixed">Fixed Quantity</SelectItem>
+                                          <SelectItem value="optimal">Calculate Optimal (based on history)</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {action.actionType === 'update_stock_levels' && (
+                                  <div className="space-y-3 mt-2">
+                                    <div>
+                                      <Label htmlFor={`${action.id}-updateMethod`} className="text-xs">Update Method</Label>
+                                      <Select 
+                                        value={action.config?.updateMethod || ""}
+                                        onValueChange={(value) => {
+                                          const newActions = [...actions];
+                                          newActions[index].config = { 
+                                            ...newActions[index].config, 
+                                            updateMethod: value 
+                                          };
+                                          setActions(newActions);
+                                        }}
+                                      >
+                                        <SelectTrigger id={`${action.id}-updateMethod`} className="h-8 text-xs">
+                                          <SelectValue placeholder="Select method" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="increment">Increment Quantity</SelectItem>
+                                          <SelectItem value="decrement">Decrement Quantity</SelectItem>
+                                          <SelectItem value="set">Set to Specific Value</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    
+                                    <div>
+                                      <Label htmlFor={`${action.id}-quantityValue`} className="text-xs">Quantity</Label>
+                                      <Input 
+                                        id={`${action.id}-quantityValue`} 
+                                        type="number"
+                                        min="0"
+                                        className="h-8 text-xs"
+                                        value={action.config?.quantityValue || "0"}
+                                        onChange={(e) => {
+                                          const newActions = [...actions];
+                                          newActions[index].config = { 
+                                            ...newActions[index].config, 
+                                            quantityValue: e.target.value 
+                                          };
+                                          setActions(newActions);
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Default configuration display for other action types or templates */}
+                                {!['send_invoice_reminder', 'update_invoice_status', 'create_purchase_order', 'update_stock_levels'].includes(action.actionType) && 
+                                  action.config && Object.keys(action.config).length > 0 && (
                                   <div className="space-y-2">
                                     <h4 className="font-medium text-sm">Configuration</h4>
                                     <div className="grid grid-cols-2 gap-2">
@@ -439,7 +766,11 @@ export function WorkflowEditor({ isOpen, onClose, workflow, isNew = false, isTem
                                       ))}
                                     </div>
                                   </div>
-                                ) : (
+                                )}
+                                
+                                {/* Show placeholder text if no config is present */}
+                                {(!action.config || Object.keys(action.config).length === 0) && 
+                                 !['send_invoice_reminder', 'update_invoice_status', 'create_purchase_order', 'update_stock_levels'].includes(action.actionType) && (
                                   <p className="text-xs text-muted-foreground">
                                     Configuration options for this action would appear here
                                   </p>
