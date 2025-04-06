@@ -39,6 +39,13 @@ interface TooltipTranslations {
     proposals: string;
     closing: string;
   };
+  training: {
+    main: string;
+    modules: string;
+    videos: string;
+    faq: string;
+    resources: string;
+  };
   contacts: {
     management: string;
     details: string;
@@ -68,6 +75,7 @@ interface NavigationTranslations {
   communicationCenter: string;
   accounting: string;
   inventory: string;
+  training: string;
 }
 
 interface DashboardTranslations {
@@ -115,6 +123,19 @@ interface ButtonsTranslations {
   import: string;
   send: string;
   more: string;
+  close: string;
+  playVideo: string;
+  downloadPdf: string;
+  fullTutorial: string;
+  learnMore: string;
+  watchNow: string;
+  readDocs: string;
+  contactSupport: string;
+  viewAllFaqs: string;
+  download: string;
+  register: string;
+  watch: string;
+  viewAllWebinars: string;
 }
 
 interface SettingsTranslations {
@@ -166,6 +187,43 @@ interface GeneralTranslations {
   noResults: string;
 }
 
+interface TrainingTranslations {
+  tutorials: string;
+  videos: string;
+  faq: string;
+  resources: string;
+  gettingStarted: string;
+  gettingStartedDesc: string;
+  quickSetup: string;
+  quickSetupDesc: string;
+  videoTutorials: string;
+  videoTutorialsDesc: string;
+  documentation: string;
+  documentationDesc: string;
+  trainingModules: string;
+  videoPlaceholder: string;
+  frequentlyAskedQuestions: string;
+  faqDescription: string;
+  needMoreHelp: string;
+  needMoreHelpDesc: string;
+  downloadableResources: string;
+  resourcesDescription: string;
+  userGuide: string;
+  apiDocumentation: string;
+  accountingSetupGuide: string;
+  migrationChecklist: string;
+  webinarsAndEvents: string;
+  webinarsDescription: string;
+  upcomingWebinarTitle: string;
+  upcomingWebinarDesc: string;
+  upcomingWebinarDate: string;
+  upcomingLabel: string;
+  recordedWebinarTitle: string;
+  recordedWebinarDesc: string;
+  recordedWebinarDate: string;
+  recordedLabel: string;
+}
+
 // Main translations interface
 export interface Translations {
   navigation: NavigationTranslations;
@@ -174,6 +232,7 @@ export interface Translations {
   settings: SettingsTranslations;
   general: GeneralTranslations;
   tooltips: TooltipTranslations;
+  training: TrainingTranslations;
 }
 
 // English translations (default)
@@ -195,6 +254,7 @@ const englishTranslations: Translations = {
     communicationCenter: 'Communication Center',
     accounting: 'Accounting',
     inventory: 'Inventory',
+    training: 'Training & Help',
   },
   dashboard: {
     greeting: 'Hello',
@@ -240,6 +300,19 @@ const englishTranslations: Translations = {
     import: 'Import',
     send: 'Send',
     more: 'More',
+    close: 'Close',
+    playVideo: 'Play Video',
+    downloadPdf: 'Download PDF',
+    fullTutorial: 'Full Tutorial',
+    learnMore: 'Learn More',
+    watchNow: 'Watch Now',
+    readDocs: 'Read Docs',
+    contactSupport: 'Contact Support',
+    viewAllFaqs: 'View All FAQs',
+    download: 'Download',
+    register: 'Register',
+    watch: 'Watch',
+    viewAllWebinars: 'View All Webinars',
   },
   settings: {
     regional: 'Regional Settings',
@@ -332,7 +405,50 @@ const englishTranslations: Translations = {
       management: 'Manage your business accounts and companies',
       details: 'View and edit company information',
       communications: 'See all interactions with this account'
+    },
+    training: {
+      main: 'Access step-by-step guides, video tutorials, and resources to master AVEROX CRM',
+      modules: 'Explore detailed training modules for different aspects of the CRM',
+      videos: 'Watch video demonstrations of key features and workflows',
+      faq: 'Find answers to frequently asked questions about using the platform',
+      resources: 'Download helpful resources like user guides and checklists'
     }
+  },
+  training: {
+    tutorials: 'Tutorials',
+    videos: 'Videos',
+    faq: 'FAQ',
+    resources: 'Resources',
+    gettingStarted: 'Getting Started with AVEROX CRM',
+    gettingStartedDesc: 'Learn the basics to quickly set up and start using your CRM effectively',
+    quickSetup: 'Quick Setup',
+    quickSetupDesc: 'Configure your account and basic settings in minutes',
+    videoTutorials: 'Video Tutorials',
+    videoTutorialsDesc: 'Watch step-by-step video guides for key features',
+    documentation: 'Documentation',
+    documentationDesc: 'Detailed guides and reference materials',
+    trainingModules: 'Training Modules',
+    videoPlaceholder: 'Click play to watch the video tutorial',
+    frequentlyAskedQuestions: 'Frequently Asked Questions',
+    faqDescription: 'Find answers to common questions about using AVEROX CRM',
+    needMoreHelp: 'Need more help?',
+    needMoreHelpDesc: 'Our support team is ready to assist you with any questions or issues',
+    downloadableResources: 'Downloadable Resources',
+    resourcesDescription: 'Access user guides, checklists, and implementation resources',
+    userGuide: 'AVEROX CRM User Guide (PDF)',
+    apiDocumentation: 'API Documentation (PDF)',
+    accountingSetupGuide: 'Accounting Module Setup Guide (PDF)',
+    migrationChecklist: 'Data Migration Checklist (PDF)',
+    webinarsAndEvents: 'Webinars & Events',
+    webinarsDescription: 'Join live training sessions and watch recorded webinars',
+    upcomingWebinarTitle: 'Mastering Customer Communication Workflows',
+    upcomingWebinarDesc: 'Learn how to streamline your customer communications across all channels',
+    upcomingWebinarDate: 'April 15, 2025 • 2:00 PM EST',
+    upcomingLabel: 'Upcoming',
+    recordedWebinarTitle: 'Advanced Reporting Techniques',
+    recordedWebinarDesc: 'How to create custom reports and dashboards for better insights',
+    recordedWebinarDate: 'March 20, 2025',
+    recordedLabel: 'Recorded'
   }
 };
 
@@ -355,6 +471,7 @@ const arabicTranslations: Translations = {
     communicationCenter: 'مركز الاتصالات',
     accounting: 'المحاسبة',
     inventory: 'المخزون',
+    training: 'التدريب والمساعدة',
   },
   dashboard: {
     greeting: 'مرحبا',
@@ -400,6 +517,19 @@ const arabicTranslations: Translations = {
     import: 'استيراد',
     send: 'إرسال',
     more: 'المزيد',
+    close: 'إغلاق',
+    playVideo: 'تشغيل الفيديو',
+    downloadPdf: 'تنزيل PDF',
+    fullTutorial: 'البرنامج التعليمي الكامل',
+    learnMore: 'معرفة المزيد',
+    watchNow: 'شاهد الآن',
+    readDocs: 'قراءة الوثائق',
+    contactSupport: 'الاتصال بالدعم',
+    viewAllFaqs: 'عرض جميع الأسئلة الشائعة',
+    download: 'تنزيل',
+    register: 'تسجيل',
+    watch: 'مشاهدة',
+    viewAllWebinars: 'عرض جميع الندوات',
   },
   settings: {
     regional: 'الإعدادات الإقليمية',
@@ -492,7 +622,50 @@ const arabicTranslations: Translations = {
       management: 'إدارة حسابات الأعمال والشركات',
       details: 'عرض وتحرير معلومات الشركة',
       communications: 'مشاهدة جميع التفاعلات مع هذا الحساب'
+    },
+    training: {
+      main: 'الوصول إلى أدلة خطوة بخطوة وبرامج تعليمية بالفيديو وموارد لإتقان AVEROX CRM',
+      modules: 'استكشاف وحدات التدريب التفصيلية لجوانب مختلفة من نظام إدارة علاقات العملاء',
+      videos: 'مشاهدة عروض توضيحية بالفيديو للميزات وسير العمل الرئيسية',
+      faq: 'ابحث عن إجابات للأسئلة المتداولة حول استخدام المنصة',
+      resources: 'تنزيل موارد مفيدة مثل أدلة المستخدم وقوائم المراجعة'
     }
+  },
+  training: {
+    tutorials: 'الدروس التعليمية',
+    videos: 'الفيديوهات',
+    faq: 'الأسئلة الشائعة',
+    resources: 'الموارد',
+    gettingStarted: 'البدء مع AVEROX CRM',
+    gettingStartedDesc: 'تعلم الأساسيات لإعداد واستخدام نظام إدارة علاقات العملاء الخاص بك بفعالية',
+    quickSetup: 'الإعداد السريع',
+    quickSetupDesc: 'قم بتكوين حسابك والإعدادات الأساسية في دقائق',
+    videoTutorials: 'دروس الفيديو',
+    videoTutorialsDesc: 'شاهد أدلة الفيديو خطوة بخطوة للميزات الرئيسية',
+    documentation: 'الوثائق',
+    documentationDesc: 'أدلة مفصلة ومواد مرجعية',
+    trainingModules: 'وحدات التدريب',
+    videoPlaceholder: 'انقر للتشغيل لمشاهدة البرنامج التعليمي بالفيديو',
+    frequentlyAskedQuestions: 'الأسئلة المتداولة',
+    faqDescription: 'ابحث عن إجابات للأسئلة الشائعة حول استخدام AVEROX CRM',
+    needMoreHelp: 'هل تحتاج إلى مزيد من المساعدة؟',
+    needMoreHelpDesc: 'فريق الدعم لدينا جاهز لمساعدتك في أي أسئلة أو مشكلات',
+    downloadableResources: 'الموارد القابلة للتنزيل',
+    resourcesDescription: 'الوصول إلى أدلة المستخدم وقوائم المراجعة وموارد التنفيذ',
+    userGuide: 'دليل مستخدم AVEROX CRM (PDF)',
+    apiDocumentation: 'وثائق API (PDF)',
+    accountingSetupGuide: 'دليل إعداد وحدة المحاسبة (PDF)',
+    migrationChecklist: 'قائمة مراجعة ترحيل البيانات (PDF)',
+    webinarsAndEvents: 'الندوات والفعاليات',
+    webinarsDescription: 'انضم إلى جلسات التدريب المباشرة وشاهد الندوات المسجلة',
+    upcomingWebinarTitle: 'إتقان سير عمل اتصالات العملاء',
+    upcomingWebinarDesc: 'تعرف على كيفية تبسيط اتصالاتك مع العملاء عبر جميع القنوات',
+    upcomingWebinarDate: '15 أبريل 2025 • 2:00 مساءً بتوقيت شرق الولايات المتحدة',
+    upcomingLabel: 'قادم',
+    recordedWebinarTitle: 'تقنيات إعداد التقارير المتقدمة',
+    recordedWebinarDesc: 'كيفية إنشاء تقارير ولوحات معلومات مخصصة للحصول على رؤى أفضل',
+    recordedWebinarDate: '20 مارس 2025',
+    recordedLabel: 'مسجل'
   }
 };
 

@@ -31,6 +31,7 @@ import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
+import TrainingHelpPage from "@/pages/training-help";
 import NewProduct from "@/pages/inventory/products/new";
 import NewCategory from "@/pages/inventory/categories/new";
 import NewTransaction from "@/pages/inventory/transactions/new";
@@ -271,6 +272,12 @@ function Router() {
       <ProtectedRoute path="/inventory/transactions/new" component={() => (
         <Layout>
           <NewTransaction />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/training-help" component={() => (
+        <Layout>
+          <TrainingHelpPage />
         </Layout>
       )} />
       

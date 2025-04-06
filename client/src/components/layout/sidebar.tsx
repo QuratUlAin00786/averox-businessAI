@@ -18,7 +18,8 @@ import {
   CreditCard,
   MessageSquare,
   Calculator,
-  PackageOpen
+  PackageOpen,
+  HelpCircle
 } from "lucide-react";
 import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
@@ -48,6 +49,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: t.navigation.intelligence, path: '/intelligence', icon: <BrainCircuit className="w-5 h-5" /> },
     { name: t.navigation.workflows, path: '/workflows', icon: <Workflow className="w-5 h-5" /> },
     { name: t.navigation.subscriptions, path: '/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
+    { name: t.navigation.training, path: '/training-help', icon: <HelpCircle className="w-5 h-5" /> },
     { name: t.navigation.settings, path: '/settings', icon: <Settings className="w-5 h-5" /> }
   ];
 
@@ -122,10 +124,19 @@ export default function Sidebar({ className = "" }: SidebarProps) {
         <hr className="my-4 border-neutral-200" />
         
         <div className="px-4 mb-2">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Help & Support</p>
+        </div>
+        <div className="px-2 space-y-1">
+          {renderNavItems(navItems.slice(13, 14))}
+        </div>
+
+        <hr className="my-4 border-neutral-200" />
+        
+        <div className="px-4 mb-2">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">System</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(13))}
+          {renderNavItems(navItems.slice(14))}
         </div>
       </ScrollArea>
       
