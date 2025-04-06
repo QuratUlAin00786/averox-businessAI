@@ -22,6 +22,13 @@ import {
   invoiceItems, type InvoiceItem, type InsertInvoiceItem,
   purchaseOrders, type PurchaseOrder, type InsertPurchaseOrder,
   purchaseOrderItems, type PurchaseOrderItem, type InsertPurchaseOrderItem,
+  // Proposal schemas
+  proposalTemplates, type ProposalTemplate, type InsertProposalTemplate,
+  proposals, type Proposal, type InsertProposal,
+  proposalElements, type ProposalElement, type InsertProposalElement,
+  proposalCollaborators, type ProposalCollaborator, type InsertProposalCollaborator,
+  proposalComments, type ProposalComment, type InsertProposalComment,
+  proposalActivities, type ProposalActivity, type InsertProposalActivity,
   // Permission schemas
   modulePermissions, type ModulePermission, type InsertModulePermission,
   rolePermissions, type RolePermission, type InsertRolePermission,
@@ -326,6 +333,46 @@ export interface IStorage {
   // Inventory
   getInventorySummary(): Promise<{products: Array<{id: number, name: string, sku: string, stock: number, value: number}>}>;
   
+  // Proposal Management
+  // Templates
+  getProposalTemplate(id: number): Promise<ProposalTemplate | undefined>;
+  listProposalTemplates(filter?: Partial<ProposalTemplate>): Promise<ProposalTemplate[]>;
+  createProposalTemplate(template: InsertProposalTemplate): Promise<ProposalTemplate>;
+  updateProposalTemplate(id: number, template: Partial<InsertProposalTemplate>): Promise<ProposalTemplate | undefined>;
+  deleteProposalTemplate(id: number): Promise<boolean>;
+  
+  // Proposals
+  getProposal(id: number): Promise<Proposal | undefined>;
+  listProposals(filter?: Partial<Proposal>): Promise<Proposal[]>;
+  getOpportunityProposals(opportunityId: number): Promise<Proposal[]>;
+  createProposal(proposal: InsertProposal): Promise<Proposal>;
+  updateProposal(id: number, proposal: Partial<InsertProposal>): Promise<Proposal | undefined>;
+  deleteProposal(id: number): Promise<boolean>;
+  
+  // Proposal Elements (reusable blocks)
+  getProposalElement(id: number): Promise<ProposalElement | undefined>;
+  listProposalElements(filter?: Partial<ProposalElement>): Promise<ProposalElement[]>;
+  createProposalElement(element: InsertProposalElement): Promise<ProposalElement>;
+  updateProposalElement(id: number, element: Partial<InsertProposalElement>): Promise<ProposalElement | undefined>;
+  deleteProposalElement(id: number): Promise<boolean>;
+  
+  // Proposal Collaborators
+  getProposalCollaborators(proposalId: number): Promise<(ProposalCollaborator & { user?: User })[]>;
+  addProposalCollaborator(collaborator: InsertProposalCollaborator): Promise<ProposalCollaborator>;
+  updateProposalCollaborator(id: number, collaborator: Partial<InsertProposalCollaborator>): Promise<ProposalCollaborator | undefined>;
+  removeProposalCollaborator(id: number): Promise<boolean>;
+  
+  // Proposal Comments
+  getProposalComments(proposalId: number): Promise<(ProposalComment & { user?: User })[]>;
+  createProposalComment(comment: InsertProposalComment): Promise<ProposalComment>;
+  updateProposalComment(id: number, comment: Partial<InsertProposalComment>): Promise<ProposalComment | undefined>;
+  deleteProposalComment(id: number): Promise<boolean>;
+  resolveProposalComment(id: number, userId: number): Promise<ProposalComment | undefined>;
+  
+  // Proposal Activities
+  getProposalActivities(proposalId: number): Promise<(ProposalActivity & { user?: User })[]>;
+  createProposalActivity(activity: InsertProposalActivity): Promise<ProposalActivity>;
+  
   // Permission Management
   getModuleByName(moduleName: string): Promise<ModulePermission | undefined>;
   getUserPermission(userId: number, moduleId: number, action: string): Promise<UserPermission | undefined>;
@@ -396,6 +443,45 @@ export interface IStorage {
   checkTeamEntityAccess(userId: number, entityType: string, entityId: number): Promise<boolean>;
   getEntityById(entityType: string, entityId: number): Promise<any>;
   initializePermissions(): Promise<void>;
+  
+  // Proposal Templates
+  getProposalTemplate(id: number): Promise<ProposalTemplate | undefined>;
+  listProposalTemplates(): Promise<ProposalTemplate[]>;
+  createProposalTemplate(template: InsertProposalTemplate): Promise<ProposalTemplate>;
+  updateProposalTemplate(id: number, template: Partial<InsertProposalTemplate>): Promise<ProposalTemplate | undefined>;
+  deleteProposalTemplate(id: number): Promise<boolean>;
+  
+  // Proposals
+  getProposal(id: number): Promise<Proposal | undefined>;
+  listProposals(filter?: Partial<Proposal>): Promise<Proposal[]>;
+  createProposal(proposal: InsertProposal): Promise<Proposal>;
+  updateProposal(id: number, proposal: Partial<InsertProposal>): Promise<Proposal | undefined>;
+  deleteProposal(id: number): Promise<boolean>;
+  
+  // Proposal Elements
+  getProposalElement(id: number): Promise<ProposalElement | undefined>;
+  listProposalElements(proposalId: number): Promise<ProposalElement[]>;
+  createProposalElement(element: InsertProposalElement): Promise<ProposalElement>;
+  updateProposalElement(id: number, element: Partial<InsertProposalElement>): Promise<ProposalElement | undefined>;
+  deleteProposalElement(id: number): Promise<boolean>;
+  
+  // Proposal Collaborators
+  getProposalCollaborator(id: number): Promise<ProposalCollaborator | undefined>;
+  getProposalCollaborators(proposalId: number): Promise<(ProposalCollaborator & { user?: User })[]>;
+  createProposalCollaborator(collaborator: InsertProposalCollaborator): Promise<ProposalCollaborator>;
+  updateProposalCollaborator(id: number, collaborator: Partial<InsertProposalCollaborator>): Promise<ProposalCollaborator | undefined>;
+  deleteProposalCollaborator(id: number): Promise<boolean>;
+  
+  // Proposal Comments
+  getProposalComment(id: number): Promise<ProposalComment | undefined>;
+  getProposalComments(proposalId: number): Promise<(ProposalComment & { user?: User })[]>;
+  createProposalComment(comment: InsertProposalComment): Promise<ProposalComment>;
+  updateProposalComment(id: number, comment: Partial<InsertProposalComment>): Promise<ProposalComment | undefined>;
+  deleteProposalComment(id: number): Promise<boolean>;
+  
+  // Proposal Activities
+  createProposalActivity(activity: InsertProposalActivity): Promise<ProposalActivity>;
+  getProposalActivities(proposalId: number): Promise<(ProposalActivity & { user?: User })[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -422,6 +508,14 @@ export class MemStorage implements IStorage {
   private apiKeys: Map<number, ApiKey>;
   private workflows: Map<number, Workflow>;
   // Communications map already initialized
+  
+  // Proposal system maps
+  private proposalTemplates: Map<number, ProposalTemplate>;
+  private proposals: Map<number, Proposal>;
+  private proposalElements: Map<number, ProposalElement>;
+  private proposalCollaborators: Map<number, ProposalCollaborator>;
+  private proposalComments: Map<number, ProposalComment>;
+  private proposalActivities: Map<number, ProposalActivity>;
   
   // Business accounting maps
   private productCategories: Map<number, ProductCategory>;
@@ -468,6 +562,14 @@ export class MemStorage implements IStorage {
   private purchaseOrderIdCounter: number;
   private purchaseOrderItemIdCounter: number;
   
+  // Proposal system ID counters
+  private proposalTemplateIdCounter: number;
+  private proposalIdCounter: number;
+  private proposalElementIdCounter: number;
+  private proposalCollaboratorIdCounter: number;
+  private proposalCommentIdCounter: number;
+  private proposalActivityIdCounter: number;
+  
   // Permission management ID counters
   private modulePermissionIdCounter: number;
   private rolePermissionIdCounter: number;
@@ -500,6 +602,14 @@ export class MemStorage implements IStorage {
     this.apiKeys = new Map();
     this.workflows = new Map();
     // Communications map already initialized in the mixin
+    
+    // Initialize proposal system maps
+    this.proposalTemplates = new Map();
+    this.proposals = new Map();
+    this.proposalElements = new Map();
+    this.proposalCollaborators = new Map();
+    this.proposalComments = new Map();
+    this.proposalActivities = new Map();
     
     // Initialize business accounting maps
     this.productCategories = new Map();
@@ -536,6 +646,14 @@ export class MemStorage implements IStorage {
     this.apiKeyIdCounter = 1;
     this.workflowIdCounter = 1;
     // Communication ID counter already initialized in the mixin
+    
+    // Initialize proposal system ID counters
+    this.proposalTemplateIdCounter = 1;
+    this.proposalIdCounter = 1;
+    this.proposalElementIdCounter = 1;
+    this.proposalCollaboratorIdCounter = 1;
+    this.proposalCommentIdCounter = 1;
+    this.proposalActivityIdCounter = 1;
     
     // Initialize business accounting ID counters
     this.productCategoryIdCounter = 1;
@@ -2793,6 +2911,293 @@ export class MemStorage implements IStorage {
     return true;
   }
 
+  // Proposal Template Methods
+  async getProposalTemplate(id: number): Promise<ProposalTemplate | undefined> {
+    return this.proposalTemplates.get(id);
+  }
+
+  async listProposalTemplates(): Promise<ProposalTemplate[]> {
+    return Array.from(this.proposalTemplates.values());
+  }
+
+  async createProposalTemplate(template: InsertProposalTemplate): Promise<ProposalTemplate> {
+    const id = this.proposalTemplateIdCounter++;
+    const createdAt = new Date();
+    
+    const proposalTemplate: ProposalTemplate = {
+      ...template,
+      id,
+      createdAt,
+      updatedAt: createdAt,
+      isActive: template.isActive === undefined ? true : template.isActive
+    };
+    
+    this.proposalTemplates.set(id, proposalTemplate);
+    return proposalTemplate;
+  }
+
+  async updateProposalTemplate(id: number, template: Partial<InsertProposalTemplate>): Promise<ProposalTemplate | undefined> {
+    const existingTemplate = this.proposalTemplates.get(id);
+    if (!existingTemplate) {
+      return undefined;
+    }
+    
+    const updatedTemplate = {
+      ...existingTemplate,
+      ...template,
+      updatedAt: new Date()
+    };
+    
+    this.proposalTemplates.set(id, updatedTemplate);
+    return updatedTemplate;
+  }
+
+  async deleteProposalTemplate(id: number): Promise<boolean> {
+    return this.proposalTemplates.delete(id);
+  }
+
+  // Proposal Methods
+  async getProposal(id: number): Promise<Proposal | undefined> {
+    return this.proposals.get(id);
+  }
+
+  async listProposals(filter?: Partial<Proposal>): Promise<Proposal[]> {
+    let proposals = Array.from(this.proposals.values());
+    
+    if (filter) {
+      proposals = proposals.filter(proposal => {
+        for (const [key, value] of Object.entries(filter)) {
+          if (proposal[key as keyof Proposal] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    
+    return proposals;
+  }
+
+  async createProposal(proposal: InsertProposal): Promise<Proposal> {
+    const id = this.proposalIdCounter++;
+    const createdAt = new Date();
+    
+    const newProposal: Proposal = {
+      ...proposal,
+      id,
+      createdAt,
+      updatedAt: createdAt,
+      status: proposal.status || 'Draft'
+    };
+    
+    this.proposals.set(id, newProposal);
+    return newProposal;
+  }
+
+  async updateProposal(id: number, proposal: Partial<InsertProposal>): Promise<Proposal | undefined> {
+    const existingProposal = this.proposals.get(id);
+    if (!existingProposal) {
+      return undefined;
+    }
+    
+    const updatedProposal = {
+      ...existingProposal,
+      ...proposal,
+      updatedAt: new Date()
+    };
+    
+    this.proposals.set(id, updatedProposal);
+    return updatedProposal;
+  }
+
+  async deleteProposal(id: number): Promise<boolean> {
+    return this.proposals.delete(id);
+  }
+
+  // Proposal Element Methods
+  async getProposalElement(id: number): Promise<ProposalElement | undefined> {
+    return this.proposalElements.get(id);
+  }
+
+  async listProposalElements(proposalId: number): Promise<ProposalElement[]> {
+    const elements = Array.from(this.proposalElements.values())
+      .filter(element => element.proposalId === proposalId)
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    
+    return elements;
+  }
+
+  async createProposalElement(element: InsertProposalElement): Promise<ProposalElement> {
+    const id = this.proposalElementIdCounter++;
+    const createdAt = new Date();
+    
+    // Auto-assign sort order if not provided
+    let sortOrder = element.sortOrder;
+    if (sortOrder === undefined) {
+      const existingElements = await this.listProposalElements(element.proposalId);
+      sortOrder = existingElements.length > 0 
+        ? Math.max(...existingElements.map(e => e.sortOrder || 0)) + 10 
+        : 10;
+    }
+    
+    const proposalElement: ProposalElement = {
+      ...element,
+      id,
+      createdAt,
+      updatedAt: createdAt,
+      sortOrder
+    };
+    
+    this.proposalElements.set(id, proposalElement);
+    return proposalElement;
+  }
+
+  async updateProposalElement(id: number, element: Partial<InsertProposalElement>): Promise<ProposalElement | undefined> {
+    const existingElement = this.proposalElements.get(id);
+    if (!existingElement) {
+      return undefined;
+    }
+    
+    const updatedElement = {
+      ...existingElement,
+      ...element,
+      updatedAt: new Date()
+    };
+    
+    this.proposalElements.set(id, updatedElement);
+    return updatedElement;
+  }
+
+  async deleteProposalElement(id: number): Promise<boolean> {
+    return this.proposalElements.delete(id);
+  }
+
+  // Proposal Collaborator Methods
+  async getProposalCollaborator(id: number): Promise<ProposalCollaborator | undefined> {
+    return this.proposalCollaborators.get(id);
+  }
+
+  async getProposalCollaborators(proposalId: number): Promise<(ProposalCollaborator & { user?: User })[]> {
+    const collaborators = Array.from(this.proposalCollaborators.values())
+      .filter(collab => collab.proposalId === proposalId);
+    
+    // Attach user info
+    return Promise.all(collaborators.map(async (collab) => {
+      const user = await this.getUser(collab.userId);
+      return { ...collab, user };
+    }));
+  }
+
+  async createProposalCollaborator(collaborator: InsertProposalCollaborator): Promise<ProposalCollaborator> {
+    const id = this.proposalCollaboratorIdCounter++;
+    const createdAt = new Date();
+    
+    const proposalCollaborator: ProposalCollaborator = {
+      ...collaborator,
+      id,
+      createdAt
+    };
+    
+    this.proposalCollaborators.set(id, proposalCollaborator);
+    return proposalCollaborator;
+  }
+
+  async updateProposalCollaborator(id: number, collaborator: Partial<InsertProposalCollaborator>): Promise<ProposalCollaborator | undefined> {
+    const existingCollaborator = this.proposalCollaborators.get(id);
+    if (!existingCollaborator) {
+      return undefined;
+    }
+    
+    const updatedCollaborator = {
+      ...existingCollaborator,
+      ...collaborator
+    };
+    
+    this.proposalCollaborators.set(id, updatedCollaborator);
+    return updatedCollaborator;
+  }
+
+  async deleteProposalCollaborator(id: number): Promise<boolean> {
+    return this.proposalCollaborators.delete(id);
+  }
+
+  // Proposal Comment Methods
+  async getProposalComment(id: number): Promise<ProposalComment | undefined> {
+    return this.proposalComments.get(id);
+  }
+
+  async getProposalComments(proposalId: number): Promise<(ProposalComment & { user?: User })[]> {
+    const comments = Array.from(this.proposalComments.values())
+      .filter(comment => comment.proposalId === proposalId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    
+    // Attach user info
+    return Promise.all(comments.map(async (comment) => {
+      const user = await this.getUser(comment.userId);
+      return { ...comment, user };
+    }));
+  }
+
+  async createProposalComment(comment: InsertProposalComment): Promise<ProposalComment> {
+    const id = this.proposalCommentIdCounter++;
+    const createdAt = new Date();
+    
+    const proposalComment: ProposalComment = {
+      ...comment,
+      id,
+      createdAt
+    };
+    
+    this.proposalComments.set(id, proposalComment);
+    return proposalComment;
+  }
+
+  async updateProposalComment(id: number, comment: Partial<InsertProposalComment>): Promise<ProposalComment | undefined> {
+    const existingComment = this.proposalComments.get(id);
+    if (!existingComment) {
+      return undefined;
+    }
+    
+    const updatedComment = {
+      ...existingComment,
+      ...comment
+    };
+    
+    this.proposalComments.set(id, updatedComment);
+    return updatedComment;
+  }
+
+  async deleteProposalComment(id: number): Promise<boolean> {
+    return this.proposalComments.delete(id);
+  }
+
+  // Proposal Activity Methods
+  async createProposalActivity(activity: InsertProposalActivity): Promise<ProposalActivity> {
+    const id = this.proposalActivityIdCounter++;
+    const createdAt = new Date();
+    
+    const proposalActivity: ProposalActivity = {
+      ...activity,
+      id,
+      createdAt
+    };
+    
+    this.proposalActivities.set(id, proposalActivity);
+    return proposalActivity;
+  }
+
+  async getProposalActivities(proposalId: number): Promise<(ProposalActivity & { user?: User })[]> {
+    const activities = Array.from(this.proposalActivities.values())
+      .filter(activity => activity.proposalId === proposalId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    // Attach user info
+    return Promise.all(activities.map(async (activity) => {
+      const user = activity.userId ? await this.getUser(activity.userId) : undefined;
+      return { ...activity, user };
+    }));
+  }
+
   async listWorkflows(filter?: Partial<Workflow>): Promise<Workflow[]> {
     let workflows = Array.from(this.workflows.values());
     
@@ -4695,6 +5100,619 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Database error in receivePurchaseOrderItems:', error);
       return false;
+    }
+  }
+
+  // Proposal Template Methods
+  async getProposalTemplate(id: number): Promise<ProposalTemplate | undefined> {
+    try {
+      const [template] = await db.select().from(proposalTemplates).where(eq(proposalTemplates.id, id));
+      return template;
+    } catch (error) {
+      console.error('Database error in getProposalTemplate:', error);
+      return undefined;
+    }
+  }
+
+  async listProposalTemplates(): Promise<ProposalTemplate[]> {
+    try {
+      return await db.select().from(proposalTemplates);
+    } catch (error) {
+      console.error('Database error in listProposalTemplates:', error);
+      return [];
+    }
+  }
+
+  async createProposalTemplate(template: InsertProposalTemplate): Promise<ProposalTemplate> {
+    try {
+      const createdAt = new Date();
+      const [newTemplate] = await db.insert(proposalTemplates).values({
+        ...template,
+        createdAt,
+        updatedAt: createdAt,
+        isActive: template.isActive === undefined ? true : template.isActive
+      }).returning();
+      return newTemplate;
+    } catch (error) {
+      console.error('Database error in createProposalTemplate:', error);
+      throw new Error('Failed to create proposal template');
+    }
+  }
+
+  async updateProposalTemplate(id: number, template: Partial<InsertProposalTemplate>): Promise<ProposalTemplate | undefined> {
+    try {
+      const [updatedTemplate] = await db.update(proposalTemplates)
+        .set({
+          ...template,
+          updatedAt: new Date()
+        })
+        .where(eq(proposalTemplates.id, id))
+        .returning();
+      return updatedTemplate;
+    } catch (error) {
+      console.error('Database error in updateProposalTemplate:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProposalTemplate(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(proposalTemplates).where(eq(proposalTemplates.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deleteProposalTemplate:', error);
+      return false;
+    }
+  }
+
+  // Proposal Methods
+  async getProposal(id: number): Promise<Proposal | undefined> {
+    try {
+      const [proposal] = await db.select().from(proposals).where(eq(proposals.id, id));
+      return proposal;
+    } catch (error) {
+      console.error('Database error in getProposal:', error);
+      return undefined;
+    }
+  }
+
+  async listProposals(filter?: Partial<Proposal>): Promise<Proposal[]> {
+    try {
+      let query = db.select().from(proposals);
+      
+      if (filter) {
+        const conditions: SQL<unknown>[] = [];
+        
+        if (filter.accountId !== undefined) {
+          conditions.push(eq(proposals.accountId, filter.accountId));
+        }
+        
+        if (filter.opportunityId !== undefined) {
+          conditions.push(eq(proposals.opportunityId, filter.opportunityId));
+        }
+        
+        if (filter.status !== undefined) {
+          conditions.push(eq(proposals.status, filter.status));
+        }
+        
+        if (filter.createdBy !== undefined) {
+          conditions.push(eq(proposals.createdBy, filter.createdBy));
+        }
+        
+        if (conditions.length > 0) {
+          query = query.where(and(...conditions));
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Database error in listProposals:', error);
+      return [];
+    }
+  }
+
+  async createProposal(proposal: InsertProposal): Promise<Proposal> {
+    try {
+      const createdAt = new Date();
+      const [newProposal] = await db.insert(proposals).values({
+        ...proposal,
+        createdAt,
+        updatedAt: createdAt,
+        status: proposal.status || 'Draft'
+      }).returning();
+      
+      // Create activity record for proposal creation
+      await this.createProposalActivity({
+        proposalId: newProposal.id,
+        userId: proposal.createdBy,
+        action: 'Created',
+        detail: 'Proposal was created'
+      });
+      
+      return newProposal;
+    } catch (error) {
+      console.error('Database error in createProposal:', error);
+      throw new Error('Failed to create proposal');
+    }
+  }
+
+  async updateProposal(id: number, proposal: Partial<InsertProposal>): Promise<Proposal | undefined> {
+    try {
+      // Get original proposal to track status changes
+      const [originalProposal] = await db.select().from(proposals).where(eq(proposals.id, id));
+      
+      if (!originalProposal) {
+        return undefined;
+      }
+      
+      // Prepare update data
+      const updateData: Partial<InsertProposal> & { updatedAt: Date } = {
+        ...proposal,
+        updatedAt: new Date()
+      };
+      
+      // Add timestamps for status transitions
+      if (proposal.status && proposal.status !== originalProposal.status) {
+        if (proposal.status === 'Sent') {
+          updateData.sentAt = new Date();
+        } else if (proposal.status === 'Accepted') {
+          updateData.acceptedAt = new Date();
+        } else if (proposal.status === 'Rejected') {
+          updateData.rejectedAt = new Date();
+        }
+      }
+      
+      // Update the proposal
+      const [updatedProposal] = await db.update(proposals)
+        .set(updateData)
+        .where(eq(proposals.id, id))
+        .returning();
+      
+      // Log activity for status change
+      if (proposal.status && proposal.status !== originalProposal.status) {
+        await this.createProposalActivity({
+          proposalId: id,
+          userId: proposal.updatedBy || null,
+          action: 'Status Changed',
+          detail: `Status changed from ${originalProposal.status} to ${proposal.status}`
+        });
+      }
+      
+      return updatedProposal;
+    } catch (error) {
+      console.error('Database error in updateProposal:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProposal(id: number): Promise<boolean> {
+    try {
+      // Delete related records first
+      await db.delete(proposalElements).where(eq(proposalElements.proposalId, id));
+      await db.delete(proposalCollaborators).where(eq(proposalCollaborators.proposalId, id));
+      await db.delete(proposalComments).where(eq(proposalComments.proposalId, id));
+      await db.delete(proposalActivities).where(eq(proposalActivities.proposalId, id));
+      
+      // Delete the proposal
+      const result = await db.delete(proposals).where(eq(proposals.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Database error in deleteProposal:', error);
+      return false;
+    }
+  }
+
+  // Proposal Element Methods
+  async getProposalElement(id: number): Promise<ProposalElement | undefined> {
+    try {
+      const [element] = await db.select().from(proposalElements).where(eq(proposalElements.id, id));
+      return element;
+    } catch (error) {
+      console.error('Database error in getProposalElement:', error);
+      return undefined;
+    }
+  }
+
+  async listProposalElements(proposalId: number): Promise<ProposalElement[]> {
+    try {
+      return await db.select()
+        .from(proposalElements)
+        .where(eq(proposalElements.proposalId, proposalId))
+        .orderBy(proposalElements.sortOrder);
+    } catch (error) {
+      console.error('Database error in listProposalElements:', error);
+      return [];
+    }
+  }
+
+  async createProposalElement(element: InsertProposalElement): Promise<ProposalElement> {
+    try {
+      // Determine sort order if not provided
+      let sortOrder = element.sortOrder;
+      if (sortOrder === undefined) {
+        const existingElements = await this.listProposalElements(element.proposalId);
+        sortOrder = existingElements.length > 0 
+          ? Math.max(...existingElements.map(e => e.sortOrder || 0)) + 10 
+          : 10;
+      }
+      
+      const createdAt = new Date();
+      const [newElement] = await db.insert(proposalElements).values({
+        ...element,
+        createdAt,
+        updatedAt: createdAt,
+        sortOrder
+      }).returning();
+      
+      // Log activity
+      await this.createProposalActivity({
+        proposalId: element.proposalId,
+        userId: element.createdBy || null,
+        action: 'Element Added',
+        detail: `Added ${element.elementType} element`
+      });
+      
+      return newElement;
+    } catch (error) {
+      console.error('Database error in createProposalElement:', error);
+      throw new Error('Failed to create proposal element');
+    }
+  }
+
+  async updateProposalElement(id: number, element: Partial<InsertProposalElement>): Promise<ProposalElement | undefined> {
+    try {
+      const [updatedElement] = await db.update(proposalElements)
+        .set({
+          ...element,
+          updatedAt: new Date()
+        })
+        .where(eq(proposalElements.id, id))
+        .returning();
+      
+      if (updatedElement && element.proposalId) {
+        // Log activity
+        await this.createProposalActivity({
+          proposalId: element.proposalId,
+          userId: element.updatedBy || null,
+          action: 'Element Updated',
+          detail: `Updated ${updatedElement.elementType} element`
+        });
+      }
+      
+      return updatedElement;
+    } catch (error) {
+      console.error('Database error in updateProposalElement:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProposalElement(id: number): Promise<boolean> {
+    try {
+      // Get element to log activity after deletion
+      const [element] = await db.select().from(proposalElements).where(eq(proposalElements.id, id));
+      
+      if (!element) {
+        return false;
+      }
+      
+      const result = await db.delete(proposalElements).where(eq(proposalElements.id, id));
+      
+      if (result.rowCount > 0) {
+        // Log activity
+        await this.createProposalActivity({
+          proposalId: element.proposalId,
+          userId: null, // No user ID available in this context
+          action: 'Element Removed',
+          detail: `Removed ${element.elementType} element`
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Database error in deleteProposalElement:', error);
+      return false;
+    }
+  }
+
+  // Proposal Collaborator Methods
+  async getProposalCollaborator(id: number): Promise<ProposalCollaborator | undefined> {
+    try {
+      const [collaborator] = await db.select().from(proposalCollaborators).where(eq(proposalCollaborators.id, id));
+      return collaborator;
+    } catch (error) {
+      console.error('Database error in getProposalCollaborator:', error);
+      return undefined;
+    }
+  }
+
+  async getProposalCollaborators(proposalId: number): Promise<(ProposalCollaborator & { user?: User })[]> {
+    try {
+      const collaborators = await db.select().from(proposalCollaborators).where(eq(proposalCollaborators.proposalId, proposalId));
+      
+      // Get user info for each collaborator
+      return await Promise.all(collaborators.map(async (collab) => {
+        const user = await this.getUser(collab.userId);
+        return { ...collab, user };
+      }));
+    } catch (error) {
+      console.error('Database error in getProposalCollaborators:', error);
+      return [];
+    }
+  }
+
+  async createProposalCollaborator(collaborator: InsertProposalCollaborator): Promise<ProposalCollaborator> {
+    try {
+      // Check if user is already a collaborator
+      const existingCollaborators = await db.select()
+        .from(proposalCollaborators)
+        .where(and(
+          eq(proposalCollaborators.proposalId, collaborator.proposalId),
+          eq(proposalCollaborators.userId, collaborator.userId)
+        ));
+      
+      if (existingCollaborators.length > 0) {
+        throw new Error('User is already a collaborator on this proposal');
+      }
+      
+      // Add collaborator
+      const [newCollaborator] = await db.insert(proposalCollaborators).values({
+        ...collaborator,
+        addedAt: new Date(),
+        notifications: collaborator.notifications === undefined ? true : collaborator.notifications
+      }).returning();
+      
+      // Get user info for activity log
+      const user = await this.getUser(collaborator.userId);
+      
+      // Log activity
+      await this.createProposalActivity({
+        proposalId: collaborator.proposalId,
+        userId: collaborator.addedBy,
+        action: 'Collaborator Added',
+        detail: `Added ${user?.firstName} ${user?.lastName} as ${collaborator.role} collaborator`
+      });
+      
+      return newCollaborator;
+    } catch (error) {
+      console.error('Database error in createProposalCollaborator:', error);
+      throw new Error('Failed to add collaborator: ' + error.message);
+    }
+  }
+
+  async updateProposalCollaborator(id: number, collaborator: Partial<InsertProposalCollaborator>): Promise<ProposalCollaborator | undefined> {
+    try {
+      // Get original data for activity log
+      const [originalCollaborator] = await db.select()
+        .from(proposalCollaborators)
+        .where(eq(proposalCollaborators.id, id));
+      
+      if (!originalCollaborator) {
+        return undefined;
+      }
+      
+      // Update collaborator
+      const [updatedCollaborator] = await db.update(proposalCollaborators)
+        .set(collaborator)
+        .where(eq(proposalCollaborators.id, id))
+        .returning();
+      
+      // Log role change if applicable
+      if (collaborator.role && collaborator.role !== originalCollaborator.role) {
+        const user = await this.getUser(originalCollaborator.userId);
+        
+        await this.createProposalActivity({
+          proposalId: originalCollaborator.proposalId,
+          userId: null, // No user ID available in this context
+          action: 'Collaborator Updated',
+          detail: `Changed ${user?.firstName} ${user?.lastName}'s role from ${originalCollaborator.role} to ${collaborator.role}`
+        });
+      }
+      
+      return updatedCollaborator;
+    } catch (error) {
+      console.error('Database error in updateProposalCollaborator:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProposalCollaborator(id: number): Promise<boolean> {
+    try {
+      // Get collaborator info for activity log
+      const [collaborator] = await db.select()
+        .from(proposalCollaborators)
+        .where(eq(proposalCollaborators.id, id));
+      
+      if (!collaborator) {
+        return false;
+      }
+      
+      // Delete collaborator
+      const result = await db.delete(proposalCollaborators).where(eq(proposalCollaborators.id, id));
+      
+      if (result.rowCount > 0) {
+        // Get user info
+        const user = await this.getUser(collaborator.userId);
+        
+        // Log activity
+        await this.createProposalActivity({
+          proposalId: collaborator.proposalId,
+          userId: null, // No user ID available in this context
+          action: 'Collaborator Removed',
+          detail: `Removed ${user?.firstName} ${user?.lastName} as collaborator`
+        });
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Database error in deleteProposalCollaborator:', error);
+      return false;
+    }
+  }
+
+  // Proposal Comment Methods
+  async getProposalComment(id: number): Promise<ProposalComment | undefined> {
+    try {
+      const [comment] = await db.select().from(proposalComments).where(eq(proposalComments.id, id));
+      return comment;
+    } catch (error) {
+      console.error('Database error in getProposalComment:', error);
+      return undefined;
+    }
+  }
+
+  async getProposalComments(proposalId: number): Promise<(ProposalComment & { user?: User })[]> {
+    try {
+      const comments = await db.select()
+        .from(proposalComments)
+        .where(eq(proposalComments.proposalId, proposalId))
+        .orderBy(proposalComments.createdAt);
+      
+      // Get user info for each comment
+      return await Promise.all(comments.map(async (comment) => {
+        const user = await this.getUser(comment.userId);
+        return { ...comment, user };
+      }));
+    } catch (error) {
+      console.error('Database error in getProposalComments:', error);
+      return [];
+    }
+  }
+
+  async createProposalComment(comment: InsertProposalComment): Promise<ProposalComment> {
+    try {
+      const createdAt = new Date();
+      const [newComment] = await db.insert(proposalComments).values({
+        ...comment,
+        createdAt,
+        resolved: false,
+        resolvedBy: null,
+        resolvedAt: null
+      }).returning();
+      
+      // Log activity for comment
+      await this.createProposalActivity({
+        proposalId: comment.proposalId,
+        userId: comment.userId,
+        action: 'Comment Added',
+        detail: comment.parentId ? 'Added reply to comment' : 'Added new comment'
+      });
+      
+      return newComment;
+    } catch (error) {
+      console.error('Database error in createProposalComment:', error);
+      throw new Error('Failed to create comment');
+    }
+  }
+
+  async updateProposalComment(id: number, comment: Partial<InsertProposalComment>): Promise<ProposalComment | undefined> {
+    try {
+      const [originalComment] = await db.select().from(proposalComments).where(eq(proposalComments.id, id));
+      
+      if (!originalComment) {
+        return undefined;
+      }
+      
+      // Prepare update data
+      const updateData: Record<string, any> = {
+        ...comment,
+        updatedAt: new Date()
+      };
+      
+      // If we're resolving a comment that wasn't resolved before
+      if (comment.resolved === true && originalComment.resolved !== true) {
+        updateData.resolvedAt = new Date();
+      }
+      
+      const [updatedComment] = await db.update(proposalComments)
+        .set(updateData)
+        .where(eq(proposalComments.id, id))
+        .returning();
+      
+      // Log resolution activity
+      if (comment.resolved === true && originalComment.resolved !== true) {
+        await this.createProposalActivity({
+          proposalId: originalComment.proposalId,
+          userId: comment.resolvedBy || null,
+          action: 'Comment Resolved',
+          detail: 'Resolved comment'
+        });
+      }
+      
+      return updatedComment;
+    } catch (error) {
+      console.error('Database error in updateProposalComment:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProposalComment(id: number): Promise<boolean> {
+    try {
+      // Get comment info for activity log
+      const [comment] = await db.select().from(proposalComments).where(eq(proposalComments.id, id));
+      
+      if (!comment) {
+        return false;
+      }
+      
+      // Delete any replies first
+      await db.delete(proposalComments).where(eq(proposalComments.parentId, id));
+      
+      // Delete the comment
+      const result = await db.delete(proposalComments).where(eq(proposalComments.id, id));
+      
+      if (result.rowCount > 0) {
+        // Log activity
+        await this.createProposalActivity({
+          proposalId: comment.proposalId,
+          userId: null, // No user ID available in this context
+          action: 'Comment Deleted',
+          detail: 'Deleted comment'
+        });
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Database error in deleteProposalComment:', error);
+      return false;
+    }
+  }
+
+  // Proposal Activity Methods
+  async createProposalActivity(activity: InsertProposalActivity): Promise<ProposalActivity> {
+    try {
+      const createdAt = new Date();
+      const [newActivity] = await db.insert(proposalActivities).values({
+        ...activity,
+        createdAt
+      }).returning();
+      
+      return newActivity;
+    } catch (error) {
+      console.error('Database error in createProposalActivity:', error);
+      throw new Error('Failed to create activity log');
+    }
+  }
+
+  async getProposalActivities(proposalId: number): Promise<(ProposalActivity & { user?: User })[]> {
+    try {
+      const activities = await db.select()
+        .from(proposalActivities)
+        .where(eq(proposalActivities.proposalId, proposalId))
+        .orderBy(desc(proposalActivities.createdAt));
+      
+      // Get user info for each activity
+      return await Promise.all(activities.map(async (activity) => {
+        const user = activity.userId ? await this.getUser(activity.userId) : undefined;
+        return { ...activity, user };
+      }));
+    } catch (error) {
+      console.error('Database error in getProposalActivities:', error);
+      return [];
     }
   }
 

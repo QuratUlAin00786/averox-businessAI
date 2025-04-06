@@ -21,6 +21,8 @@ export const invoiceStatusEnum = pgEnum('invoice_status', ['Draft', 'Sent', 'Pai
 export const inventoryTransactionTypeEnum = pgEnum('inventory_transaction_type', ['Purchase', 'Sale', 'Adjustment', 'Return', 'Transfer']);
 export const paymentMethodEnum = pgEnum('payment_method', ['Cash', 'Credit Card', 'Bank Transfer', 'Check', 'PayPal', 'Other']);
 export const purchaseOrderStatusEnum = pgEnum('purchase_order_status', ['Draft', 'Sent', 'Received', 'Cancelled', 'Partially Received']);
+export const proposalStatusEnum = pgEnum('proposal_status', ['Draft', 'Sent', 'Accepted', 'Rejected', 'Expired', 'Revoked']);
+export const proposalElementTypeEnum = pgEnum('proposal_element_type', ['Header', 'Text', 'Image', 'Table', 'List', 'Quote', 'ProductList', 'Signature', 'PageBreak', 'Custom']);
 
 // Users
 export const users = pgTable("users", {
@@ -319,6 +321,99 @@ export const communications = pgTable("communications", {
   contactType: text("contact_type"), // 'lead' or 'customer'
 });
 
+// Proposal Templates
+export const proposalTemplates = pgTable("proposal_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  content: jsonb("content").notNull(), // JSON structure for template layout and sections
+  thumbnail: text("thumbnail"), // URL or path to template thumbnail
+  isDefault: boolean("is_default").default(false),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  isActive: boolean("is_active").default(true),
+  category: text("category").default("General"), // E.g., "Sales", "Service", "General", etc.
+  tags: text("tags").array(),
+});
+
+// Proposals
+export const proposals = pgTable("proposals", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  opportunityId: integer("opportunity_id").references(() => opportunities.id).notNull(),
+  accountId: integer("account_id").references(() => accounts.id).notNull(),
+  status: proposalStatusEnum("status").default("Draft"),
+  content: jsonb("content").notNull(), // JSON structure for proposal content
+  templateId: integer("template_id").references(() => proposalTemplates.id),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  sentAt: timestamp("sent_at"),
+  expiresAt: timestamp("expires_at"),
+  acceptedAt: timestamp("accepted_at"),
+  rejectedAt: timestamp("rejected_at"),
+  totalAmount: numeric("total_amount"),
+  currency: text("currency").default("USD"),
+  versionNumber: integer("version_number").default(1),
+  previousVersionId: integer("previous_version_id").references((): any => proposals.id),
+  settings: jsonb("settings"), // Configuration options like page size, fonts, colors
+  metadata: jsonb("metadata"), // Additional data like view count, time spent viewing
+});
+
+// Proposal Elements (for saved custom blocks/components)
+export const proposalElements = pgTable("proposal_elements", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  elementType: proposalElementTypeEnum("element_type").notNull(),
+  content: jsonb("content").notNull(), // JSON structure for element content
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  isGlobal: boolean("is_global").default(false), // If true, available to all users
+  isActive: boolean("is_active").default(true),
+  category: text("category").default("General"),
+  thumbnail: text("thumbnail"), // URL or path to element thumbnail
+});
+
+// Proposal Collaborators
+export const proposalCollaborators = pgTable("proposal_collaborators", {
+  id: serial("id").primaryKey(),
+  proposalId: integer("proposal_id").references(() => proposals.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  role: text("role").default("Editor"), // "Editor", "Viewer", "Approver"
+  addedBy: integer("added_by").references(() => users.id),
+  addedAt: timestamp("added_at").defaultNow(),
+  lastAccessed: timestamp("last_accessed"),
+  notifications: boolean("notifications").default(true),
+});
+
+// Proposal Comments
+export const proposalComments = pgTable("proposal_comments", {
+  id: serial("id").primaryKey(),
+  proposalId: integer("proposal_id").references(() => proposals.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  elementPath: text("element_path"), // JSON path to the commented element
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  resolved: boolean("resolved").default(false),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  parentId: integer("parent_id").references((): any => proposalComments.id), // For threaded comments
+});
+
+// Proposal Activity
+export const proposalActivities = pgTable("proposal_activities", {
+  id: serial("id").primaryKey(),
+  proposalId: integer("proposal_id").references(() => proposals.id).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  action: text("action").notNull(), // "created", "edited", "commented", "sent", "viewed", "accepted", "rejected"
+  detail: text("detail"),
+  createdAt: timestamp("created_at").defaultNow(),
+  metadata: jsonb("metadata"), // Additional information like client IP, device, etc.
+});
+
 // Forward declaration for self-references
 const productCategoriesRef = pgTable("product_categories", {
   id: serial("id").primaryKey(),
@@ -403,13 +498,20 @@ export const userPermissions = pgTable("user_permissions", {
   updatedAt: timestamp("updated_at"),
 });
 
+// Forward declare teams for self-reference
+const teamsRef = pgTable("teams", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+});
+
 // Team assignment management
 export const teams = pgTable("teams", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
   createdBy: integer("created_by").references(() => users.id),
-  parentTeamId: integer("parent_team_id").references(() => teams.id),
+  parentTeamId: integer("parent_team_id").references((): typeof teamsRef.id => teamsRef.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at"),
   isActive: boolean("is_active").default(true),
@@ -651,6 +753,48 @@ export const insertCommunicationSchema = createInsertSchema(communications).omit
   receivedAt: z.string().or(z.date()).nullable().optional(),
 });
 
+// Proposal schemas
+export const insertProposalTemplateSchema = createInsertSchema(proposalTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProposalSchema = createInsertSchema(proposals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  sentAt: true,
+  acceptedAt: true,
+  rejectedAt: true,
+}).extend({
+  expiresAt: z.string().or(z.date()).optional().nullable()
+});
+
+export const insertProposalElementSchema = createInsertSchema(proposalElements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProposalCollaboratorSchema = createInsertSchema(proposalCollaborators).omit({
+  id: true,
+  addedAt: true,
+  lastAccessed: true,
+});
+
+export const insertProposalCommentSchema = createInsertSchema(proposalComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  resolvedAt: true,
+});
+
+export const insertProposalActivitySchema = createInsertSchema(proposalActivities).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Product and Inventory schemas
 export const insertProductCategorySchema = createInsertSchema(productCategories).omit({
   id: true,
@@ -753,6 +897,25 @@ export type Workflow = typeof workflows.$inferSelect;
 
 export type InsertCommunication = z.infer<typeof insertCommunicationSchema>;
 export type Communication = typeof communications.$inferSelect;
+
+// Proposal types
+export type InsertProposalTemplate = z.infer<typeof insertProposalTemplateSchema>;
+export type ProposalTemplate = typeof proposalTemplates.$inferSelect;
+
+export type InsertProposal = z.infer<typeof insertProposalSchema>;
+export type Proposal = typeof proposals.$inferSelect;
+
+export type InsertProposalElement = z.infer<typeof insertProposalElementSchema>;
+export type ProposalElement = typeof proposalElements.$inferSelect;
+
+export type InsertProposalCollaborator = z.infer<typeof insertProposalCollaboratorSchema>;
+export type ProposalCollaborator = typeof proposalCollaborators.$inferSelect;
+
+export type InsertProposalComment = z.infer<typeof insertProposalCommentSchema>;
+export type ProposalComment = typeof proposalComments.$inferSelect;
+
+export type InsertProposalActivity = z.infer<typeof insertProposalActivitySchema>;
+export type ProposalActivity = typeof proposalActivities.$inferSelect;
 
 // Product and Inventory types
 export type InsertProductCategory = z.infer<typeof insertProductCategorySchema>;
