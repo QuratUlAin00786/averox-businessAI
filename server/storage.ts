@@ -5188,17 +5188,7 @@ DatabaseStorage.prototype.getTeamById = async function(id: number): Promise<Team
   }
 };
 
-DatabaseStorage.prototype.createTeam = async function(teamData: InsertTeam): Promise<Team> {
-  try {
-    const [newTeam] = await db.insert(teams)
-      .values(teamData)
-      .returning();
-    return newTeam;
-  } catch (error) {
-    console.error('Database error in createTeam:', error);
-    throw error;
-  }
-};
+// First implementation of createTeam
 
 DatabaseStorage.prototype.updateTeam = async function(id: number, updates: Partial<InsertTeam>): Promise<Team> {
   try {
