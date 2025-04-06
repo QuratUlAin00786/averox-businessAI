@@ -148,8 +148,8 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
             <span className="sr-only">View notifications</span>
             <div className="relative">
               <Bell className="w-6 h-6" />
-              {/* Dynamic notification count - The count here could come from an API in a real app */}
-              <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-destructive rounded-full">3</span>
+              {/* Notification indicator - no fixed count */}
+              <span className="absolute -top-1 -right-1 flex items-center justify-center w-2.5 h-2.5 bg-destructive rounded-full"></span>
             </div>
           </Button>
           
@@ -158,8 +158,8 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
             <span className="sr-only">View messages</span>
             <div className="relative">
               <MessageCircle className="w-6 h-6" />
-              {/* Dynamic message count - The count here could come from an API in a real app */}
-              <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-primary rounded-full">5</span>
+              {/* Message indicator - no fixed count */}
+              <span className="absolute -top-1 -right-1 flex items-center justify-center w-2.5 h-2.5 bg-primary rounded-full"></span>
             </div>
           </Button>
           
