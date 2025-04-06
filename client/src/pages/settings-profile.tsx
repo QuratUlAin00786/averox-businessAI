@@ -20,16 +20,16 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 
-// Predefined avatars for users to select from
+// Predefined avatars for users to select from - each with a unique color
 const predefinedAvatars = [
-  { id: 'male1', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4&accessories=Kurt,Prescription02,Prescription01,Round&accessoriesProbability=80&clothesColor=a7d&eyes=Default,Side,Cry,Happy,Wink,Hearts,Dizzy&eyebrows=DefaultNatural,SadConcerned,RaisedExcited&facialHair=MoustacheFancy,BeardMedium&facialHairProbability=80&mouth=Smile,Default,Twinkle,Concerned&skinColor=f2d3b1,ecad80,d08b5b,ffcd94,eac086,bf9169' },
-  { id: 'male2', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John&backgroundColor=ffdfbf&accessories=Prescription01&accessoriesProbability=80&clothesColor=545454&eyes=Happy,Default&eyebrows=Default,DefaultNatural&facialHair=BeardLight,BeardMagestic&facialHairProbability=90&mouth=Smile,Twinkle&skinColor=f8d25c,ffcd94,eac086,bf9169' },
-  { id: 'male3', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Thomas&backgroundColor=d1d4f9&accessories=Blank&accessoriesProbability=0&clothesColor=3c4f5c&eyes=Default,Side&eyebrows=Default,DefaultNatural,RaisedExcited&facialHair=Blank&facialHairProbability=0&mouth=Smile&skinColor=f2d3b1,ecad80,d08b5b' },
-  { id: 'female1', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie&backgroundColor=ffd5dc&accessories=Blank&accessoriesProbability=0&clothesColor=ff9000&clothes=ShirtScoopNeck,ShirtCrewNeck&eyes=Default,Happy,Hearts&eyebrows=Default,DefaultNatural,RaisedExcited&facialHair=Blank&facialHairProbability=0&hairColor=a55728,2c1b18,4a312c&mouth=Smile,Default&skinColor=f2d3b1,ecad80,d08b5b,ffcd94,eac086' },
-  { id: 'female2', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma&backgroundColor=f0ffb8&accessories=Kurt,Prescription02,Round&accessoriesProbability=30&clothesColor=6bd9e9&clothes=ShirtScoopNeck,ShirtVNeck&eyes=Default,Side,Happy,Wink&eyebrows=DefaultNatural,SadConcerned&facialHair=Blank&facialHairProbability=0&hairColor=a55728,2c1b18,4a312c,6a4f42&mouth=Smile,Default,Twinkle&skinColor=f2d3b1,ecad80,d08b5b' },
-  { id: 'female3', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Olivia&backgroundColor=d1f4d2&accessories=Prescription01,Prescription02,Round&accessoriesProbability=40&clothesColor=e0ddff&clothes=ShirtCrewNeck,ShirtScoopNeck,ShirtVNeck&eyes=Default,Happy,Hearts&eyebrows=DefaultNatural,RaisedExcited&facialHair=Blank&facialHairProbability=0&hairColor=2c1b18,4a312c,6a4f42,f59797&mouth=Smile,Default&skinColor=f2d3b1,ecad80,d08b5b,ffcd94' },
-  { id: 'professional1', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex&backgroundColor=b6e3f4&accessories=Kurt,Prescription02,Prescription01,Round&accessoriesProbability=90&clothesColor=3c4f5c&clothes=BlazerShirt,BlazerSweater&eyes=Default,Side&eyebrows=DefaultNatural,SadConcerned,RaisedExcited&facialHair=Blank&facialHairProbability=40&mouth=Smile,Default&skinColor=f2d3b1,ecad80,d08b5b,ffcd94,eac086,bf9169' },
-  { id: 'professional2', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Taylor&backgroundColor=d1d4f9&accessories=Prescription01,Prescription02&accessoriesProbability=70&clothesColor=545454&clothes=BlazerShirt,BlazerSweater&eyes=Default,Side,Happy&eyebrows=DefaultNatural&facialHair=Blank&facialHairProbability=10&mouth=Smile,Default&skinColor=f2d3b1,ecad80,d08b5b,ffcd94,eac086' }
+  { id: 'male1', url: '#3B82F6', colorBg: 'bg-blue-500', label: 'M1' },
+  { id: 'male2', url: '#10B981', colorBg: 'bg-green-500', label: 'M2' },
+  { id: 'male3', url: '#6366F1', colorBg: 'bg-indigo-500', label: 'M3' },
+  { id: 'female1', url: '#F472B6', colorBg: 'bg-pink-500', label: 'F1' },
+  { id: 'female2', url: '#EC4899', colorBg: 'bg-pink-600', label: 'F2' },
+  { id: 'female3', url: '#8B5CF6', colorBg: 'bg-purple-500', label: 'F3' },
+  { id: 'professional1', url: '#1E3A8A', colorBg: 'bg-blue-900', label: 'P1' },
+  { id: 'professional2', url: '#0F766E', colorBg: 'bg-teal-800', label: 'P2' }
 ];
 
 export default function SettingsProfile() {
@@ -182,8 +182,20 @@ export default function SettingsProfile() {
                 <div className="flex flex-col items-center space-y-4">
                   <Avatar className="h-32 w-32 border-4 border-primary">
                     {formData.avatar ? (
-                      <AvatarImage src={formData.avatar} alt={user?.username} className="object-cover" />
+                      formData.avatar.startsWith('#') ? (
+                        // Color-based avatar (from our predefined set)
+                        <AvatarFallback
+                          style={{backgroundColor: formData.avatar}}
+                          className="text-3xl text-white font-bold"
+                        >
+                          {getInitials() || "AV"}
+                        </AvatarFallback>
+                      ) : (
+                        // Image-based avatar (uploaded by user)
+                        <AvatarImage src={formData.avatar} alt={user?.username} className="object-cover" />
+                      )
                     ) : (
+                      // Default avatar if none is selected
                       <AvatarFallback className="text-2xl bg-primary/10 text-primary font-semibold">
                         {getInitials() || <User className="h-16 w-16" />}
                       </AvatarFallback>
@@ -198,17 +210,60 @@ export default function SettingsProfile() {
                         id="avatar-upload"
                         type="file"
                         accept="image/*"
+                        capture="user"
                         className="hidden"
                         onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            // Convert to base64 for storage
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              const base64String = reader.result as string;
-                              setFormData(prev => ({ ...prev, avatar: base64String }));
-                            };
-                            reader.readAsDataURL(file);
+                          try {
+                            const files = e.target.files;
+                            if (files && files.length > 0) {
+                              const file = files[0];
+                              // Check file size (limit to 5MB)
+                              if (file.size > 5 * 1024 * 1024) {
+                                toast({
+                                  title: "File too large",
+                                  description: "Please select an image under 5MB",
+                                  variant: "destructive"
+                                });
+                                return;
+                              }
+                              
+                              // Convert to base64 for storage
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                try {
+                                  const base64String = reader.result as string;
+                                  setFormData(prev => ({ ...prev, avatar: base64String }));
+                                  toast({
+                                    title: "Image uploaded",
+                                    description: "Don't forget to save your changes!",
+                                  });
+                                } catch (error) {
+                                  console.error("Error setting image:", error);
+                                  toast({
+                                    title: "Upload failed",
+                                    description: "There was a problem processing your image.",
+                                    variant: "destructive"
+                                  });
+                                }
+                              };
+                              
+                              reader.onerror = () => {
+                                toast({
+                                  title: "Upload failed",
+                                  description: "There was a problem reading your image.",
+                                  variant: "destructive"
+                                });
+                              };
+                              
+                              reader.readAsDataURL(file);
+                            }
+                          } catch (error) {
+                            console.error("File upload error:", error);
+                            toast({
+                              title: "Upload failed",
+                              description: "There was a problem with the file upload.",
+                              variant: "destructive"
+                            });
                           }
                         }}
                       />
@@ -247,8 +302,9 @@ export default function SettingsProfile() {
                             }}
                           >
                             <Avatar className="h-24 w-24 mx-auto border-2 border-transparent">
-                              <AvatarImage src={avatar.url} alt={avatar.id} className="object-cover" />
-                              <AvatarFallback>Loading...</AvatarFallback>
+                              <AvatarFallback className={`text-white font-bold text-lg ${avatar.colorBg}`}>
+                                {avatar.label}
+                              </AvatarFallback>
                             </Avatar>
                             
                             {formData.avatar === avatar.url && (
