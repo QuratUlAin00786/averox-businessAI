@@ -26,6 +26,7 @@ import { Pencil, Check, Phone, Mail, Building, RefreshCw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { CommunicationPanel } from "@/components/communications/communication-panel";
+import AssignmentManager from "@/components/assignment/assignment-manager";
 
 interface LeadDetailProps {
   isOpen: boolean;
@@ -209,6 +210,9 @@ export function LeadDetail({
                 <TabsTrigger value="communications" title="View all communication channels including phone, SMS, and WhatsApp">
                   Communications
                 </TabsTrigger>
+                <TabsTrigger value="assignments">
+                  Assignments
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="notes">
@@ -230,6 +234,21 @@ export function LeadDetail({
                   email={lead.email || ""}
                   phone={lead.phone || ""}
                 />
+              </TabsContent>
+
+              <TabsContent value="assignments">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Assignment Management</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <AssignmentManager 
+                      entityId={lead.id}
+                      entityType="lead"
+                      entityName={`${lead.firstName} ${lead.lastName}`}
+                    />
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </div>

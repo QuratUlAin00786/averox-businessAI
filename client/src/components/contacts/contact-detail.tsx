@@ -12,6 +12,7 @@ import { ContactNotes } from "./contact-notes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarDays, Mail, MapPin, Phone, Tag, UserRound, X, Building, ArrowLeft } from "lucide-react";
 import { CommunicationPanel } from "@/components/communications/communication-panel";
+import AssignmentManager from "@/components/assignment/assignment-manager";
 
 interface ContactDetailProps {
   contactId: number;
@@ -255,6 +256,7 @@ export function ContactDetail({ contactId, onBack }: ContactDetailProps) {
               <TabsTrigger value="communications" title="View all communication channels including phone, SMS, and WhatsApp">
                 Communications
               </TabsTrigger>
+              <TabsTrigger value="assignments">Assignments</TabsTrigger>
               <TabsTrigger value="activities">Activities</TabsTrigger>
               <TabsTrigger value="related">Related Records</TabsTrigger>
             </TabsList>
@@ -285,6 +287,24 @@ export function ContactDetail({ contactId, onBack }: ContactDetailProps) {
                 email={contact.email || ""}
                 phone={contact.phone || ""}
               />
+            </TabsContent>
+            
+            <TabsContent value="assignments">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Assignment Management</CardTitle>
+                  <CardDescription>
+                    Assign this contact to users or teams
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AssignmentManager
+                    entityId={contact.id}
+                    entityType="contacts"
+                    entityName={`${contact.firstName} ${contact.lastName}`}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
             
             <TabsContent value="activities">
