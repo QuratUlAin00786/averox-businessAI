@@ -408,8 +408,8 @@ export const proposalActivities = pgTable("proposal_activities", {
   id: serial("id").primaryKey(),
   proposalId: integer("proposal_id").references(() => proposals.id).notNull(),
   userId: integer("user_id").references(() => users.id),
-  action: text("action").notNull(), // "created", "edited", "commented", "sent", "viewed", "accepted", "rejected"
-  detail: text("detail"),
+  activityType: text("activity_type").notNull(), // "created", "edited", "commented", "sent", "viewed", "accepted", "rejected"
+  description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
   metadata: jsonb("metadata"), // Additional information like client IP, device, etc.
 });

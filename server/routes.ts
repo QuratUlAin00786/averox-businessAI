@@ -2687,8 +2687,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await storage.createProposalActivity({
                 proposalId: id,
                 userId: req.user.id,
-                action: "view",
-                detail: `Proposal viewed by ${req.user.username || 'user'}`
+                activityType: "view",
+                description: `Proposal viewed by ${req.user.username || 'user'}`
               });
             }
           } catch (activityError) {
@@ -2746,6 +2746,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint for proposal creation
+  app.post('/api/test-proposal', async (req: Request, res: Response) => {
+    try {
+      console.log("Test proposal endpoint called with body:", JSON.stringify(req.body, null, 2));
+      
+      // Skip authentication for test
+      
+      // Create basic proposal data for testing
+      const proposalData = {
+        name: "Test Proposal",
+        opportunityId: 91,
+        accountId: 102,
+        createdBy: 2, 
+        status: "Draft" as "Draft" | "Sent" | "Accepted" | "Rejected" | "Expired" | "Revoked",
+        content: {},
+        metadata: {},
+      };
+      
+      console.log("Creating test proposal with data:", JSON.stringify(proposalData, null, 2));
+      
+      // Create the proposal
+      const proposal = await storage.createProposal(proposalData);
+      console.log("Test proposal created:", JSON.stringify(proposal, null, 2));
+      
+      // Return response in the new standardized format
+      return res.status(201).json({
+        success: true,
+        data: proposal,
+        message: "Test proposal created successfully"
+      });
+    } catch (error: any) {
+      console.error("Error in test proposal creation:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Failed to create test proposal"
+      });
+    }
+  });
+
   app.post('/api/proposals', async (req: Request, res: Response) => {
     try {
       // Log the incoming request for debugging purposes
@@ -2765,7 +2804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           opportunityId: Number(req.body.opportunityId),
           accountId: Number(req.body.accountId),
           createdBy: req.body.createdBy || req.user.id,
-          status: req.body.status || "Draft",
+          status: (req.body.status || "Draft") as "Draft" | "Sent" | "Accepted" | "Rejected" | "Expired" | "Revoked",
           content: req.body.content || {},
           metadata: req.body.metadata || {},
           templateId: req.body.templateId ? Number(req.body.templateId) : undefined,
@@ -2846,8 +2885,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createProposalActivity({
             proposalId: proposal.id,
             userId: req.user.id,
-            action: "create",
-            detail: `Proposal "${proposal.name}" created by ${req.user.username || 'user'}`,
+            activityType: "create",
+            description: `Proposal "${proposal.name}" created by ${req.user.username || 'user'}`,
             metadata: {
               createdAt: new Date(),
               fromTemplate: !!proposalToCreate.templateId,
@@ -2946,21 +2985,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Track timestamps based on status changes
             const now = new Date();
+            
+            // Ensure metadata is treated as an object
+            const metadataObj = proposalData.metadata as Record<string, any>;
+            
             if (proposalData.status === 'Sent') {
-              proposalData.metadata.sentAt = now;
+              metadataObj.sentAt = now;
             } else if (proposalData.status === 'Accepted') {
-              proposalData.metadata.acceptedAt = now;
+              metadataObj.acceptedAt = now;
             } else if (proposalData.status === 'Rejected') {
-              proposalData.metadata.rejectedAt = now;
+              metadataObj.rejectedAt = now;
             }
+            
+            // Reassign the object back
+            proposalData.metadata = metadataObj;
             
             // Log status change activity
             try {
               await storage.createProposalActivity({
                 proposalId: id,
                 userId: req.user.id,
-                action: "status_change",
-                detail: `Proposal status changed from "${existingProposal.status}" to "${proposalData.status}" by ${req.user.username || 'user'}`,
+                activityType: "status_change",
+                description: `Proposal status changed from "${existingProposal.status}" to "${proposalData.status}" by ${req.user.username || 'user'}`,
                 metadata: {
                   previousStatus: existingProposal.status,
                   newStatus: proposalData.status,
@@ -3084,8 +3130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.createProposalActivity({
               proposalId: id,
               userId: req.user.id,
-              action: "delete",
-              detail: `Proposal "${existingProposal.name}" deleted by ${req.user.username || 'user'}`,
+              activityType: "delete",
+              description: `Proposal "${existingProposal.name}" deleted by ${req.user.username || 'user'}`,
               metadata: {
                 deletedAt: new Date(),
                 hadElements: elements.length > 0,

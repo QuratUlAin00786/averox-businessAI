@@ -5740,10 +5740,27 @@ export class DatabaseStorage implements IStorage {
   async createProposalActivity(activity: InsertProposalActivity): Promise<ProposalActivity> {
     try {
       const createdAt = new Date();
-      const [newActivity] = await db.insert(proposalActivities).values({
+      
+      // Map action to activityType and detail to description if they exist (for backward compatibility)
+      const processedActivity: InsertProposalActivity = {
         ...activity,
         createdAt
-      }).returning();
+      };
+      
+      // Handle legacy fields (action/detail) if present in the request
+      if ('action' in activity && !('activityType' in activity)) {
+        processedActivity.activityType = activity['action' as keyof typeof activity] as string;
+      }
+      
+      if ('detail' in activity && !('description' in activity)) {
+        processedActivity.description = activity['detail' as keyof typeof activity] as string;
+      }
+      
+      // Remove any legacy fields to avoid SQL errors
+      delete (processedActivity as any).action;
+      delete (processedActivity as any).detail;
+      
+      const [newActivity] = await db.insert(proposalActivities).values(processedActivity).returning();
       
       return newActivity;
     } catch (error) {

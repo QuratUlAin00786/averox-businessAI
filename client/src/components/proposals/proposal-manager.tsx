@@ -198,41 +198,12 @@ export function ProposalManager({
     mutationFn: async (data: InsertProposal) => {
       console.log("Making API request to create proposal with data:", data);
       try {
-        const response = await fetch('/api/proposals', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        });
-        
-        // Try to read the response as text first to properly debug any issues
-        const responseText = await response.text();
-        console.log("Raw server response:", responseText);
-        
-        if (!response.ok) {
-          // Try to parse as JSON if possible
-          let errorMessage = 'Server error creating proposal';
-          try {
-            const errorData = JSON.parse(responseText);
-            errorMessage = errorData.error || errorData.message || errorMessage;
-          } catch (parseError) {
-            errorMessage = responseText || errorMessage;
-          }
-          
-          console.error("Server returned error:", errorMessage);
-          throw new Error(errorMessage);
-        }
-        
-        // Parse the successful response
-        try {
-          const result = JSON.parse(responseText);
-          console.log("Server returned successful result:", result);
-          return result.data; // Extract the data property from the standardized response
-        } catch (parseError) {
-          console.error("Error parsing successful response:", parseError);
-          throw new Error('Invalid response format from server');
-        }
+        // Use apiRequestJson to ensure credentials are included
+        return await apiRequestJson<InsertProposal>(
+          'POST', 
+          '/api/proposals', 
+          data
+        );
       } catch (error) {
         console.error("Error in API request:", error);
         throw error;
