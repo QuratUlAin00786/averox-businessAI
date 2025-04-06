@@ -20,10 +20,20 @@ import { MyTasks } from "@/components/dashboard/my-tasks";
 import { UpcomingEvents } from "@/components/dashboard/upcoming-events";
 import { getDashboardData } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Dashboard() {
   const [currentDate, setCurrentDate] = useState<string>("");
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+
+  // Function to get a greeting based on time of day
+  const getGreeting = (): string => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
 
   useEffect(() => {
     setCurrentDate(format(new Date(), "MMMM d, yyyy"));
@@ -41,7 +51,7 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
-              Dashboard
+              {getGreeting()}{user?.firstName ? `, ${user.firstName}` : ''}
             </h2>
             <div className="flex flex-col mt-1 sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
               <div className="flex items-center mt-2 text-sm text-neutral-500">
