@@ -5405,6 +5405,13 @@ if (useDatabase) {
   addCommunicationsToDatabase(dbStorage);
   // Add permission methods to database storage
   addPermissionsToDatabaseStorage(dbStorage);
+  
+  // Add method aliases to make DatabaseStorage methods match the IStorage interface
+  DatabaseStorage.prototype.listTeamMembers = DatabaseStorage.prototype.getTeamMembers;
+  DatabaseStorage.prototype.createTeamMember = DatabaseStorage.prototype.addTeamMember;
+  DatabaseStorage.prototype.deleteTeamMember = DatabaseStorage.prototype.removeTeamMember;
+  DatabaseStorage.prototype.listAssignments = DatabaseStorage.prototype.getAssignmentsByEntity;
+  
   storage = dbStorage;
 } else {
   // Use in-memory storage for development/testing
