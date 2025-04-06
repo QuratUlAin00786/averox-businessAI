@@ -86,8 +86,53 @@ export default function SettingsProfile() {
   
   // State for avatar selection dialog
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
-  const [tempSelectedAvatar, setTempSelectedAvatar] = useState("");
+  // Keep separate avatar state for the dialog to enable proper cancellation
+  const [dialogAvatar, setDialogAvatar] = useState("");
   const originalAvatarRef = useRef("");
+
+  // Opens the avatar dialog and stores the current avatar for potential cancellation
+  const openAvatarDialog = () => {
+    originalAvatarRef.current = formData.avatar;
+    setDialogAvatar(formData.avatar);
+    setIsAvatarDialogOpen(true);
+  };
+  
+  // Handles selecting an avatar in the dialog
+  const selectAvatar = (url: string) => {
+    setDialogAvatar(url);
+  };
+  
+  // Handles saving the selected avatar from the dialog
+  const saveSelectedAvatar = () => {
+    setFormData(prev => ({ ...prev, avatar: dialogAvatar }));
+    setIsAvatarDialogOpen(false);
+    toast({
+      title: "Avatar Selected",
+      description: "Don't forget to click Save Changes to apply your selection!",
+      duration: 5000,
+    });
+  };
+  
+  // Handles canceling avatar selection
+  const cancelAvatarSelection = () => {
+    setDialogAvatar(originalAvatarRef.current);
+    setFormData(prev => ({ ...prev, avatar: originalAvatarRef.current }));
+    setIsAvatarDialogOpen(false);
+    toast({
+      title: "Selection Cancelled",
+      description: "Avatar selection has been cancelled",
+    });
+  };
+  
+  // Handle closing of avatar dialog with proper cancel logic
+  const handleAvatarDialogClose = (e: boolean) => {
+    if (!e) {
+      // Dialog is closing, check if it's via ESC or clicking outside
+      // In this case, restore the original avatar
+      cancelAvatarSelection();
+    }
+    setIsAvatarDialogOpen(e);
+  };
 
   useEffect(() => {
     if (user) {
@@ -372,12 +417,7 @@ export default function SettingsProfile() {
                         <div className="flex justify-center">
                           <Button 
                             variant="secondary"
-                            onClick={() => {
-                              // Store the original avatar in case user cancels
-                              originalAvatarRef.current = formData.avatar;
-                              setTempSelectedAvatar(formData.avatar);
-                              setIsAvatarDialogOpen(true);
-                            }}
+                            onClick={openAvatarDialog}
                           >
                             Select Avatar
                           </Button>
@@ -387,7 +427,7 @@ export default function SettingsProfile() {
                   </div>
                   
                   {/* Avatar Selection Dialog */}
-                  <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
+                  <Dialog open={isAvatarDialogOpen} onOpenChange={handleAvatarDialogClose}>
                     <DialogContent className="max-w-4xl">
                       <DialogHeader>
                         <DialogTitle>Choose a Professional Avatar</DialogTitle>
@@ -407,19 +447,17 @@ export default function SettingsProfile() {
                                 <div 
                                   key={avatar.id} 
                                   className={`relative cursor-pointer rounded-md border-2 p-3 transition-all hover:shadow-md ${
-                                    formData.avatar === avatar.url 
+                                    dialogAvatar === avatar.url 
                                       ? 'border-primary bg-primary/10 shadow-md' 
                                       : 'border-neutral-200 hover:border-primary/50'
                                   }`}
-                                  onClick={() => {
-                                    setFormData(prev => ({ ...prev, avatar: avatar.url }));
-                                  }}
+                                  onClick={() => selectAvatar(avatar.url)}
                                 >
                                   <Avatar className="h-24 w-24 mx-auto border-2 border-transparent">
                                     <AvatarImage src={avatar.url} alt={`Male avatar option`} className="object-cover" />
                                   </Avatar>
                                   
-                                  {formData.avatar === avatar.url && (
+                                  {dialogAvatar === avatar.url && (
                                     <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full p-1 shadow-md ring-2 ring-white">
                                       <Check className="h-4 w-4" />
                                     </div>
@@ -440,19 +478,17 @@ export default function SettingsProfile() {
                                 <div 
                                   key={avatar.id} 
                                   className={`relative cursor-pointer rounded-md border-2 p-3 transition-all hover:shadow-md ${
-                                    formData.avatar === avatar.url 
+                                    dialogAvatar === avatar.url 
                                       ? 'border-primary bg-primary/10 shadow-md' 
                                       : 'border-neutral-200 hover:border-primary/50'
                                   }`}
-                                  onClick={() => {
-                                    setFormData(prev => ({ ...prev, avatar: avatar.url }));
-                                  }}
+                                  onClick={() => selectAvatar(avatar.url)}
                                 >
                                   <Avatar className="h-24 w-24 mx-auto border-2 border-transparent">
                                     <AvatarImage src={avatar.url} alt={`Female avatar option`} className="object-cover" />
                                   </Avatar>
                                   
-                                  {formData.avatar === avatar.url && (
+                                  {dialogAvatar === avatar.url && (
                                     <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full p-1 shadow-md ring-2 ring-white">
                                       <Check className="h-4 w-4" />
                                     </div>
@@ -467,9 +503,9 @@ export default function SettingsProfile() {
                         
                         <div className="flex justify-between items-center pt-2">
                           <div className="text-xs text-neutral-500">
-                            {formData.avatar && (
+                            {dialogAvatar && (
                               <span>Avatar selected: {
-                                predefinedAvatars.find(a => a.url === formData.avatar)?.gender === 'male' 
+                                predefinedAvatars.find(a => a.url === dialogAvatar)?.gender === 'male' 
                                   ? 'Male Professional Avatar' 
                                   : 'Female Professional Avatar'
                               }</span>
@@ -479,31 +515,12 @@ export default function SettingsProfile() {
                           <div className="flex space-x-2">
                             <Button 
                               variant="outline" 
-                              onClick={() => {
-                                // Restore original avatar on cancel
-                                setFormData(prev => ({
-                                  ...prev,
-                                  avatar: originalAvatarRef.current
-                                }));
-                                setIsAvatarDialogOpen(false);
-                                toast({
-                                  title: "Selection Cancelled",
-                                  description: "Avatar selection has been cancelled",
-                                });
-                              }}
+                              onClick={cancelAvatarSelection}
                             >
                               Cancel
                             </Button>
                             <Button 
-                              onClick={() => {
-                                // Avatar is already set in formData, just close dialog
-                                setIsAvatarDialogOpen(false);
-                                toast({
-                                  title: "Avatar Selected",
-                                  description: "Don't forget to click Save Changes to apply your selection!",
-                                  duration: 5000,
-                                });
-                              }}
+                              onClick={saveSelectedAvatar}
                             >
                               Use Selected Avatar
                             </Button>
