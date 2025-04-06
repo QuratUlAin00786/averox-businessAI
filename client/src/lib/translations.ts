@@ -3,6 +3,54 @@
 export type Language = 'english' | 'arabic' | 'spanish' | 'french' | 'german' | 'chinese';
 
 // Translation keys by section
+interface TooltipTranslations {
+  previous: string;
+  next: string;
+  step: string;
+  of: string;
+  helpTip: string;
+  // Specific section tooltips
+  dashboard: {
+    overview: string;
+    salesPipeline: string;
+    tasks: string;
+    activities: string;
+  };
+  settings: {
+    language: string;
+    timezone: string;
+    dateFormat: string;
+    rtlLayout: string;
+    notifications: string;
+    security: string;
+  };
+  communications: {
+    overview: string;
+    channels: string;
+    integration: string;
+  };
+  leads: {
+    creation: string;
+    management: string;
+    conversion: string;
+  };
+  opportunities: {
+    stages: string;
+    proposals: string;
+    closing: string;
+  };
+  contacts: {
+    management: string;
+    details: string;
+    communications: string;
+  };
+  accounts: {
+    management: string;
+    details: string;
+    communications: string;
+  };
+}
+
 interface NavigationTranslations {
   dashboard: string;
   contacts: string;
@@ -125,6 +173,7 @@ export interface Translations {
   buttons: ButtonsTranslations;
   settings: SettingsTranslations;
   general: GeneralTranslations;
+  tooltips: TooltipTranslations;
 }
 
 // English translations (default)
@@ -238,6 +287,52 @@ const englishTranslations: Translations = {
     actions: 'Actions',
     description: 'Description',
     noResults: 'No results found',
+  },
+  tooltips: {
+    previous: 'Previous',
+    next: 'Next',
+    step: 'Step',
+    of: 'of',
+    helpTip: 'Help',
+    dashboard: {
+      overview: 'View key performance metrics at a glance',
+      salesPipeline: 'Track deals through various stages of your sales process',
+      tasks: 'Manage your upcoming tasks and deadlines',
+      activities: 'See recent updates and activities across your CRM'
+    },
+    settings: {
+      language: 'Change the language of the interface',
+      timezone: 'Set your local time zone for accurate scheduling',
+      dateFormat: 'Choose how dates are displayed throughout the system',
+      rtlLayout: 'Enable right-to-left text direction for Arabic language',
+      notifications: 'Configure how and when you receive notifications',
+      security: 'Manage security settings and privacy preferences'
+    },
+    communications: {
+      overview: 'View all your communication channels in one place',
+      channels: 'Configure different communication methods',
+      integration: 'Connect with external messaging services'
+    },
+    leads: {
+      creation: 'Add new potential customers to your pipeline',
+      management: 'Organize and track your leads',
+      conversion: 'Convert qualified leads into opportunities'
+    },
+    opportunities: {
+      stages: 'Track deal progress through customizable sales stages',
+      proposals: 'Create and manage sales proposals',
+      closing: 'Tools and reminders to help close deals'
+    },
+    contacts: {
+      management: 'Organize your contacts database',
+      details: 'View and edit contact information',
+      communications: 'See all interactions with this contact'
+    },
+    accounts: {
+      management: 'Manage your business accounts and companies',
+      details: 'View and edit company information',
+      communications: 'See all interactions with this account'
+    }
   }
 };
 
@@ -352,6 +447,52 @@ const arabicTranslations: Translations = {
     actions: 'الإجراءات',
     description: 'الوصف',
     noResults: 'لم يتم العثور على نتائج',
+  },
+  tooltips: {
+    previous: 'السابق',
+    next: 'التالي',
+    step: 'خطوة',
+    of: 'من',
+    helpTip: 'مساعدة',
+    dashboard: {
+      overview: 'عرض مقاييس الأداء الرئيسية في لمحة',
+      salesPipeline: 'تتبع الصفقات عبر مراحل مختلفة من عملية البيع',
+      tasks: 'إدارة المهام القادمة والمواعيد النهائية',
+      activities: 'مشاهدة التحديثات والأنشطة الأخيرة في نظام إدارة علاقات العملاء'
+    },
+    settings: {
+      language: 'تغيير لغة الواجهة',
+      timezone: 'ضبط المنطقة الزمنية المحلية للجدولة الدقيقة',
+      dateFormat: 'اختيار كيفية عرض التواريخ في جميع أنحاء النظام',
+      rtlLayout: 'تمكين اتجاه النص من اليمين إلى اليسار للغة العربية',
+      notifications: 'تكوين كيفية ووقت تلقي الإشعارات',
+      security: 'إدارة إعدادات الأمان وتفضيلات الخصوصية'
+    },
+    communications: {
+      overview: 'عرض جميع قنوات الاتصال في مكان واحد',
+      channels: 'تكوين طرق اتصال مختلفة',
+      integration: 'الاتصال بخدمات المراسلة الخارجية'
+    },
+    leads: {
+      creation: 'إضافة عملاء محتملين جدد إلى خط الأنابيب',
+      management: 'تنظيم وتتبع العملاء المحتملين',
+      conversion: 'تحويل العملاء المحتملين المؤهلين إلى فرص'
+    },
+    opportunities: {
+      stages: 'تتبع تقدم الصفقة من خلال مراحل البيع القابلة للتخصيص',
+      proposals: 'إنشاء وإدارة عروض المبيعات',
+      closing: 'أدوات وتذكيرات للمساعدة في إغلاق الصفقات'
+    },
+    contacts: {
+      management: 'تنظيم قاعدة بيانات جهات الاتصال',
+      details: 'عرض وتحرير معلومات الاتصال',
+      communications: 'مشاهدة جميع التفاعلات مع جهة الاتصال هذه'
+    },
+    accounts: {
+      management: 'إدارة حسابات الأعمال والشركات',
+      details: 'عرض وتحرير معلومات الشركة',
+      communications: 'مشاهدة جميع التفاعلات مع هذا الحساب'
+    }
   }
 };
 

@@ -3,6 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, ChevronRight, Plus } from "lucide-react";
 import { MyTask } from "@/lib/data";
 import { useLanguage } from "@/hooks/use-language";
+import { TooltipHelper } from "@/components/ui/tooltip-helper";
 
 interface MyTasksProps {
   tasks: MyTask[];
@@ -44,7 +45,15 @@ export function MyTasks({ tasks }: MyTasksProps) {
     <div className="h-full overflow-hidden bg-white rounded-lg shadow">
       <div className="px-4 py-3 border-b border-neutral-200 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-lg font-medium leading-6 text-neutral-700">{t.dashboard.myTasks}</h3>
+          <div className="flex items-center">
+            <h3 className="text-lg font-medium leading-6 text-neutral-700">{t.dashboard.myTasks}</h3>
+            <TooltipHelper 
+              content={t.tooltips.dashboard.tasks} 
+              side="top" 
+              className="ml-2"
+              iconSize={18}
+            />
+          </div>
           <SimpleButton 
             variant="outline" 
             className="border-primary text-primary hover:bg-primary hover:text-white"

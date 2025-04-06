@@ -2,6 +2,7 @@ import { SimpleButton } from "@/components/ui/simple-button";
 import { PlusCircle, CheckCircle, MessageCircle, Calendar } from "lucide-react";
 import { DashboardActivity } from "@/lib/data";
 import { useLanguage } from "@/hooks/use-language";
+import { TooltipStepHelper } from "@/components/ui/tooltip-helper";
 
 interface RecentActivitiesProps {
   activities: DashboardActivity[];
@@ -43,7 +44,28 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
     <div className="h-full overflow-hidden bg-white rounded-lg shadow">
       <div className="px-4 py-3 border-b border-neutral-200 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-lg font-medium leading-6 text-neutral-700">{t.dashboard.recentActivities}</h3>
+          <div className="flex items-center">
+            <h3 className="text-lg font-medium leading-6 text-neutral-700">{t.dashboard.recentActivities}</h3>
+            <TooltipStepHelper 
+              steps={[
+                {
+                  title: t.dashboard.recentActivities,
+                  content: t.tooltips.dashboard.activities
+                },
+                {
+                  title: t.general.actions,
+                  content: "Click on any activity to view details and related actions"
+                },
+                {
+                  title: t.buttons.filter,
+                  content: "Use the filter options to sort activities by type, date, or user"
+                }
+              ]}
+              side="right" 
+              className="ml-2"
+              iconSize={18}
+            />
+          </div>
           <SimpleButton 
             variant="outline" 
             className="border-primary text-primary hover:bg-primary hover:text-white"

@@ -4,6 +4,7 @@ import { Settings } from "lucide-react";
 import { useMemo } from "react";
 import { PipelineStage } from "@/lib/data";
 import { useLanguage } from "@/hooks/use-language";
+import { TooltipHelper } from "@/components/ui/tooltip-helper";
 
 interface SalesPipelineProps {
   stages: PipelineStage[];
@@ -64,7 +65,15 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
     <div className="overflow-hidden bg-white rounded-lg shadow">
       <div className="px-4 py-5 border-b border-neutral-200 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-          <h3 className="text-xl sm:text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">{t.dashboard.salesPipeline}</h3>
+          <div className="flex items-center">
+            <h3 className="text-xl sm:text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">{t.dashboard.salesPipeline}</h3>
+            <TooltipHelper 
+              content={t.tooltips.dashboard.salesPipeline} 
+              side="top" 
+              className="ml-2"
+              iconSize={18}
+            />
+          </div>
           <div className="flex items-center">
             <span className="text-base sm:text-sm text-neutral-500">{t.dashboard.last30days}</span>
             <SimpleButton 
