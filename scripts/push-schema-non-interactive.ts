@@ -112,6 +112,36 @@ async function createEnumTypes() {
       CREATE TYPE communication_status AS ENUM ('Unread', 'Read', 'Replied', 'Archived');
     EXCEPTION
       WHEN duplicate_object THEN null;
+    END $$;`,
+    
+    `DO $$ BEGIN
+      CREATE TYPE invoice_status AS ENUM ('Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled', 'Refunded');
+    EXCEPTION
+      WHEN duplicate_object THEN null;
+    END $$;`,
+    
+    `DO $$ BEGIN
+      CREATE TYPE inventory_transaction_type AS ENUM ('Purchase', 'Sale', 'Adjustment', 'Return', 'Transfer');
+    EXCEPTION
+      WHEN duplicate_object THEN null;
+    END $$;`,
+    
+    `DO $$ BEGIN
+      CREATE TYPE payment_method AS ENUM ('Cash', 'Credit Card', 'Bank Transfer', 'Check', 'PayPal', 'Other');
+    EXCEPTION
+      WHEN duplicate_object THEN null;
+    END $$;`,
+    
+    `DO $$ BEGIN
+      CREATE TYPE purchase_order_status AS ENUM ('Draft', 'Sent', 'Received', 'Cancelled', 'Partially Received');
+    EXCEPTION
+      WHEN duplicate_object THEN null;
+    END $$;`,
+    
+    `DO $$ BEGIN
+      CREATE TYPE permission_action AS ENUM ('view', 'create', 'update', 'delete', 'export', 'import', 'assign');
+    EXCEPTION
+      WHEN duplicate_object THEN null;
     END $$;`
   ];
   
@@ -424,6 +454,206 @@ async function createTables(sql: postgres.Sql) {
       is_starred BOOLEAN DEFAULT FALSE,
       labels JSONB,
       metadata JSONB
+    )`,
+    
+    // Module Permissions
+    `CREATE TABLE IF NOT EXISTS module_permissions (
+      id SERIAL PRIMARY KEY,
+      module_name TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      description TEXT,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP,
+      "order" INTEGER DEFAULT 0,
+      icon TEXT
+    )`,
+    
+    // Role Permissions
+    `CREATE TABLE IF NOT EXISTS role_permissions (
+      id SERIAL PRIMARY KEY,
+      role user_role NOT NULL,
+      module_id INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      is_allowed BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP
+    )`,
+    
+    // User Permissions
+    `CREATE TABLE IF NOT EXISTS user_permissions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      module_id INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      is_allowed BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP
+    )`,
+    
+    // Teams
+    `CREATE TABLE IF NOT EXISTS teams (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP,
+      created_by INTEGER,
+      parent_team_id INTEGER
+    )`,
+    
+    // Team Members
+    `CREATE TABLE IF NOT EXISTS team_members (
+      id SERIAL PRIMARY KEY,
+      team_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      role TEXT,
+      is_leader BOOLEAN DEFAULT FALSE,
+      joined_at TIMESTAMP DEFAULT NOW()
+    )`,
+    
+    // Assignments
+    `CREATE TABLE IF NOT EXISTS assignments (
+      id SERIAL PRIMARY KEY,
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER NOT NULL,
+      assigned_to_type TEXT NOT NULL,
+      assigned_to_id INTEGER NOT NULL,
+      assigned_by INTEGER,
+      assigned_at TIMESTAMP DEFAULT NOW(),
+      notes TEXT
+    )`,
+    
+    // Product Categories
+    `CREATE TABLE IF NOT EXISTS product_categories (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      description TEXT,
+      parent_id INTEGER,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP,
+      image TEXT,
+      attributes JSONB,
+      owner_id INTEGER
+    )`,
+    
+    // Products
+    `CREATE TABLE IF NOT EXISTS products (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      sku TEXT NOT NULL UNIQUE,
+      description TEXT,
+      price NUMERIC NOT NULL,
+      cost NUMERIC,
+      category_id INTEGER,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP,
+      in_stock BOOLEAN DEFAULT TRUE,
+      stock_quantity INTEGER DEFAULT 0,
+      reorder_level INTEGER DEFAULT 5,
+      attributes JSONB,
+      image TEXT,
+      owner_id INTEGER
+    )`,
+    
+    // Inventory Transactions
+    `CREATE TABLE IF NOT EXISTS inventory_transactions (
+      id SERIAL PRIMARY KEY,
+      product_id INTEGER NOT NULL,
+      transaction_type TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      transaction_date TIMESTAMP DEFAULT NOW(),
+      user_id INTEGER,
+      reference_type TEXT,
+      reference_id INTEGER,
+      location TEXT,
+      notes TEXT,
+      unit_price NUMERIC,
+      total_price NUMERIC,
+      supplier_id INTEGER,
+      customer_id INTEGER,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`,
+    
+    // Invoices
+    `CREATE TABLE IF NOT EXISTS invoices (
+      id SERIAL PRIMARY KEY,
+      invoice_number TEXT NOT NULL UNIQUE,
+      account_id INTEGER,
+      contact_id INTEGER,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP,
+      issue_date DATE NOT NULL,
+      due_date DATE NOT NULL,
+      status TEXT DEFAULT 'Draft',
+      subtotal NUMERIC NOT NULL,
+      tax_amount NUMERIC,
+      discount_amount NUMERIC,
+      total_amount NUMERIC NOT NULL,
+      notes TEXT,
+      terms TEXT,
+      paid_amount NUMERIC DEFAULT 0,
+      balance_due NUMERIC,
+      payment_date DATE,
+      payment_method TEXT,
+      owner_id INTEGER,
+      currency TEXT DEFAULT 'USD',
+      shipping_address TEXT,
+      billing_address TEXT
+    )`,
+    
+    // Invoice Items
+    `CREATE TABLE IF NOT EXISTS invoice_items (
+      id SERIAL PRIMARY KEY,
+      invoice_id INTEGER NOT NULL,
+      product_id INTEGER,
+      description TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      unit_price NUMERIC NOT NULL,
+      total_price NUMERIC NOT NULL,
+      tax_rate NUMERIC,
+      discount_rate NUMERIC,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`,
+    
+    // Purchase Orders
+    `CREATE TABLE IF NOT EXISTS purchase_orders (
+      id SERIAL PRIMARY KEY,
+      po_number TEXT NOT NULL UNIQUE,
+      supplier_id INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP,
+      order_date DATE NOT NULL,
+      expected_date DATE,
+      status TEXT DEFAULT 'Draft',
+      subtotal NUMERIC NOT NULL,
+      tax_amount NUMERIC,
+      shipping_amount NUMERIC,
+      total_amount NUMERIC NOT NULL,
+      notes TEXT,
+      terms TEXT,
+      received_date DATE,
+      owner_id INTEGER,
+      currency TEXT DEFAULT 'USD',
+      shipping_address TEXT,
+      billing_address TEXT
+    )`,
+    
+    // Purchase Order Items
+    `CREATE TABLE IF NOT EXISTS purchase_order_items (
+      id SERIAL PRIMARY KEY,
+      po_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      description TEXT,
+      quantity INTEGER NOT NULL,
+      unit_price NUMERIC NOT NULL,
+      total_price NUMERIC NOT NULL,
+      received_quantity INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP
     )`
   ];
   
