@@ -244,69 +244,56 @@ export function ProposalManager({
   // Create proposal mutation
   const createProposalMutation = useMutation({
     mutationFn: async (data: InsertProposal) => {
-      console.log("DEBUG - Making API request to create proposal with data:", JSON.stringify(data, null, 2));
+      console.log("Making API request to create proposal with data:", JSON.stringify(data, null, 2));
       try {
-        // Ensure content is a valid JSON object - validate to make sure it's not a string
-        let validatedContent = data.content || {};
-        if (typeof data.content === 'string') {
-          try {
-            validatedContent = JSON.parse(data.content);
-            console.log("DEBUG - Parsed content from string to object:", validatedContent);
-          } catch (parseError) {
-            console.error("DEBUG - Error parsing content string:", parseError);
-            // Use empty object if parsing fails
-            validatedContent = {};
-          }
-        }
+        // Ensure content is a valid JSON object
+        const content = data.content || {};
         
-        // Create a validated proposal object with correct types
+        // Create a clean proposal object with correct types
         const validatedData = {
-          ...data,
-          content: validatedContent,
-          // Ensure IDs are numbers
+          name: data.name,
+          // Convert IDs to numbers and ensure they exist
           opportunityId: Number(data.opportunityId),
           accountId: Number(data.accountId),
           createdBy: Number(data.createdBy || 2),
-          // Ensure metadata is an object
-          metadata: data.metadata || {}
+          status: data.status || "Draft",
+          // Ensure these are objects, not strings
+          content: typeof content === 'string' ? JSON.parse(content) : content,
+          metadata: data.metadata || {},
+          // Only include other fields if they exist
+          templateId: data.templateId ? Number(data.templateId) : undefined,
+          expiresAt: data.expiresAt
         };
         
-        console.log("DEBUG - Sending validated data:", JSON.stringify(validatedData, null, 2));
-        
-        // Make a direct fetch call to debug response handling
-        const response = await fetch('/api/proposals', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(validatedData)
-        });
-        
-        console.log("DEBUG - Raw response status:", response.status);
-        const responseText = await response.text();
-        console.log("DEBUG - Raw response text:", responseText);
-        
-        let responseData;
-        try {
-          responseData = JSON.parse(responseText);
-          console.log("DEBUG - Parsed response:", responseData);
-        } catch (parseError) {
-          console.error("DEBUG - Error parsing response:", parseError);
-          throw new Error(`Failed to parse server response: ${responseText}`);
+        // Validate required fields
+        if (!validatedData.name) {
+          throw new Error("Proposal name is required");
         }
+        
+        if (isNaN(validatedData.opportunityId) || validatedData.opportunityId <= 0) {
+          throw new Error("Valid opportunity ID is required");
+        }
+        
+        if (isNaN(validatedData.accountId) || validatedData.accountId <= 0) {
+          throw new Error("Valid account ID is required");
+        }
+        
+        console.log("Sending validated data:", JSON.stringify(validatedData, null, 2));
+        
+        // Use the standardized API request helper
+        const response = await apiRequestJson('POST', '/api/proposals', validatedData);
         
         // Check for standardized response format
-        if (responseData.success === true && responseData.data) {
-          console.log("DEBUG - Successful response with data:", responseData.data);
-          return responseData.data;
-        } else if (responseData.error || responseData.message) {
-          throw new Error(responseData.message || responseData.error || "Unknown server error");
+        if (response.success === true && response.data) {
+          console.log("Successful response with data:", response.data);
+          return response.data;
+        } else if (response.error || response.message) {
+          throw new Error(response.message || response.error || "Unknown server error");
         }
         
-        return responseData;
-      } catch (error) {
-        console.error("DEBUG - Error in API request:", error);
+        return response;
+      } catch (error: any) {
+        console.error("Error in API request:", error);
         throw error;
       }
     },
@@ -339,24 +326,62 @@ export function ProposalManager({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertProposal> }) => {
       console.log("Making API request to update proposal with ID:", id, "and data:", JSON.stringify(data, null, 2));
       
-      // Process the data to ensure content is properly formatted
-      const processedData = {
-        ...data,
-        // Ensure content is a valid JSON object if it exists
-        ...(data.content && {
-          content: typeof data.content === 'string' ? JSON.parse(data.content) : data.content
-        }),
-        // Ensure IDs are numbers if they exist
-        ...(data.opportunityId && { opportunityId: Number(data.opportunityId) }),
-        ...(data.accountId && { accountId: Number(data.accountId) }),
-        ...(data.createdBy && { createdBy: Number(data.createdBy) })
-      };
-      
-      console.log("Sending processed data:", JSON.stringify(processedData, null, 2));
-      
-      const proposal = await apiRequestJson<Proposal>('PATCH', `/api/proposals/${id}`, processedData);
-      console.log("Received updated proposal from server after extraction:", proposal);
-      return proposal;
+      try {
+        // Create a clean processed data object with properly formatted values
+        const processedData: Record<string, any> = {};
+        
+        // Only include fields that are present in the data object
+        if (data.name !== undefined) {
+          processedData.name = data.name;
+        }
+        
+        if (data.status !== undefined) {
+          processedData.status = data.status;
+        }
+        
+        if (data.opportunityId !== undefined) {
+          const opportunityId = Number(data.opportunityId);
+          if (isNaN(opportunityId) || opportunityId <= 0) {
+            throw new Error("Invalid opportunity ID");
+          }
+          processedData.opportunityId = opportunityId;
+        }
+        
+        if (data.accountId !== undefined) {
+          const accountId = Number(data.accountId);
+          if (isNaN(accountId) || accountId <= 0) {
+            throw new Error("Invalid account ID");
+          }
+          processedData.accountId = accountId;
+        }
+        
+        if (data.content !== undefined) {
+          processedData.content = typeof data.content === 'string' 
+            ? JSON.parse(data.content) 
+            : data.content;
+        }
+        
+        if (data.metadata !== undefined) {
+          processedData.metadata = data.metadata;
+        }
+        
+        if (data.templateId !== undefined) {
+          processedData.templateId = data.templateId ? Number(data.templateId) : null;
+        }
+        
+        if (data.expiresAt !== undefined) {
+          processedData.expiresAt = data.expiresAt;
+        }
+        
+        console.log("Sending processed data:", JSON.stringify(processedData, null, 2));
+        
+        const response = await apiRequestJson<Proposal>('PATCH', `/api/proposals/${id}`, processedData);
+        console.log("Received updated proposal from server:", response);
+        return response;
+      } catch (error: any) {
+        console.error("Error in update API request:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       console.log("Update mutation succeeded with response:", data);
@@ -416,111 +441,63 @@ export function ProposalManager({
 
   const handleCreateProposal = (data: InsertProposal) => {
     try {
-      console.log("=== CREATE PROPOSAL START ===");
-      console.log("Proposal data received:", data);
-      console.log("Form mode:", formMode);
-      console.log("Context data - accountId:", accountId, "opportunityId:", opportunityId);
-      console.log("Data types:", {
-        dataAccountIdType: typeof data.accountId,
-        opportunityIdType: typeof data.opportunityId,
-        contextAccountIdType: typeof accountId,
-        contextOpportunityIdType: typeof opportunityId
-      });
-      
-      // Make sure required data is present
-      if (!data.accountId && !accountId) {
-        console.error("Account ID missing in both form data and context");
-        toast({
-          title: "Error",
-          description: "Account ID is required",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (!data.opportunityId && !opportunityId) {
-        console.error("Opportunity ID missing in both form data and context");
-        toast({
-          title: "Error",
-          description: "Opportunity ID is required",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Ensure accountId and opportunityId are numbers
+      // Get account and opportunity IDs either from form data or from the component context
       const accountIdValue = Number(data.accountId || accountId);
       const opportunityIdValue = Number(data.opportunityId || opportunityId);
       
-      console.log("Converted IDs:", { 
-        accountIdValue, 
-        opportunityIdValue,
-        isAccountIdValid: !isNaN(accountIdValue),
-        isOpportunityIdValid: !isNaN(opportunityIdValue) 
-      });
-      
-      if (isNaN(accountIdValue) || isNaN(opportunityIdValue)) {
-        console.error("Invalid ID values:", { accountId: accountIdValue, opportunityId: opportunityIdValue });
+      // Validate IDs
+      if (!accountIdValue || isNaN(accountIdValue)) {
         toast({
           title: "Error",
-          description: "Invalid account or opportunity ID",
+          description: "Valid account ID is required",
           variant: "destructive",
         });
         return;
       }
       
-      // Create proposal data with required fields
-      const proposalData = {
-        name: data.name,  // Required by schema
+      if (!opportunityIdValue || isNaN(opportunityIdValue)) {
+        toast({
+          title: "Error",
+          description: "Valid opportunity ID is required",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validate proposal name
+      if (!data.name || !data.name.trim()) {
+        toast({
+          title: "Error",
+          description: "Proposal name is required",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Create clean proposal data object with proper types
+      const proposalData: InsertProposal = {
+        name: data.name.trim(),
         accountId: accountIdValue,
         opportunityId: opportunityIdValue,
-        createdBy: 2, // Using user ID 2 for now
-        content: typeof data.content === 'string' ? JSON.parse(data.content) : (data.content || {}), // Ensure content is a valid JSON object
+        // Default values
         status: data.status || 'Draft',
-        expiresAt: data.expiresAt,
-        templateId: data.templateId
+        createdBy: 2, // Current user ID
+        // Handle JSON content correctly
+        content: typeof data.content === 'string' 
+          ? JSON.parse(data.content) 
+          : (data.content || {}),
+        // Optional fields
+        metadata: data.metadata || {},
+        templateId: data.templateId ? Number(data.templateId) : undefined,
+        expiresAt: data.expiresAt
       };
       
-      console.log("Creating proposal with data:", JSON.stringify(proposalData, null, 2));
-      
-      // Debug the mutation object
-      console.log("Mutation status before call:", { 
-        isPending: createProposalMutation.isPending,
-        isError: createProposalMutation.isError,
-        error: createProposalMutation.error
-      });
-      
-      // Set state to remember we're creating a proposal
-      // This ensures we don't lose the context while async operations are pending
-      createProposalMutation.mutate(proposalData, {
-        onSuccess: (data) => {
-          console.log("Proposal creation succeeded:", data);
-          toast({
-            title: "Success",
-            description: "Proposal created successfully",
-          });
-          refetchProposals();
-          setFormMode(null);
-          setSelectedProposal(null);
-          setSelectedProposalId(null);
-        },
-        onError: (error) => {
-          console.error("Proposal creation failed:", error);
-          toast({
-            title: "Error",
-            description: `Failed to create proposal: ${error.message}`,
-            variant: "destructive",
-          });
-        }
-      });
-      
-      console.log("Mutation called - observe network request in DevTools");
-      console.log("=== CREATE PROPOSAL END ===");
-    } catch (error) {
-      console.error("Error creating proposal:", error);
+      // Execute mutation with error handling in the callbacks
+      createProposalMutation.mutate(proposalData);
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred while creating the proposal",
+        description: `An unexpected error occurred: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
     }
@@ -528,12 +505,19 @@ export function ProposalManager({
 
   const handleUpdateProposal = (id: number, data: Partial<InsertProposal>) => {
     try {
-      console.log("Updating proposal with ID:", id, "Data:", data);
+      // Validate ID
+      if (!id || isNaN(id) || id <= 0) {
+        toast({
+          title: "Error",
+          description: "Invalid proposal ID",
+          variant: "destructive",
+        });
+        return;
+      }
       
-      // Handle metadata with timestamps
-      let updatedData = { ...data };
+      // Handle status-related metadata (timestamps for different statuses)
+      const updatedData: Partial<InsertProposal> = { ...data };
       
-      // Handle various timestamps in metadata
       if (data.status === 'Sent' && !data.metadata) {
         updatedData.metadata = { sentAt: new Date().toISOString() };
       } else if (data.status === 'Accepted' && !data.metadata) {
@@ -542,23 +526,59 @@ export function ProposalManager({
         updatedData.metadata = { rejectedAt: new Date().toISOString() };
       }
       
-      updateProposalMutation.mutate({ 
-        id, 
-        data: updatedData 
-      });
-    } catch (error) {
-      console.error("Error updating proposal:", error);
+      // Ensure IDs are properly formatted as numbers
+      if (updatedData.opportunityId) {
+        updatedData.opportunityId = Number(updatedData.opportunityId);
+      }
+      
+      if (updatedData.accountId) {
+        updatedData.accountId = Number(updatedData.accountId);
+      }
+      
+      if (updatedData.templateId) {
+        updatedData.templateId = Number(updatedData.templateId);
+      }
+      
+      // Handle JSON content field if present
+      if (updatedData.content !== undefined) {
+        updatedData.content = typeof updatedData.content === 'string'
+          ? JSON.parse(updatedData.content)
+          : updatedData.content;
+      }
+      
+      // Execute mutation with the processed data
+      updateProposalMutation.mutate({ id, data: updatedData });
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update proposal",
+        description: `Failed to update proposal: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
     }
   };
 
   const handleDeleteProposal = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this proposal?')) {
-      deleteProposalMutation.mutate(id);
+    try {
+      // Validate ID
+      if (!id || isNaN(id) || id <= 0) {
+        toast({
+          title: "Error",
+          description: "Invalid proposal ID",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Confirm deletion with the user
+      if (window.confirm('Are you sure you want to delete this proposal? This action cannot be undone.')) {
+        deleteProposalMutation.mutate(id);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to delete proposal: ${error.message || "Unknown error"}`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -630,17 +650,43 @@ export function ProposalManager({
 
   // Action handler for sending a proposal
   const handleSendProposal = (proposal: Proposal) => {
-    // In a real application, this would show a dialog to collect recipient information
-    // and handle the actual sending process
-    handleUpdateProposal(proposal.id, {
-      status: 'Sent',
-      metadata: { sentAt: new Date().toISOString() }
-    });
-
-    toast({
-      title: 'Proposal Sent',
-      description: 'The proposal has been sent to the client.',
-    });
+    try {
+      // Validate proposal object
+      if (!proposal || !proposal.id || isNaN(proposal.id)) {
+        toast({
+          title: "Error",
+          description: "Invalid proposal data",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // In a production app, this would show a dialog to collect recipient information
+      // such as email addresses, message, etc. before triggering the send operation
+      
+      // Update proposal status and add timestamp to metadata
+      handleUpdateProposal(proposal.id, {
+        status: 'Sent',
+        metadata: { 
+          sentAt: new Date().toISOString(),
+          // In a real application, you might add recipient info here
+          // recipients: ['example@client.com'],
+          // message: 'Please review the attached proposal'
+        }
+      });
+      
+      // Show success message
+      toast({
+        title: 'Proposal Sent',
+        description: 'The proposal has been sent to the client.',
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to send proposal: ${error.message || "Unknown error"}`,
+        variant: "destructive",
+      });
+    }
   };
 
   const renderProposalList = () => {
