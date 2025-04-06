@@ -108,6 +108,7 @@ interface GeneralTranslations {
   register: string;
   search: string;
   name: string;
+  select: string;
   email: string;
   phone: string;
   address: string;
@@ -229,6 +230,7 @@ const englishTranslations: Translations = {
     register: 'Register',
     search: 'Search',
     name: 'Name',
+    select: 'Select',
     email: 'Email',
     phone: 'Phone',
     address: 'Address',
@@ -342,6 +344,7 @@ const arabicTranslations: Translations = {
     register: 'التسجيل',
     search: 'بحث',
     name: 'الاسم',
+    select: 'اختر',
     email: 'البريد الإلكتروني',
     phone: 'الهاتف',
     address: 'العنوان',

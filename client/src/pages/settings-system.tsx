@@ -159,7 +159,7 @@ export default function SettingsSystem() {
                           onValueChange={(value) => handleSelectChange("language", value)}
                         >
                           <SelectTrigger id="language">
-                            <SelectValue placeholder="Select language" />
+                            <SelectValue placeholder={`${t.general.select} ${t.settings.language.toLowerCase()}`} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="english">English</SelectItem>
@@ -179,7 +179,7 @@ export default function SettingsSystem() {
                           onValueChange={(value) => handleSelectChange("timezone", value)}
                         >
                           <SelectTrigger id="timezone">
-                            <SelectValue placeholder="Select timezone" />
+                            <SelectValue placeholder={`${t.general.select} ${t.settings.timezone.toLowerCase()}`} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="utc-8">UTC-8 Pacific Time</SelectItem>
@@ -203,7 +203,7 @@ export default function SettingsSystem() {
                           onValueChange={(value) => handleSelectChange("dateFormat", value)}
                         >
                           <SelectTrigger id="dateFormat">
-                            <SelectValue placeholder="Select date format" />
+                            <SelectValue placeholder={`${t.general.select} ${t.settings.dateFormat.toLowerCase()}`} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="mm/dd/yyyy">MM/DD/YYYY</SelectItem>
