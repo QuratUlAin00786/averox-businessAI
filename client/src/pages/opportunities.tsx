@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Opportunity, InsertOpportunity } from "@shared/schema";
+import { Opportunity, InsertOpportunity, Account } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { OpportunityList } from "@/components/opportunities/opportunity-list";
 import { OpportunityForm } from "@/components/opportunities/opportunity-form";
 import { OpportunityDetail } from "@/components/opportunities/opportunity-detail";
+import { ProposalManager } from "@/components/proposals/proposal-manager";
 import { apiRequestJson } from "@/lib/queryClient";
 import { Loader2, Plus, RefreshCw } from "lucide-react";
 
@@ -19,6 +20,7 @@ export default function Opportunities() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isProposalManagerOpen, setIsProposalManagerOpen] = useState(false);
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   
   // Fetch opportunities
@@ -160,6 +162,11 @@ export default function Opportunities() {
     setSelectedOpportunity(opportunity);
     setIsDeleteOpen(true);
   };
+  
+  const handleOpenProposalManager = (opportunity: Opportunity) => {
+    setSelectedOpportunity(opportunity);
+    setIsProposalManagerOpen(true);
+  };
 
   const handleChangeStatus = (
     opportunity: Opportunity, 
@@ -249,6 +256,7 @@ export default function Opportunities() {
         onClose={() => setIsViewOpen(false)}
         onEdit={handleEditOpportunity}
         onChangeStatus={handleChangeStatus}
+        onOpenProposals={handleOpenProposalManager}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -275,6 +283,17 @@ export default function Opportunities() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Proposal Manager */}
+      {selectedOpportunity && (
+        <ProposalManager
+          opportunityId={selectedOpportunity.id}
+          opportunityName={selectedOpportunity.name}
+          accountId={selectedOpportunity.accountId || undefined}
+          isVisible={isProposalManagerOpen}
+          onClose={() => setIsProposalManagerOpen(false)}
+        />
+      )}
     </div>
   );
 }

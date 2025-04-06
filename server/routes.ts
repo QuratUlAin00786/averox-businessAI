@@ -25,7 +25,14 @@ import {
   insertInvoiceSchema,
   insertInvoiceItemSchema,
   insertPurchaseOrderSchema,
-  insertPurchaseOrderItemSchema
+  insertPurchaseOrderItemSchema,
+  // Proposal system schemas
+  insertProposalSchema,
+  insertProposalTemplateSchema,
+  insertProposalElementSchema,
+  insertProposalCollaboratorSchema,
+  insertProposalCommentSchema,
+  insertProposalActivitySchema
 } from "@shared/schema";
 import { z } from "zod";
 import { 
@@ -2411,6 +2418,509 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const result = await storage.receivePurchaseOrderItems(id, items);
       res.json(result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // --------------------------------
+  // Proposal System Routes
+  // --------------------------------
+
+  // Proposal Template routes
+  app.get('/api/proposal-templates', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const templates = await storage.listProposalTemplates();
+      res.json(templates);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/proposal-templates/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const template = await storage.getProposalTemplate(id);
+      if (!template) {
+        return res.status(404).json({ error: "Proposal template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/proposal-templates', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const templateData = insertProposalTemplateSchema.parse(req.body);
+      
+      // Add user as creator if not specified
+      if (!templateData.createdBy) {
+        templateData.createdBy = req.user.id;
+      }
+      
+      const template = await storage.createProposalTemplate(templateData);
+      res.status(201).json(template);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/proposal-templates/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const templateData = insertProposalTemplateSchema.partial().parse(req.body);
+      
+      // Add user as updater
+      if (!templateData.updatedBy) {
+        templateData.updatedBy = req.user.id;
+      }
+      
+      const template = await storage.updateProposalTemplate(id, templateData);
+      if (!template) {
+        return res.status(404).json({ error: "Proposal template not found" });
+      }
+      
+      res.json(template);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/proposal-templates/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteProposalTemplate(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Proposal template not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Proposal routes
+  app.get('/api/proposals', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Parse filter params
+      const filter: Record<string, any> = {};
+      
+      if (req.query.accountId) {
+        filter.accountId = parseInt(req.query.accountId as string);
+      }
+      
+      if (req.query.opportunityId) {
+        filter.opportunityId = parseInt(req.query.opportunityId as string);
+      }
+      
+      if (req.query.status) {
+        filter.status = req.query.status as string;
+      }
+      
+      if (req.query.createdBy) {
+        filter.createdBy = parseInt(req.query.createdBy as string);
+      }
+      
+      const proposals = await storage.listProposals(filter);
+      res.json(proposals);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/proposals/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const proposal = await storage.getProposal(id);
+      
+      if (!proposal) {
+        return res.status(404).json({ error: "Proposal not found" });
+      }
+      
+      res.json(proposal);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/proposals', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const proposalData = insertProposalSchema.parse(req.body);
+      
+      // Add current user as creator if not specified
+      if (!proposalData.createdBy) {
+        proposalData.createdBy = req.user.id;
+      }
+      
+      const proposal = await storage.createProposal(proposalData);
+      res.status(201).json(proposal);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/proposals/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const proposalData = insertProposalSchema.partial().parse(req.body);
+      
+      // Add current user as updater
+      if (!proposalData.updatedBy) {
+        proposalData.updatedBy = req.user.id;
+      }
+      
+      const proposal = await storage.updateProposal(id, proposalData);
+      
+      if (!proposal) {
+        return res.status(404).json({ error: "Proposal not found" });
+      }
+      
+      res.json(proposal);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/proposals/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteProposal(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Proposal not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Proposal Elements routes
+  app.get('/api/proposals/:proposalId/elements', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const proposalId = parseInt(req.params.proposalId);
+      const elements = await storage.listProposalElements(proposalId);
+      
+      res.json(elements);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/proposals/:proposalId/elements', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const proposalId = parseInt(req.params.proposalId);
+      
+      // Validate element data
+      const elementData = insertProposalElementSchema.parse({
+        ...req.body,
+        proposalId,
+        createdBy: req.user.id
+      });
+      
+      const element = await storage.createProposalElement(elementData);
+      res.status(201).json(element);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.get('/api/proposal-elements/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const element = await storage.getProposalElement(id);
+      
+      if (!element) {
+        return res.status(404).json({ error: "Proposal element not found" });
+      }
+      
+      res.json(element);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/proposal-elements/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      // Get the current element to know its proposal ID
+      const currentElement = await storage.getProposalElement(id);
+      if (!currentElement) {
+        return res.status(404).json({ error: "Proposal element not found" });
+      }
+      
+      // Validate the update data
+      const elementData = insertProposalElementSchema.partial().parse({
+        ...req.body,
+        updatedBy: req.user.id,
+        // Ensure proposalId is included for activity log
+        proposalId: currentElement.proposalId
+      });
+      
+      const element = await storage.updateProposalElement(id, elementData);
+      
+      if (!element) {
+        return res.status(404).json({ error: "Proposal element not found" });
+      }
+      
+      res.json(element);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/proposal-elements/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteProposalElement(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Proposal element not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Proposal Collaborator routes
+  app.get('/api/proposals/:proposalId/collaborators', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const proposalId = parseInt(req.params.proposalId);
+      const collaborators = await storage.getProposalCollaborators(proposalId);
+      
+      res.json(collaborators);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/proposals/:proposalId/collaborators', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const proposalId = parseInt(req.params.proposalId);
+      
+      // Validate collaborator data
+      const collaboratorData = insertProposalCollaboratorSchema.parse({
+        ...req.body,
+        proposalId,
+        addedBy: req.user.id
+      });
+      
+      const collaborator = await storage.createProposalCollaborator(collaboratorData);
+      res.status(201).json(collaborator);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/proposal-collaborators/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const collaboratorData = insertProposalCollaboratorSchema.partial().parse(req.body);
+      
+      const collaborator = await storage.updateProposalCollaborator(id, collaboratorData);
+      
+      if (!collaborator) {
+        return res.status(404).json({ error: "Collaborator not found" });
+      }
+      
+      res.json(collaborator);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/proposal-collaborators/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteProposalCollaborator(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Collaborator not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Proposal Comment routes
+  app.get('/api/proposals/:proposalId/comments', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const proposalId = parseInt(req.params.proposalId);
+      const comments = await storage.getProposalComments(proposalId);
+      
+      res.json(comments);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.post('/api/proposals/:proposalId/comments', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const proposalId = parseInt(req.params.proposalId);
+      
+      // Validate comment data
+      const commentData = insertProposalCommentSchema.parse({
+        ...req.body,
+        proposalId,
+        userId: req.user.id
+      });
+      
+      const comment = await storage.createProposalComment(commentData);
+      res.status(201).json(comment);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.patch('/api/proposal-comments/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      // If resolving a comment, add the resolver
+      let commentData = req.body;
+      if (commentData.resolved === true) {
+        commentData.resolvedBy = req.user.id;
+      }
+      
+      commentData = insertProposalCommentSchema.partial().parse(commentData);
+      
+      const comment = await storage.updateProposalComment(id, commentData);
+      
+      if (!comment) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      
+      res.json(comment);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  app.delete('/api/proposal-comments/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteProposalComment(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Proposal Activity routes
+  app.get('/api/proposals/:proposalId/activities', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const proposalId = parseInt(req.params.proposalId);
+      const activities = await storage.getProposalActivities(proposalId);
+      
+      res.json(activities);
     } catch (error) {
       handleError(res, error);
     }

@@ -32,7 +32,8 @@ import {
   Calendar, 
   RefreshCw, 
   Users, 
-  BarChart4
+  BarChart4,
+  FileText
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -47,6 +48,7 @@ interface OpportunityDetailProps {
   onClose: () => void;
   onEdit: (opportunity: Opportunity) => void;
   onChangeStatus: (opportunity: Opportunity, status: { isClosed: boolean, isWon: boolean }) => void;
+  onOpenProposals?: (opportunity: Opportunity) => void;
 }
 
 export function OpportunityDetail({
@@ -55,6 +57,7 @@ export function OpportunityDetail({
   onClose,
   onEdit,
   onChangeStatus,
+  onOpenProposals,
 }: OpportunityDetailProps) {
   // Fetch owner data if available
   const { data: owner, isLoading: isLoadingOwner } = useQuery<User>({
@@ -290,6 +293,9 @@ export function OpportunityDetail({
                 <TabsTrigger value="communications" title="Click to view all communication channels and history, including phone, SMS, WhatsApp">
                   Communications
                 </TabsTrigger>
+                <TabsTrigger value="proposals">
+                  Proposals
+                </TabsTrigger>
                 <TabsTrigger value="assignments">
                   Assignments
                 </TabsTrigger>
@@ -324,6 +330,31 @@ export function OpportunityDetail({
                     <p className="ml-2">Loading account information...</p>
                   </div>
                 )}
+              </TabsContent>
+              
+              <TabsContent value="proposals">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Proposals</CardTitle>
+                    <CardDescription>Create and manage proposals for this opportunity</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <Button 
+                      className="w-full justify-center py-8"
+                      onClick={() => {
+                        // Call the onOpenProposals handler if provided, otherwise fallback to edit
+                        if (onOpenProposals) {
+                          onOpenProposals(opportunity);
+                        } else {
+                          onEdit(opportunity);
+                        }
+                      }}
+                    >
+                      <FileText className="h-5 w-5 mr-2" />
+                      Manage Proposals
+                    </Button>
+                  </CardContent>
+                </Card>
               </TabsContent>
               
               <TabsContent value="assignments">
