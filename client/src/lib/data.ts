@@ -202,19 +202,72 @@ export async function getRecentActivities(): Promise<DashboardActivity[]> {
     try {
       const activities = await apiRequestJson<Activity[]>('GET', '/api/activities');
       
+      // Get users data to map user IDs to names
+      let users: User[] = [];
+      try {
+        users = await apiRequestJson<User[]>('GET', '/api/users');
+      } catch (userError) {
+        console.warn('Failed to fetch users:', userError);
+      }
+      
+      // Get the currently logged-in user
+      let currentUser: User | null = null;
+      try {
+        currentUser = await apiRequestJson<User>('GET', '/api/user');
+      } catch (userError) {
+        console.warn('Failed to fetch current user:', userError);
+      }
+      
       // Transform the activities for dashboard display
       return activities.map(activity => {
         // Get relative time - handle null case safely
-        // Convert the timestamp to a string no matter what
         const createdAtDate = activity.createdAt ? new Date(activity.createdAt) : new Date();
         const timeString = getRelativeTimeString(createdAtDate);
         
-        // Create user info (would come from a users endpoint in a real app)
-        const userInfo = {
-          name: 'System User',
+        // Find the user who performed this activity
+        const user = users.find(u => u.id === activity.userId);
+        
+        // Create user info with real name if available
+        let userInfo = {
+          name: 'System User', // Default fallback
           avatar: '',
           initials: 'SU'
         };
+        
+        if (user) {
+          const firstName = user.firstName || '';
+          const lastName = user.lastName || '';
+          const fullName = [firstName, lastName].filter(Boolean).join(' ');
+          
+          // Get initials from first and last name
+          const initials = [firstName?.[0], lastName?.[0]]
+            .filter(Boolean)
+            .join('')
+            .toUpperCase();
+            
+          userInfo = {
+            name: fullName || user.username,
+            avatar: user.avatar || '',
+            initials: initials || user.username?.[0]?.toUpperCase() || 'U'
+          };
+        } else if (currentUser && activity.userId === currentUser.id) {
+          // If this activity belongs to the current user
+          const firstName = currentUser.firstName || '';
+          const lastName = currentUser.lastName || '';
+          const fullName = [firstName, lastName].filter(Boolean).join(' ');
+          
+          // Get initials from first and last name
+          const initials = [firstName?.[0], lastName?.[0]]
+            .filter(Boolean)
+            .join('')
+            .toUpperCase();
+            
+          userInfo = {
+            name: fullName || currentUser.username,
+            avatar: currentUser.avatar || '',
+            initials: initials || currentUser.username?.[0]?.toUpperCase() || 'U'
+          };
+        }
         
         // Create a properly typed DashboardActivity object by converting Date to string
         return {
