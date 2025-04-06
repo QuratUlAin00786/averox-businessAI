@@ -39,6 +39,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 import { CommunicationPanel } from "@/components/communications/communication-panel";
+import AssignmentManager from "@/components/assignment/assignment-manager";
 
 interface OpportunityDetailProps {
   isOpen: boolean;
@@ -289,6 +290,9 @@ export function OpportunityDetail({
                 <TabsTrigger value="communications" title="Click to view all communication channels and history, including phone, SMS, WhatsApp">
                   Communications
                 </TabsTrigger>
+                <TabsTrigger value="assignments">
+                  Assignments
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="notes">
@@ -320,6 +324,22 @@ export function OpportunityDetail({
                     <p className="ml-2">Loading account information...</p>
                   </div>
                 )}
+              </TabsContent>
+              
+              <TabsContent value="assignments">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Assignment Management</CardTitle>
+                    <CardDescription>Assign this opportunity to users or teams</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <AssignmentManager 
+                      entityType="opportunity" 
+                      entityId={opportunity.id} 
+                      entityName={opportunity.name}
+                    />
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </div>

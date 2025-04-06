@@ -19,8 +19,9 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CommunicationPanel } from "@/components/communications/communication-panel";
+import AssignmentManager from "@/components/assignment/assignment-manager";
 
 interface AccountDetailProps {
   account: Account | null;
@@ -194,6 +195,9 @@ export function AccountDetail({
                     <TabsTrigger value="communications" title="Click to view all communication channels and history, including phone, SMS, WhatsApp">
                       Communications
                     </TabsTrigger>
+                    <TabsTrigger value="assignments">
+                      Assignments
+                    </TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="notes">
@@ -217,6 +221,22 @@ export function AccountDetail({
                         phone={String(account.phone || "")}
                       />
                     </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="assignments">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">Assignment Management</CardTitle>
+                        <CardDescription>Assign this account to users or teams</CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <AssignmentManager 
+                          entityType="account" 
+                          entityId={account.id} 
+                          entityName={account.name}
+                        />
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                 </Tabs>
               </div>
