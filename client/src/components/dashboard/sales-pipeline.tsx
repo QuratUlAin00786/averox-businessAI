@@ -3,12 +3,14 @@ import { SimpleButton } from "@/components/ui/simple-button";
 import { Settings } from "lucide-react";
 import { useMemo } from "react";
 import { PipelineStage } from "@/lib/data";
+import { useLanguage } from "@/hooks/use-language";
 
 interface SalesPipelineProps {
   stages: PipelineStage[];
 }
 
 export function SalesPipeline({ stages }: SalesPipelineProps) {
+  const { t } = useLanguage();
   // Get color based on stage name
   const getStageColor = (stageName: string): string => {
     const stageColors: Record<string, string> = {
@@ -52,9 +54,9 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
     <div className="overflow-hidden bg-white rounded-lg shadow">
       <div className="px-4 py-5 border-b border-neutral-200 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-          <h3 className="text-xl sm:text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">Sales Pipeline</h3>
+          <h3 className="text-xl sm:text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">{t.dashboard.salesPipeline}</h3>
           <div className="flex items-center">
-            <span className="text-base sm:text-sm text-neutral-500">Last 30 days</span>
+            <span className="text-base sm:text-sm text-neutral-500">{t.dashboard.last30days}</span>
             <SimpleButton 
               variant="outline" 
               className="ml-2 border-primary text-primary hover:bg-primary hover:text-white p-2 sm:p-2"
@@ -109,7 +111,7 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
             ))
           ) : (
             <div className="py-4 text-center text-neutral-500">
-              No pipeline data available
+              {t.dashboard.noPipelineData}
             </div>
           )}
         </div>
@@ -119,7 +121,7 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
           className="mt-4 text-base sm:text-sm text-center text-neutral-500 w-full p-3 sm:p-2 h-auto hover:bg-neutral-50"
           onClick={() => window.alert("Opening detailed pipeline analysis...")}
         >
-          <span className="font-medium text-primary text-xl sm:text-base">{totalPipeline}</span> <span className="text-lg sm:text-sm">total pipeline value</span>
+          <span className="font-medium text-primary text-xl sm:text-base">{totalPipeline}</span> <span className="text-lg sm:text-sm">{t.dashboard.totalPipelineValue}</span>
         </SimpleButton>
       </div>
     </div>

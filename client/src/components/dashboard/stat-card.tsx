@@ -1,6 +1,7 @@
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SimpleButton } from "@/components/ui/simple-button";
+import { useLanguage } from "@/hooks/use-language";
 
 interface StatCardProps {
   title: string;
@@ -16,6 +17,7 @@ interface StatCardProps {
 }
 
 export function StatCard({ title, value, change, icon: Icon, iconColor }: StatCardProps) {
+  const { t } = useLanguage();
   const colorClasses = {
     primary: {
       bg: "bg-primary-light bg-opacity-20",

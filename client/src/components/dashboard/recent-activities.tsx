@@ -1,12 +1,14 @@
 import { SimpleButton } from "@/components/ui/simple-button";
 import { PlusCircle, CheckCircle, MessageCircle, Calendar } from "lucide-react";
 import { DashboardActivity } from "@/lib/data";
+import { useLanguage } from "@/hooks/use-language";
 
 interface RecentActivitiesProps {
   activities: DashboardActivity[];
 }
 
 export function RecentActivities({ activities }: RecentActivitiesProps) {
+  const { t } = useLanguage();
   const getIconByType = (type: string | null = "added") => {
     switch (type) {
       case "added":
@@ -41,13 +43,13 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
     <div className="h-full overflow-hidden bg-white rounded-lg shadow">
       <div className="px-4 py-3 border-b border-neutral-200 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-lg font-medium leading-6 text-neutral-700">Recent Activities</h3>
+          <h3 className="text-lg font-medium leading-6 text-neutral-700">{t.dashboard.recentActivities}</h3>
           <SimpleButton 
             variant="outline" 
             className="border-primary text-primary hover:bg-primary hover:text-white"
             onClick={() => window.alert("Opening all activities history...")}
           >
-            View All
+            {t.dashboard.viewAll}
           </SimpleButton>
         </div>
       </div>
@@ -91,7 +93,7 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
             </ul>
           ) : (
             <div className="py-6 text-center text-neutral-500">
-              <p>No recent activities</p>
+              <p>{t.dashboard.noActivities}</p>
             </div>
           )}
         </div>

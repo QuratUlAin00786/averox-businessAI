@@ -41,6 +41,14 @@ interface DashboardTranslations {
   goodMorning: string;
   goodAfternoon: string;
   goodEvening: string;
+  last30days: string;
+  noPipelineData: string;
+  totalPipelineValue: string;
+  myTasks: string;
+  noTasks: string;
+  createNewTask: string;
+  viewAllTasks: string;
+  viewAll: string;
 }
 
 interface ButtonsTranslations {
@@ -155,6 +163,14 @@ const englishTranslations: Translations = {
     goodMorning: 'Good Morning',
     goodAfternoon: 'Good Afternoon',
     goodEvening: 'Good Evening',
+    last30days: 'Last 30 days',
+    noPipelineData: 'No pipeline data available',
+    totalPipelineValue: 'total pipeline value',
+    myTasks: 'My Tasks',
+    noTasks: 'No pending tasks',
+    createNewTask: 'Create New Task',
+    viewAllTasks: 'View All Tasks',
+    viewAll: 'View All',
   },
   buttons: {
     save: 'Save',
@@ -258,6 +274,14 @@ const arabicTranslations: Translations = {
     goodMorning: 'صباح الخير',
     goodAfternoon: 'مساء الخير',
     goodEvening: 'طاب مساؤك',
+    last30days: 'آخر 30 يوم',
+    noPipelineData: 'لا توجد بيانات خط أنابيب متاحة',
+    totalPipelineValue: 'إجمالي قيمة خط الأنابيب',
+    myTasks: 'مهامي',
+    noTasks: 'لا توجد مهام معلقة',
+    createNewTask: 'إنشاء مهمة جديدة',
+    viewAllTasks: 'عرض جميع المهام',
+    viewAll: 'عرض الكل',
   },
   buttons: {
     save: 'حفظ',

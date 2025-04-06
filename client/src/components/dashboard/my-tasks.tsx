@@ -2,12 +2,14 @@ import { SimpleButton } from "@/components/ui/simple-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, ChevronRight, Plus } from "lucide-react";
 import { MyTask } from "@/lib/data";
+import { useLanguage } from "@/hooks/use-language";
 
 interface MyTasksProps {
   tasks: MyTask[];
 }
 
 export function MyTasks({ tasks }: MyTasksProps) {
+  const { t } = useLanguage();
   const getPriorityClass = (priority: MyTask["priority"]) => {
     switch (priority) {
       case "High":
@@ -35,14 +37,14 @@ export function MyTasks({ tasks }: MyTasksProps) {
     <div className="h-full overflow-hidden bg-white rounded-lg shadow">
       <div className="px-4 py-3 border-b border-neutral-200 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-lg font-medium leading-6 text-neutral-700">My Tasks</h3>
+          <h3 className="text-lg font-medium leading-6 text-neutral-700">{t.dashboard.myTasks}</h3>
           <SimpleButton 
             variant="outline" 
             className="border-primary text-primary hover:bg-primary hover:text-white"
             onClick={() => window.alert("Opening task creation form...")}
           >
             <Plus className="w-4 h-4 mr-1" />
-            Add Task
+            {t.buttons.add} {t.navigation.tasks}
           </SimpleButton>
         </div>
       </div>
@@ -95,21 +97,21 @@ export function MyTasks({ tasks }: MyTasksProps) {
                 href="/tasks"
                 onClick={() => window.alert("Navigating to tasks page...")}
               >
-                View All Tasks
+                {t.dashboard.viewAllTasks}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </SimpleButton>
             </div>
           </>
         ) : (
           <div className="px-4 py-6 text-center text-neutral-500">
-            <p>No pending tasks</p>
+            <p>{t.dashboard.noTasks}</p>
             <SimpleButton 
               variant="outline" 
               className="mt-4 text-primary border-primary"
               onClick={() => window.alert("Opening task creation form...")}
             >
               <Plus className="w-4 h-4 mr-1" />
-              Create New Task
+              {t.dashboard.createNewTask}
             </SimpleButton>
           </div>
         )}
