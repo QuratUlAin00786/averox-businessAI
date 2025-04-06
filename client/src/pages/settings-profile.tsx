@@ -8,9 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Save, Upload, User, Check } from "lucide-react";
+import { ArrowLeft, Save, Upload, User, Check, X, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { 
   Dialog,
@@ -86,6 +86,8 @@ export default function SettingsProfile() {
   
   // State for avatar selection dialog
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [tempSelectedAvatar, setTempSelectedAvatar] = useState("");
+  const originalAvatarRef = useRef("");
 
   useEffect(() => {
     if (user) {
@@ -370,7 +372,12 @@ export default function SettingsProfile() {
                         <div className="flex justify-center">
                           <Button 
                             variant="secondary"
-                            onClick={() => setIsAvatarDialogOpen(true)}
+                            onClick={() => {
+                              // Store the original avatar in case user cancels
+                              originalAvatarRef.current = formData.avatar;
+                              setTempSelectedAvatar(formData.avatar);
+                              setIsAvatarDialogOpen(true);
+                            }}
                           >
                             Select Avatar
                           </Button>
@@ -472,16 +479,29 @@ export default function SettingsProfile() {
                           <div className="flex space-x-2">
                             <Button 
                               variant="outline" 
-                              onClick={() => setIsAvatarDialogOpen(false)}
+                              onClick={() => {
+                                // Restore original avatar on cancel
+                                setFormData(prev => ({
+                                  ...prev,
+                                  avatar: originalAvatarRef.current
+                                }));
+                                setIsAvatarDialogOpen(false);
+                                toast({
+                                  title: "Selection Cancelled",
+                                  description: "Avatar selection has been cancelled",
+                                });
+                              }}
                             >
                               Cancel
                             </Button>
                             <Button 
                               onClick={() => {
+                                // Avatar is already set in formData, just close dialog
                                 setIsAvatarDialogOpen(false);
                                 toast({
                                   title: "Avatar Selected",
                                   description: "Don't forget to click Save Changes to apply your selection!",
+                                  duration: 5000,
                                 });
                               }}
                             >
