@@ -24,6 +24,7 @@ import SettingsDataMigration from "@/pages/settings-data-migration";
 import Intelligence from "@/pages/intelligence";
 import Workflows from "@/pages/workflows";
 import Subscriptions from "@/pages/subscriptions";
+import Subscribe from "@/pages/subscribe";
 import AdminSubscriptionPackages from "@/pages/admin-subscription-packages";
 import AdminUsers from "@/pages/admin-users";
 import CommunicationCenter from "@/pages/communication-center";
@@ -116,6 +117,12 @@ function Router() {
       <ProtectedRoute path="/subscriptions" component={() => (
         <Layout>
           <Subscriptions />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/subscribe" component={() => (
+        <Layout>
+          <Subscribe />
         </Layout>
       )} />
       

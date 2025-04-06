@@ -127,7 +127,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Help & Support</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(13, 14))}
+          {renderNavItems(navItems.slice(13, 15))}
         </div>
 
         <hr className="my-4 border-neutral-200" />
@@ -136,7 +136,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">System</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(14))}
+          {renderNavItems(navItems.slice(15))}
         </div>
       </ScrollArea>
       

@@ -264,14 +264,34 @@ export default function TrainingHelpPage() {
                   </div>
                 ))}
                 <div className="flex justify-end">
-                  <SimpleButton variant="outline" className="gap-2 mr-2">
-                    <Download className="w-4 h-4" />
-                    {t.buttons.downloadPdf}
-                  </SimpleButton>
-                  <SimpleButton variant="default" className="gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    {t.buttons.fullTutorial}
-                  </SimpleButton>
+                  <a 
+                    href={`#pdf-${module.id}`} 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Open PDF in new tab (simulate download in real app)
+                      window.open(`#${module.id}-pdf`, '_blank');
+                      // Add alert showing PDF download started
+                      alert("PDF download started. The file will open in a new tab.");
+                    }}
+                  >
+                    <SimpleButton variant="outline" className="gap-2 mr-2">
+                      <Download className="w-4 h-4" />
+                      {t.buttons.downloadPdf}
+                    </SimpleButton>
+                  </a>
+                  <a 
+                    href={`#tutorial-${module.id}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Open full tutorial in new tab
+                      window.open(`#full-tutorial-${module.id}`, '_blank');
+                    }}
+                  >
+                    <SimpleButton variant="default" className="gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      {t.buttons.fullTutorial}
+                    </SimpleButton>
+                  </a>
                 </div>
               </div>
             ) : null}

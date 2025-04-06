@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,14 +6,31 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Loader2 } from "lucide-react";
 import { SubscriptionPackage } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function SubscriptionsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [, navigate] = useLocation();
   const [selectedPackage, setSelectedPackage] = useState<SubscriptionPackage | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Check for success query param
+  const params = new URLSearchParams(window.location.search);
+  const success = params.get('success');
+  
+  // Show success message if redirected from successful payment
+  useEffect(() => {
+    if (success === 'true') {
+      toast({
+        title: "Subscription Activated",
+        description: "Your subscription has been successfully activated! You now have access to all features.",
+      });
+      // Clean up URL
+      window.history.replaceState({}, document.title, "/subscriptions");
+    }
+  }, [success, toast]);
   
   const { data: packages, isLoading } = useQuery({
     queryKey: ['/api/subscription-packages'],
@@ -27,30 +44,14 @@ export default function SubscriptionsPage() {
     setSelectedPackage(packages?.find(p => p.id === packageId) || null);
     
     try {
-      const response = await apiRequest('POST', '/api/create-subscription', {
-        userId: user?.id,
-        packageId
-      });
-      
-      const data = await response.json();
-      
-      // Redirect to a checkout page with the client secret
-      if (data.clientSecret) {
-        // For demo purposes we'll just show a success message
-        toast({
-          title: "Subscription created successfully",
-          description: "You've been subscribed to the selected package!",
-        });
-      } else {
-        throw new Error("No client secret returned");
-      }
+      // Navigate to subscribe page with package ID
+      navigate(`/subscribe?packageId=${packageId}`);
     } catch (error: any) {
       toast({
-        title: "Error creating subscription",
+        title: "Error",
         description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
