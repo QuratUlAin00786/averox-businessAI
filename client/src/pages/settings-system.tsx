@@ -35,6 +35,7 @@ export default function SettingsSystem() {
     twoFactorAuth: false,
     dataExport: false,
     activityLogging: true,
+    rtlLayout: false,
   });
 
   const handleSwitchChange = (field: string) => {
@@ -45,10 +46,39 @@ export default function SettingsSystem() {
   };
 
   const handleSelectChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    // If switching to Arabic, suggest enabling RTL layout
+    if (field === "language" && value === "arabic") {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        rtlLayout: true
+      }));
+      
+      toast({
+        title: "RTL Layout Enabled",
+        description: "Right-to-left layout has been enabled for Arabic language support.",
+      });
+    } 
+    // If switching from Arabic to another language and RTL is enabled, suggest disabling RTL
+    else if (field === "language" && formData.language === "arabic" && formData.rtlLayout) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        rtlLayout: false
+      }));
+      
+      toast({
+        title: "RTL Layout Disabled",
+        description: "Right-to-left layout has been disabled as it's not needed for the selected language.",
+      });
+    } 
+    // Normal case for other field changes
+    else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -101,6 +131,7 @@ export default function SettingsSystem() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="english">English</SelectItem>
+                            <SelectItem value="arabic">Arabic (العربية)</SelectItem>
                             <SelectItem value="spanish">Spanish</SelectItem>
                             <SelectItem value="french">French</SelectItem>
                             <SelectItem value="german">German</SelectItem>
@@ -125,6 +156,9 @@ export default function SettingsSystem() {
                             <SelectItem value="utc-5">UTC-5 Eastern Time</SelectItem>
                             <SelectItem value="utc+0">UTC+0 Greenwich Mean Time</SelectItem>
                             <SelectItem value="utc+1">UTC+1 Central European Time</SelectItem>
+                            <SelectItem value="utc+3-ksa">UTC+3 Arabia Standard Time (Saudi Arabia)</SelectItem>
+                            <SelectItem value="utc+3-kuwait">UTC+3 Eastern Europe Time (Kuwait, Qatar)</SelectItem>
+                            <SelectItem value="utc+4">UTC+4 Gulf Standard Time (UAE)</SelectItem>
                             <SelectItem value="utc+8">UTC+8 China Standard Time</SelectItem>
                           </SelectContent>
                         </Select>
@@ -146,6 +180,22 @@ export default function SettingsSystem() {
                             <SelectItem value="dd.mm.yyyy">DD.MM.YYYY</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4 mt-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="rtlLayout">Right-to-Left Layout</Label>
+                          <div className="text-sm text-muted-foreground">
+                            Enable right-to-left text direction for Arabic language support
+                          </div>
+                        </div>
+                        <Switch
+                          id="rtlLayout"
+                          checked={formData.rtlLayout}
+                          onCheckedChange={() => handleSwitchChange("rtlLayout")}
+                        />
                       </div>
                     </div>
                   </div>
