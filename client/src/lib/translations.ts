@@ -34,6 +34,7 @@ interface DashboardTranslations {
   overview: string;
   view: string;
   today: string;
+  tomorrow: string;
   week: string;
   month: string;
   noActivities: string;
@@ -49,6 +50,7 @@ interface DashboardTranslations {
   createNewTask: string;
   viewAllTasks: string;
   viewAll: string;
+  due: string;
 }
 
 interface ButtonsTranslations {
@@ -156,6 +158,7 @@ const englishTranslations: Translations = {
     overview: 'Overview',
     view: 'View',
     today: 'Today',
+    tomorrow: 'Tomorrow',
     week: 'This Week',
     month: 'This Month',
     noActivities: 'No recent activities',
@@ -171,6 +174,7 @@ const englishTranslations: Translations = {
     createNewTask: 'Create New Task',
     viewAllTasks: 'View All Tasks',
     viewAll: 'View All',
+    due: 'Due',
   },
   buttons: {
     save: 'Save',
@@ -267,6 +271,7 @@ const arabicTranslations: Translations = {
     overview: 'نظرة عامة',
     view: 'عرض',
     today: 'اليوم',
+    tomorrow: 'غدا',
     week: 'هذا الأسبوع',
     month: 'هذا الشهر',
     noActivities: 'لا توجد أنشطة حديثة',
@@ -282,6 +287,7 @@ const arabicTranslations: Translations = {
     createNewTask: 'إنشاء مهمة جديدة',
     viewAllTasks: 'عرض جميع المهام',
     viewAll: 'عرض الكل',
+    due: 'موعد',
   },
   buttons: {
     save: 'حفظ',

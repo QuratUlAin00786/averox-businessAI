@@ -135,7 +135,7 @@ export default function SettingsSystem() {
                 </Button>
               </Link>
               <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
-                System Settings
+                {t.settings.system}
               </h2>
             </div>
           </div>
@@ -146,14 +146,14 @@ export default function SettingsSystem() {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Languages className="mr-2 h-5 w-5" />
-                    Regional Settings
+                    {t.settings.regional}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="language">Language</Label>
+                        <Label htmlFor="language">{t.settings.language}</Label>
                         <Select 
                           value={formData.language} 
                           onValueChange={(value) => handleSelectChange("language", value)}
@@ -173,7 +173,7 @@ export default function SettingsSystem() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="timezone">Time Zone</Label>
+                        <Label htmlFor="timezone">{t.settings.timezone}</Label>
                         <Select 
                           value={formData.timezone} 
                           onValueChange={(value) => handleSelectChange("timezone", value)}
@@ -197,7 +197,7 @@ export default function SettingsSystem() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="dateFormat">Date Format</Label>
+                        <Label htmlFor="dateFormat">{t.settings.dateFormat}</Label>
                         <Select 
                           value={formData.dateFormat} 
                           onValueChange={(value) => handleSelectChange("dateFormat", value)}
@@ -218,9 +218,9 @@ export default function SettingsSystem() {
                     <div className="space-y-4 mt-4">
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="rtlLayout">Right-to-Left Layout</Label>
+                          <Label htmlFor="rtlLayout">{t.settings.rtlLayout}</Label>
                           <div className="text-sm text-muted-foreground">
-                            Enable right-to-left text direction for Arabic language support
+                            {t.settings.rtlLayoutDescription}
                           </div>
                         </div>
                         <Switch
@@ -238,16 +238,16 @@ export default function SettingsSystem() {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <BellRing className="mr-2 h-5 w-5" />
-                    Notification Preferences
+                    {t.settings.notifications}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="emailNotifications">Email Notifications</Label>
+                        <Label htmlFor="emailNotifications">{t.settings.emailNotifications}</Label>
                         <div className="text-sm text-muted-foreground">
-                          Receive email updates about your account activity
+                          {t.settings.emailNotificationsDescription}
                         </div>
                       </div>
                       <Switch
@@ -261,9 +261,9 @@ export default function SettingsSystem() {
                     
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="smsNotifications">SMS Notifications</Label>
+                        <Label htmlFor="smsNotifications">{t.settings.smsNotifications}</Label>
                         <div className="text-sm text-muted-foreground">
-                          Receive text messages for important alerts
+                          {t.settings.smsNotificationsDescription}
                         </div>
                       </div>
                       <Switch
@@ -277,9 +277,9 @@ export default function SettingsSystem() {
                     
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="desktopNotifications">Desktop Notifications</Label>
+                        <Label htmlFor="desktopNotifications">{t.settings.desktopNotifications}</Label>
                         <div className="text-sm text-muted-foreground">
-                          Receive notifications in your browser
+                          {t.settings.desktopNotificationsDescription}
                         </div>
                       </div>
                       <Switch
@@ -296,16 +296,16 @@ export default function SettingsSystem() {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Shield className="mr-2 h-5 w-5" />
-                    Security & Privacy
+                    {t.settings.security}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="twoFactorAuth">Two-Factor Authentication</Label>
+                        <Label htmlFor="twoFactorAuth">{t.settings.twoFactorAuth}</Label>
                         <div className="text-sm text-muted-foreground">
-                          Add an extra layer of security to your account
+                          {t.settings.twoFactorAuthDescription}
                         </div>
                       </div>
                       <Switch
@@ -319,9 +319,9 @@ export default function SettingsSystem() {
                     
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="dataExport">Data Export</Label>
+                        <Label htmlFor="dataExport">{t.settings.dataExport}</Label>
                         <div className="text-sm text-muted-foreground">
-                          Allow exporting your data in various formats
+                          {t.settings.dataExportDescription}
                         </div>
                       </div>
                       <Switch
@@ -335,9 +335,9 @@ export default function SettingsSystem() {
                     
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="activityLogging">Activity Logging</Label>
+                        <Label htmlFor="activityLogging">{t.settings.activityLogging}</Label>
                         <div className="text-sm text-muted-foreground">
-                          Keep a record of your actions for security purposes
+                          {t.settings.activityLoggingDescription}
                         </div>
                       </div>
                       <Switch
@@ -352,7 +352,7 @@ export default function SettingsSystem() {
 
               <Button type="submit" className="w-full md:w-auto md:ml-auto">
                 <Save className="mr-2 h-4 w-4" />
-                Save Settings
+                {t.buttons.save}
               </Button>
             </div>
           </form>

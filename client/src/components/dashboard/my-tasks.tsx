@@ -11,25 +11,32 @@ interface MyTasksProps {
 export function MyTasks({ tasks }: MyTasksProps) {
   const { t } = useLanguage();
   const getPriorityClass = (priority: MyTask["priority"]) => {
+    // Handle both English and Arabic priority levels
     switch (priority) {
       case "High":
+      case "عالية":
         return "bg-red-500 text-white";
       case "Medium":
+      case "متوسطة":
         return "bg-orange-500 text-white";
       case "Normal":
+      case "عادية":
         return "bg-blue-500 text-white";
+      case "Low":
+      case "منخفضة":
+        return "bg-green-500 text-white";
       default:
         return "bg-neutral-400 text-white";
     }
   };
 
   const formatDueDate = (dueDate: string) => {
-    if (dueDate === 'Today') {
-      return 'Due today';
-    } else if (dueDate === 'Tomorrow') {
-      return 'Due tomorrow';
+    if (dueDate === 'Today' || dueDate === t.dashboard.today) {
+      return `${t.dashboard.due} ${t.dashboard.today.toLowerCase()}`;
+    } else if (dueDate === 'Tomorrow' || dueDate === t.dashboard.tomorrow) {
+      return `${t.dashboard.due} ${t.dashboard.tomorrow.toLowerCase()}`;
     } else {
-      return `Due ${dueDate}`;
+      return `${t.dashboard.due} ${dueDate}`;
     }
   };
 

@@ -53,7 +53,7 @@ export interface MyTask {
   id: number | string;
   title: string;
   dueDate: string;
-  priority: "High" | "Medium" | "Normal";
+  priority: "High" | "Medium" | "Normal" | "Low" | "عالية" | "متوسطة" | "عادية" | "منخفضة";
 }
 
 export interface DashboardData {
@@ -314,7 +314,10 @@ export async function getMyTasks(): Promise<MyTask[]> {
     .filter(task => task.status !== 'Completed')
     .sort((a, b) => {
       // Sort by priority first
-      const priorityOrder = { "High": 0, "Medium": 1, "Normal": 2 };
+      const priorityOrder = { 
+        "High": 0, "Medium": 1, "Normal": 2, "Low": 3,
+        "عالية": 0, "متوسطة": 1, "عادية": 2, "منخفضة": 3 
+      };
       const priorityDiff = 
         (priorityOrder[a.priority as keyof typeof priorityOrder] || 0) - 
         (priorityOrder[b.priority as keyof typeof priorityOrder] || 0);
@@ -332,7 +335,7 @@ export async function getMyTasks(): Promise<MyTask[]> {
       id: task.id,
       title: task.title,
       dueDate: task.dueDate ? formatTaskDueDate(new Date(task.dueDate)) : 'No due date',
-      priority: task.priority as "High" | "Medium" | "Normal" || "Normal"
+      priority: task.priority as "High" | "Medium" | "Normal" | "Low" | "عالية" | "متوسطة" | "عادية" | "منخفضة" || "Normal"
     }));
   
   return myIncompleteTasks;

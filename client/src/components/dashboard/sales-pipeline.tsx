@@ -13,7 +13,8 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
   const { t } = useLanguage();
   // Get color based on stage name
   const getStageColor = (stageName: string): string => {
-    const stageColors: Record<string, string> = {
+    // English stage names
+    const englishStageColors: Record<string, string> = {
       "Lead Generation": "bg-primary",
       "Qualification": "bg-primary-dark",
       "Proposal": "bg-secondary",
@@ -21,7 +22,16 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
       "Closing": "bg-success"
     };
     
-    return stageColors[stageName] || "bg-primary";
+    // Arabic stage names mapping
+    const arabicStageColors: Record<string, string> = {
+      "توليد العملاء المحتملين": "bg-primary",
+      "التأهيل": "bg-primary-dark",
+      "المقترح": "bg-secondary",
+      "التفاوض": "bg-secondary-dark",
+      "الإغلاق": "bg-success"
+    };
+    
+    return englishStageColors[stageName] || arabicStageColors[stageName] || "bg-primary";
   };
 
   // Format the stages with appropriate colors
