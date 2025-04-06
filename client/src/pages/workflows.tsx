@@ -37,6 +37,36 @@ import {
 
 const workflowTemplates = [
   {
+    id: 7,
+    name: "Invoice Payment Reminder",
+    description: "Send automated reminders for upcoming and overdue invoice payments",
+    category: "Accounting",
+    triggers: ["Invoice Created", "Payment Overdue"],
+    steps: 4,
+    popular: true,
+    trigger: {
+      id: "invoice_created",
+      name: "Invoice Created or Updated",
+      category: "Accounting",
+      description: "Trigger when a new invoice is created or payment status changes"
+    },
+  },
+  {
+    id: 8,
+    name: "Low Inventory Alert",
+    description: "Monitor inventory levels and alert when products fall below threshold",
+    category: "Inventory",
+    triggers: ["Inventory Updated"],
+    steps: 3,
+    popular: true,
+    trigger: {
+      id: "inventory_threshold",
+      name: "Inventory Below Threshold",
+      category: "Inventory",
+      description: "Trigger when product inventory falls below defined threshold"
+    },
+  },
+  {
     id: 1,
     name: "Lead Nurturing Sequence",
     description: "Automatically nurture new leads with a series of personalized emails",
@@ -460,6 +490,38 @@ const workflowTemplates = [
 
 const activeWorkflows = [
   {
+    id: 107,
+    name: "Automated Invoice Reminders",
+    description: "Send payment reminders for upcoming and overdue invoices",
+    status: "active",
+    lastRun: "30 minutes ago",
+    runs: 15,
+    created: "Apr 1, 2025",
+    trigger: {
+      id: "invoice_created",
+      name: "Invoice Created or Updated",
+      category: "Accounting",
+      description: "Trigger when a new invoice is created or payment status changes"
+    },
+    triggerType: "invoice_created"
+  },
+  {
+    id: 108,
+    name: "Low Stock Notification",
+    description: "Alert inventory manager when stock levels are critical",
+    status: "active",
+    lastRun: "2 hours ago",
+    runs: 8,
+    created: "Apr 2, 2025",
+    trigger: {
+      id: "inventory_threshold",
+      name: "Inventory Below Threshold",
+      category: "Inventory",
+      description: "Trigger when product inventory falls below defined threshold"
+    },
+    triggerType: "inventory_threshold"
+  },
+  {
     id: 101,
     name: "VIP Lead Nurturing",
     description: "Special nurturing flow for high-value leads",
@@ -526,6 +588,33 @@ const activeWorkflows = [
 ];
 
 const workflowRuns = [
+  {
+    id: 1007,
+    workflowName: "Automated Invoice Reminders",
+    status: "completed",
+    trigger: "Invoice created: INV-2025-042",
+    startTime: "Apr 5, 2025 11:15 AM",
+    duration: "32 seconds",
+    steps: [
+      { name: "Check payment status", status: "completed" },
+      { name: "Calculate due date", status: "completed" },
+      { name: "Send payment reminder", status: "completed" },
+      { name: "Record notification sent", status: "completed" }
+    ]
+  },
+  {
+    id: 1008,
+    workflowName: "Low Stock Notification",
+    status: "completed",
+    trigger: "Product 'Widget XYZ' below threshold",
+    startTime: "Apr 5, 2025 9:45 AM",
+    duration: "28 seconds",
+    steps: [
+      { name: "Check inventory levels", status: "completed" },
+      { name: "Generate inventory report", status: "completed" },
+      { name: "Alert inventory manager", status: "completed" }
+    ]
+  },
   {
     id: 1001,
     workflowName: "VIP Lead Nurturing",
@@ -642,6 +731,8 @@ export default function Workflows() {
   };
 
   const getTriggerIcon = (triggerName: string) => {
+    if (triggerName.includes("Invoice")) return <FileText className="h-4 w-4 text-emerald-500" />;
+    if (triggerName.includes("inventory") || triggerName.includes("stock")) return <Layout className="h-4 w-4 text-cyan-500" />;
     if (triggerName.includes("lead")) return <User className="h-4 w-4 text-blue-500" />;
     if (triggerName.includes("deal")) return <Zap className="h-4 w-4 text-purple-500" />;
     if (triggerName.includes("email")) return <Mail className="h-4 w-4 text-green-500" />;
