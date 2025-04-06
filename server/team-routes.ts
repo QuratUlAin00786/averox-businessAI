@@ -25,8 +25,7 @@ export function registerTeamRoutes(app: Express) {
       }
 
       const newTeam = await storage.createTeam({
-        ...validation.data,
-        updatedAt: new Date(),
+        ...validation.data
       });
       res.status(201).json(newTeam);
     } catch (error: any) {
@@ -71,7 +70,8 @@ export function registerTeamRoutes(app: Express) {
       const updateSchema = z.object({
         name: z.string().optional(),
         description: z.string().optional(),
-        leaderId: z.number().optional(),
+        createdBy: z.number().optional(),
+        parentTeamId: z.number().optional(),
         isActive: z.boolean().optional(),
       });
 
@@ -80,10 +80,7 @@ export function registerTeamRoutes(app: Express) {
         return res.status(400).json({ error: validation.error.format() });
       }
 
-      const updatedTeam = await storage.updateTeam(teamId, {
-        ...validation.data,
-        updatedAt: new Date(),
-      });
+      const updatedTeam = await storage.updateTeam(teamId, validation.data);
 
       res.json(updatedTeam);
     } catch (error: any) {
@@ -126,7 +123,7 @@ export function registerTeamRoutes(app: Express) {
         return res.status(404).json({ error: "Team not found" });
       }
 
-      const members = await storage.getTeamMembers(teamId);
+      const members = await storage.listTeamMembers(teamId);
       res.json(members);
     } catch (error: any) {
       console.error("Error fetching team members:", error);
@@ -156,10 +153,7 @@ export function registerTeamRoutes(app: Express) {
         return res.status(400).json({ error: validation.error.format() });
       }
 
-      const newMember = await storage.addTeamMember({
-        ...validation.data,
-        updatedAt: new Date(),
-      });
+      const newMember = await storage.createTeamMember(validation.data);
 
       res.status(201).json(newMember);
     } catch (error: any) {
@@ -188,8 +182,7 @@ export function registerTeamRoutes(app: Express) {
       }
 
       const updatedMember = await storage.updateTeamMember(memberId, {
-        ...validation.data,
-        updatedAt: new Date(),
+        ...validation.data
       });
 
       res.json(updatedMember);
@@ -209,7 +202,7 @@ export function registerTeamRoutes(app: Express) {
         return res.status(400).json({ error: "Invalid team ID or member ID" });
       }
 
-      await storage.removeTeamMember(memberId);
+      await storage.deleteTeamMember(memberId);
       res.status(204).send();
     } catch (error: any) {
       console.error("Error removing team member:", error);
@@ -240,8 +233,7 @@ export function registerTeamRoutes(app: Express) {
       // Add the current user as the assigner
       const newAssignment = await storage.createAssignment({
         ...validation.data,
-        assignedById: req.user.id,
-        assignedAt: new Date(),
+        assignedById: req.user.id
       });
 
       res.status(201).json(newAssignment);
@@ -261,7 +253,7 @@ export function registerTeamRoutes(app: Express) {
         return res.status(400).json({ error: "Invalid entity ID" });
       }
 
-      const assignments = await storage.getAssignmentsByEntity(entityType, entityId);
+      const assignments = await storage.listAssignments(entityType, entityId);
       res.json(assignments);
     } catch (error: any) {
       console.error("Error fetching assignments:", error);
@@ -289,7 +281,7 @@ export function registerTeamRoutes(app: Express) {
   // Get all users (for team assignment)
   app.get("/api/users", async (req: Request, res: Response) => {
     try {
-      const users = await storage.getAllUsers();
+      const users = await storage.listUsers();
       
       // Filter out sensitive information
       const filteredUsers = users.map(user => ({

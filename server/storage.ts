@@ -220,6 +220,7 @@ export interface IStorage {
   deleteSocialIntegration(id: number): Promise<boolean>;
   
   // Team Management
+  listTeams(): Promise<Team[]>;
   getAllTeams(): Promise<Team[]>;
   getTeamById(id: number): Promise<Team | undefined>;
   createTeam(team: InsertTeam): Promise<Team>;
@@ -4863,6 +4864,10 @@ export class DatabaseStorage implements IStorage {
     return Array.from(this.teams.values());
   }
   
+  async listTeams(): Promise<Team[]> {
+    return this.getTeams();
+  }
+  
   async getTeam(id: number): Promise<Team | undefined> {
     return this.teams.get(id);
   }
@@ -5158,6 +5163,230 @@ import { addSocialIntegrationsToMemStorage, addSocialIntegrationsToDatabaseStora
 import { addApiKeysToMemStorage, addApiKeysToDatabaseStorage } from './api-keys-integration';
 // Import permission helper functions
 import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from './permissions-manager';
+
+// Team Management - PostgreSQL implementation
+DatabaseStorage.prototype.listTeams = async function(): Promise<Team[]> {
+  try {
+    return await db.select().from(teams);
+  } catch (error) {
+    console.error('Database error in listTeams:', error);
+    return [];
+  }
+};
+
+DatabaseStorage.prototype.getAllTeams = async function(): Promise<Team[]> {
+  return this.listTeams();
+};
+
+DatabaseStorage.prototype.getTeamById = async function(id: number): Promise<Team | undefined> {
+  try {
+    const [team] = await db.select().from(teams).where(eq(teams.id, id));
+    return team || undefined;
+  } catch (error) {
+    console.error('Database error in getTeamById:', error);
+    return undefined;
+  }
+};
+
+DatabaseStorage.prototype.createTeam = async function(teamData: InsertTeam): Promise<Team> {
+  try {
+    const [newTeam] = await db.insert(teams)
+      .values(teamData)
+      .returning();
+    return newTeam;
+  } catch (error) {
+    console.error('Database error in createTeam:', error);
+    throw error;
+  }
+};
+
+DatabaseStorage.prototype.updateTeam = async function(id: number, updates: Partial<InsertTeam>): Promise<Team> {
+  try {
+    const [updatedTeam] = await db.update(teams)
+      .set(updates)
+      .where(eq(teams.id, id))
+      .returning();
+    return updatedTeam;
+  } catch (error) {
+    console.error('Database error in updateTeam:', error);
+    throw error;
+  }
+};
+
+DatabaseStorage.prototype.deleteTeam = async function(id: number): Promise<boolean> {
+  try {
+    await db.delete(teams).where(eq(teams.id, id));
+    return true;
+  } catch (error) {
+    console.error('Database error in deleteTeam:', error);
+    return false;
+  }
+};
+
+// Team Members Management - PostgreSQL implementation
+DatabaseStorage.prototype.getTeamMembers = async function(teamId: number): Promise<(TeamMember & { user?: User })[]> {
+  try {
+    const members = await db.select({
+      teamMember: teamMembers,
+      user: users
+    })
+    .from(teamMembers)
+    .leftJoin(users, eq(teamMembers.userId, users.id))
+    .where(eq(teamMembers.teamId, teamId));
+    
+    return members.map(({ teamMember, user }) => ({ ...teamMember, user }));
+  } catch (error) {
+    console.error('Database error in getTeamMembers:', error);
+    return [];
+  }
+};
+
+DatabaseStorage.prototype.addTeamMember = async function(member: InsertTeamMember): Promise<TeamMember> {
+  try {
+    const [newMember] = await db.insert(teamMembers)
+      .values(member)
+      .returning();
+    return newMember;
+  } catch (error) {
+    console.error('Database error in addTeamMember:', error);
+    throw error;
+  }
+};
+
+DatabaseStorage.prototype.updateTeamMember = async function(id: number, updates: Partial<InsertTeamMember>): Promise<TeamMember> {
+  try {
+    const [updatedMember] = await db.update(teamMembers)
+      .set(updates)
+      .where(eq(teamMembers.id, id))
+      .returning();
+    return updatedMember;
+  } catch (error) {
+    console.error('Database error in updateTeamMember:', error);
+    throw error;
+  }
+};
+
+DatabaseStorage.prototype.removeTeamMember = async function(id: number): Promise<boolean> {
+  try {
+    await db.delete(teamMembers).where(eq(teamMembers.id, id));
+    return true;
+  } catch (error) {
+    console.error('Database error in removeTeamMember:', error);
+    return false;
+  }
+};
+
+// Team Management - DatabaseStorage Implementation
+DatabaseStorage.prototype.listTeams = async function(): Promise<Team[]> {
+  try {
+    return await db.select().from(teams).orderBy(teams.name);
+  } catch (error) {
+    console.error('Database error in listTeams:', error);
+    return [];
+  }
+};
+
+DatabaseStorage.prototype.getAllTeams = async function(): Promise<Team[]> {
+  return this.listTeams();
+};
+
+DatabaseStorage.prototype.getTeamById = async function(id: number): Promise<Team | undefined> {
+  try {
+    const [team] = await db.select().from(teams).where(eq(teams.id, id));
+    return team || undefined;
+  } catch (error) {
+    console.error('Database error in getTeamById:', error);
+    return undefined;
+  }
+};
+
+DatabaseStorage.prototype.createTeam = async function(team: InsertTeam): Promise<Team> {
+  try {
+    const [newTeam] = await db.insert(teams)
+      .values(team)
+      .returning();
+    return newTeam;
+  } catch (error) {
+    console.error('Database error in createTeam:', error);
+    throw error;
+  }
+};
+
+DatabaseStorage.prototype.updateTeam = async function(id: number, updates: Partial<InsertTeam>): Promise<Team> {
+  try {
+    const [updatedTeam] = await db.update(teams)
+      .set(updates)
+      .where(eq(teams.id, id))
+      .returning();
+    return updatedTeam;
+  } catch (error) {
+    console.error('Database error in updateTeam:', error);
+    throw error;
+  }
+};
+
+DatabaseStorage.prototype.deleteTeam = async function(id: number): Promise<boolean> {
+  try {
+    await db.delete(teams).where(eq(teams.id, id));
+    return true;
+  } catch (error) {
+    console.error('Database error in deleteTeam:', error);
+    return false;
+  }
+};
+
+// Team Members - DatabaseStorage Implementation
+DatabaseStorage.prototype.getTeamMembers = async function(teamId: number): Promise<(TeamMember & { user?: User })[]> {
+  try {
+    const members = await db.select({
+      teamMember: teamMembers,
+      user: users
+    })
+    .from(teamMembers)
+    .leftJoin(users, eq(teamMembers.userId, users.id))
+    .where(eq(teamMembers.teamId, teamId));
+    
+    return members.map(({ teamMember, user }) => ({ ...teamMember, user }));
+  } catch (error) {
+    console.error('Database error in getTeamMembers:', error);
+    return [];
+  }
+};
+
+DatabaseStorage.prototype.addTeamMember = async function(member: InsertTeamMember): Promise<TeamMember> {
+  try {
+    const [newMember] = await db.insert(teamMembers)
+      .values(member)
+      .returning();
+    return newMember;
+  } catch (error) {
+    console.error('Database error in addTeamMember:', error);
+    throw error;
+  }
+};
+
+DatabaseStorage.prototype.updateTeamMember = async function(id: number, updates: Partial<InsertTeamMember>): Promise<TeamMember> {
+  try {
+    const [updatedMember] = await db.update(teamMembers)
+      .set(updates)
+      .where(eq(teamMembers.id, id))
+      .returning();
+    return updatedMember;
+  } catch (error) {
+    console.error('Database error in updateTeamMember:', error);
+    throw error;
+  }
+};
+
+DatabaseStorage.prototype.removeTeamMember = async function(id: number): Promise<boolean> {
+  try {
+    await db.delete(teamMembers).where(eq(teamMembers.id, id));
+    return true;
+  } catch (error) {
+    console.error('Database error in removeTeamMember:', error);
+    return false;
+  }
+};
 
 // Create the appropriate storage implementation
 // For development, you can switch between MemStorage and DatabaseStorage
