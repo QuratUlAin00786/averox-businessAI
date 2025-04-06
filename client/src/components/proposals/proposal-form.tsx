@@ -152,10 +152,11 @@ export function ProposalForm({
   const { toast } = useToast();
   
   const handleFormSubmit = (values: ProposalFormValues) => {
+    console.log("[FORM DEBUG] Form submission triggered!", new Date().toISOString());
     try {
-      console.log("Form values:", values);
-      console.log("Form context - opportunityId:", opportunityId, "accountId:", accountId);
-      console.log("Form state - isEditing:", isEditing, "selectedTemplateId:", selectedTemplateId);
+      console.log("[FORM DEBUG] Form values:", JSON.stringify(values, null, 2));
+      console.log("[FORM DEBUG] Form context - opportunityId:", opportunityId, "accountId:", accountId);
+      console.log("[FORM DEBUG] Form state - isEditing:", isEditing, "selectedTemplateId:", selectedTemplateId);
       
       // Create a clean proposal object with explicit typing to avoid Zod validation issues
       const proposalData = {
@@ -168,7 +169,8 @@ export function ProposalForm({
         expiresAt: values.expiresAt,
         createdBy: 2, // Default to user ID 2 (would normally come from auth context)
         content: {}, // Empty content object
-        metadata: {} // Empty metadata object
+        metadata: {}, // Empty metadata object
+        templateId: selectedTemplateId || undefined
       };
       
       console.log("DEBUG - Constructed proposalData:", JSON.stringify(proposalData, null, 2));

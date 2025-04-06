@@ -583,15 +583,19 @@ export function ProposalManager({
   });
 
   const handleCreateProposal = (data: InsertProposal) => {
+    const timestamp = new Date().toISOString();
     try {
-      console.log("handleCreateProposal called with data:", data);
+      console.log(`[${timestamp}] handleCreateProposal called with data:`, JSON.stringify(data, null, 2));
       
       // Get account and opportunity IDs either from form data or from the component context
       const accountIdValue = Number(data.accountId || accountId);
       const opportunityIdValue = Number(data.opportunityId || opportunityId);
       
+      console.log(`[${timestamp}] ID Values - opportunityId: ${opportunityIdValue} (${typeof opportunityIdValue}), accountId: ${accountIdValue} (${typeof accountIdValue})`);
+      
       // Validate IDs
-      if (!accountIdValue || isNaN(accountIdValue)) {
+      if (!accountIdValue || isNaN(accountIdValue) || accountIdValue <= 0) {
+        console.error(`[${timestamp}] Invalid account ID: ${accountIdValue}`);
         toast({
           title: "Error",
           description: "Valid account ID is required",
@@ -600,7 +604,8 @@ export function ProposalManager({
         return;
       }
       
-      if (!opportunityIdValue || isNaN(opportunityIdValue)) {
+      if (!opportunityIdValue || isNaN(opportunityIdValue) || opportunityIdValue <= 0) {
+        console.error(`[${timestamp}] Invalid opportunity ID: ${opportunityIdValue}`);
         toast({
           title: "Error",
           description: "Valid opportunity ID is required",
@@ -611,6 +616,7 @@ export function ProposalManager({
       
       // Validate proposal name
       if (!data.name || !data.name.trim()) {
+        console.error(`[${timestamp}] Missing proposal name`);
         toast({
           title: "Error",
           description: "Proposal name is required",
@@ -637,12 +643,17 @@ export function ProposalManager({
         expiresAt: data.expiresAt
       };
       
-      console.log("Submitting validated proposalData:", proposalData);
+      console.log(`[${timestamp}] Submitting validated proposalData:`, JSON.stringify(proposalData, null, 2));
+      console.log(`[${timestamp}] Data types - accountId: ${typeof proposalData.accountId}, opportunityId: ${typeof proposalData.opportunityId}, templateId: ${typeof proposalData.templateId}`);
+      
+      // Add timestamp to metadata for tracking
+      if (!proposalData.metadata) proposalData.metadata = {};
+      proposalData.metadata.clientSubmissionTime = timestamp;
       
       // Execute mutation with error handling in the callbacks
       createProposalMutation.mutate(proposalData);
     } catch (error: any) {
-      console.error("Error in handleCreateProposal:", error);
+      console.error(`[${timestamp}] Error in handleCreateProposal:`, error);
       toast({
         title: "Error",
         description: `An unexpected error occurred: ${error.message || "Unknown error"}`,
@@ -860,7 +871,15 @@ export function ProposalManager({
                 ? 'No proposals exist for this record yet'
                 : 'No proposals exist in the system yet'}
           </p>
-          <Button onClick={() => setFormMode('create')}>
+          <Button onClick={() => {
+              console.log('Create proposal button clicked (1)');
+              try {
+                setFormMode('create');
+                console.log('Form mode set to create');
+              } catch (error) {
+                console.error('Error setting form mode:', error);
+              }
+            }}>
             <Plus className="h-4 w-4 mr-2" /> Create New Proposal
           </Button>
         </div>
@@ -1019,7 +1038,15 @@ export function ProposalManager({
           <p className="text-neutral-500 mb-6 max-w-md">
             Select a proposal from the list to view its details, or create a new proposal to get started.
           </p>
-          <Button onClick={() => setFormMode('create')}>
+          <Button onClick={() => {
+              console.log('Create proposal button clicked (2)');
+              try {
+                setFormMode('create');
+                console.log('Form mode set to create');
+              } catch (error) {
+                console.error('Error setting form mode:', error);
+              }
+            }}>
             <Plus className="h-4 w-4 mr-2" /> Create New Proposal
           </Button>
         </div>
@@ -1197,7 +1224,15 @@ export function ProposalManager({
                   Create and manage proposals for {opportunityName || accountName || 'your clients'}
                 </DialogDescription>
               </div>
-              <Button onClick={() => setFormMode('create')}>
+              <Button onClick={() => {
+                console.log('Create proposal button clicked (3)');
+                try {
+                  setFormMode('create');
+                  console.log('Form mode set to create');
+                } catch (error) {
+                  console.error('Error setting form mode:', error);
+                }
+              }}>
                 <Plus className="h-4 w-4 mr-2" /> New Proposal
               </Button>
             </div>
@@ -1263,18 +1298,22 @@ export function ProposalManager({
           templates={templates}
           onClose={() => setFormMode(null)}
           onSubmit={(data) => {
-            console.log("Form submission received in ProposalManager with data:", data);
-            console.log("Current formMode:", formMode);
-            console.log("Context values - opportunityId:", opportunityId, "accountId:", accountId);
-            
-            if (formMode === 'create') {
-              console.log("Calling handleCreateProposal with data");
-              handleCreateProposal(data as InsertProposal);
-            } else if (formMode === 'edit' && selectedProposal) {
-              console.log("Calling handleUpdateProposal with ID:", selectedProposal.id);
-              handleUpdateProposal(selectedProposal.id, data);
-            } else {
-              console.error("Unexpected form state - formMode:", formMode, "selectedProposal:", selectedProposal);
+            try {
+              console.log("Form submission received in ProposalManager with data:", data);
+              console.log("Current formMode:", formMode);
+              console.log("Context values - opportunityId:", opportunityId, "accountId:", accountId);
+              
+              if (formMode === 'create') {
+                console.log("Calling handleCreateProposal with data");
+                handleCreateProposal(data as InsertProposal);
+              } else if (formMode === 'edit' && selectedProposal) {
+                console.log("Calling handleUpdateProposal with ID:", selectedProposal.id);
+                handleUpdateProposal(selectedProposal.id, data);
+              } else {
+                console.error("Unexpected form state - formMode:", formMode, "selectedProposal:", selectedProposal);
+              }
+            } catch (error) {
+              console.error("Error in form submission handler:", error);
             }
           }}
         />
