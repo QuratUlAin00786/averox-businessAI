@@ -10,8 +10,27 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Save, Upload, User } from "lucide-react";
+import { ArrowLeft, Save, Upload, User, Check } from "lucide-react";
 import { Link } from "wouter";
+import { 
+  Dialog,
+  DialogContent, 
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog";
+
+// Predefined avatars for users to select from
+const predefinedAvatars = [
+  { id: 'male1', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4&accessories=Kurt,Prescription02,Prescription01,Round&accessoriesProbability=80&clothesColor=a7d&eyes=Default,Side,Cry,Happy,Wink,Hearts,Dizzy&eyebrows=DefaultNatural,SadConcerned,RaisedExcited&facialHair=MoustacheFancy,BeardMedium&facialHairProbability=80&mouth=Smile,Default,Twinkle,Concerned&skinColor=f2d3b1,ecad80,d08b5b,ffcd94,eac086,bf9169' },
+  { id: 'male2', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John&backgroundColor=ffdfbf&accessories=Prescription01&accessoriesProbability=80&clothesColor=545454&eyes=Happy,Default&eyebrows=Default,DefaultNatural&facialHair=BeardLight,BeardMagestic&facialHairProbability=90&mouth=Smile,Twinkle&skinColor=f8d25c,ffcd94,eac086,bf9169' },
+  { id: 'male3', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Thomas&backgroundColor=d1d4f9&accessories=Blank&accessoriesProbability=0&clothesColor=3c4f5c&eyes=Default,Side&eyebrows=Default,DefaultNatural,RaisedExcited&facialHair=Blank&facialHairProbability=0&mouth=Smile&skinColor=f2d3b1,ecad80,d08b5b' },
+  { id: 'female1', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie&backgroundColor=ffd5dc&accessories=Blank&accessoriesProbability=0&clothesColor=ff9000&clothes=ShirtScoopNeck,ShirtCrewNeck&eyes=Default,Happy,Hearts&eyebrows=Default,DefaultNatural,RaisedExcited&facialHair=Blank&facialHairProbability=0&hairColor=a55728,2c1b18,4a312c&mouth=Smile,Default&skinColor=f2d3b1,ecad80,d08b5b,ffcd94,eac086' },
+  { id: 'female2', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma&backgroundColor=f0ffb8&accessories=Kurt,Prescription02,Round&accessoriesProbability=30&clothesColor=6bd9e9&clothes=ShirtScoopNeck,ShirtVNeck&eyes=Default,Side,Happy,Wink&eyebrows=DefaultNatural,SadConcerned&facialHair=Blank&facialHairProbability=0&hairColor=a55728,2c1b18,4a312c,6a4f42&mouth=Smile,Default,Twinkle&skinColor=f2d3b1,ecad80,d08b5b' },
+  { id: 'female3', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Olivia&backgroundColor=d1f4d2&accessories=Prescription01,Prescription02,Round&accessoriesProbability=40&clothesColor=e0ddff&clothes=ShirtCrewNeck,ShirtScoopNeck,ShirtVNeck&eyes=Default,Happy,Hearts&eyebrows=DefaultNatural,RaisedExcited&facialHair=Blank&facialHairProbability=0&hairColor=2c1b18,4a312c,6a4f42,f59797&mouth=Smile,Default&skinColor=f2d3b1,ecad80,d08b5b,ffcd94' },
+  { id: 'professional1', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex&backgroundColor=b6e3f4&accessories=Kurt,Prescription02,Prescription01,Round&accessoriesProbability=90&clothesColor=3c4f5c&clothes=BlazerShirt,BlazerSweater&eyes=Default,Side&eyebrows=DefaultNatural,SadConcerned,RaisedExcited&facialHair=Blank&facialHairProbability=40&mouth=Smile,Default&skinColor=f2d3b1,ecad80,d08b5b,ffcd94,eac086,bf9169' },
+  { id: 'professional2', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Taylor&backgroundColor=d1d4f9&accessories=Prescription01,Prescription02&accessoriesProbability=70&clothesColor=545454&clothes=BlazerShirt,BlazerSweater&eyes=Default,Side,Happy&eyebrows=DefaultNatural&facialHair=Blank&facialHairProbability=10&mouth=Smile,Default&skinColor=f2d3b1,ecad80,d08b5b,ffcd94,eac086' }
+];
 
 export default function SettingsProfile() {
   const { user } = useAuth();
@@ -29,6 +48,9 @@ export default function SettingsProfile() {
     newPassword: "",
     confirmPassword: "",
   });
+  
+  // State for avatar selection dialog
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -167,29 +189,98 @@ export default function SettingsProfile() {
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <label htmlFor="avatar-upload" className="w-full">
-                    <Button variant="outline" className="w-full cursor-pointer" type="button">
-                      <Upload className="mr-2 h-4 w-4" /> Upload Photo
+                  <div className="flex flex-col space-y-2 w-full">
+                    <label htmlFor="avatar-upload" className="w-full">
+                      <Button variant="outline" className="w-full cursor-pointer" type="button">
+                        <Upload className="mr-2 h-4 w-4" /> Upload Photo
+                      </Button>
+                      <input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            // Convert to base64 for storage
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              const base64String = reader.result as string;
+                              setFormData(prev => ({ ...prev, avatar: base64String }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setIsAvatarDialogOpen(true)}
+                    >
+                      <User className="mr-2 h-4 w-4" /> Select Avatar
                     </Button>
-                    <input
-                      id="avatar-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          // Convert to base64 for storage
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            const base64String = reader.result as string;
-                            setFormData(prev => ({ ...prev, avatar: base64String }));
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                  </label>
+                  </div>
+                  
+                  {/* Avatar Selection Dialog */}
+                  <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
+                    <DialogContent className="max-w-4xl">
+                      <DialogHeader>
+                        <DialogTitle>Choose an Avatar</DialogTitle>
+                        <DialogDescription>
+                          Select one of the pre-defined avatars for your profile
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
+                        {predefinedAvatars.map((avatar) => (
+                          <div 
+                            key={avatar.id} 
+                            className={`relative cursor-pointer rounded-md border-2 p-2 transition-all hover:shadow-md ${
+                              formData.avatar === avatar.url 
+                                ? 'border-primary bg-primary/5' 
+                                : 'border-neutral-200 hover:border-primary/50'
+                            }`}
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, avatar: avatar.url }));
+                            }}
+                          >
+                            <Avatar className="h-full w-full">
+                              <AvatarImage src={avatar.url} alt={avatar.id} />
+                              <AvatarFallback>...</AvatarFallback>
+                            </Avatar>
+                            
+                            {formData.avatar === avatar.url && (
+                              <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full p-1">
+                                <Check className="h-4 w-4" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsAvatarDialogOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            setIsAvatarDialogOpen(false);
+                            toast({
+                              title: "Avatar Selected",
+                              description: "Don't forget to save your changes!",
+                            });
+                          }}
+                        >
+                          Use Selected Avatar
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <div className="flex-1">
