@@ -340,21 +340,29 @@ export default function DataMigrationPage() {
       addToProcessingLog(`Starting import from file: ${file.name}`);
       
       try {
-        // Create FormData to send file
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('crmType', selectedSystem || 'generic');
+        // Build query params for additional data
+        const queryParams = new URLSearchParams();
+        queryParams.append('crmType', selectedSystem || 'generic');
         
-        // Add additional data
+        // Add entity types if selected
         if (selectedEntities.length > 0) {
-          formData.append('entityTypes', JSON.stringify(selectedEntities));
+          queryParams.append('entityTypes', JSON.stringify(selectedEntities));
         }
         
-        // Start upload - using raw fetch instead of apiRequest because FormData is not JSON
-        const response = await fetch('/api/migration/import-file', {
+        // Get file content as ArrayBuffer
+        const fileBuffer = await file.arrayBuffer();
+        
+        // Convert to appropriate format for sending
+        const fileData = new Uint8Array(fileBuffer);
+        
+        // Start upload - using raw fetch with file binary data
+        const response = await fetch(`/api/migration/import-file?${queryParams.toString()}`, {
           method: 'POST',
-          body: formData,
-          // Don't set Content-Type header - the browser will set it with the correct boundary for FormData
+          body: fileData,
+          headers: {
+            'Content-Type': file.type,
+            'Content-Disposition': `attachment; filename="${file.name}"`
+          }
         });
         
         if (!response.ok) {

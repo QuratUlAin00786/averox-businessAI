@@ -255,19 +255,33 @@ export class MigrationController {
    */
   async importFromFile(req: Request, res: Response) {
     try {
-      // Check if file exists in the request
-      if (!req.file) {
+      // Check if file data exists in the request
+      if (!req.body || req.body.length === 0) {
         return res.status(400).json({
           success: false,
-          error: 'No file uploaded'
+          error: 'No file data uploaded'
         });
       }
 
-      const file = req.file;
-      const crmType = req.body.crmType || 'generic';
-      const entityTypes = req.body.entityTypes ? JSON.parse(req.body.entityTypes) : [];
+      // Extract filename and content type from headers
+      const contentType = req.get('Content-Type') || 'application/octet-stream';
+      const contentDisposition = req.get('Content-Disposition') || '';
+      const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
+      const fileName = fileNameMatch ? fileNameMatch[1] : 'imported-file';
       
-      console.log(`Processing file ${file.originalname} (${file.size} bytes) from CRM type: ${crmType}`);
+      // Extract metadata from query params since we can't use multipart/form-data
+      const crmType = req.query.crmType as string || 'generic';
+      const entityTypesStr = req.query.entityTypes as string;
+      const entityTypes = entityTypesStr ? JSON.parse(entityTypesStr) : [];
+      
+      const fileData = {
+        buffer: req.body,
+        originalname: fileName,
+        mimetype: contentType,
+        size: req.body.length
+      };
+      
+      console.log(`Processing file ${fileName} (${fileData.size} bytes) from CRM type: ${crmType}`);
       
       // Generate a unique migration ID
       const migrationId = `file_import_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
@@ -283,14 +297,14 @@ export class MigrationController {
         errors: [],
         startTime: new Date(),
         fileDetails: {
-          name: file.originalname,
-          size: file.size,
-          type: file.mimetype
+          name: fileName,
+          size: fileData.size,
+          type: contentType
         }
       });
       
       // Start processing in the background
-      this.processFileImportInBackground(migrationId, file, crmType, entityTypes);
+      this.processFileImportInBackground(migrationId, fileData, crmType, entityTypes);
       
       // Return the migration ID to the client for status polling
       res.status(200).json({
@@ -511,7 +525,7 @@ export class MigrationController {
    */
   private async processFileImportInBackground(
     migrationId: string, 
-    file: Express.Multer.File,
+    file: any, // Modified to accept our custom file object
     crmType: string, 
     entityTypes: string[]
   ) {

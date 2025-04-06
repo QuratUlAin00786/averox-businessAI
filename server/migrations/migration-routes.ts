@@ -1,37 +1,7 @@
 import express from 'express';
 import { migrationController } from './migration-controller';
-import multer from 'multer';
 
 export const migrationRouter = express.Router();
-
-// Set up multer for file uploads
-// Store files in memory for processing
-const storage = multer.memoryStorage();
-const upload = multer({ 
-  storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // Limit file size to 10MB
-  },
-  fileFilter: (req, file, cb) => {
-    // Accept only specific file types
-    const allowedMimeTypes = [
-      'text/csv', 
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/json'
-    ];
-    
-    // Check file type
-    if (allowedMimeTypes.includes(file.mimetype) || 
-        file.originalname.endsWith('.csv') || 
-        file.originalname.endsWith('.xlsx') ||
-        file.originalname.endsWith('.json')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only CSV, Excel, and JSON files are allowed.'));
-    }
-  }
-});
 
 // Route for initiating authentication with a CRM system
 migrationRouter.post('/auth/init', migrationController.initiateAuth.bind(migrationController));
@@ -55,5 +25,10 @@ migrationRouter.post('/start', migrationController.startMigration.bind(migration
 migrationRouter.get('/status/:jobId', migrationController.getMigrationStatus.bind(migrationController));
 
 // Route for importing data from a file (CSV, Excel, etc.)
-// Use multer middleware to handle file upload
-migrationRouter.post('/import-file', upload.single('file'), migrationController.importFromFile.bind(migrationController));
+// Using express.raw() to handle file uploads with size limit of 10MB
+migrationRouter.post('/import-file', 
+  express.raw({ 
+    type: ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/json'],
+    limit: '10mb'
+  }), 
+  migrationController.importFromFile.bind(migrationController));
