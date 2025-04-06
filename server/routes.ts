@@ -133,6 +133,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Special profile update endpoint that can handle large base64 encoded images
+  app.post('/api/profile', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const userId = req.user.id;
+      const { firstName, lastName, email, company, avatar } = req.body;
+      
+      // Create a sanitized update object
+      const updateData: Record<string, any> = {};
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (email !== undefined) updateData.email = email;
+      if (company !== undefined) updateData.company = company;
+      if (avatar !== undefined) updateData.avatar = avatar;
+      
+      console.log(`Processing profile update for user ${userId}`);
+      
+      // Perform the update
+      const updatedUser = await storage.updateUser(userId, updateData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Don't send password back to client
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
   // Users routes
   app.get('/api/users', async (req: Request, res: Response) => {
     try {

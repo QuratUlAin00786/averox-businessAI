@@ -101,7 +101,13 @@ export default function SettingsProfile() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const response = await apiRequest("PATCH", `/api/users/${user?.id}`, data);
+      console.log('Submitting profile data:', data);
+      // Use the special profile endpoint that can handle large base64 images
+      const response = await apiRequest("POST", `/api/profile`, data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -112,6 +118,7 @@ export default function SettingsProfile() {
       });
     },
     onError: (error: Error) => {
+      console.error('Profile update error:', error);
       toast({
         title: "Update Failed",
         description: error.message,
@@ -227,99 +234,95 @@ export default function SettingsProfile() {
                     )}
                   </Avatar>
                   <div className="flex flex-col space-y-2 w-full">
-                    <label htmlFor="avatar-upload" className="w-full">
-                      <Button variant="outline" className="w-full cursor-pointer" type="button">
-                        <Upload className="mr-2 h-4 w-4" /> Upload Photo
-                      </Button>
-                      <input
-                        id="avatar-upload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          try {
-                            const files = e.target.files;
-                            if (files && files.length > 0) {
-                              const file = files[0];
-                              
-                              // Check file size (limit to 5MB)
-                              if (file.size > 5 * 1024 * 1024) {
-                                toast({
-                                  title: "File too large",
-                                  description: "Please select an image under 5MB",
-                                  variant: "destructive"
-                                });
-                                return;
-                              }
-                              
-                              // Check file type for additional validation
-                              const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
-                              if (!validImageTypes.includes(file.type)) {
-                                toast({
-                                  title: "Invalid file type",
-                                  description: "Please select a JPG, PNG, GIF, or SVG image",
-                                  variant: "destructive"
-                                });
-                                return;
-                              }
-                              
-                              // Show loading toast
-                              toast({
-                                title: "Processing image",
-                                description: "Please wait while we process your image...",
-                              });
-                              
-                              // Convert to base64 for storage
-                              const reader = new FileReader();
-                              
-                              reader.onloadend = () => {
-                                try {
-                                  const base64String = reader.result as string;
-                                  
-                                  // Ensure we got a valid result
-                                  if (!base64String || typeof base64String !== 'string') {
-                                    throw new Error('Invalid image data received');
-                                  }
-                                  
-                                  setFormData(prev => ({ ...prev, avatar: base64String }));
-                                  
+                    <div className="w-full">
+                      <Button 
+                        variant="outline" 
+                        className="w-full cursor-pointer" 
+                        type="button"
+                        onClick={() => {
+                          // Create a temporary file input and click it
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'image/*';
+                          
+                          input.onchange = (e) => {
+                            try {
+                              const files = (e.target as HTMLInputElement).files;
+                              if (files && files.length > 0) {
+                                const file = files[0];
+                                
+                                // Check file size (limit to 5MB)
+                                if (file.size > 5 * 1024 * 1024) {
                                   toast({
-                                    title: "Image uploaded",
-                                    description: "Don't forget to click 'Save Changes' to apply!",
-                                  });
-                                } catch (error) {
-                                  console.error("Error setting image:", error);
-                                  toast({
-                                    title: "Upload failed",
-                                    description: "There was a problem processing your image.",
+                                    title: "File too large",
+                                    description: "Please select an image under 5MB",
                                     variant: "destructive"
                                   });
+                                  return;
                                 }
-                              };
-                              
-                              reader.onerror = (event) => {
-                                console.error("FileReader error:", event);
+                                
+                                // Show loading toast
                                 toast({
-                                  title: "Upload failed",
-                                  description: "There was a problem reading your image.",
-                                  variant: "destructive"
+                                  title: "Processing image",
+                                  description: "Please wait while we process your image...",
                                 });
-                              };
-                              
-                              // Start reading the file
-                              reader.readAsDataURL(file);
+                                
+                                // Convert to base64 for storage
+                                const reader = new FileReader();
+                                
+                                reader.onload = () => {
+                                  try {
+                                    const base64String = reader.result as string;
+                                    
+                                    // Ensure we got a valid result
+                                    if (!base64String || typeof base64String !== 'string') {
+                                      throw new Error('Invalid image data received');
+                                    }
+                                    
+                                    setFormData(prev => ({ ...prev, avatar: base64String }));
+                                    
+                                    toast({
+                                      title: "Image uploaded",
+                                      description: "Don't forget to click 'Save Changes' to apply!",
+                                    });
+                                  } catch (error) {
+                                    console.error("Error setting image:", error);
+                                    toast({
+                                      title: "Upload failed",
+                                      description: "There was a problem processing your image.",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                };
+                                
+                                reader.onerror = () => {
+                                  toast({
+                                    title: "Upload failed",
+                                    description: "There was a problem reading your image.",
+                                    variant: "destructive"
+                                  });
+                                };
+                                
+                                // Start reading the file
+                                reader.readAsDataURL(file);
+                              }
+                            } catch (error) {
+                              console.error("File upload error:", error);
+                              toast({
+                                title: "Upload failed",
+                                description: "There was a problem with the file upload.",
+                                variant: "destructive"
+                              });
                             }
-                          } catch (error) {
-                            console.error("File upload error:", error);
-                            toast({
-                              title: "Upload failed",
-                              description: "There was a problem with the file upload. Please try again with a different photo.",
-                              variant: "destructive"
-                            });
-                          }
+                          };
+                          
+                          // Trigger the file selection dialog
+                          input.click();
                         }}
-                      />
-                    </label>
+                      >
+                        <Upload className="mr-2 h-4 w-4" /> Upload Photo
+                      </Button>
+                    </div>
                     
                     <Button 
                       variant="outline" 
