@@ -17,11 +17,13 @@ import {
   BellRing, 
   Layout, 
   Languages, 
+  Loader2,
   MailCheck, 
   Menu, 
   Save, 
   Shield,
-  Smartphone 
+  Smartphone,
+  ToggleLeft
 } from "lucide-react";
 import { Link } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
@@ -122,14 +124,25 @@ export default function SettingsSystem() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real app, this would save to the backend
-    toast({
-      title: "Settings Saved",
-      description: "Your system settings have been updated successfully.",
-    });
+    try {
+      // Save the system settings including menu visibility
+      await saveSettings();
+      
+      toast({
+        title: "Settings Saved",
+        description: "Your system settings have been updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -358,10 +371,188 @@ export default function SettingsSystem() {
                   </div>
                 </CardContent>
               </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <ToggleLeft className="mr-2 h-5 w-5" />
+                    Menu Visibility
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Enable or disable menu items in the navigation sidebar. This allows you to customize the user interface based on your organization's needs.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="contacts">Contacts</Label>
+                        <Switch
+                          id="contacts"
+                          checked={settings.menuVisibility.contacts}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("contacts", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="accounts">Accounts</Label>
+                        <Switch
+                          id="accounts"
+                          checked={settings.menuVisibility.accounts}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("accounts", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="leads">Leads</Label>
+                        <Switch
+                          id="leads"
+                          checked={settings.menuVisibility.leads}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("leads", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="opportunities">Opportunities</Label>
+                        <Switch
+                          id="opportunities"
+                          checked={settings.menuVisibility.opportunities}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("opportunities", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="calendar">Calendar</Label>
+                        <Switch
+                          id="calendar"
+                          checked={settings.menuVisibility.calendar}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("calendar", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="tasks">Tasks</Label>
+                        <Switch
+                          id="tasks"
+                          checked={settings.menuVisibility.tasks}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("tasks", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="communicationCenter">Communication Center</Label>
+                        <Switch
+                          id="communicationCenter"
+                          checked={settings.menuVisibility.communicationCenter}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("communicationCenter", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="accounting">Accounting</Label>
+                        <Switch
+                          id="accounting"
+                          checked={settings.menuVisibility.accounting}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("accounting", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="inventory">Inventory</Label>
+                        <Switch
+                          id="inventory"
+                          checked={settings.menuVisibility.inventory}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("inventory", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="supportTickets">Support Tickets</Label>
+                        <Switch
+                          id="supportTickets"
+                          checked={settings.menuVisibility.supportTickets}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("supportTickets", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="ecommerce">E-commerce</Label>
+                        <Switch
+                          id="ecommerce"
+                          checked={settings.menuVisibility.ecommerce}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("ecommerce", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="ecommerceStore">E-commerce Store</Label>
+                        <Switch
+                          id="ecommerceStore"
+                          checked={settings.menuVisibility.ecommerceStore}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("ecommerceStore", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="reports">Reports</Label>
+                        <Switch
+                          id="reports"
+                          checked={settings.menuVisibility.reports}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("reports", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="intelligence">Intelligence</Label>
+                        <Switch
+                          id="intelligence"
+                          checked={settings.menuVisibility.intelligence}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("intelligence", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="workflows">Workflows</Label>
+                        <Switch
+                          id="workflows"
+                          checked={settings.menuVisibility.workflows}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("workflows", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="subscriptions">Subscriptions</Label>
+                        <Switch
+                          id="subscriptions"
+                          checked={settings.menuVisibility.subscriptions}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("subscriptions", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="training">Training & Help</Label>
+                        <Switch
+                          id="training"
+                          checked={settings.menuVisibility.training}
+                          onCheckedChange={(checked) => handleMenuVisibilityChange("training", checked)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <Button type="submit" className="w-full md:w-auto md:ml-auto">
-                <Save className="mr-2 h-4 w-4" />
-                {t.buttons.save}
+              <Button 
+                type="submit" 
+                className="w-full md:w-auto md:ml-auto"
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                ) : (
+                  <><Save className="mr-2 h-4 w-4" /> {t.buttons.save}</>
+                )}
               </Button>
             </div>
           </form>
