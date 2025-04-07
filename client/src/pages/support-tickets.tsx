@@ -23,7 +23,11 @@ import {
 } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { AlertCircle, Clock, Filter, MessageSquare, Search, User, Info, Ticket, CheckCircle2, AlertTriangle, HelpCircle, XCircle, Phone, Mail, MessageCircleQuestion } from 'lucide-react';
+import { 
+  AlertCircle, Clock, Filter, MessageSquare, Search, User, Info, Ticket, 
+  CheckCircle2, AlertTriangle, HelpCircle, XCircle, Phone, Mail, 
+  MessageCircleQuestion, ExternalLink, Globe
+} from 'lucide-react';
 
 // Mock data structure until API is implemented
 interface SupportTicket {
@@ -458,6 +462,16 @@ export default function SupportTicketsPage() {
           <p className="text-muted-foreground">Manage and track your support requests</p>
         </div>
         <div className="flex space-x-2">
+          <a 
+            href="https://support.averox.com" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="inline-flex items-center"
+          >
+            <Button variant="outline" className="mr-2">
+              <ExternalLink className="mr-2 h-4 w-4" /> External Support Portal
+            </Button>
+          </a>
           <Button variant="default" onClick={() => setIsNewTicketDialogOpen(true)}>
             <Ticket className="mr-2 h-4 w-4" /> New Ticket
           </Button>
@@ -565,6 +579,58 @@ export default function SupportTicketsPage() {
             </Table>
           </Card>
           
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Customer Support Portal</CardTitle>
+              <CardDescription>Access your dedicated support portal for personalized assistance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4 items-start">
+                <div className="flex-1 bg-blue-50 p-4 rounded-md">
+                  <div className="flex items-center mb-3">
+                    <Globe className="h-5 w-5 mr-2 text-primary" />
+                    <h3 className="font-semibold">External Support Portal</h3>
+                  </div>
+                  <p className="text-sm mb-4">
+                    Access our dedicated customer portal to submit tickets, view knowledge base articles, 
+                    and get real-time updates on your support requests.
+                  </p>
+                  <a 
+                    href="https://support.averox.com/portal" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block"
+                  >
+                    <Button>
+                      <ExternalLink className="mr-2 h-4 w-4" /> Access Customer Portal
+                    </Button>
+                  </a>
+                </div>
+                
+                <div className="flex-1 bg-gray-50 p-4 rounded-md">
+                  <div className="flex items-center mb-3">
+                    <MessageCircleQuestion className="h-5 w-5 mr-2 text-primary" />
+                    <h3 className="font-semibold">Register a Complaint</h3>
+                  </div>
+                  <p className="text-sm mb-4">
+                    Not satisfied with our support? Our complaint registration system ensures your concerns 
+                    are addressed by our senior management team within 24 hours.
+                  </p>
+                  <a 
+                    href="https://support.averox.com/complaint" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block"
+                  >
+                    <Button variant="outline">
+                      <ExternalLink className="mr-2 h-4 w-4" /> Register Complaint
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
