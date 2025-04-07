@@ -44,6 +44,7 @@ import ProfitLossReport from "@/pages/accounting/reports/profit-loss";
 import TransactionsPage from "@/pages/accounting/transactions";
 import SupportTickets from "@/pages/support-tickets";
 import Ecommerce from "@/pages/ecommerce";
+import EcommerceStore from "@/pages/ecommerce-store";
 
 function Router() {
   return (
@@ -299,6 +300,12 @@ function Router() {
       <ProtectedRoute path="/ecommerce" component={() => (
         <Layout>
           <Ecommerce />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/ecommerce-store" component={() => (
+        <Layout>
+          <EcommerceStore />
         </Layout>
       )} />
       

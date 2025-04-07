@@ -61,6 +61,25 @@ interface TooltipTranslations {
     details: string;
     communications: string;
   };
+  supportTickets: {
+    main: string;
+    creation: string;
+    management: string;
+    status: string;
+  };
+  ecommerce: {
+    main: string;
+    stores: string;
+    products: string;
+    orders: string;
+  };
+  ecommerceStore: {
+    main: string;
+    dashboard: string;
+    products: string;
+    orders: string;
+    customers: string;
+  };
 }
 
 interface NavigationTranslations {
@@ -83,6 +102,7 @@ interface NavigationTranslations {
   training: string;
   supportTickets: string;
   ecommerce: string;
+  ecommerceStore: string;
 }
 
 interface DashboardTranslations {
@@ -264,6 +284,7 @@ const englishTranslations: Translations = {
     training: 'Training & Help',
     supportTickets: 'Support Tickets',
     ecommerce: 'E-Commerce',
+    ecommerceStore: 'E-Commerce Store',
   },
   dashboard: {
     greeting: 'Hello',
@@ -438,6 +459,13 @@ const englishTranslations: Translations = {
       stores: 'Connect and synchronize with your Shopify stores',
       products: 'Manage your product catalog across all stores',
       orders: 'Track and process customer orders from all channels'
+    },
+    ecommerceStore: {
+      main: 'Manage your own e-commerce store directly through AVEROX',
+      dashboard: 'View store performance and analytics',
+      products: 'Manage your product catalog and inventory',
+      orders: 'Process and fulfill customer orders',
+      customers: 'Manage customer accounts and purchase history'
     }
   },
   training: {
@@ -500,6 +528,7 @@ const arabicTranslations: Translations = {
     training: 'التدريب والمساعدة',
     supportTickets: 'تذاكر الدعم',
     ecommerce: 'التجارة الإلكترونية',
+    ecommerceStore: 'متجر التجارة الإلكترونية',
   },
   dashboard: {
     greeting: 'مرحبا',
@@ -674,6 +703,13 @@ const arabicTranslations: Translations = {
       stores: 'اتصل ومزامنة مع متاجر Shopify الخاصة بك',
       products: 'إدارة كتالوج المنتجات الخاص بك عبر جميع المتاجر',
       orders: 'تتبع ومعالجة طلبات العملاء من جميع القنوات'
+    },
+    ecommerceStore: {
+      main: 'إدارة متجر التجارة الإلكترونية الخاص بك مباشرة من خلال AVEROX',
+      dashboard: 'عرض أداء المتجر والتحليلات',
+      products: 'إدارة كتالوج المنتجات والمخزون',
+      orders: 'معالجة وتنفيذ طلبات العملاء',
+      customers: 'إدارة حسابات العملاء وسجل المشتريات'
     }
   },
   training: {
