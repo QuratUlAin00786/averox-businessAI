@@ -426,6 +426,18 @@ const englishTranslations: Translations = {
       videos: 'Watch video demonstrations of key features and workflows',
       faq: 'Find answers to frequently asked questions about using the platform',
       resources: 'Download helpful resources like user guides and checklists'
+    },
+    supportTickets: {
+      main: 'Manage support requests and inquiries in one centralized location',
+      creation: 'Create new support tickets to get help with issues',
+      management: 'Track and respond to active support tickets',
+      status: 'Monitor the status and progress of your support requests'
+    },
+    ecommerce: {
+      main: 'Manage your online stores, products, and orders',
+      stores: 'Connect and synchronize with your Shopify stores',
+      products: 'Manage your product catalog across all stores',
+      orders: 'Track and process customer orders from all channels'
     }
   },
   training: {
@@ -650,6 +662,18 @@ const arabicTranslations: Translations = {
       videos: 'مشاهدة عروض توضيحية بالفيديو للميزات وسير العمل الرئيسية',
       faq: 'ابحث عن إجابات للأسئلة المتداولة حول استخدام المنصة',
       resources: 'تنزيل موارد مفيدة مثل أدلة المستخدم وقوائم المراجعة'
+    },
+    supportTickets: {
+      main: 'إدارة طلبات الدعم والاستفسارات في مكان مركزي واحد',
+      creation: 'إنشاء تذاكر دعم جديدة للحصول على المساعدة في حل المشكلات',
+      management: 'تتبع والرد على تذاكر الدعم النشطة',
+      status: 'مراقبة حالة وتقدم طلبات الدعم الخاصة بك'
+    },
+    ecommerce: {
+      main: 'إدارة متاجرك عبر الإنترنت والمنتجات والطلبات',
+      stores: 'اتصل ومزامنة مع متاجر Shopify الخاصة بك',
+      products: 'إدارة كتالوج المنتجات الخاص بك عبر جميع المتاجر',
+      orders: 'تتبع ومعالجة طلبات العملاء من جميع القنوات'
     }
   },
   training: {

@@ -42,6 +42,8 @@ import RevenueReport from "@/pages/accounting/reports/revenue";
 import ExpensesReport from "@/pages/accounting/reports/expenses";
 import ProfitLossReport from "@/pages/accounting/reports/profit-loss";
 import TransactionsPage from "@/pages/accounting/transactions";
+import SupportTickets from "@/pages/support-tickets";
+import Ecommerce from "@/pages/ecommerce";
 
 function Router() {
   return (
@@ -285,6 +287,18 @@ function Router() {
       <ProtectedRoute path="/training-help" component={() => (
         <Layout>
           <TrainingHelpPage />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/support-tickets" component={() => (
+        <Layout>
+          <SupportTickets />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/ecommerce" component={() => (
+        <Layout>
+          <Ecommerce />
         </Layout>
       )} />
       
