@@ -15,7 +15,7 @@ import {
   socialCampaigns, type SocialCampaign, type InsertSocialCampaign,
   apiKeys, type ApiKey, type InsertApiKey,
   workflows, type Workflow, type InsertWorkflow,
-  productCategories, type ProductCategory, type InsertProductCategory,
+  productCategoriesTable, type ProductCategory, type InsertProductCategory,
   products, type Product, type InsertProduct,
   inventoryTransactions, type InventoryTransaction, type InsertInventoryTransaction,
   invoices, type Invoice, type InsertInvoice,
@@ -521,7 +521,7 @@ export class MemStorage implements IStorage {
   private proposalActivities: Map<number, ProposalActivity>;
   
   // Business accounting maps
-  private productCategories: Map<number, ProductCategory>;
+  private productCategoriesMap: Map<number, ProductCategory>;
   private products: Map<number, Product>;
   private inventoryTransactions: Map<number, InventoryTransaction>;
   private invoices: Map<number, Invoice>;
@@ -615,7 +615,7 @@ export class MemStorage implements IStorage {
     this.proposalActivities = new Map();
     
     // Initialize business accounting maps
-    this.productCategories = new Map();
+    this.productCategoriesMap = new Map();
     this.products = new Map();
     this.inventoryTransactions = new Map();
     this.invoices = new Map();
@@ -2257,11 +2257,11 @@ export class MemStorage implements IStorage {
 
   // Product Category Methods
   async getProductCategory(id: number): Promise<ProductCategory | undefined> {
-    return this.productCategories.get(id);
+    return this.productCategoriesMap.get(id);
   }
 
   async listProductCategories(filter?: Partial<ProductCategory>): Promise<ProductCategory[]> {
-    let categories = Array.from(this.productCategories.values());
+    let categories = Array.from(this.productCategoriesMap.values());
     
     if (filter) {
       categories = categories.filter(category => {
@@ -2290,12 +2290,12 @@ export class MemStorage implements IStorage {
       isActive: insertProductCategory.isActive === undefined ? true : insertProductCategory.isActive
     };
     
-    this.productCategories.set(id, productCategory);
+    this.productCategoriesMap.set(id, productCategory);
     return productCategory;
   }
 
   async updateProductCategory(id: number, categoryData: Partial<InsertProductCategory>): Promise<ProductCategory | undefined> {
-    const existingCategory = this.productCategories.get(id);
+    const existingCategory = this.productCategoriesMap.get(id);
     if (!existingCategory) {
       return undefined;
     }
@@ -2305,12 +2305,12 @@ export class MemStorage implements IStorage {
       ...categoryData
     };
     
-    this.productCategories.set(id, updatedCategory);
+    this.productCategoriesMap.set(id, updatedCategory);
     return updatedCategory;
   }
 
   async deleteProductCategory(id: number): Promise<boolean> {
-    return this.productCategories.delete(id);
+    return this.productCategoriesMap.delete(id);
   }
 
   // Product Methods
@@ -4455,7 +4455,7 @@ export class DatabaseStorage implements IStorage {
   // Product Category methods
   async getProductCategory(id: number): Promise<ProductCategory | undefined> {
     try {
-      const [productCategory] = await db.select().from(productCategories).where(eq(productCategories.id, id));
+      const [productCategory] = await db.select().from(productCategoriesTable).where(eq(productCategoriesTable.id, id));
       return productCategory;
     } catch (error) {
       console.error('Database error in getProductCategory:', error);
@@ -4465,14 +4465,14 @@ export class DatabaseStorage implements IStorage {
 
   async listProductCategories(filter?: Partial<ProductCategory>): Promise<ProductCategory[]> {
     try {
-      let query = db.select().from(productCategories);
+      let query = db.select().from(productCategoriesTable);
       
       if (filter) {
         const whereConditions = [];
-        if (filter.id !== undefined) whereConditions.push(eq(productCategories.id, filter.id));
-        if (filter.name !== undefined) whereConditions.push(eq(productCategories.name, filter.name));
-        if (filter.isActive !== undefined) whereConditions.push(eq(productCategories.isActive, filter.isActive));
-        if (filter.ownerId !== undefined) whereConditions.push(eq(productCategories.ownerId, filter.ownerId));
+        if (filter.id !== undefined) whereConditions.push(eq(productCategoriesTable.id, filter.id));
+        if (filter.name !== undefined) whereConditions.push(eq(productCategoriesTable.name, filter.name));
+        if (filter.isActive !== undefined) whereConditions.push(eq(productCategoriesTable.isActive, filter.isActive));
+        if (filter.ownerId !== undefined) whereConditions.push(eq(productCategoriesTable.ownerId, filter.ownerId));
         
         // Apply where conditions if any exist
         if (whereConditions.length > 0) {
@@ -4489,7 +4489,7 @@ export class DatabaseStorage implements IStorage {
 
   async createProductCategory(category: InsertProductCategory): Promise<ProductCategory> {
     try {
-      const [newCategory] = await db.insert(productCategories).values(category).returning();
+      const [newCategory] = await db.insert(productCategoriesTable).values(category).returning();
       return newCategory;
     } catch (error) {
       console.error('Database error in createProductCategory:', error);
@@ -4499,12 +4499,12 @@ export class DatabaseStorage implements IStorage {
 
   async updateProductCategory(id: number, category: Partial<InsertProductCategory>): Promise<ProductCategory | undefined> {
     try {
-      const [updatedCategory] = await db.update(productCategories)
+      const [updatedCategory] = await db.update(productCategoriesTable)
         .set({
           ...category,
           updatedAt: new Date()
         })
-        .where(eq(productCategories.id, id))
+        .where(eq(productCategoriesTable.id, id))
         .returning();
       
       return updatedCategory;
@@ -4523,7 +4523,7 @@ export class DatabaseStorage implements IStorage {
         return false;
       }
       
-      const result = await db.delete(productCategories).where(eq(productCategories.id, id));
+      const result = await db.delete(productCategories).where(eq(productCategoriesTable.id, id));
       return result.rowCount > 0;
     } catch (error) {
       console.error('Database error in deleteProductCategory:', error);

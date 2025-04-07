@@ -438,7 +438,7 @@ const productCategoriesRef = pgTable("product_categories", {
 });
 
 // Product Categories
-export const productCategories = pgTable("product_categories", {
+export const productCategoriesTable = pgTable("product_categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
@@ -459,7 +459,7 @@ export const products = pgTable("products", {
   description: text("description"),
   price: numeric("price").notNull(),
   cost: numeric("cost"),
-  categoryId: integer("category_id").references(() => productCategories.id),
+  categoryId: integer("category_id").references(() => productCategoriesTable.id),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at"),
@@ -811,7 +811,7 @@ export const insertProposalActivitySchema = createInsertSchema(proposalActivitie
 });
 
 // Product and Inventory schemas
-export const insertProductCategorySchema = createInsertSchema(productCategories).omit({
+export const insertProductCategorySchema = createInsertSchema(productCategoriesTable).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -934,7 +934,7 @@ export type ProposalActivity = typeof proposalActivities.$inferSelect;
 
 // Product and Inventory types
 export type InsertProductCategory = z.infer<typeof insertProductCategorySchema>;
-export type ProductCategory = typeof productCategories.$inferSelect;
+export type ProductCategory = typeof productCategoriesTable.$inferSelect;
 
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
@@ -1009,3 +1009,188 @@ export type TeamMember = typeof teamMembers.$inferSelect;
 
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
 export type Assignment = typeof assignments.$inferSelect;
+
+// Support Ticket System Schema
+export const ticketPriorities = pgEnum('ticket_priority', ['low', 'medium', 'high', 'critical']);
+export const ticketStatuses = pgEnum('ticket_status', ['open', 'in_progress', 'waiting_on_customer', 'waiting_on_third_party', 'resolved', 'closed']);
+export const ticketTypes = pgEnum('ticket_type', ['technical', 'billing', 'feature_request', 'general_inquiry', 'bug_report']);
+
+export const supportTickets = pgTable('support_tickets', {
+  id: serial('id').primaryKey(),
+  subject: text('subject').notNull(),
+  description: text('description').notNull(),
+  customerId: integer('customer_id').references(() => users.id),
+  assignedTo: integer('assigned_to').references(() => users.id),
+  status: ticketStatuses('status').default('open').notNull(),
+  priority: ticketPriorities('priority').default('medium').notNull(),
+  type: ticketTypes('type').default('general_inquiry').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  resolvedAt: timestamp('resolved_at'),
+  dueDate: timestamp('due_date'),
+  isInternal: boolean('is_internal').default(false),
+});
+
+export const ticketComments = pgTable('ticket_comments', {
+  id: serial('id').primaryKey(),
+  ticketId: integer('ticket_id').references(() => supportTickets.id).notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  comment: text('comment').notNull(),
+  isInternal: boolean('is_internal').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const ticketAttachments = pgTable('ticket_attachments', {
+  id: serial('id').primaryKey(),
+  ticketId: integer('ticket_id').references(() => supportTickets.id).notNull(),
+  commentId: integer('comment_id').references(() => ticketComments.id),
+  fileName: text('file_name').notNull(),
+  fileUrl: text('file_url').notNull(),
+  fileSize: integer('file_size').notNull(),
+  contentType: text('content_type').notNull(),
+  uploadedBy: integer('uploaded_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// E-commerce Integration Schema (Shopify)
+export const shopifyStores = pgTable('shopify_stores', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  storeName: text('store_name').notNull(),
+  domain: text('domain').notNull(),
+  accessToken: text('access_token'),
+  apiKey: text('api_key'),
+  apiSecret: text('api_secret'),
+  isActive: boolean('is_active').default(true),
+  lastSyncedAt: timestamp('last_synced_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const shopifyProductCategoryEnum = pgEnum('shopify_product_category', [
+  'clothing', 'electronics', 'home_goods', 'food', 'beauty', 'books', 'sports', 'other'
+]);
+
+export const shopifyProducts = pgTable('shopify_products', {
+  id: serial('id').primaryKey(),
+  storeId: integer('store_id').references(() => shopifyStores.id).notNull(),
+  productId: text('product_id').notNull(),
+  title: text('title').notNull(),
+  description: text('description'),
+  price: numeric('price', { precision: 10, scale: 2 }),
+  compareAtPrice: numeric('compare_at_price', { precision: 10, scale: 2 }),
+  inventoryQuantity: integer('inventory_quantity'),
+  sku: text('sku'),
+  productType: text('product_type'),
+  category: shopifyProductCategoryEnum('category').default('other'),
+  vendor: text('vendor'),
+  imageUrl: text('image_url'),
+  productUrl: text('product_url'),
+  tags: text('tags'),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const shopifyCustomers = pgTable('shopify_customers', {
+  id: serial('id').primaryKey(),
+  storeId: integer('store_id').references(() => shopifyStores.id).notNull(),
+  customerId: text('customer_id').notNull(),
+  email: text('email'),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  phone: text('phone'),
+  ordersCount: integer('orders_count').default(0),
+  totalSpent: numeric('total_spent', { precision: 10, scale: 2 }).default('0'),
+  averoxContactId: integer('averox_contact_id').references(() => contacts.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const orderStatuses = pgEnum('order_status', [
+  'pending', 'processing', 'fulfilled', 'shipped', 'delivered', 'cancelled', 'refunded'
+]);
+
+export const shopifyOrders = pgTable('shopify_orders', {
+  id: serial('id').primaryKey(),
+  storeId: integer('store_id').references(() => shopifyStores.id).notNull(),
+  orderId: text('order_id').notNull(),
+  customerId: integer('customer_id').references(() => shopifyCustomers.id),
+  orderNumber: text('order_number').notNull(),
+  totalPrice: numeric('total_price', { precision: 10, scale: 2 }).notNull(),
+  subtotalPrice: numeric('subtotal_price', { precision: 10, scale: 2 }),
+  totalTax: numeric('total_tax', { precision: 10, scale: 2 }),
+  totalShipping: numeric('total_shipping', { precision: 10, scale: 2 }),
+  totalDiscounts: numeric('total_discounts', { precision: 10, scale: 2 }),
+  currency: text('currency').default('USD'),
+  status: orderStatuses('status').default('pending').notNull(),
+  financialStatus: text('financial_status'),
+  fulfillmentStatus: text('fulfillment_status'),
+  paymentMethod: text('payment_method'),
+  shippingMethod: text('shipping_method'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Create insert schemas for the new tables
+export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTicketCommentSchema = createInsertSchema(ticketComments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTicketAttachmentSchema = createInsertSchema(ticketAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertShopifyStoreSchema = createInsertSchema(shopifyStores).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertShopifyProductSchema = createInsertSchema(shopifyProducts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertShopifyCustomerSchema = createInsertSchema(shopifyCustomers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertShopifyOrderSchema = createInsertSchema(shopifyOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Define types for the new tables
+export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
+export type SupportTicket = typeof supportTickets.$inferSelect;
+
+export type InsertTicketComment = z.infer<typeof insertTicketCommentSchema>;
+export type TicketComment = typeof ticketComments.$inferSelect;
+
+export type InsertTicketAttachment = z.infer<typeof insertTicketAttachmentSchema>;
+export type TicketAttachment = typeof ticketAttachments.$inferSelect;
+
+export type InsertShopifyStore = z.infer<typeof insertShopifyStoreSchema>;
+export type ShopifyStore = typeof shopifyStores.$inferSelect;
+
+export type InsertShopifyProduct = z.infer<typeof insertShopifyProductSchema>;
+export type ShopifyProduct = typeof shopifyProducts.$inferSelect;
+
+export type InsertShopifyCustomer = z.infer<typeof insertShopifyCustomerSchema>;
+export type ShopifyCustomer = typeof shopifyCustomers.$inferSelect;
+
+export type InsertShopifyOrder = z.infer<typeof insertShopifyOrderSchema>;
+export type ShopifyOrder = typeof shopifyOrders.$inferSelect;
