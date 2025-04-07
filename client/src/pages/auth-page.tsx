@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { Redirect } from "wouter";
+import averoxLogo from "../assets/averox-logo.png";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -76,6 +77,9 @@ export default function AuthPage() {
       <div className="w-full md:w-1/2 p-6 flex items-center justify-center">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <img src={averoxLogo} alt="AVEROX Logo" className="h-10 object-contain" />
+            </div>
             <h1 className="text-3xl font-bold tracking-tight">AVEROX CRM</h1>
             <p className="text-muted-foreground mt-2">
               Sign in to your account or create a new one
@@ -307,6 +311,9 @@ export default function AuthPage() {
       <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-50 to-blue-100">
         <div className="flex flex-col justify-center items-center p-12 w-full">
           <div className="max-w-md text-center">
+            <div className="flex justify-center mb-8">
+              <img src={averoxLogo} alt="AVEROX Logo" className="h-16 object-contain" />
+            </div>
             <h2 className="text-3xl font-bold text-blue-900 mb-6">
               Revolutionize Your Customer Relationships
             </h2>
