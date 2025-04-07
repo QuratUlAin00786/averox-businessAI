@@ -25,9 +25,12 @@ export interface MenuVisibilitySettings {
   training: boolean;
 }
 
+import { DashboardPreferences } from '@shared/schema';
+
 // Define the system settings interface
 export interface SystemSettings {
   menuVisibility: MenuVisibilitySettings;
+  dashboardPreferences: DashboardPreferences;
   // Other system settings can be added here
 }
 
@@ -52,9 +55,33 @@ export const DEFAULT_MENU_VISIBILITY: MenuVisibilitySettings = {
   training: true,
 };
 
+// Default values for dashboard preferences
+export const DEFAULT_DASHBOARD_PREFERENCES: DashboardPreferences = {
+  // Graph and chart preferences
+  showSalesPipeline: true,
+  showRecentActivities: true,
+  showTasks: true,
+  showEvents: true,
+  
+  // Stat preferences
+  showLeadsStats: true,
+  showConversionStats: true,
+  showRevenueStats: true,
+  showOpportunitiesStats: true,
+  
+  // Graph type preferences
+  pipelineChartType: 'pie',
+  revenueChartType: 'line',
+  leadsChartType: 'line',
+  
+  // Time range preferences
+  defaultTimeRange: 'month'
+};
+
 // Default system settings
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   menuVisibility: DEFAULT_MENU_VISIBILITY,
+  dashboardPreferences: DEFAULT_DASHBOARD_PREFERENCES,
 };
 
 type SystemSettingsContextType = {
@@ -62,6 +89,9 @@ type SystemSettingsContextType = {
   isLoading: boolean;
   error: Error | null;
   updateMenuVisibility: (menuItem: keyof MenuVisibilitySettings, value: boolean) => void;
+  updateDashboardWidgets: (widgetKey: keyof DashboardPreferences, value: boolean | string) => void;
+  updateDashboardChartType: (chartKey: 'pipelineChartType' | 'revenueChartType' | 'leadsChartType', value: 'pie' | 'bar' | 'line' | 'funnel' | 'area') => void;
+  updateDashboardTimeRange: (value: 'week' | 'month' | 'quarter' | 'year') => void;
   saveSettings: () => void;
   isUpdating: boolean;
 };
@@ -128,6 +158,37 @@ export function SystemSettingsProvider({ children }: { children: ReactNode }) {
       }
     }));
   };
+
+  const updateDashboardWidgets = (widgetKey: keyof DashboardPreferences, value: boolean | string) => {
+    setSettings(prev => ({
+      ...prev,
+      dashboardPreferences: {
+        ...prev.dashboardPreferences,
+        [widgetKey]: value,
+      }
+    }));
+  };
+
+  const updateDashboardChartType = (chartKey: 'pipelineChartType' | 'revenueChartType' | 'leadsChartType', 
+    value: 'pie' | 'bar' | 'line' | 'funnel' | 'area') => {
+    setSettings(prev => ({
+      ...prev,
+      dashboardPreferences: {
+        ...prev.dashboardPreferences,
+        [chartKey]: value,
+      }
+    }));
+  };
+
+  const updateDashboardTimeRange = (value: 'week' | 'month' | 'quarter' | 'year') => {
+    setSettings(prev => ({
+      ...prev,
+      dashboardPreferences: {
+        ...prev.dashboardPreferences,
+        defaultTimeRange: value,
+      }
+    }));
+  };
   
   const saveSettings = () => {
     saveSettingsMutation.mutate();
@@ -140,6 +201,9 @@ export function SystemSettingsProvider({ children }: { children: ReactNode }) {
         isLoading,
         error,
         updateMenuVisibility,
+        updateDashboardWidgets,
+        updateDashboardChartType,
+        updateDashboardTimeRange,
         saveSettings,
         isUpdating: saveSettingsMutation.isPending,
       }}

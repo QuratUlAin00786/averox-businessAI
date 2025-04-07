@@ -66,9 +66,33 @@ export interface MenuVisibilitySettings {
   training: boolean;
 }
 
+// Define dashboard widget preferences
+export interface DashboardPreferences {
+  // Graph and chart preferences
+  showSalesPipeline: boolean;
+  showRecentActivities: boolean;
+  showTasks: boolean;
+  showEvents: boolean;
+  
+  // Stat preferences
+  showLeadsStats: boolean;
+  showConversionStats: boolean;
+  showRevenueStats: boolean;
+  showOpportunitiesStats: boolean;
+  
+  // Graph type preferences
+  pipelineChartType: 'pie' | 'bar' | 'funnel';
+  revenueChartType: 'line' | 'bar' | 'area';
+  leadsChartType: 'line' | 'bar' | 'area';
+  
+  // Time range preferences
+  defaultTimeRange: 'week' | 'month' | 'quarter' | 'year';
+}
+
 // Define the system settings interface used throughout the application
 export interface SystemSettings {
   menuVisibility: MenuVisibilitySettings;
+  dashboardPreferences: DashboardPreferences;
   // Other system settings can be added here
 }
 

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save, Users, Package2, Settings as SettingsIcon, User, Shield, UserCog, FileUp, Database } from "lucide-react";
+import { Save, Users, Package2, Settings as SettingsIcon, User, Shield, UserCog, FileUp, Database, LayoutDashboard } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
@@ -207,6 +207,30 @@ export default function Settings() {
               <Link href="/settings/data-migration">
                 <Button variant="outline" className="w-full flex items-center justify-center">
                   <FileUp className="mr-2 h-4 w-4" /> Start Migration
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <LayoutDashboard className="w-5 h-5 mr-2" />
+                Dashboard Settings
+              </CardTitle>
+              <CardDescription>
+                Customize your dashboard experience
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Configure widgets, chart types, and data display preferences for your dashboard
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Link href="/settings/dashboard">
+                <Button variant="outline" className="w-full flex items-center justify-center">
+                  <LayoutDashboard className="mr-2 h-4 w-4" /> Customize Dashboard
                 </Button>
               </Link>
             </CardFooter>
