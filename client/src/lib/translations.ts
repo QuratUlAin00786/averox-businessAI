@@ -81,6 +81,8 @@ interface NavigationTranslations {
   accounting: string;
   inventory: string;
   training: string;
+  supportTickets: string;
+  ecommerce: string;
 }
 
 interface DashboardTranslations {
@@ -260,6 +262,8 @@ const englishTranslations: Translations = {
     accounting: 'Accounting',
     inventory: 'Inventory',
     training: 'Training & Help',
+    supportTickets: 'Support Tickets',
+    ecommerce: 'E-Commerce',
   },
   dashboard: {
     greeting: 'Hello',
@@ -482,6 +486,8 @@ const arabicTranslations: Translations = {
     accounting: 'المحاسبة',
     inventory: 'المخزون',
     training: 'التدريب والمساعدة',
+    supportTickets: 'تذاكر الدعم',
+    ecommerce: 'التجارة الإلكترونية',
   },
   dashboard: {
     greeting: 'مرحبا',

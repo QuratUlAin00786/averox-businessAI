@@ -19,7 +19,9 @@ import {
   MessageSquare,
   Calculator,
   PackageOpen,
-  HelpCircle
+  HelpCircle,
+  TicketCheck,
+  ShoppingCart
 } from "lucide-react";
 import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
@@ -45,6 +47,8 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: t.navigation.communicationCenter, path: '/communication-center', icon: <MessageSquare className="w-5 h-5" /> },
     { name: t.navigation.accounting, path: '/accounting', icon: <Calculator className="w-5 h-5" /> },
     { name: t.navigation.inventory, path: '/inventory', icon: <PackageOpen className="w-5 h-5" /> },
+    { name: t.navigation.supportTickets, path: '/support-tickets', icon: <TicketCheck className="w-5 h-5" /> },
+    { name: t.navigation.ecommerce, path: '/ecommerce', icon: <ShoppingCart className="w-5 h-5" /> },
     { name: t.navigation.reports, path: '/reports', icon: <BarChart2 className="w-5 h-5" /> },
     { name: t.navigation.intelligence, path: '/intelligence', icon: <BrainCircuit className="w-5 h-5" /> },
     { name: t.navigation.workflows, path: '/workflows', icon: <Workflow className="w-5 h-5" /> },
@@ -109,7 +113,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Business</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(8, 10))}
+          {renderNavItems(navItems.slice(8, 12))}
         </div>
         
         <hr className="my-4 border-neutral-200" />
@@ -118,7 +122,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Analytics & Automation</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(10, 13))}
+          {renderNavItems(navItems.slice(12, 15))}
         </div>
         
         <hr className="my-4 border-neutral-200" />
@@ -127,7 +131,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Help & Support</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(13, 15))}
+          {renderNavItems(navItems.slice(15, 16))}
         </div>
 
         <hr className="my-4 border-neutral-200" />
@@ -136,7 +140,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">System</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(15))}
+          {renderNavItems(navItems.slice(16))}
         </div>
       </ScrollArea>
       
