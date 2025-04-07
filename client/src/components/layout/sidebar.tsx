@@ -27,6 +27,7 @@ import {
 import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
+import { useSystemSettings, type MenuVisibilitySettings } from "@/hooks/use-system-settings";
 
 interface SidebarProps {
   className?: string;
@@ -36,28 +37,39 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { settings } = useSystemSettings();
 
-  const navItems = [
-    { name: t.navigation.dashboard, path: '/', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { name: t.navigation.contacts, path: '/contacts', icon: <Users className="w-5 h-5" /> },
-    { name: t.navigation.accounts, path: '/accounts', icon: <Briefcase className="w-5 h-5" /> },
-    { name: t.navigation.leads, path: '/leads', icon: <UserPlus className="w-5 h-5" /> },
-    { name: t.navigation.opportunities, path: '/opportunities', icon: <TrendingUp className="w-5 h-5" /> },
-    { name: t.navigation.calendar, path: '/calendar', icon: <Calendar className="w-5 h-5" /> },
-    { name: t.navigation.tasks, path: '/tasks', icon: <CheckSquare className="w-5 h-5" /> },
-    { name: t.navigation.communicationCenter, path: '/communication-center', icon: <MessageSquare className="w-5 h-5" /> },
-    { name: t.navigation.accounting, path: '/accounting', icon: <Calculator className="w-5 h-5" /> },
-    { name: t.navigation.inventory, path: '/inventory', icon: <PackageOpen className="w-5 h-5" /> },
-    { name: t.navigation.supportTickets, path: '/support-tickets', icon: <TicketCheck className="w-5 h-5" /> },
-    { name: t.navigation.ecommerce, path: '/ecommerce', icon: <ShoppingCart className="w-5 h-5" /> },
-    { name: t.navigation.ecommerceStore, path: '/ecommerce-store', icon: <Store className="w-5 h-5" /> },
-    { name: t.navigation.reports, path: '/reports', icon: <BarChart2 className="w-5 h-5" /> },
-    { name: t.navigation.intelligence, path: '/intelligence', icon: <BrainCircuit className="w-5 h-5" /> },
-    { name: t.navigation.workflows, path: '/workflows', icon: <Workflow className="w-5 h-5" /> },
-    { name: t.navigation.subscriptions, path: '/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
-    { name: t.navigation.training, path: '/training-help', icon: <HelpCircle className="w-5 h-5" /> },
-    { name: t.navigation.settings, path: '/settings', icon: <Settings className="w-5 h-5" /> }
+  // Items with their menu visibility key
+  const navItemsWithKeys = [
+    { name: t.navigation.dashboard, path: '/', icon: <LayoutDashboard className="w-5 h-5" />, key: null }, // Dashboard is always visible
+    { name: t.navigation.contacts, path: '/contacts', icon: <Users className="w-5 h-5" />, key: 'contacts' as keyof MenuVisibilitySettings },
+    { name: t.navigation.accounts, path: '/accounts', icon: <Briefcase className="w-5 h-5" />, key: 'accounts' as keyof MenuVisibilitySettings },
+    { name: t.navigation.leads, path: '/leads', icon: <UserPlus className="w-5 h-5" />, key: 'leads' as keyof MenuVisibilitySettings },
+    { name: t.navigation.opportunities, path: '/opportunities', icon: <TrendingUp className="w-5 h-5" />, key: 'opportunities' as keyof MenuVisibilitySettings },
+    { name: t.navigation.calendar, path: '/calendar', icon: <Calendar className="w-5 h-5" />, key: 'calendar' as keyof MenuVisibilitySettings },
+    { name: t.navigation.tasks, path: '/tasks', icon: <CheckSquare className="w-5 h-5" />, key: 'tasks' as keyof MenuVisibilitySettings },
+    { name: t.navigation.communicationCenter, path: '/communication-center', icon: <MessageSquare className="w-5 h-5" />, key: 'communicationCenter' as keyof MenuVisibilitySettings },
+    { name: t.navigation.accounting, path: '/accounting', icon: <Calculator className="w-5 h-5" />, key: 'accounting' as keyof MenuVisibilitySettings },
+    { name: t.navigation.inventory, path: '/inventory', icon: <PackageOpen className="w-5 h-5" />, key: 'inventory' as keyof MenuVisibilitySettings },
+    { name: t.navigation.supportTickets, path: '/support-tickets', icon: <TicketCheck className="w-5 h-5" />, key: 'supportTickets' as keyof MenuVisibilitySettings },
+    { name: t.navigation.ecommerce, path: '/ecommerce', icon: <ShoppingCart className="w-5 h-5" />, key: 'ecommerce' as keyof MenuVisibilitySettings },
+    { name: t.navigation.ecommerceStore, path: '/ecommerce-store', icon: <Store className="w-5 h-5" />, key: 'ecommerceStore' as keyof MenuVisibilitySettings },
+    { name: t.navigation.reports, path: '/reports', icon: <BarChart2 className="w-5 h-5" />, key: 'reports' as keyof MenuVisibilitySettings },
+    { name: t.navigation.intelligence, path: '/intelligence', icon: <BrainCircuit className="w-5 h-5" />, key: 'intelligence' as keyof MenuVisibilitySettings },
+    { name: t.navigation.workflows, path: '/workflows', icon: <Workflow className="w-5 h-5" />, key: 'workflows' as keyof MenuVisibilitySettings },
+    { name: t.navigation.subscriptions, path: '/subscriptions', icon: <CreditCard className="w-5 h-5" />, key: 'subscriptions' as keyof MenuVisibilitySettings },
+    { name: t.navigation.training, path: '/training-help', icon: <HelpCircle className="w-5 h-5" />, key: 'training' as keyof MenuVisibilitySettings },
+    { name: t.navigation.settings, path: '/settings', icon: <Settings className="w-5 h-5" />, key: null } // Settings is always visible
   ];
+
+  // Filter navItems based on menu visibility settings
+  const navItems = navItemsWithKeys.filter(item => {
+    // If key is null (like Dashboard and Settings), always show it
+    if (item.key === null) return true;
+    
+    // Otherwise check the settings
+    return settings.menuVisibility[item.key];
+  });
 
   const isActive = (path: string) => {
     return location === path;
@@ -82,6 +94,35 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     ));
   };
 
+  // Get visible items for each section
+  const getCoreItems = () => {
+    return navItems.filter((_, index) => index >= 0 && index <= 6);
+  };
+
+  const getCommunicationItems = () => {
+    return navItems.filter(item => item.path === '/communication-center');
+  };
+
+  const getBusinessItems = () => {
+    return navItems.filter(item => 
+      ['/accounting', '/inventory', '/support-tickets', '/ecommerce', '/ecommerce-store'].includes(item.path)
+    );
+  };
+
+  const getAnalyticsItems = () => {
+    return navItems.filter(item => 
+      ['/reports', '/intelligence', '/workflows'].includes(item.path)
+    );
+  };
+
+  const getSupportItems = () => {
+    return navItems.filter(item => item.path === '/subscriptions' || item.path === '/training-help');
+  };
+
+  const getSystemItems = () => {
+    return navItems.filter(item => item.path === '/settings');
+  };
+
   const sidebarContent = (
     <>
       <div className="flex items-center justify-center h-16 px-4 border-b border-neutral-200">
@@ -97,44 +138,56 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Core</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(0, 7))}
+          {renderNavItems(getCoreItems())}
         </div>
         
-        <hr className="my-4 border-neutral-200" />
+        {getCommunicationItems().length > 0 && (
+          <>
+            <hr className="my-4 border-neutral-200" />
+            <div className="px-4 mb-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Communication</p>
+            </div>
+            <div className="px-2 space-y-1">
+              {renderNavItems(getCommunicationItems())}
+            </div>
+          </>
+        )}
         
-        <div className="px-4 mb-2">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Communication</p>
-        </div>
-        <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(7, 8))}
-        </div>
+        {getBusinessItems().length > 0 && (
+          <>
+            <hr className="my-4 border-neutral-200" />
+            <div className="px-4 mb-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Business</p>
+            </div>
+            <div className="px-2 space-y-1">
+              {renderNavItems(getBusinessItems())}
+            </div>
+          </>
+        )}
         
-        <hr className="my-4 border-neutral-200" />
+        {getAnalyticsItems().length > 0 && (
+          <>
+            <hr className="my-4 border-neutral-200" />
+            <div className="px-4 mb-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Analytics & Automation</p>
+            </div>
+            <div className="px-2 space-y-1">
+              {renderNavItems(getAnalyticsItems())}
+            </div>
+          </>
+        )}
         
-        <div className="px-4 mb-2">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Business</p>
-        </div>
-        <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(8, 13))}
-        </div>
-        
-        <hr className="my-4 border-neutral-200" />
-        
-        <div className="px-4 mb-2">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Analytics & Automation</p>
-        </div>
-        <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(13, 16))}
-        </div>
-        
-        <hr className="my-4 border-neutral-200" />
-        
-        <div className="px-4 mb-2">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Help & Support</p>
-        </div>
-        <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(16, 17))}
-        </div>
+        {getSupportItems().length > 0 && (
+          <>
+            <hr className="my-4 border-neutral-200" />
+            <div className="px-4 mb-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Help & Support</p>
+            </div>
+            <div className="px-2 space-y-1">
+              {renderNavItems(getSupportItems())}
+            </div>
+          </>
+        )}
 
         <hr className="my-4 border-neutral-200" />
         
@@ -142,7 +195,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">System</p>
         </div>
         <div className="px-2 space-y-1">
-          {renderNavItems(navItems.slice(17))}
+          {renderNavItems(getSystemItems())}
         </div>
       </ScrollArea>
       
