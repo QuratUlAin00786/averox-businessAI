@@ -3372,6 +3372,7 @@ function initializeSubscriptionPackages(storage: MemStorage) {
 export class DatabaseStorage implements IStorage {
   // Session store for authentication
   public sessionStore: session.Store;
+  private systemSettingsMap: Map<string, SystemSettings>;
 
   constructor() {
     // Initialize PostgreSQL session store
@@ -3380,6 +3381,9 @@ export class DatabaseStorage implements IStorage {
       tableName: 'session', // Name of the table to store sessions
       createTableIfMissing: true // Automatically create the session table if it doesn't exist
     });
+    
+    // Initialize system settings map
+    this.systemSettingsMap = new Map();
   }
 
   // Implement all methods from IStorage interface with database queries
@@ -6325,6 +6329,127 @@ export class DatabaseStorage implements IStorage {
           });
         }
       }
+    }
+  }
+
+  // System Settings Methods
+  async getSystemSettings(userId: number): Promise<SystemSettings> {
+    try {
+      // Check if settings are already in memory cache
+      const settingsKey = `user_${userId}`;
+      const cachedSettings = this.systemSettingsMap.get(settingsKey);
+      
+      if (cachedSettings) {
+        return cachedSettings;
+      }
+      
+      // Try to get settings from database
+      const settings = await db.select()
+        .from(systemSettings)
+        .where(eq(systemSettings.userId, userId))
+        .where(eq(systemSettings.settingKey, 'userSettings'));
+      
+      if (settings.length > 0 && settings[0].settingValue) {
+        // Parse the JSON value from the database
+        const userSettings = settings[0].settingValue as unknown as SystemSettings;
+        
+        // Cache the settings in memory
+        this.systemSettingsMap.set(settingsKey, userSettings);
+        
+        return userSettings;
+      }
+      
+      // Return default settings if user has no settings yet
+      const defaultSettings: SystemSettings = {
+        menuVisibility: {
+          contacts: true,
+          accounts: true,
+          leads: true,
+          opportunities: true,
+          calendar: true,
+          tasks: true,
+          communicationCenter: true,
+          accounting: true,
+          inventory: true,
+          supportTickets: true,
+          ecommerce: true,
+          ecommerceStore: true,
+          reports: true,
+          intelligence: true,
+          workflows: true,
+          subscriptions: true,
+          training: true
+        }
+      };
+      
+      // Store default settings for this user in cache
+      this.systemSettingsMap.set(settingsKey, defaultSettings);
+      
+      return defaultSettings;
+    } catch (error) {
+      console.error('Database error in getSystemSettings:', error);
+      // Return default settings on error
+      const defaultSettings: SystemSettings = {
+        menuVisibility: {
+          contacts: true,
+          accounts: true,
+          leads: true,
+          opportunities: true,
+          calendar: true,
+          tasks: true,
+          communicationCenter: true,
+          accounting: true,
+          inventory: true,
+          supportTickets: true,
+          ecommerce: true,
+          ecommerceStore: true, 
+          reports: true,
+          intelligence: true,
+          workflows: true,
+          subscriptions: true,
+          training: true
+        }
+      };
+      return defaultSettings;
+    }
+  }
+  
+  async saveSystemSettings(userId: number, settings: SystemSettings): Promise<SystemSettings> {
+    try {
+      const settingsKey = `user_${userId}`;
+      
+      // Update in-memory cache
+      this.systemSettingsMap.set(settingsKey, settings);
+      
+      // Check if settings already exist for this user
+      const existing = await db.select()
+        .from(systemSettings)
+        .where(eq(systemSettings.userId, userId))
+        .where(eq(systemSettings.settingKey, 'userSettings'));
+      
+      if (existing.length > 0) {
+        // Update existing settings
+        await db.update(systemSettings)
+          .set({
+            settingValue: settings as any,
+            updatedAt: new Date()
+          })
+          .where(eq(systemSettings.id, existing[0].id));
+      } else {
+        // Insert new settings
+        await db.insert(systemSettings)
+          .values({
+            userId: userId,
+            settingKey: 'userSettings',
+            settingValue: settings as any,
+            scope: 'user'
+          });
+      }
+      
+      return settings;
+    } catch (error) {
+      console.error('Database error in saveSystemSettings:', error);
+      return settings; // Return the settings even if save failed
     }
   }
 }
