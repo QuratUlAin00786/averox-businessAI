@@ -120,8 +120,11 @@ export function AccountCommunications({ accountId, accountName = '', email = '',
   } = useQuery<Communication[]>({
     queryKey: ['/api/communications/related', 'account', accountId],
     queryFn: async () => {
+      console.log(`Fetching communications for account ${accountId}`);
       const response = await apiRequest('GET', `/api/communications/related/account/${accountId}`);
-      return response.json();
+      const data = await response.json();
+      console.log('Fetched account communications:', data);
+      return data;
     },
     enabled: !!accountId
   });
@@ -154,6 +157,7 @@ export function AccountCommunications({ accountId, accountName = '', email = '',
       relatedToType: string;
       relatedToId: number;
     }) => {
+      // For account-related communications, we only need channel, content, relatedToType, and relatedToId
       const response = await apiRequest('POST', '/api/communications/send', {
         channel,
         content,
@@ -258,6 +262,13 @@ export function AccountCommunications({ accountId, accountName = '', email = '',
       });
       return;
     }
+
+    console.log('Sending message with params:', {
+      channel: selectedChannel,
+      content: messageContent,
+      relatedToType: 'account', 
+      relatedToId: accountId
+    });
 
     sendMessageMutation.mutate({
       channel: selectedChannel,

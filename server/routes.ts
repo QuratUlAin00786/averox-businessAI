@@ -1894,36 +1894,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/communications/send', async (req: Request, res: Response) => {
     try {
+      console.log('Communication send request:', req.body);
       const { recipientId, channel, content, contactType, relatedToType, relatedToId } = req.body;
       
-      if (!recipientId || !channel || !content || !contactType) {
-        return res.status(400).json({ error: "Required fields missing: recipientId, channel, content, contactType" });
+      // We're going to handle two types of communications:
+      // 1. Direct communications with a specific recipient (recipientId and contactType are required)
+      // 2. Entity-related communications (relatedToType and relatedToId are required)
+      
+      const isDirectCommunication = recipientId && contactType;
+      const isEntityCommunication = relatedToType && relatedToId;
+      
+      if (!channel || !content) {
+        return res.status(400).json({ error: "Required fields missing: channel, content" });
+      }
+
+      if (!isDirectCommunication && !isEntityCommunication) {
+        return res.status(400).json({ 
+          error: "Either (recipientId and contactType) or (relatedToType and relatedToId) must be provided" 
+        });
       }
       
-      if (contactType !== 'lead' && contactType !== 'customer') {
+      if (isDirectCommunication && contactType !== 'lead' && contactType !== 'customer') {
         return res.status(400).json({ error: "Invalid contactType. Must be 'lead' or 'customer'." });
       }
       
+      // For entity communications without a specific recipient (like account-related messages),
+      // we'll create a placeholder contact
+      let contactId = recipientId;
+      let contactTypeValue = contactType;
+      
+      if (!isDirectCommunication && isEntityCommunication) {
+        // For account-related communications, we use a placeholder contact
+        if (relatedToType === 'account') {
+          // Try to find the account
+          const account = await storage.getAccount(relatedToId);
+          if (!account) {
+            return res.status(404).json({ error: `${relatedToType} with ID ${relatedToId} not found` });
+          }
+
+          // Use a specific customer contact if available, or create a system contact
+          contactId = -1; // System contact ID for entity-related messages
+          contactTypeValue = 'customer'; // Default to customer type for account messages
+        }
+      }
+      
       const communication = await storage.createCommunication({
-        contactId: recipientId,
-        contactType,
+        contactId: contactId as number,
+        contactType: contactTypeValue as 'lead' | 'customer',
         channel,
-        direction: 'outbound', // Changed from 'inbound' to 'outbound' since this is for sending
+        direction: 'outbound',
         content,
         status: 'read',
         sentAt: new Date(),
-        relatedToType: relatedToType, // Optional relation to account, opportunity, etc.
-        relatedToId: relatedToId     // Optional ID of the related entity
+        relatedToType,
+        relatedToId
       });
       
       // Create an activity record when a message is sent
       if (req.user) {
+        let activityDetail = '';
+        
+        if (isDirectCommunication) {
+          activityDetail = `Sent ${channel} to ${contactType} ${recipientId}`;
+        } else {
+          activityDetail = `Sent ${channel} related to ${relatedToType} ${relatedToId}`;
+        }
+        
         await storage.createActivity({
           userId: req.user.id,
           action: `Sent ${channel} message`,
-          detail: `Sent ${channel} to ${contactType} ${recipientId}`,
-          relatedToType: contactType,
-          relatedToId: recipientId,
+          detail: activityDetail,
+          relatedToType: relatedToType || contactType,
+          relatedToId: relatedToId || recipientId,
           createdAt: new Date(),
           icon: 'sent'
         });
