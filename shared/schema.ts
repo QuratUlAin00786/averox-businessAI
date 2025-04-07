@@ -25,6 +25,53 @@ export const proposalStatusEnum = pgEnum('proposal_status', ['Draft', 'Sent', 'A
 export const proposalElementTypeEnum = pgEnum('proposal_element_type', ['Header', 'Text', 'Image', 'Table', 'List', 'Quote', 'ProductList', 'Signature', 'PageBreak', 'Custom']);
 
 // Users
+// System settings table for global and user configuration
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  settingKey: text("setting_key").notNull(),
+  settingValue: jsonb("setting_value").notNull(),
+  scope: text("scope").default("user"), // 'user' or 'global'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
+export type SystemSetting = typeof systemSettings.$inferSelect;
+
+// Define the menu visibility interface
+export interface MenuVisibilitySettings {
+  contacts: boolean;
+  accounts: boolean;
+  leads: boolean;
+  opportunities: boolean;
+  calendar: boolean;
+  tasks: boolean;
+  communicationCenter: boolean;
+  accounting: boolean;
+  inventory: boolean;
+  supportTickets: boolean;
+  ecommerce: boolean;
+  ecommerceStore: boolean;
+  reports: boolean;
+  intelligence: boolean;
+  workflows: boolean;
+  subscriptions: boolean;
+  training: boolean;
+}
+
+// Define the system settings interface used throughout the application
+export interface SystemSettings {
+  menuVisibility: MenuVisibilitySettings;
+  // Other system settings can be added here
+}
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),

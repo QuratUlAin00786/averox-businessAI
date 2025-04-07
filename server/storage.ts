@@ -18,6 +18,7 @@ import {
   productCategoriesTable, type ProductCategory, type InsertProductCategory,
   products, type Product, type InsertProduct,
   inventoryTransactions, type InventoryTransaction, type InsertInventoryTransaction,
+  systemSettings, type SystemSetting, type InsertSystemSetting, type SystemSettings, type MenuVisibilitySettings,
   invoices, type Invoice, type InsertInvoice,
   invoiceItems, type InvoiceItem, type InsertInvoiceItem,
   purchaseOrders, type PurchaseOrder, type InsertPurchaseOrder,
@@ -68,6 +69,10 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   listUsers(): Promise<User[]>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  
+  // System Settings
+  getSystemSettings(userId: number): Promise<SystemSettings>;
+  saveSystemSettings(userId: number, settings: SystemSettings): Promise<SystemSettings>;
   
   // Communication center methods
   getAllCommunications(): Promise<Communication[]>;
@@ -336,6 +341,10 @@ export interface IStorage {
   // Inventory
   getInventorySummary(): Promise<{products: Array<{id: number, name: string, sku: string, stock: number, value: number}>}>;
   
+  // System Settings
+  getSystemSettings(userId: number): Promise<SystemSettings>;
+  saveSystemSettings(userId: number, settings: SystemSettings): Promise<SystemSettings>;
+  
   // Proposal Management
   // Templates
   getProposalTemplate(id: number): Promise<ProposalTemplate | undefined>;
@@ -493,6 +502,7 @@ export class MemStorage implements IStorage {
   
   // Maps to store entity data
   public users: Map<number, User>; // Make users map public for auth module direct access
+  private systemSettingsMap: Map<string, SystemSettings>;
   private contacts: Map<number, Contact>;
   private accounts: Map<number, Account>;
   private leads: Map<number, Lead>;
@@ -604,6 +614,7 @@ export class MemStorage implements IStorage {
     this.socialCampaigns = new Map();
     this.apiKeys = new Map();
     this.workflows = new Map();
+    this.systemSettingsMap = new Map();
     // Communications map already initialized in the mixin
     
     // Initialize proposal system maps
@@ -5983,6 +5994,50 @@ export class DatabaseStorage implements IStorage {
   
   async listTeams(): Promise<Team[]> {
     return this.getTeams();
+  }
+  
+  // System Settings Methods
+  async getSystemSettings(userId: number): Promise<SystemSettings> {
+    const settingsKey = `user_${userId}`;
+    const userSettings = this.systemSettingsMap.get(settingsKey);
+    
+    if (userSettings) {
+      return userSettings;
+    }
+    
+    // Return default settings if user has no settings yet
+    const defaultSettings: SystemSettings = {
+      menuVisibility: {
+        contacts: true,
+        accounts: true,
+        leads: true,
+        opportunities: true,
+        calendar: true,
+        tasks: true,
+        communicationCenter: true,
+        accounting: true,
+        inventory: true,
+        supportTickets: true,
+        ecommerce: true,
+        ecommerceStore: true,
+        reports: true,
+        intelligence: true,
+        workflows: true,
+        subscriptions: true,
+        training: true
+      }
+    };
+    
+    // Store default settings for this user
+    this.systemSettingsMap.set(settingsKey, defaultSettings);
+    
+    return defaultSettings;
+  }
+  
+  async saveSystemSettings(userId: number, settings: SystemSettings): Promise<SystemSettings> {
+    const settingsKey = `user_${userId}`;
+    this.systemSettingsMap.set(settingsKey, settings);
+    return settings;
   }
   
   async getTeam(id: number): Promise<Team | undefined> {
