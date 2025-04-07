@@ -9,6 +9,11 @@ interface TooltipTranslations {
   step: string;
   of: string;
   helpTip: string;
+  skip: string;
+  finish: string;
+  startTour: string;
+  watchVideo: string;
+  learnMore: string;
   // Specific section tooltips
   dashboard: {
     overview: string;
@@ -367,6 +372,11 @@ const englishTranslations: Translations = {
     step: 'Step',
     of: 'of',
     helpTip: 'Help',
+    skip: 'Skip',
+    finish: 'Finish',
+    startTour: 'Start Tour',
+    watchVideo: 'Watch Video',
+    learnMore: 'Learn More',
     dashboard: {
       overview: 'View key performance metrics at a glance',
       salesPipeline: 'Track deals through various stages of your sales process',
@@ -584,6 +594,11 @@ const arabicTranslations: Translations = {
     step: 'خطوة',
     of: 'من',
     helpTip: 'مساعدة',
+    skip: 'تخطي',
+    finish: 'إنهاء',
+    startTour: 'بدء الجولة',
+    watchVideo: 'مشاهدة الفيديو',
+    learnMore: 'معرفة المزيد',
     dashboard: {
       overview: 'عرض مقاييس الأداء الرئيسية في لمحة',
       salesPipeline: 'تتبع الصفقات عبر مراحل مختلفة من عملية البيع',

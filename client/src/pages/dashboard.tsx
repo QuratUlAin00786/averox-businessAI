@@ -7,7 +7,8 @@ import {
   DollarSign, 
   Briefcase, 
   Download, 
-  Plus 
+  Plus,
+  HelpCircle 
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -22,12 +23,15 @@ import { getDashboardData } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
+import { SimpleTour, TourHelpButton, useTour } from "@/components/ui/simple-tour";
+import { dashboardTour } from "@/lib/simple-tour-data";
 
 export default function Dashboard() {
   const [currentDate, setCurrentDate] = useState<string>("");
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const { isTourOpen, startTour, closeTour, hasCompletedTour } = useTour('dashboard');
 
   // Function to get a greeting based on time of day
   const getGreeting = (): string => {
@@ -50,10 +54,26 @@ export default function Dashboard() {
 
   return (
     <div className="py-6">
+      {/* Simple Tour */}
+      <SimpleTour
+        steps={dashboardTour.steps}
+        open={isTourOpen}
+        onOpenChange={setIsTourOpen}
+        onComplete={completeTour}
+      />
+
+      {/* Help button to start tour */}
+      {!isTourOpen && (
+        <TourHelpButton 
+          onClick={startTour} 
+          className="fixed bottom-4 right-4 z-50"
+        />
+      )}
+
       <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
+            <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate dashboard-header">
               {getGreeting()}{user?.firstName ? `, ${user.firstName}` : ''}
             </h2>
             <div className="flex flex-col mt-1 sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
@@ -243,7 +263,7 @@ export default function Dashboard() {
           // Loaded state with actual data
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 gap-6 mt-4 sm:gap-5 sm:mt-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 mt-4 sm:gap-5 sm:mt-2 sm:grid-cols-2 lg:grid-cols-4 stats-cards">
               {data?.stats.map((stat, index) => {
                 const icons = [UserPlus, TrendingUp, DollarSign, Briefcase];
                 const colors = ["primary", "secondary", "accent", "info"] as const;
@@ -275,13 +295,19 @@ export default function Dashboard() {
             
             {/* Charts & Tables Section */}
             <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
-              <SalesPipeline stages={data?.pipelineStages || []} />
-              <RecentActivities activities={data?.recentActivities || []} />
+              <div className="sales-pipeline">
+                <SalesPipeline stages={data?.pipelineStages || []} />
+              </div>
+              <div className="activities-section">
+                <RecentActivities activities={data?.recentActivities || []} />
+              </div>
             </div>
             
             {/* Tasks and Upcoming Events */}
             <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
-              <MyTasks tasks={data?.myTasks || []} />
+              <div className="tasks-section">
+                <MyTasks tasks={data?.myTasks || []} />
+              </div>
               <UpcomingEvents events={data?.upcomingEvents || []} />
             </div>
           </>
