@@ -24,6 +24,13 @@ interface TooltipTranslations {
     notifications: string;
     security: string;
   };
+  training: {
+    main: string;
+    modules: string;
+    videos: string;
+    faq: string;
+    resources: string;
+  };
   communications: {
     overview: string;
     channels: string;
@@ -38,13 +45,6 @@ interface TooltipTranslations {
     stages: string;
     proposals: string;
     closing: string;
-  };
-  training: {
-    main: string;
-    modules: string;
-    videos: string;
-    faq: string;
-    resources: string;
   };
   contacts: {
     management: string;

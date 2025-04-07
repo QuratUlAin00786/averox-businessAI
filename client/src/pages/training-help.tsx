@@ -306,7 +306,7 @@ export default function TrainingHelpPage() {
       <div className="flex items-center mb-6">
         <h1 className="text-3xl font-bold tracking-tight">{t.navigation.training}</h1>
         <TooltipHelper 
-          content={t.tooltips.training.main} 
+          content="Access step-by-step guides, video tutorials, and resources to master AVEROX CRM"
           side="right" 
           className="ml-2"
           iconSize={20}
