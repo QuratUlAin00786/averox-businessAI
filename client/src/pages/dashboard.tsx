@@ -31,7 +31,7 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { t, language } = useLanguage();
-  const { isTourOpen, startTour, closeTour, hasCompletedTour } = useTour('dashboard');
+  const { isTourOpen, setIsTourOpen, startTour, closeTour, completeTour, hasCompletedTour } = useTour('dashboard');
 
   // Function to get a greeting based on time of day
   const getGreeting = (): string => {

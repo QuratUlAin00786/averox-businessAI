@@ -120,10 +120,12 @@ export function useTour(tourId: string) {
   // Complete the tour
   const completeTour = () => {
     localStorage.setItem(`tour_${tourId}_completed`, 'true');
+    setIsTourOpen(false);
   };
   
   return {
     isTourOpen,
+    setIsTourOpen,
     startTour,
     closeTour,
     completeTour,
