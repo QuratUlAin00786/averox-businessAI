@@ -463,7 +463,7 @@ export default function SupportTicketsPage() {
         </div>
         <div className="flex space-x-2">
           <a 
-            href="https://support1.averox.com" 
+            href="https://ticket.averox.com" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="inline-flex items-center"
@@ -596,7 +596,7 @@ export default function SupportTicketsPage() {
                     and get real-time updates on your support requests.
                   </p>
                   <a 
-                    href="https://support1.averox.com/portal" 
+                    href="https://ticket.averox.com/portal" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-block"
@@ -617,7 +617,7 @@ export default function SupportTicketsPage() {
                     are addressed by our senior management team within 24 hours.
                   </p>
                   <a 
-                    href="https://support1.averox.com/complaint" 
+                    href="https://ticket.averox.com/complaint" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-block"
