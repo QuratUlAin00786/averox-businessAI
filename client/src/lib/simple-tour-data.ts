@@ -34,24 +34,60 @@ export const dashboardTour: TourData = {
   description: 'Learn how to navigate and use the dashboard effectively',
   steps: [
     {
-      title: 'Welcome to Your Dashboard',
-      content: 'This is your personal dashboard where you can see an overview of your business performance, recent activities, and upcoming tasks.',
+      title: 'Welcome to Your AVEROX CRM Dashboard',
+      content: 'This is your personalized dashboard that gives you a complete overview of your business activities. From here, you can monitor performance metrics, track your sales pipeline, manage tasks, and view recent activities across your organization.',
     },
     {
-      title: 'Performance Metrics',
-      content: 'These cards show your key performance indicators like new leads, conversion rate, revenue generated, and open deals.',
+      title: 'Personalized Greeting',
+      content: 'Notice the personalized greeting that changes based on the time of day (Good morning, Good afternoon, or Good evening) along with your name. The current date is also displayed for your reference.',
     },
     {
-      title: 'Sales Pipeline',
-      content: 'Here you can see your sales pipeline with the number of leads in each stage and the total value.',
+      title: 'Action Buttons',
+      content: 'These buttons at the top right allow you to export dashboard data as a CSV file or create new reports. Try clicking the Export button to download your current dashboard data for offline analysis.',
     },
     {
-      title: 'Your Tasks',
-      content: 'This section displays your upcoming tasks. You can create new tasks, mark them as complete, or navigate to the tasks page for more details.',
+      title: 'New Leads Metric',
+      content: 'This special card highlights new leads that have entered your pipeline. The percentage indicates the change compared to the previous period. You can click on this card to navigate directly to your leads page.',
     },
     {
-      title: 'Recent Activities',
-      content: 'Keep track of recent activities across your team including calls, emails, meetings, and more.',
+      title: 'Key Performance Indicators',
+      content: 'These metric cards show critical business performance data including conversion rates, revenue generated, and number of open deals. Each card displays the current value and the percentage change compared to the previous period.',
+    },
+    {
+      title: 'Sales Pipeline Visualization',
+      content: 'This chart visualizes your entire sales process from lead generation to closing deals. Each stage shows the number of opportunities and their total value. You can see at a glance where prospects are in your sales funnel.',
+    },
+    {
+      title: 'Pipeline Stage Details',
+      content: 'Each column in the pipeline chart represents a different stage in your sales process. The height of the bar indicates the total value of opportunities at that stage, while the percentage shows the proportion of your total pipeline value.',
+    },
+    {
+      title: 'Recent Activities Feed',
+      content: 'This section displays the latest actions performed by you and your team members. It includes calls made, emails sent, meetings scheduled, and other important interactions with leads and customers.',
+    },
+    {
+      title: 'Activity Details',
+      content: 'Each activity entry shows who performed the action, what they did, and when it happened. This helps you stay informed about all customer interactions across your organization.',
+    },
+    {
+      title: 'Tasks Management',
+      content: 'The Tasks section shows your upcoming responsibilities with due dates. You can quickly see what needs your attention today, tomorrow, this week, or later.',
+    },
+    {
+      title: 'Task Creation and Management',
+      content: 'You can create new tasks directly from this section using the "Create New Task" button. Tasks can be marked as complete by clicking the checkbox next to them.',
+    },
+    {
+      title: 'Upcoming Events',
+      content: 'This section displays scheduled events like meetings, calls, and deadlines. It helps you prepare for upcoming engagements with clients and team members.',
+    },
+    {
+      title: 'Navigation and Customization',
+      content: 'Use the sidebar on the left to navigate to different sections of AVEROX CRM. You can access detailed views of your contacts, accounts, leads, opportunities, and more. The dashboard automatically refreshes to show you the most up-to-date information.',
+    },
+    {
+      title: 'Tour Help Button',
+      content: 'You can restart this tour at any time by clicking the help button in the bottom right corner of the screen. Similar help buttons are available throughout AVEROX CRM to guide you through different features.',
     }
   ]
 };

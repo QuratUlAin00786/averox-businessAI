@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, HelpCircle, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLanguage } from '@/hooks/use-language';
@@ -60,13 +60,24 @@ export function SimpleTour({
             {steps[currentStep]?.content}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+        <DialogFooter className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-2 order-2 sm:order-1">
             <span className="text-xs text-muted-foreground">
               {currentStep + 1} {t.tooltips.of} {steps.length}
             </span>
+            {steps.length > 5 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleComplete}
+                className="flex items-center text-xs text-muted-foreground"
+              >
+                <SkipForward className="h-3 w-3 mr-1" />
+                {t.tooltips.skip}
+              </Button>
+            )}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 order-1 sm:order-2">
             {currentStep > 0 && (
               <Button
                 variant="outline"
