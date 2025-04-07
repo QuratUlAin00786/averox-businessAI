@@ -101,11 +101,17 @@ const ChannelIcon = ({ channel }: { channel: string }) => {
 };
 
 export function CommunicationPanel({ contactId, contactType, contactName = '', email = '', phone = '' }: CommunicationPanelProps) {
+  // Check if we have a saved debug phone in localStorage
+  const savedDebugPhone = localStorage.getItem('debug_account_phone');
+  
+  // Use the phone parameter or the debug phone from localStorage
+  const phoneToUse = phone || savedDebugPhone || '';
+  
   // Convert phone to string for use in communication options
-  const phoneStr = String(phone || '');
+  const phoneStr = String(phoneToUse || '');
   
   // Log detailed debug information
-  console.log('%c CommunicationPanel props:', 'background: #007bff; color: white; padding: 2px 5px; border-radius: 3px;', { 
+  console.log('%c CommunicationPanel props and debug info:', 'background: #007bff; color: white; padding: 2px 5px; border-radius: 3px;', { 
     contactId, 
     contactType, 
     contactName, 
@@ -114,7 +120,10 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
     hasPhone: !!phone,  // Explicitly show if phone is truthy
     phoneType: typeof phone,  // Log the type of the phone parameter
     phoneValue: phone, // Log the exact value
-    phoneString: phoneStr // Log the string version we'll use
+    phoneString: phoneStr, // Log the string version we'll use
+    savedDebugPhone, // Show what's in localStorage
+    usingDebugPhone: !phone && !!savedDebugPhone, // Are we using the debug value?
+    finalPhoneUsed: phoneToUse // The final value used after fallbacks
   });
   
   const { toast } = useToast();

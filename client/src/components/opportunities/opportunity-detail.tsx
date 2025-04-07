@@ -81,6 +81,11 @@ export function OpportunityDetail({
         hasPhone: !!account.phone,
         phoneToString: String(account.phone || "")
       });
+      
+      // Save the phone to localStorage to debug persistence
+      if (account.phone) {
+        localStorage.setItem('debug_account_phone', String(account.phone));
+      }
     }
   }, [account, opportunity]);
 
