@@ -322,13 +322,20 @@ export function OpportunityDetail({
                 <span className="hidden">{account && opportunity ? JSON.stringify({account, opportunity}) : ""}</span>
                 {/* Force a check to ensure account data is available */}
                 {account ? (
-                  <CommunicationPanel 
-                    contactId={opportunity.id}
-                    contactType="customer"
-                    contactName={opportunity.name}
-                    email={account.email || ""}
-                    phone={account.phone || ""} 
-                  />
+                  <>
+                    {/* Additional debug information for phone numbers - hidden from view */}
+                    <div className="hidden">
+                      Debug info logged to console
+                      {/* Using useEffect in the component to log this instead */}
+                    </div>
+                    <CommunicationPanel 
+                      contactId={opportunity.id}
+                      contactType="customer"
+                      contactName={opportunity.name}
+                      email={account.email || ""}
+                      phone={account.phone || ""} 
+                    />
+                  </>
                 ) : (
                   <div className="flex justify-center items-center py-8">
                     <RefreshCw className="h-8 w-8 animate-spin text-neutral-400" />

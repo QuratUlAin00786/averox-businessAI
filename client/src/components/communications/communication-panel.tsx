@@ -101,17 +101,20 @@ const ChannelIcon = ({ channel }: { channel: string }) => {
 };
 
 export function CommunicationPanel({ contactId, contactType, contactName = '', email = '', phone = '' }: CommunicationPanelProps) {
-  // Ensure phone is a string and debug log with more visibility
-  const phoneStr = typeof phone === 'string' ? phone : String(phone || '');
+  // Convert phone to string for use in communication options
+  const phoneStr = String(phone || '');
+  
+  // Log detailed debug information
   console.log('%c CommunicationPanel props:', 'background: #007bff; color: white; padding: 2px 5px; border-radius: 3px;', { 
     contactId, 
     contactType, 
     contactName, 
     email, 
-    phone: phoneStr,
-    hasPhone: !!phoneStr,  // Explicitly show if phone is truthy
-    phoneLength: phoneStr.length,  // Check length of phone string
-    phoneType: typeof phone  // Log the type of the phone parameter
+    phone,
+    hasPhone: !!phone,  // Explicitly show if phone is truthy
+    phoneType: typeof phone,  // Log the type of the phone parameter
+    phoneValue: phone, // Log the exact value
+    phoneString: phoneStr // Log the string version we'll use
   });
   
   const { toast } = useToast();
