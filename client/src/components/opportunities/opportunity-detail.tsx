@@ -74,8 +74,13 @@ export function OpportunityDetail({
   // Add debug logging via useEffect
   useEffect(() => {
     if (account && opportunity) {
-      console.log('Account data for communication panel:', account);
-      console.log('Account phone number:', account.phone);
+      console.log('%c Opportunity Detail - Account Data:', 'background: #6366f1; color: white; padding: 2px 5px; border-radius: 3px;', account);
+      console.log('%c Opportunity Detail - Account Phone:', 'background: #6366f1; color: white; padding: 2px 5px; border-radius: 3px;', {
+        phone: account.phone,
+        phoneType: typeof account.phone,
+        hasPhone: !!account.phone,
+        phoneToString: String(account.phone || "")
+      });
     }
   }, [account, opportunity]);
 
@@ -322,7 +327,7 @@ export function OpportunityDetail({
                     contactType="customer"
                     contactName={opportunity.name}
                     email={account.email || ""}
-                    phone={String(account.phone || "")}
+                    phone={account.phone || ""} 
                   />
                 ) : (
                   <div className="flex justify-center items-center py-8">
