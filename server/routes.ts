@@ -33,7 +33,10 @@ import {
   insertProposalElementSchema,
   insertProposalCollaboratorSchema,
   insertProposalCommentSchema,
-  insertProposalActivitySchema
+  insertProposalActivitySchema,
+  // System types
+  type MenuVisibilitySettings,
+  type SystemSettings
 } from "@shared/schema";
 import { z } from "zod";
 import { 
@@ -71,6 +74,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Initialize default permissions
     await storage.initializePermissions();
   }
+  
+  // System Settings API routes
+  app.get('/api/system-settings', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      const userId = req.user.id;
+      const settings = await storage.getSystemSettings(userId);
+      res.json(settings);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  app.post('/api/system-settings', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      // Validate user has admin privileges
+      if (req.user.role !== 'Admin') {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      }
+      
+      const userId = req.user.id;
+      const settings = req.body as SystemSettings;
+      const updatedSettings = await storage.saveSystemSettings(userId, settings);
+      res.json(updatedSettings);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
   
   // Set up Stripe client for payment processing
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');

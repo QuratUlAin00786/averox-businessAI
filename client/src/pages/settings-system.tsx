@@ -15,18 +15,23 @@ import {
 import { 
   ArrowLeft, 
   BellRing, 
+  Layout, 
   Languages, 
   MailCheck, 
+  Menu, 
   Save, 
-  Shield, 
+  Shield,
   Smartphone 
 } from "lucide-react";
 import { Link } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useSystemSettings } from "@/hooks/use-system-settings";
 
 export default function SettingsSystem() {
   const { toast } = useToast();
   const { language, isRTL, setLanguage, setRTL, t } = useLanguage();
+  const { settings, updateMenuVisibility, saveSettings, isUpdating } = useSystemSettings();
   
   const [formData, setFormData] = useState({
     language: "english",
@@ -62,6 +67,10 @@ export default function SettingsSystem() {
     if (field === "rtlLayout") {
       setRTL(newValue);
     }
+  };
+  
+  const handleMenuVisibilityChange = (menuItem: keyof typeof settings.menuVisibility, checked: boolean) => {
+    updateMenuVisibility(menuItem, checked);
   };
 
   const handleSelectChange = (field: string, value: string) => {
