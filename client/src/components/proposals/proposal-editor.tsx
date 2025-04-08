@@ -1015,16 +1015,20 @@ export function ProposalEditor({
             </div>
 
             {!isReadOnly && (
-              <div className="mb-6 border rounded-md p-4 bg-neutral-50">
-                <h4 className="font-medium text-sm mb-3">Add New Collaborator</h4>
+              <div className="mb-6 border border-dashed rounded-md p-4 bg-neutral-50 hover:border-neutral-300 transition-colors">
+                <h4 className="font-medium text-base mb-3">Add New Collaborator</h4>
+                <p className="text-sm text-neutral-600 mb-4">
+                  Share this proposal with team members by adding them as collaborators.
+                  Assign roles to control their access level.
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <Label htmlFor="user-select" className="mb-2 block">User</Label>
+                    <Label htmlFor="user-select" className="mb-2 block font-medium">Select User</Label>
                     <Select
                       value={selectedUserId?.toString() || ""}
                       onValueChange={(value) => setSelectedUserId(parseInt(value))}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="collaborator-user-select">
                         <SelectValue placeholder="Select a user" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1051,7 +1055,7 @@ export function ProposalEditor({
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="role-select" className="mb-2 block">Role</Label>
+                    <Label htmlFor="role-select" className="mb-2 block font-medium">Assign Role</Label>
                     <Select
                       value={selectedRole}
                       onValueChange={(value) => setSelectedRole(value)}
@@ -1060,9 +1064,9 @@ export function ProposalEditor({
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Viewer">Viewer</SelectItem>
-                        <SelectItem value="Editor">Editor</SelectItem>
-                        <SelectItem value="Manager">Manager</SelectItem>
+                        <SelectItem value="Viewer">Viewer (can only view)</SelectItem>
+                        <SelectItem value="Editor">Editor (can make changes)</SelectItem>
+                        <SelectItem value="Manager">Manager (full control)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1080,6 +1084,7 @@ export function ProposalEditor({
                   }}
                   disabled={!selectedUserId || addCollaboratorMutation.isPending}
                   size="sm"
+                  className="w-full md:w-auto"
                 >
                   {addCollaboratorMutation.isPending ? (
                     <>
@@ -1087,7 +1092,7 @@ export function ProposalEditor({
                     </>
                   ) : (
                     <>
-                      <Plus className="h-4 w-4 mr-2" /> Add Collaborator
+                      <UserPlus className="h-4 w-4 mr-2" /> Add Collaborator
                     </>
                   )}
                 </Button>
@@ -1099,7 +1104,7 @@ export function ProposalEditor({
                 <Loader2 className="h-8 w-8 animate-spin text-primary/70" />
               </div>
             ) : collaborators.length === 0 ? (
-              <Card>
+              <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center p-8 text-center">
                   <Users className="h-12 w-12 text-neutral-300 mb-4" />
                   <h3 className="text-lg font-medium mb-2">No collaborators yet</h3>
@@ -1135,7 +1140,7 @@ export function ProposalEditor({
             ) : (
               <div className="space-y-4">
                 {collaborators.map((collaborator) => (
-                  <Card key={collaborator.id} className="overflow-hidden">
+                  <Card key={collaborator.id} className="overflow-hidden hover:shadow-sm transition-shadow">
                     <CardHeader className="p-4 pb-2">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
@@ -1211,37 +1216,39 @@ export function ProposalEditor({
                   ))}
 
                   {comments.length === 0 && (
-                    <div className="text-center p-8 text-neutral-500">
-                      <MessageSquare className="h-12 w-12 mx-auto text-neutral-300 mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No comments yet</h3>
-                      <p className="mb-4">
-                        This proposal doesn't have any comments or feedback yet.
-                      </p>
-                      {!isReadOnly && (
-                        <>
-                          <p className="text-sm text-neutral-600 mb-4">
-                            Comments allow team members to discuss this proposal, provide feedback, 
-                            and keep a record of important conversations.
-                          </p>
-                          <div className="flex flex-col items-center">
-                            <Button 
-                              variant="outline" 
-                              className="mb-2 w-full md:w-auto"
-                              onClick={() => {
-                                // Focus the comment textarea
-                                const textarea = document.querySelector('textarea');
-                                if (textarea) {
-                                  textarea.focus();
-                                }
-                              }}
-                            >
-                              <MessageSquare className="h-4 w-4 mr-2" />
-                              Add the first comment
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    <Card className="border-dashed">
+                      <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                        <MessageSquare className="h-12 w-12 text-neutral-300 mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No comments yet</h3>
+                        <p className="mb-4 text-neutral-500">
+                          This proposal doesn't have any comments or feedback yet.
+                        </p>
+                        {!isReadOnly && (
+                          <>
+                            <p className="text-sm text-neutral-600 mb-4">
+                              Comments allow team members to discuss this proposal, provide feedback, 
+                              and keep a record of important conversations.
+                            </p>
+                            <div className="flex flex-col items-center">
+                              <Button 
+                                variant="outline" 
+                                className="mb-2 w-full md:w-auto"
+                                onClick={() => {
+                                  // Focus the comment textarea
+                                  const textarea = document.getElementById('comment-textarea');
+                                  if (textarea) {
+                                    textarea.focus();
+                                  }
+                                }}
+                              >
+                                <MessageSquare className="h-4 w-4 mr-2" />
+                                Add the first comment
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
                   )}
                 </div>
 
@@ -1250,6 +1257,7 @@ export function ProposalEditor({
                     <h4 className="text-sm font-medium mb-2">Add a comment</h4>
                     <div className="flex gap-2">
                       <Textarea
+                        id="comment-textarea"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Type your comment here..."
