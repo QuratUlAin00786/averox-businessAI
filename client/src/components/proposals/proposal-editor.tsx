@@ -116,6 +116,8 @@ export function ProposalEditor({
   const [isDraggingElement, setIsDraggingElement] = useState<number | null>(null);
   const [selectedElement, setSelectedElement] = useState<ProposalElement | null>(null);
   const [newComment, setNewComment] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>('Viewer');
 
   // Fetch proposal elements
   const {
@@ -183,12 +185,31 @@ export function ProposalEditor({
     enabled: isOpen && activeTab === 'comments',
   });
 
+  // Fetch users for collaborator selection
+  const {
+    data: users = [],
+    isLoading: isLoadingUsers,
+  } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+    queryFn: async () => {
+      const response = await fetch('/api/users');
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      const result = await response.json();
+      return result.data || result;
+    },
+    enabled: isOpen && activeTab === 'collaborators',
+  });
+
   // Reset state when dialog is closed
   useEffect(() => {
     if (!isOpen) {
       setActiveTab('editor');
       setSelectedElement(null);
       setNewComment('');
+      setSelectedUserId(null);
+      setSelectedRole('Viewer');
     }
   }, [isOpen]);
 
@@ -987,12 +1008,87 @@ export function ProposalEditor({
           <TabsContent value="collaborators" className="p-6 max-h-[calc(90vh-180px)] overflow-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Collaborators</h3>
-              {!isReadOnly && (
-                <Button size="sm" disabled>
-                  <Plus className="h-4 w-4 mr-2" /> Add Collaborator
-                </Button>
-              )}
             </div>
+
+            {!isReadOnly && (
+              <div className="mb-6 border rounded-md p-4 bg-neutral-50">
+                <h4 className="font-medium text-sm mb-3">Add New Collaborator</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label htmlFor="user-select" className="mb-2 block">User</Label>
+                    <Select
+                      value={selectedUserId?.toString() || ""}
+                      onValueChange={(value) => setSelectedUserId(parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Users</SelectLabel>
+                          {isLoadingUsers ? (
+                            <SelectItem value="loading" disabled>
+                              <Loader2 className="h-4 w-4 animate-spin mr-2 inline" />
+                              Loading users...
+                            </SelectItem>
+                          ) : users.length === 0 ? (
+                            <SelectItem value="none" disabled>
+                              No users available
+                            </SelectItem>
+                          ) : (
+                            users.map(user => (
+                              <SelectItem key={user.id} value={user.id.toString()}>
+                                {user.firstName} {user.lastName} ({user.username})
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="role-select" className="mb-2 block">Role</Label>
+                    <Select
+                      value={selectedRole}
+                      onValueChange={(value) => setSelectedRole(value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Viewer">Viewer</SelectItem>
+                        <SelectItem value="Editor">Editor</SelectItem>
+                        <SelectItem value="Manager">Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => {
+                    if (selectedUserId) {
+                      addCollaboratorMutation.mutate({
+                        userId: selectedUserId,
+                        role: selectedRole
+                      });
+                      setSelectedUserId(null);
+                      setSelectedRole('Viewer');
+                    }
+                  }}
+                  disabled={!selectedUserId || addCollaboratorMutation.isPending}
+                  size="sm"
+                >
+                  {addCollaboratorMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" /> Add Collaborator
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
 
             {isLoadingCollaborators ? (
               <div className="flex justify-center p-6">
