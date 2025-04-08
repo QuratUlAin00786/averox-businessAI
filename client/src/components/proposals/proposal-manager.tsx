@@ -673,9 +673,14 @@ export function ProposalManager({
         onSuccess: (data) => {
           console.log('Proposal created successfully:', data);
           
+          // Close the form
+          setFormMode(null);
+          
           // If we have a valid ID, select the proposal
           if (data && typeof data === 'object' && 'id' in data) {
             setSelectedProposalId(data.id);
+            // Fetch the newly created proposal to get full details
+            refetchProposals();
           }
           
           toast({
@@ -758,6 +763,14 @@ export function ProposalManager({
       updateProposalMutation.mutate({ id, data: updatedData }, {
         onSuccess: (data) => {
           console.log('Proposal updated successfully:', data);
+          
+          // Close form if in edit mode
+          if (formMode === 'edit') {
+            setFormMode(null);
+          }
+          
+          // Refresh data to get the latest updates
+          refetchProposals();
           
           toast({
             title: "Success",
@@ -967,8 +980,15 @@ export function ProposalManager({
           <Button onClick={() => {
               console.log('Create proposal button clicked (1)');
               try {
-                setFormMode('create');
-                console.log('Form mode set to create');
+                // Reset any existing selected proposal to avoid confusion
+                setSelectedProposal(null);
+                setSelectedProposalId(null);
+                
+                // Set form mode after a brief delay to ensure state consistency
+                setTimeout(() => {
+                  setFormMode('create');
+                  console.log('Form mode set to create');
+                }, 10);
               } catch (error) {
                 console.error('Error setting form mode:', error);
               }
@@ -1138,11 +1158,15 @@ export function ProposalManager({
           <Button onClick={() => {
               console.log('Create proposal button clicked (2)');
               try {
-                setFormMode('create');
-                console.log('Form mode set to create');
-                // Make sure ProposalForm is rendered
-                setSelectedProposalId(null);
+                // Reset any existing selected proposal to avoid confusion
                 setSelectedProposal(null);
+                setSelectedProposalId(null);
+                
+                // Set form mode after a brief delay to ensure state consistency
+                setTimeout(() => {
+                  setFormMode('create');
+                  console.log('Form mode set to create');
+                }, 10);
               } catch (error) {
                 console.error('Error setting form mode:', error);
               }
@@ -1327,11 +1351,15 @@ export function ProposalManager({
               <Button onClick={() => {
                 console.log('Create proposal button clicked (3)');
                 try {
-                  setFormMode('create');
-                  console.log('Form mode set to create');
-                  // Make sure ProposalForm is rendered
-                  setSelectedProposalId(null);
+                  // Reset any existing selected proposal to avoid confusion
                   setSelectedProposal(null);
+                  setSelectedProposalId(null);
+                  
+                  // Set form mode after a brief delay to ensure state consistency
+                  setTimeout(() => {
+                    setFormMode('create');
+                    console.log('Form mode set to create');
+                  }, 10);
                 } catch (error) {
                   console.error('Error setting form mode:', error);
                 }
@@ -1399,7 +1427,12 @@ export function ProposalManager({
           accountId={accountId}
           accountName={accountName}
           templates={templates}
-          onClose={() => setFormMode(null)}
+          onClose={() => {
+            console.log("Form closing, resetting state");
+            // Reset all related state to ensure clean state for next operation
+            setFormMode(null);
+            // Don't reset selected proposal here as it might be needed for the view
+          }}
           onSubmit={(data) => {
             try {
               console.log("Form submission received in ProposalManager with data:", data);
