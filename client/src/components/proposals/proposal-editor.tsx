@@ -35,7 +35,13 @@ import {
   ChevronDown,
   GripVertical as GripVerticalIcon,
   UserPlus,
+  FileIcon,
+  MousePointerClickIcon,
+  PlusIcon,
 } from 'lucide-react';
+
+// Import element renderer component
+import { ElementPreview, ElementRenderer } from './proposal-element-renderer';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -123,27 +129,58 @@ export function ProposalEditor({
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('Viewer');
 
-  // Fetch proposal elements
+  // Fetch proposal elements with better error handling
   const {
     data: elements = [],
     isLoading: isLoadingElements,
     refetch: refetchElements,
+    error: elementsError,
   } = useQuery<ProposalElement[]>({
     queryKey: ['/api/proposals', proposal.id, 'elements'],
     queryFn: async () => {
-      const response = await fetch(`/api/proposals/${proposal.id}/elements`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch proposal elements');
+      console.log(`Fetching elements for proposal ID: ${proposal.id}`);
+      try {
+        const response = await fetch(`/api/proposals/${proposal.id}/elements`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error fetching proposal elements:", errorText);
+          throw new Error(`Failed to fetch proposal elements: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log('Fetched proposal elements:', result);
+        
+        // Handle both standardized and legacy response formats
+        const elementsArray = result.data || result;
+        
+        // Validate the returned elements array
+        if (!Array.isArray(elementsArray)) {
+          console.error("Invalid elements response format:", elementsArray);
+          throw new Error("Server returned invalid format for proposal elements");
+        }
+        
+        // Sort elements by sortOrder if available
+        return elementsArray.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      } catch (error) {
+        console.error("Error in element fetch function:", error);
+        throw error;
       }
-      
-      const result = await response.json();
-      console.log('Fetched proposal elements:', result);
-      
-      // Handle both standardized and legacy response formats
-      return result.data || result;
     },
     enabled: isOpen,
   });
+  
+  // Log any errors with elements
+  useEffect(() => {
+    if (elementsError) {
+      console.error("Error fetching elements:", elementsError);
+      toast({
+        title: "Error loading proposal elements",
+        description: elementsError instanceof Error ? elementsError.message : "Unknown error",
+        variant: "destructive"
+      });
+    }
+  }, [elementsError, toast]);
 
   // Fetch proposal collaborators
   const {
@@ -575,108 +612,10 @@ export function ProposalEditor({
     });
   };
 
+  // Import our shared element renderer instead of defining the function inline
   const getElementDisplay = (element: ProposalElement) => {
     const isSelected = selectedElement?.id === element.id;
-    
-    // Parse content if it's a string with error handling
-    let content;
-    try {
-      content = typeof element.content === 'string' 
-        ? JSON.parse(element.content) 
-        : element.content || {};
-    } catch (error) {
-      console.error("Error parsing element content:", error, element);
-      content = {}; // Default to empty object if parsing fails
-    }
-    
-    // Basic preview of the element based on type
-    switch (element.elementType) {
-      case 'Header':
-        return (
-          <div className={cn("text-xl font-bold", isSelected && "bg-primary/5 p-2 rounded")}>
-            {content.text || 'Header Text'}
-          </div>
-        );
-      case 'Text':
-        return (
-          <div className={cn("text-sm line-clamp-3", isSelected && "bg-primary/5 p-2 rounded")}>
-            {content.text || 'Text content...'}
-          </div>
-        );
-      case 'Image':
-        return (
-          <div className={cn("text-center text-sm text-neutral-500", isSelected && "bg-primary/5 p-2 rounded")}>
-            {content.url ? (
-              <div className="flex flex-col items-center">
-                <div className="w-20 h-12 border flex items-center justify-center bg-neutral-50">
-                  <EyeIcon className="h-4 w-4 text-neutral-400" />
-                </div>
-                <span className="mt-1">Image</span>
-              </div>
-            ) : (
-              <span>[Image placeholder]</span>
-            )}
-          </div>
-        );
-      case 'Table':
-        return (
-          <div className={cn("text-center text-sm text-neutral-500", isSelected && "bg-primary/5 p-2 rounded")}>
-            <div className="border-2 border-neutral-200 w-full h-10 flex items-center justify-center">
-              Table: {content.headers?.length || 0} columns × {content.rows?.length || 0} rows
-            </div>
-          </div>
-        );
-      case 'List':
-        return (
-          <div className={cn("text-sm", isSelected && "bg-primary/5 p-2 rounded")}>
-            {content.ordered ? (
-              <ol className="list-decimal list-inside">
-                {(content.items || ['List item']).slice(0, 3).map((item: string, i: number) => (
-                  <li key={i}>{item}</li>
-                ))}
-                {(content.items?.length || 0) > 3 && <li>...</li>}
-              </ol>
-            ) : (
-              <ul className="list-disc list-inside">
-                {(content.items || ['List item']).slice(0, 3).map((item: string, i: number) => (
-                  <li key={i}>{item}</li>
-                ))}
-                {(content.items?.length || 0) > 3 && <li>...</li>}
-              </ul>
-            )}
-          </div>
-        );
-      case 'Quote':
-        return (
-          <div className={cn("border-l-4 pl-4 italic", isSelected && "bg-primary/5 p-2 rounded")}>
-            "{content.text || 'Quote text'}"
-            {content.attribution && (
-              <div className="text-right text-sm">— {content.attribution}</div>
-            )}
-          </div>
-        );
-      case 'PageBreak':
-        return (
-          <div className={cn("border-t-2 border-dashed my-2 text-center text-xs text-neutral-400", isSelected && "bg-primary/5 p-2 rounded")}>
-            Page Break
-          </div>
-        );
-      case 'Signature':
-        return (
-          <div className={cn("text-sm", isSelected && "bg-primary/5 p-2 rounded")}>
-            <div className="border-b mt-4 mb-2 w-40"></div>
-            <div>{content.name || 'Signature'}</div>
-            <div className="text-neutral-500 text-xs">{content.role || 'Title'}</div>
-            {content.date && <div className="text-neutral-500 text-xs">Date</div>}
-          </div>
-        );
-      default:
-        return (
-          <div className={cn("text-sm text-neutral-500", isSelected && "bg-primary/5 p-2 rounded")}>
-            {element.elementType} element
-          </div>
-        );
-    }
+    return <ElementPreview element={element} isSelected={isSelected} />;
   };
 
   const renderElementEditor = () => {
