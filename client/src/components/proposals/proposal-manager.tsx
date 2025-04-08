@@ -8,6 +8,7 @@ import {
   Opportunity
 } from '@shared/schema';
 import { apiRequestJson } from '@/lib/queryClient';
+import { ProposalCard } from './proposal-card';
 
 // Define a standardized API response interface
 interface ApiResponse<T> {
@@ -1001,153 +1002,18 @@ export function ProposalManager({
 
     return (
       <div className="space-y-4">
-        {filteredProposals.map((proposal) => {
-          // Generate status badge outside the card to prevent any layout issues
-          const statusBadge = getStatusBadge(proposal.status);
-          
-          return (
-            <div 
-              key={proposal.id}
-              className="proposal-card"
-              onClick={() => handleViewProposal(proposal)}
-            >
-              <div className="proposal-card-header">
-                <div>
-                  <h3 className="proposal-card-title">{proposal.name}</h3>
-                  <p className="proposal-card-description">
-                    Last edited: {
-                      proposal.updatedAt 
-                        ? formatDistanceToNow(new Date(proposal.updatedAt), { addSuffix: true })
-                        : formatDistanceToNow(new Date(proposal.createdAt || new Date()), { addSuffix: true })
-                    }
-                  </p>
-                </div>
-                <div 
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleOpenEditor(proposal)}>
-                        <ClipboardEdit className="h-4 w-4 mr-2" /> Edit Content
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleEditProposal(proposal)}>
-                        <Eye className="h-4 w-4 mr-2" /> Edit Details
-                      </DropdownMenuItem>
-                      {proposal.status === 'Draft' && (
-                        <DropdownMenuItem onClick={() => handleSendProposal(proposal)}>
-                          <Send className="h-4 w-4 mr-2" /> Send to Client
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem>
-                        <Download className="h-4 w-4 mr-2" /> Download PDF
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <ExternalLink className="h-4 w-4 mr-2" /> Share Link
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        className="text-red-600"
-                        onClick={() => handleDeleteProposal(proposal.id)}
-                      >
-                        <Trash className="h-4 w-4 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-              
-              <div className="proposal-card-content">
-                {proposal.expiresAt && (
-                  <div className="flex items-center text-sm text-neutral-500">
-                    <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
-                    <span>
-                      Expires: {format(new Date(proposal.expiresAt), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="proposal-card-footer">
-                <div>
-                  {statusBadge}
-                </div>
-                
-                <div className="proposal-card-actions">
-                  {proposal.status === 'Draft' && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSendProposal(proposal);
-                      }}
-                    >
-                      <Send className="h-3 w-3 mr-1" /> Send
-                    </Button>
-                  )}
-                  
-                  {proposal.status === 'Sent' && (
-                    <>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="h-7 text-xs border-green-600 text-green-600 hover:bg-green-50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const acceptedData: Partial<InsertProposal> = {
-                            status: 'Accepted',
-                            metadata: {}
-                          };
-                          (acceptedData.metadata as Record<string, any>).acceptedAt = new Date().toISOString();
-                          handleUpdateProposal(proposal.id, acceptedData);
-                        }}
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" /> Mark Accepted
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="h-7 text-xs border-red-600 text-red-600 hover:bg-red-50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const rejectedData: Partial<InsertProposal> = {
-                            status: 'Rejected',
-                            metadata: {}
-                          };
-                          (rejectedData.metadata as Record<string, any>).rejectedAt = new Date().toISOString();
-                          handleUpdateProposal(proposal.id, rejectedData);
-                        }}
-                      >
-                        <XCircle className="h-3 w-3 mr-1" /> Mark Rejected
-                      </Button>
-                    </>
-                  )}
-                  
-                  {(proposal.status === 'Accepted' || proposal.status === 'Rejected') && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUpdateProposal(proposal.id, { status: 'Draft' });
-                      }}
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" /> Reopen
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {filteredProposals.map((proposal) => (
+          <ProposalCard
+            key={proposal.id}
+            proposal={proposal}
+            onView={handleViewProposal}
+            onEdit={handleEditProposal}
+            onEditContent={handleOpenEditor}
+            onDelete={handleDeleteProposal}
+            onSend={handleSendProposal}
+            onUpdateStatus={handleUpdateProposal}
+          />
+        ))}
       </div>
     );
   };
