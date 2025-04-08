@@ -3,8 +3,6 @@ import { useLocation } from "wouter";
 import { 
   Search, 
   Menu, 
-  Bell, 
-  MessageCircle, 
   Plus,
   User,
   Settings,
@@ -26,6 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
+import { MessagesDropdown } from "@/components/notifications/messages-dropdown";
 
 interface TopBarProps {
   onToggleSidebar: () => void;
@@ -143,25 +143,11 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          {/* Notification button */}
-          <Button variant="ghost" size="icon" className="p-1 ml-3 text-neutral-400 hover:text-neutral-500">
-            <span className="sr-only">View notifications</span>
-            <div className="relative">
-              <Bell className="w-6 h-6" />
-              {/* Notification indicator - no fixed count */}
-              <span className="absolute -top-1 -right-1 flex items-center justify-center w-2.5 h-2.5 bg-destructive rounded-full"></span>
-            </div>
-          </Button>
+          {/* Notification dropdown */}
+          <NotificationDropdown />
           
-          {/* Messages button */}
-          <Button variant="ghost" size="icon" className="p-1 ml-3 text-neutral-400 hover:text-neutral-500">
-            <span className="sr-only">View messages</span>
-            <div className="relative">
-              <MessageCircle className="w-6 h-6" />
-              {/* Message indicator - no fixed count */}
-              <span className="absolute -top-1 -right-1 flex items-center justify-center w-2.5 h-2.5 bg-primary rounded-full"></span>
-            </div>
-          </Button>
+          {/* Messages dropdown */}
+          <MessagesDropdown />
           
           {/* Profile dropdown */}
           <div className="relative ml-3">
