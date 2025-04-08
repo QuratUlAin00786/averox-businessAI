@@ -1001,25 +1001,31 @@ export function ProposalManager({
 
     return (
       <div className="space-y-4">
-        {filteredProposals.map((proposal) => (
-          <Card 
-            key={proposal.id}
-            className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleViewProposal(proposal)}
-          >
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
+        {filteredProposals.map((proposal) => {
+          // Generate status badge outside the card to prevent any layout issues
+          const statusBadge = getStatusBadge(proposal.status);
+          
+          return (
+            <div 
+              key={proposal.id}
+              className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleViewProposal(proposal)}
+            >
+              <div className="p-4 pb-2 flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-base font-medium">{proposal.name}</CardTitle>
-                  <CardDescription className="mt-1 text-sm text-neutral-600">
+                  <h3 className="text-base font-medium mb-1">{proposal.name}</h3>
+                  <p className="text-sm text-neutral-600">
                     Last edited: {
                       proposal.updatedAt 
                         ? formatDistanceToNow(new Date(proposal.updatedAt), { addSuffix: true })
                         : formatDistanceToNow(new Date(proposal.createdAt || new Date()), { addSuffix: true })
                     }
-                  </CardDescription>
+                  </p>
                 </div>
-                <div onClick={(e) => e.stopPropagation()}>
+                <div 
+                  className="ml-4" 
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -1056,11 +1062,10 @@ export function ProposalManager({
                   </DropdownMenu>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="pb-2 pt-0">
-              <div className="flex items-center gap-4 text-sm">
+              
+              <div className="px-4 pt-0 pb-2">
                 {proposal.expiresAt && (
-                  <div className="flex items-center text-neutral-500">
+                  <div className="flex items-center text-sm text-neutral-500">
                     <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
                     <span>
                       Expires: {format(new Date(proposal.expiresAt), 'MMM d, yyyy')}
@@ -1068,82 +1073,82 @@ export function ProposalManager({
                   </div>
                 )}
               </div>
-            </CardContent>
-            <CardFooter className="pt-0 pb-3 flex justify-between items-center">
-              <div>
-                {getStatusBadge(proposal.status)}
-              </div>
               
-              {/* Quick action buttons based on status */}
-              <div className="flex gap-2 ml-auto">
-                {proposal.status === 'Draft' && (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="h-7 text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSendProposal(proposal);
-                    }}
-                  >
-                    <Send className="h-3 w-3 mr-1" /> Send
-                  </Button>
-                )}
+              <div className="px-4 pt-0 pb-3 flex justify-between items-center">
+                <div>
+                  {statusBadge}
+                </div>
                 
-                {proposal.status === 'Sent' && (
-                  <>
+                <div className="flex gap-2 ml-auto">
+                  {proposal.status === 'Draft' && (
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="h-7 text-xs border-green-600 text-green-600 hover:bg-green-50"
+                      className="h-7 text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const acceptedData: Partial<InsertProposal> = {
-                          status: 'Accepted',
-                          metadata: {}
-                        };
-                        (acceptedData.metadata as Record<string, any>).acceptedAt = new Date().toISOString();
-                        handleUpdateProposal(proposal.id, acceptedData);
+                        handleSendProposal(proposal);
                       }}
                     >
-                      <CheckCircle className="h-3 w-3 mr-1" /> Mark Accepted
+                      <Send className="h-3 w-3 mr-1" /> Send
                     </Button>
+                  )}
+                  
+                  {proposal.status === 'Sent' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="h-7 text-xs border-green-600 text-green-600 hover:bg-green-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const acceptedData: Partial<InsertProposal> = {
+                            status: 'Accepted',
+                            metadata: {}
+                          };
+                          (acceptedData.metadata as Record<string, any>).acceptedAt = new Date().toISOString();
+                          handleUpdateProposal(proposal.id, acceptedData);
+                        }}
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" /> Mark Accepted
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="h-7 text-xs border-red-600 text-red-600 hover:bg-red-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rejectedData: Partial<InsertProposal> = {
+                            status: 'Rejected',
+                            metadata: {}
+                          };
+                          (rejectedData.metadata as Record<string, any>).rejectedAt = new Date().toISOString();
+                          handleUpdateProposal(proposal.id, rejectedData);
+                        }}
+                      >
+                        <XCircle className="h-3 w-3 mr-1" /> Mark Rejected
+                      </Button>
+                    </>
+                  )}
+                  
+                  {(proposal.status === 'Accepted' || proposal.status === 'Rejected') && (
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="h-7 text-xs border-red-600 text-red-600 hover:bg-red-50"
+                      className="h-7 text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const rejectedData: Partial<InsertProposal> = {
-                          status: 'Rejected',
-                          metadata: {}
-                        };
-                        (rejectedData.metadata as Record<string, any>).rejectedAt = new Date().toISOString();
-                        handleUpdateProposal(proposal.id, rejectedData);
+                        handleUpdateProposal(proposal.id, { status: 'Draft' });
                       }}
                     >
-                      <XCircle className="h-3 w-3 mr-1" /> Mark Rejected
+                      <RotateCcw className="h-3 w-3 mr-1" /> Reopen
                     </Button>
-                  </>
-                )}
-                
-                {(proposal.status === 'Accepted' || proposal.status === 'Rejected') && (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="h-7 text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUpdateProposal(proposal.id, { status: 'Draft' });
-                    }}
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" /> Reopen
-                  </Button>
-                )}
+                  )}
+                </div>
               </div>
-            </CardFooter>
-          </Card>
-        ))}
+            </div>
+          );
+        })}
       </div>
     );
   };
