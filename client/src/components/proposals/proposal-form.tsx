@@ -152,11 +152,12 @@ export function ProposalForm({
   const { toast } = useToast();
   
   const handleFormSubmit = (values: ProposalFormValues) => {
-    console.log("[FORM DEBUG] Form submission triggered!", new Date().toISOString());
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] Form submission triggered!`);
     try {
-      console.log("[FORM DEBUG] Form values:", JSON.stringify(values, null, 2));
-      console.log("[FORM DEBUG] Form context - opportunityId:", opportunityId, "accountId:", accountId);
-      console.log("[FORM DEBUG] Form state - isEditing:", isEditing, "selectedTemplateId:", selectedTemplateId);
+      console.log(`[${timestamp}] Form values:`, JSON.stringify(values, null, 2));
+      console.log(`[${timestamp}] Form context - opportunityId:`, opportunityId, "accountId:", accountId);
+      console.log(`[${timestamp}] Form state - isEditing:`, isEditing, "selectedTemplateId:", selectedTemplateId);
       
       // Create a clean proposal object with explicit typing to avoid Zod validation issues
       const proposalData = {
@@ -173,46 +174,42 @@ export function ProposalForm({
         templateId: selectedTemplateId || undefined
       };
       
-      console.log("DEBUG - Constructed proposalData:", JSON.stringify(proposalData, null, 2));
-      console.log("DEBUG - Types check:", {
-        nameType: typeof proposalData.name,
-        statusType: typeof proposalData.status,
-        opportunityIdType: typeof proposalData.opportunityId,
-        opportunityIdValue: proposalData.opportunityId,
-        accountIdType: typeof proposalData.accountId,
-        accountIdValue: proposalData.accountId,
-        expiresAtType: proposalData.expiresAt ? 'Date object' : 'null',
-      });
+      console.log(`[${timestamp}] Constructed proposalData:`, JSON.stringify(proposalData, null, 2));
       
       // Add template if selected
       if (!isEditing && selectedTemplateId) {
         proposalData.templateId = selectedTemplateId;
-        console.log("Added templateId:", selectedTemplateId);
+        console.log(`[${timestamp}] Added templateId:`, selectedTemplateId);
       }
       
       // Final validation before submitting
       if (!proposalData.name) {
-        console.error("Proposal name is required");
+        console.error(`[${timestamp}] Proposal name is required`);
         throw new Error("Proposal name is required");
       }
       
       if (proposalData.opportunityId <= 0 || isNaN(proposalData.opportunityId)) {
-        console.error("Invalid opportunity ID:", proposalData.opportunityId);
+        console.error(`[${timestamp}] Invalid opportunity ID:`, proposalData.opportunityId);
         throw new Error("Valid opportunity ID is required");
       }
       
       if (proposalData.accountId <= 0 || isNaN(proposalData.accountId)) {
-        console.error("Invalid account ID:", proposalData.accountId);
+        console.error(`[${timestamp}] Invalid account ID:`, proposalData.accountId);
         throw new Error("Valid account ID is required");
       }
       
-      console.log("Validation passed, submitting proposal data:", proposalData);
+      console.log(`[${timestamp}] Validation passed, calling onSubmit with data:`, proposalData);
       
-      // Skip schema validation on the way out - let the server handle it
+      // Call the onSubmit handler passed from the parent component
       try {
         onSubmit(proposalData as any);
-        console.log("onSubmit callback executed successfully");
-        form.reset();
+        console.log(`[${timestamp}] onSubmit callback executed successfully`);
+        
+        // Reset form immediately after successful submission
+        setTimeout(() => {
+          form.reset();
+          console.log(`[${timestamp}] Form reset after successful submission`);
+        }, 100);
         
         // Show success toast
         toast({
@@ -220,12 +217,12 @@ export function ProposalForm({
           description: `Successfully ${isEditing ? 'updated' : 'created'} proposal "${proposalData.name}"`,
           variant: "default"
         });
-      } catch (submitError) {
-        console.error("Error in onSubmit callback:", submitError);
+      } catch (submitError: any) {
+        console.error(`[${timestamp}] Error in onSubmit callback:`, submitError);
         throw submitError; // Re-throw to be caught by the outer catch
       }
     } catch (error: any) {
-      console.error("Error in form submission:", error);
+      console.error(`[${timestamp}] Error in form submission:`, error);
       // Present error to user
       toast({
         title: "Form Error",
@@ -454,7 +451,24 @@ export function ProposalForm({
                     Back
                   </Button>
                 )}
-                <Button type="submit" disabled={form.formState.isSubmitting}>
+                <Button 
+                  type="submit" 
+                  disabled={form.formState.isSubmitting}
+                  onClick={(e) => {
+                    // Explicitly log that the button was clicked
+                    console.log('Create Proposal button clicked directly');
+                    
+                    // For debugging only - don't prevent default as we want normal form submission
+                    if (form.formState.isValid) {
+                      console.log('Form is valid, submission should proceed');
+                      // Let the normal form submission happen
+                    } else {
+                      console.log('Form validation errors:', form.formState.errors);
+                      // Force trigger handleSubmit manually in case there's an issue with the button
+                      form.handleSubmit(handleFormSubmit)();
+                    }
+                  }}
+                >
                   {form.formState.isSubmitting && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
