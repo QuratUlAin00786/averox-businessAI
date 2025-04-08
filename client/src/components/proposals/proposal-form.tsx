@@ -315,7 +315,14 @@ export function ProposalForm({
 
         {step === 'info' && (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            <form 
+              className="space-y-6"
+              onSubmit={(e) => {
+                e.preventDefault();
+                console.log("DIRECT FORM SUBMISSION TRIGGERED");
+                form.handleSubmit(handleFormSubmit)(e);
+              }}
+            >
               <FormField
                 control={form.control}
                 name="name"
@@ -452,20 +459,39 @@ export function ProposalForm({
                   </Button>
                 )}
                 <Button 
-                  type="submit" 
+                  type="button" 
                   disabled={form.formState.isSubmitting}
-                  onClick={(e) => {
-                    // Explicitly log that the button was clicked
-                    console.log('Create Proposal button clicked directly');
+                  onClick={() => {
+                    console.log('EMERGENCY MANUAL SUBMISSION TRIGGERED');
+                    const proposalData = {
+                      name: form.getValues().name || "New Proposal",
+                      status: form.getValues().status || "Draft",
+                      opportunityId: Number(opportunityId || form.getValues().opportunityId || 0),
+                      accountId: Number(accountId || form.getValues().accountId || 0),
+                      expiresAt: form.getValues().expiresAt,
+                      createdBy: 2, // Default to user ID 2
+                      content: {}, // Empty content object
+                      metadata: {}, // Empty metadata object
+                      templateId: selectedTemplateId || undefined
+                    };
                     
-                    // For debugging only - don't prevent default as we want normal form submission
-                    if (form.formState.isValid) {
-                      console.log('Form is valid, submission should proceed');
-                      // Let the normal form submission happen
-                    } else {
-                      console.log('Form validation errors:', form.formState.errors);
-                      // Force trigger handleSubmit manually in case there's an issue with the button
-                      form.handleSubmit(handleFormSubmit)();
+                    console.log('DIRECT SUBMISSION DATA:', proposalData);
+                    
+                    try {
+                      onSubmit(proposalData as any);
+                      toast({
+                        title: isEditing ? "Proposal Updated" : "Proposal Created",
+                        description: `Successfully ${isEditing ? 'updated' : 'created'} proposal`,
+                      });
+                      form.reset();
+                      onClose();
+                    } catch (error: any) {
+                      console.error('Error in manual submission:', error);
+                      toast({
+                        title: "Error",
+                        description: error.message || "An error occurred",
+                        variant: "destructive"
+                      });
                     }
                   }}
                 >
