@@ -463,22 +463,38 @@ export function ProposalForm({
                   disabled={form.formState.isSubmitting}
                   onClick={() => {
                     console.log('EMERGENCY MANUAL SUBMISSION TRIGGERED');
+                    // Create proposal data with proper date handling
                     const proposalData = {
                       name: form.getValues().name || "New Proposal",
                       status: form.getValues().status || "Draft",
                       opportunityId: Number(opportunityId || form.getValues().opportunityId || 0),
                       accountId: Number(accountId || form.getValues().accountId || 0),
-                      expiresAt: form.getValues().expiresAt,
+                      // Fix date format - ensure it's in ISO string format
+                      expiresAt: form.getValues().expiresAt instanceof Date ? form.getValues().expiresAt.toISOString() : null,
                       createdBy: 2, // Default to user ID 2
                       content: {}, // Empty content object
-                      metadata: {}, // Empty metadata object
+                      metadata: {
+                        clientSubmissionTime: new Date().toISOString()
+                      },
                       templateId: selectedTemplateId || undefined
                     };
                     
                     console.log('DIRECT SUBMISSION DATA:', proposalData);
                     
                     try {
-                      onSubmit(proposalData as any);
+                      // If in edit mode, we need to add the ID to the data
+                      if (isEditing && proposal) {
+                        const updateData = {
+                          ...proposalData,
+                          id: proposal.id
+                        };
+                        console.log('EDIT MODE: Updating proposal with ID', proposal.id);
+                        onSubmit(updateData as any);
+                      } else {
+                        // Create mode
+                        onSubmit(proposalData as any);
+                      }
+                      
                       toast({
                         title: isEditing ? "Proposal Updated" : "Proposal Created",
                         description: `Successfully ${isEditing ? 'updated' : 'created'} proposal`,
