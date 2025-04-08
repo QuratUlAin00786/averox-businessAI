@@ -3980,7 +3980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           addedBy: req.user.id
         });
         
-        const collaborator = await storage.createProposalCollaborator(collaboratorData);
+        const collaborator = await storage.addProposalCollaborator(collaboratorData);
         
         // Log activity
         try {

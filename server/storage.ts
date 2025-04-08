@@ -480,7 +480,7 @@ export interface IStorage {
   // Proposal Collaborators
   getProposalCollaborator(id: number): Promise<ProposalCollaborator | undefined>;
   getProposalCollaborators(proposalId: number): Promise<(ProposalCollaborator & { user?: User })[]>;
-  createProposalCollaborator(collaborator: InsertProposalCollaborator): Promise<ProposalCollaborator>;
+  addProposalCollaborator(collaborator: InsertProposalCollaborator): Promise<ProposalCollaborator>;
   updateProposalCollaborator(id: number, collaborator: Partial<InsertProposalCollaborator>): Promise<ProposalCollaborator | undefined>;
   deleteProposalCollaborator(id: number): Promise<boolean>;
   
@@ -3102,7 +3102,7 @@ export class MemStorage implements IStorage {
     }));
   }
 
-  async createProposalCollaborator(collaborator: InsertProposalCollaborator): Promise<ProposalCollaborator> {
+  async addProposalCollaborator(collaborator: InsertProposalCollaborator): Promise<ProposalCollaborator> {
     const id = this.proposalCollaboratorIdCounter++;
     const createdAt = new Date();
     
@@ -5573,7 +5573,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createProposalCollaborator(collaborator: InsertProposalCollaborator): Promise<ProposalCollaborator> {
+  async addProposalCollaborator(collaborator: InsertProposalCollaborator): Promise<ProposalCollaborator> {
     try {
       // Check if user is already a collaborator
       const existingCollaborators = await db.select()
@@ -5607,7 +5607,7 @@ export class DatabaseStorage implements IStorage {
       
       return newCollaborator;
     } catch (error) {
-      console.error('Database error in createProposalCollaborator:', error);
+      console.error('Database error in addProposalCollaborator:', error);
       throw new Error('Failed to add collaborator: ' + error.message);
     }
   }
