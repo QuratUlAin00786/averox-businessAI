@@ -24,6 +24,9 @@ export const purchaseOrderStatusEnum = pgEnum('purchase_order_status', ['Draft',
 export const proposalStatusEnum = pgEnum('proposal_status', ['Draft', 'Sent', 'Accepted', 'Rejected', 'Expired', 'Revoked']);
 export const proposalElementTypeEnum = pgEnum('proposal_element_type', ['Header', 'Text', 'Image', 'Table', 'List', 'Quote', 'ProductList', 'Signature', 'PageBreak', 'Custom']);
 
+// Custom Fields
+export const customFieldTypeEnum = pgEnum('custom_field_type', ['Text', 'Number', 'Date', 'Boolean', 'Dropdown', 'MultiSelect', 'Email', 'Phone', 'URL', 'TextArea', 'Currency']);
+
 // Users
 // System settings table for global and user configuration
 export const systemSettings = pgTable("system_settings", {
@@ -392,6 +395,104 @@ export const workflows = pgTable("workflows", {
   settings: jsonb("settings"), // Configuration options
 });
 
+// Custom Fields Definition
+export const customFields = pgTable("custom_fields", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  label: text("label").notNull(),
+  type: customFieldTypeEnum("type").notNull(),
+  entityType: text("entity_type").notNull(), // 'contact', 'account', 'lead', 'opportunity', etc.
+  options: jsonb("options"), // For dropdown and multi-select types
+  isRequired: boolean("is_required").default(false),
+  defaultValue: text("default_value"),
+  placeholder: text("placeholder"),
+  description: text("description"),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  isSystem: boolean("is_system").default(false), // System fields can't be deleted
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  validationRules: jsonb("validation_rules"), // JSON with validation rule config
+  showInList: boolean("show_in_list").default(false), // Show in list views
+  showInDetail: boolean("show_in_detail").default(true), // Show in detail views
+  showInForm: boolean("show_in_form").default(true), // Show in forms
+});
+
+export const insertCustomFieldSchema = createInsertSchema(customFields).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type InsertCustomField = z.infer<typeof insertCustomFieldSchema>;
+export type CustomField = typeof customFields.$inferSelect;
+
+// Custom Field Values
+export const customFieldValues = pgTable("custom_field_values", {
+  id: serial("id").primaryKey(),
+  fieldId: integer("field_id").references(() => customFields.id).notNull(),
+  entityId: integer("entity_id").notNull(), // ID of the entity (contact, account, etc.)
+  entityType: text("entity_type").notNull(), // 'contact', 'account', 'lead', 'opportunity', etc.
+  value: text("value"), // String representation of the value
+  textValue: text("text_value"), // For text or long text
+  numberValue: numeric("number_value"), // For numeric fields
+  dateValue: timestamp("date_value"), // For date/time
+  booleanValue: boolean("boolean_value"), // For checkboxes
+  arrayValue: jsonb("array_value"), // For multi-select
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertCustomFieldValueSchema = createInsertSchema(customFieldValues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type InsertCustomFieldValue = z.infer<typeof insertCustomFieldValueSchema>;
+export type CustomFieldValue = typeof customFieldValues.$inferSelect;
+
+// Custom Field Groups (for organizing fields on forms)
+export const customFieldGroups = pgTable("custom_field_groups", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  entityType: text("entity_type").notNull(), // 'contact', 'account', 'lead', 'opportunity', etc.
+  label: text("label").notNull(),
+  description: text("description"),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertCustomFieldGroupSchema = createInsertSchema(customFieldGroups).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type InsertCustomFieldGroup = z.infer<typeof insertCustomFieldGroupSchema>;
+export type CustomFieldGroup = typeof customFieldGroups.$inferSelect;
+
+// Custom Field to Group mapping
+export const customFieldGroupMapping = pgTable("custom_field_group_mapping", {
+  id: serial("id").primaryKey(),
+  fieldId: integer("field_id").references(() => customFields.id).notNull(),
+  groupId: integer("group_id").references(() => customFieldGroups.id).notNull(),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCustomFieldGroupMappingSchema = createInsertSchema(customFieldGroupMapping).omit({
+  id: true,
+  createdAt: true
+});
+
+export type InsertCustomFieldGroupMapping = z.infer<typeof insertCustomFieldGroupMappingSchema>;
+export type CustomFieldGroupMapping = typeof customFieldGroupMapping.$inferSelect;
+
 // Communications
 export const communications = pgTable("communications", {
   id: serial("id").primaryKey(),
@@ -409,6 +510,9 @@ export const communications = pgTable("communications", {
   ownerId: integer("owner_id").references(() => users.id),
   contactType: text("contact_type"), // 'lead' or 'customer'
 });
+
+// Note: Insert schema for communications is defined later in the file
+export type Communication = typeof communications.$inferSelect;
 
 // Proposal Templates
 export const proposalTemplates = pgTable("proposal_templates", {

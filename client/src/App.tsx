@@ -24,6 +24,7 @@ import SettingsApiKeys from "@/pages/settings-api-keys";
 import SettingsTeams from "@/pages/settings-teams";
 import SettingsDataMigration from "@/pages/settings-data-migration";
 import SettingsDashboard from "@/pages/settings-dashboard";
+import SettingsCustomFields from "@/pages/settings-custom-fields";
 import Intelligence from "@/pages/intelligence";
 import Workflows from "@/pages/workflows";
 import Subscriptions from "@/pages/subscriptions";
@@ -172,6 +173,12 @@ function Router() {
       <ProtectedRoute path="/settings/dashboard" component={() => (
         <Layout>
           <SettingsDashboard />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/settings/custom-fields" component={() => (
+        <Layout>
+          <SettingsCustomFields />
         </Layout>
       )} />
       
