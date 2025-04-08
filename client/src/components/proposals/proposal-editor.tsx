@@ -1105,6 +1105,12 @@ export function ProposalEditor({
                   <p className="text-neutral-500 mb-4">
                     No one has been added as a collaborator on this proposal.
                   </p>
+                  {!isReadOnly && (
+                    <p className="text-sm text-blue-600 font-medium">
+                      Use the form above to add team members as collaborators. 
+                      Collaborators can view or edit this proposal based on their assigned role.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -1192,6 +1198,12 @@ export function ProposalEditor({
                       <p className="mb-4">
                         Start the conversation by adding the first comment.
                       </p>
+                      {!isReadOnly && (
+                        <p className="text-sm text-blue-600 font-medium">
+                          Use the comment form below to provide feedback or ask questions about this proposal.
+                          All team members with access can view and respond to comments.
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
