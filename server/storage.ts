@@ -5260,6 +5260,26 @@ export class DatabaseStorage implements IStorage {
       
       // Set default values if missing
       const createdAt = new Date();
+      
+      // Ensure expiresAt is handled correctly to prevent date errors
+      let parsedExpiresAt = null;
+      if (proposal.expiresAt) {
+        // If it's a string that looks like an ISO date string, parse it
+        if (typeof proposal.expiresAt === 'string' && proposal.expiresAt.match(/^\d{4}-\d{2}-\d{2}/)) {
+          parsedExpiresAt = new Date(proposal.expiresAt);
+        } 
+        // If it's already a Date object, use it directly
+        else if (proposal.expiresAt instanceof Date) {
+          parsedExpiresAt = proposal.expiresAt;
+        }
+        
+        // Verify the date is valid before using it
+        if (parsedExpiresAt && isNaN(parsedExpiresAt.getTime())) {
+          console.warn("Invalid date detected, setting expiresAt to null");
+          parsedExpiresAt = null;
+        }
+      }
+      
       const proposalData = {
         name: proposal.name,
         opportunityId: proposal.opportunityId,
@@ -5269,7 +5289,7 @@ export class DatabaseStorage implements IStorage {
         content: proposal.content || {},
         metadata: proposal.metadata || {},
         templateId: proposal.templateId,
-        expiresAt: proposal.expiresAt,
+        expiresAt: parsedExpiresAt,
         createdAt,
         updatedAt: createdAt
       };
@@ -5329,9 +5349,34 @@ export class DatabaseStorage implements IStorage {
         return undefined;
       }
       
+      // Handle date fields to ensure they're valid Date objects
+      let cleanProposal = { ...proposal };
+      
+      // Fix expiresAt date if it exists
+      if (proposal.expiresAt) {
+        // If it's a string that looks like an ISO date string, parse it
+        if (typeof proposal.expiresAt === 'string' && proposal.expiresAt.match(/^\d{4}-\d{2}-\d{2}/)) {
+          cleanProposal.expiresAt = new Date(proposal.expiresAt);
+        } 
+        // If it's already a Date object, use it directly
+        else if (proposal.expiresAt instanceof Date) {
+          cleanProposal.expiresAt = proposal.expiresAt;
+        }
+        else {
+          console.warn("Invalid expiresAt date detected, removing from update data");
+          delete cleanProposal.expiresAt;
+        }
+        
+        // Verify the date is valid 
+        if (cleanProposal.expiresAt && cleanProposal.expiresAt instanceof Date && isNaN(cleanProposal.expiresAt.getTime())) {
+          console.warn("Invalid date detected, removing expiresAt from update data");
+          delete cleanProposal.expiresAt;
+        }
+      }
+      
       // Prepare update data
       const updateData: Partial<InsertProposal> & { updatedAt: Date } = {
-        ...proposal,
+        ...cleanProposal,
         updatedAt: new Date()
       };
       
