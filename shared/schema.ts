@@ -87,6 +87,11 @@ export interface DashboardPreferences {
   
   // Time range preferences
   defaultTimeRange: 'week' | 'month' | 'quarter' | 'year';
+  
+  // AI insights preferences
+  showAIInsights: boolean;
+  aiInsightTypes: ('leads' | 'opportunities' | 'customers' | 'revenue' | 'all')[];
+  aiInsightsCount: number;
 }
 
 // Define the system settings interface used throughout the application

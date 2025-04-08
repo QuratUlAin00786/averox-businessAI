@@ -19,10 +19,12 @@ import { SalesPipeline } from "@/components/dashboard/sales-pipeline";
 import { RecentActivities } from "@/components/dashboard/recent-activities";
 import { MyTasks } from "@/components/dashboard/my-tasks";
 import { UpcomingEvents } from "@/components/dashboard/upcoming-events";
+import { AIInsights } from "@/components/dashboard/ai-insights";
 import { getDashboardData } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
+import { useSystemSettings } from "@/hooks/use-system-settings";
 import { SimpleTour, TourHelpButton, useTour } from "@/components/ui/simple-tour";
 import { dashboardTour } from "@/lib/simple-tour-data";
 
@@ -31,6 +33,7 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const { settings } = useSystemSettings();
   const { isTourOpen, setIsTourOpen, startTour, closeTour, completeTour, hasCompletedTour } = useTour('dashboard');
 
   // Function to get a greeting based on time of day
@@ -302,6 +305,13 @@ export default function Dashboard() {
                 <RecentActivities activities={data?.recentActivities || []} />
               </div>
             </div>
+            
+            {/* AI Insights Section */}
+            {settings?.dashboardPreferences?.showAIInsights && (
+              <div className="mt-8">
+                <AIInsights className="w-full" />
+              </div>
+            )}
             
             {/* Tasks and Upcoming Events */}
             <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">

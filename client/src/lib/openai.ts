@@ -1,91 +1,50 @@
-import { apiRequestJson } from "./queryClient";
+import { apiRequestJson } from "@/lib/queryClient";
 
-export interface AnalysisRequest {
-  prompt: string;
-  context?: string;
-  type?: 'leads' | 'opportunities' | 'customers' | 'general';
-}
-
-export interface AnalysisResponse {
+export type AnalysisResponse = {
   content: string;
+  created: number;
+};
+
+export interface DashboardInsightRequest {
+  data: any;
   type: string;
-  metadata?: Record<string, any>;
+}
+
+export interface Insight {
+  title: string;
+  description: string;
+  category: "trend" | "customer" | "prediction" | string;
+  importance: "high" | "medium" | "low";
 }
 
 /**
- * Generate AI analysis based on CRM data and user prompt
+ * Generates AI insights based on dashboard data
+ * @param data Dashboard data to analyze
+ * @param type Type of insights to generate (leads, opportunities, revenue, customers, or all)
+ * @returns Insights from the AI
  */
-export async function generateAnalysis(request: AnalysisRequest): Promise<AnalysisResponse> {
+export async function generateInsights(data: any, type: string = 'all'): Promise<Insight[]> {
   try {
-    // Use the server-side endpoint for AI analysis
     const response = await apiRequestJson<AnalysisResponse>(
-      'POST',
-      '/api/ai/analyze',
-      request
-    );
-    
-    return response;
-  } catch (error: any) {
-    console.error("Error generating AI analysis:", error);
-    return {
-      content: `Error generating analysis: ${error.message || "Unknown error"}`,
-      type: "error"
-    };
-  }
-}
-
-/**
- * Generate structured insights from CRM data
- */
-export async function generateInsights(
-  data: Record<string, any>,
-  insightType: 'leads' | 'opportunities' | 'customers' | 'all' = 'all'
-): Promise<AnalysisResponse> {
-  try {
-    // Use the server-side endpoint for AI insights
-    const response = await apiRequestJson<AnalysisResponse>(
-      'POST',
+      'POST', 
       '/api/ai/insights',
-      {
-        data,
-        type: insightType
-      }
+      { data, type }
     );
     
-    return response;
-  } catch (error: any) {
-    console.error("Error generating insights:", error);
-    return {
-      content: `Error generating insights: ${error.message || "Unknown error"}`,
-      type: "error"
-    };
-  }
-}
-
-/**
- * Generate recommendations for specific entities (leads, opportunities, etc.)
- */
-export async function generateRecommendations(
-  entityType: string,
-  entityData: Record<string, any>
-): Promise<AnalysisResponse> {
-  try {
-    // Use the server-side endpoint for AI recommendations
-    const response = await apiRequestJson<AnalysisResponse>(
-      'POST',
-      '/api/ai/recommendations',
-      {
-        entityType,
-        entityData
+    if (typeof response.content === 'string') {
+      try {
+        // Try to parse as JSON
+        const parsedContent = JSON.parse(response.content);
+        return parsedContent.insights || [];
+      } catch (e) {
+        console.error("Error parsing AI insights:", e);
+        return [];
       }
-    );
+    }
     
-    return response;
-  } catch (error: any) {
-    console.error("Error generating recommendations:", error);
-    return {
-      content: `Error generating recommendations: ${error.message || "Unknown error"}`,
-      type: "error"
-    };
+    return [];
+  } catch (error) {
+    console.error("Failed to generate insights:", error);
+    throw error;
   }
 }

@@ -75,7 +75,12 @@ export const DEFAULT_DASHBOARD_PREFERENCES: DashboardPreferences = {
   leadsChartType: 'line',
   
   // Time range preferences
-  defaultTimeRange: 'month'
+  defaultTimeRange: 'month',
+  
+  // AI insights preferences
+  showAIInsights: true,
+  aiInsightTypes: ['leads', 'opportunities', 'revenue'],
+  aiInsightsCount: 3
 };
 
 // Default system settings
@@ -89,7 +94,7 @@ type SystemSettingsContextType = {
   isLoading: boolean;
   error: Error | null;
   updateMenuVisibility: (menuItem: keyof MenuVisibilitySettings, value: boolean) => void;
-  updateDashboardWidgets: (widgetKey: keyof DashboardPreferences, value: boolean | string) => void;
+  updateDashboardWidgets: (widgetKey: keyof DashboardPreferences, value: boolean | string | string[]) => void;
   updateDashboardChartType: (chartKey: 'pipelineChartType' | 'revenueChartType' | 'leadsChartType', value: 'pie' | 'bar' | 'line' | 'funnel' | 'area') => void;
   updateDashboardTimeRange: (value: 'week' | 'month' | 'quarter' | 'year') => void;
   saveSettings: () => void;
@@ -159,7 +164,10 @@ export function SystemSettingsProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const updateDashboardWidgets = (widgetKey: keyof DashboardPreferences, value: boolean | string) => {
+  const updateDashboardWidgets = (
+    widgetKey: keyof DashboardPreferences, 
+    value: boolean | string | string[]
+  ) => {
     setSettings(prev => ({
       ...prev,
       dashboardPreferences: {

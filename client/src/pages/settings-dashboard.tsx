@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSystemSettings } from "@/hooks/use-system-settings";
 import { toast } from "@/hooks/use-toast";
@@ -119,6 +120,167 @@ export default function DashboardSettingsPage() {
           </CardContent>
         </Card>
 
+        {/* AI Insights Options */}
+        <Card>
+          <CardHeader>
+            <CardTitle>AI Insights</CardTitle>
+            <CardDescription>Configure AI-powered personalized insights</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col space-y-1">
+                <Label htmlFor="show-ai-insights">Show AI Insights</Label>
+                <p className="text-sm text-muted-foreground">Display AI-generated insights on your dashboard</p>
+              </div>
+              <Switch 
+                id="show-ai-insights" 
+                checked={settings.dashboardPreferences.showAIInsights}
+                onCheckedChange={(checked) => updateDashboardWidgets('showAIInsights', checked)}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col space-y-1">
+                <Label htmlFor="ai-insights-count">Number of Insights</Label>
+                <p className="text-sm text-muted-foreground">How many AI insights to display</p>
+              </div>
+              <Select
+                value={settings.dashboardPreferences.aiInsightsCount.toString()}
+                onValueChange={(value) => updateDashboardWidgets('aiInsightsCount', parseInt(value))}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select count" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 insight</SelectItem>
+                  <SelectItem value="2">2 insights</SelectItem>
+                  <SelectItem value="3">3 insights</SelectItem>
+                  <SelectItem value="4">4 insights</SelectItem>
+                  <SelectItem value="5">5 insights</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col space-y-1">
+                <Label htmlFor="ai-insight-types">Insight Types</Label>
+                <p className="text-sm text-muted-foreground">What types of insights to generate</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    id="insight-leads" 
+                    checked={settings.dashboardPreferences.aiInsightTypes.includes('leads')}
+                    onCheckedChange={(checked) => {
+                      const currentTypes = [...settings.dashboardPreferences.aiInsightTypes];
+                      if (checked) {
+                        if (!currentTypes.includes('leads')) {
+                          currentTypes.push('leads');
+                        }
+                      } else {
+                        const index = currentTypes.indexOf('leads');
+                        if (index !== -1) {
+                          currentTypes.splice(index, 1);
+                        }
+                      }
+                      updateDashboardWidgets('aiInsightTypes', currentTypes);
+                    }}
+                  />
+                  <Label htmlFor="insight-leads">Leads</Label>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    id="insight-opportunities" 
+                    checked={settings.dashboardPreferences.aiInsightTypes.includes('opportunities')}
+                    onCheckedChange={(checked) => {
+                      const currentTypes = [...settings.dashboardPreferences.aiInsightTypes];
+                      if (checked) {
+                        if (!currentTypes.includes('opportunities')) {
+                          currentTypes.push('opportunities');
+                        }
+                      } else {
+                        const index = currentTypes.indexOf('opportunities');
+                        if (index !== -1) {
+                          currentTypes.splice(index, 1);
+                        }
+                      }
+                      updateDashboardWidgets('aiInsightTypes', currentTypes);
+                    }}
+                  />
+                  <Label htmlFor="insight-opportunities">Opportunities</Label>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    id="insight-customers" 
+                    checked={settings.dashboardPreferences.aiInsightTypes.includes('customers')}
+                    onCheckedChange={(checked) => {
+                      const currentTypes = [...settings.dashboardPreferences.aiInsightTypes];
+                      if (checked) {
+                        if (!currentTypes.includes('customers')) {
+                          currentTypes.push('customers');
+                        }
+                      } else {
+                        const index = currentTypes.indexOf('customers');
+                        if (index !== -1) {
+                          currentTypes.splice(index, 1);
+                        }
+                      }
+                      updateDashboardWidgets('aiInsightTypes', currentTypes);
+                    }}
+                  />
+                  <Label htmlFor="insight-customers">Customers</Label>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    id="insight-revenue" 
+                    checked={settings.dashboardPreferences.aiInsightTypes.includes('revenue')}
+                    onCheckedChange={(checked) => {
+                      const currentTypes = [...settings.dashboardPreferences.aiInsightTypes];
+                      if (checked) {
+                        if (!currentTypes.includes('revenue')) {
+                          currentTypes.push('revenue');
+                        }
+                      } else {
+                        const index = currentTypes.indexOf('revenue');
+                        if (index !== -1) {
+                          currentTypes.splice(index, 1);
+                        }
+                      }
+                      updateDashboardWidgets('aiInsightTypes', currentTypes);
+                    }}
+                  />
+                  <Label htmlFor="insight-revenue">Revenue</Label>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    id="insight-all" 
+                    checked={settings.dashboardPreferences.aiInsightTypes.includes('all')}
+                    onCheckedChange={(checked) => {
+                      const currentTypes = [...settings.dashboardPreferences.aiInsightTypes];
+                      if (checked) {
+                        if (!currentTypes.includes('all')) {
+                          currentTypes.push('all');
+                        }
+                      } else {
+                        const index = currentTypes.indexOf('all');
+                        if (index !== -1) {
+                          currentTypes.splice(index, 1);
+                        }
+                      }
+                      updateDashboardWidgets('aiInsightTypes', currentTypes);
+                    }}
+                  />
+                  <Label htmlFor="insight-all">All Data (Comprehensive)</Label>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      
         {/* Statistics Options */}
         <Card>
           <CardHeader>

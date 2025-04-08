@@ -48,6 +48,8 @@ import {
   summarizeMeeting
 } from "./openai";
 
+
+
 // Utility function to handle OpenAI API errors
 function handleOpenAIError(res: Response, errorData: any) {
   const errorMessage = errorData.error?.message || "Unknown error";
@@ -4294,6 +4296,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register data migration routes
   app.use('/api/migration', migrationRouter);
+  
+
 
   // Create HTTP server
   const server = createServer(app);
