@@ -1008,13 +1008,13 @@ export function ProposalManager({
           return (
             <div 
               key={proposal.id}
-              className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+              className="proposal-card"
               onClick={() => handleViewProposal(proposal)}
             >
-              <div className="p-4 pb-2 flex justify-between items-start">
+              <div className="proposal-card-header">
                 <div>
-                  <h3 className="text-base font-medium mb-1">{proposal.name}</h3>
-                  <p className="text-sm text-neutral-600">
+                  <h3 className="proposal-card-title">{proposal.name}</h3>
+                  <p className="proposal-card-description">
                     Last edited: {
                       proposal.updatedAt 
                         ? formatDistanceToNow(new Date(proposal.updatedAt), { addSuffix: true })
@@ -1023,7 +1023,6 @@ export function ProposalManager({
                   </p>
                 </div>
                 <div 
-                  className="ml-4" 
                   onClick={(e) => e.stopPropagation()}
                 >
                   <DropdownMenu>
@@ -1063,7 +1062,7 @@ export function ProposalManager({
                 </div>
               </div>
               
-              <div className="px-4 pt-0 pb-2">
+              <div className="proposal-card-content">
                 {proposal.expiresAt && (
                   <div className="flex items-center text-sm text-neutral-500">
                     <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
@@ -1074,12 +1073,12 @@ export function ProposalManager({
                 )}
               </div>
               
-              <div className="px-4 pt-0 pb-3 flex justify-between items-center">
+              <div className="proposal-card-footer">
                 <div>
                   {statusBadge}
                 </div>
                 
-                <div className="flex gap-2 ml-auto">
+                <div className="proposal-card-actions">
                   {proposal.status === 'Draft' && (
                     <Button 
                       size="sm" 

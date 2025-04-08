@@ -172,3 +172,57 @@ html[dir="rtl"] .rtl-mirror {
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-neutral-500;
 }
+
+/* Custom styles for proposal cards */
+.proposal-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.proposal-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.proposal-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem 1rem 0.5rem 1rem;
+}
+
+.proposal-card-title {
+  font-weight: 500;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.proposal-card-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.proposal-card-content {
+  padding: 0 1rem 0.5rem 1rem;
+}
+
+.proposal-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem 0.75rem 1rem;
+  border-top: none;
+}
+
+.proposal-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
