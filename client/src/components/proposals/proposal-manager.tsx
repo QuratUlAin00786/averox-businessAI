@@ -633,10 +633,24 @@ export function ProposalManager({
         // Default values
         status: data.status || 'Draft',
         createdBy: 2, // Current user ID
-        // Handle JSON content correctly
-        content: typeof data.content === 'string' 
-          ? JSON.parse(data.content) 
-          : (data.content || {}),
+        // Handle JSON content correctly with error handling
+        content: (() => {
+          try {
+            if (typeof data.content === 'string') {
+              // Try to parse if it's a string
+              return JSON.parse(data.content);
+            } else if (data.content) {
+              // If it's already an object, use it
+              return data.content;
+            } else {
+              // Default to empty object
+              return {};
+            }
+          } catch (e) {
+            console.error("Error parsing content:", e);
+            return {}; // Return empty object on parse error
+          }
+        })(),
         // Optional fields
         metadata: data.metadata || {},
         templateId: data.templateId ? Number(data.templateId) : undefined,
@@ -655,7 +669,29 @@ export function ProposalManager({
       (proposalData.metadata as Record<string, any>).clientSubmissionTime = timestamp;
       
       // Execute mutation with error handling in the callbacks
-      createProposalMutation.mutate(proposalData);
+      createProposalMutation.mutate(proposalData, {
+        onSuccess: (data) => {
+          console.log('Proposal created successfully:', data);
+          
+          // If we have a valid ID, select the proposal
+          if (data && typeof data === 'object' && 'id' in data) {
+            setSelectedProposalId(data.id);
+          }
+          
+          toast({
+            title: "Success",
+            description: "Proposal created successfully",
+          });
+        },
+        onError: (error) => {
+          console.error('Error creating proposal:', error);
+          toast({
+            title: "Error",
+            description: `Failed to create proposal: ${error.message || "Unknown error"}`,
+            variant: "destructive",
+          });
+        }
+      });
     } catch (error: any) {
       console.error(`[${timestamp}] Error in handleCreateProposal:`, error);
       toast({
@@ -719,7 +755,24 @@ export function ProposalManager({
       }
       
       // Execute mutation with the processed data
-      updateProposalMutation.mutate({ id, data: updatedData });
+      updateProposalMutation.mutate({ id, data: updatedData }, {
+        onSuccess: (data) => {
+          console.log('Proposal updated successfully:', data);
+          
+          toast({
+            title: "Success",
+            description: "Proposal updated successfully",
+          });
+        },
+        onError: (error) => {
+          console.error('Error updating proposal:', error);
+          toast({
+            title: "Error",
+            description: `Failed to update proposal: ${error.message || "Unknown error"}`,
+            variant: "destructive",
+          });
+        }
+      });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -743,7 +796,30 @@ export function ProposalManager({
       
       // Confirm deletion with the user
       if (window.confirm('Are you sure you want to delete this proposal? This action cannot be undone.')) {
-        deleteProposalMutation.mutate(id);
+        deleteProposalMutation.mutate(id, {
+          onSuccess: () => {
+            console.log('Proposal deleted successfully');
+            
+            // Reset selected proposal if the currently selected one was deleted
+            if (selectedProposalId === id) {
+              setSelectedProposalId(null);
+              setSelectedProposal(null);
+            }
+            
+            toast({
+              title: "Success",
+              description: "Proposal deleted successfully",
+            });
+          },
+          onError: (error) => {
+            console.error('Error deleting proposal:', error);
+            toast({
+              title: "Error",
+              description: `Failed to delete proposal: ${error.message || "Unknown error"}`,
+              variant: "destructive",
+            });
+          }
+        });
       }
     } catch (error: any) {
       toast({
