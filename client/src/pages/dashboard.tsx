@@ -307,11 +307,9 @@ export default function Dashboard() {
             </div>
             
             {/* AI Insights Section */}
-            {settings?.dashboardPreferences?.showAIInsights && (
-              <div className="mt-8">
-                <AIInsights className="w-full" />
-              </div>
-            )}
+            <div className="mt-8">
+              <AIInsights className="w-full" />
+            </div>
             
             {/* Tasks and Upcoming Events */}
             <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
