@@ -34,6 +34,7 @@ import {
   ChevronUp,
   ChevronDown,
   GripVertical as GripVerticalIcon,
+  UserPlus,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
@@ -1106,10 +1107,28 @@ export function ProposalEditor({
                     No one has been added as a collaborator on this proposal.
                   </p>
                   {!isReadOnly && (
-                    <p className="text-sm text-blue-600 font-medium">
-                      Use the form above to add team members as collaborators. 
-                      Collaborators can view or edit this proposal based on their assigned role.
-                    </p>
+                    <>
+                      <p className="text-sm text-neutral-600 mb-4">
+                        Collaborators can view or edit this proposal based on their assigned role.
+                        Share this proposal with team members to work together on it.
+                      </p>
+                      <div className="flex flex-col items-center">
+                        <Button 
+                          variant="outline" 
+                          className="mb-2 w-full md:w-auto"
+                          onClick={() => {
+                            // Focus the user select dropdown
+                            const userSelect = document.querySelector('[id^="radix-"][id*="-trigger-"]') as HTMLElement;
+                            if (userSelect) {
+                              userSelect.click();
+                            }
+                          }}
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Add your first collaborator
+                        </Button>
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -1196,13 +1215,31 @@ export function ProposalEditor({
                       <MessageSquare className="h-12 w-12 mx-auto text-neutral-300 mb-4" />
                       <h3 className="text-lg font-medium mb-2">No comments yet</h3>
                       <p className="mb-4">
-                        Start the conversation by adding the first comment.
+                        This proposal doesn't have any comments or feedback yet.
                       </p>
                       {!isReadOnly && (
-                        <p className="text-sm text-blue-600 font-medium">
-                          Use the comment form below to provide feedback or ask questions about this proposal.
-                          All team members with access can view and respond to comments.
-                        </p>
+                        <>
+                          <p className="text-sm text-neutral-600 mb-4">
+                            Comments allow team members to discuss this proposal, provide feedback, 
+                            and keep a record of important conversations.
+                          </p>
+                          <div className="flex flex-col items-center">
+                            <Button 
+                              variant="outline" 
+                              className="mb-2 w-full md:w-auto"
+                              onClick={() => {
+                                // Focus the comment textarea
+                                const textarea = document.querySelector('textarea');
+                                if (textarea) {
+                                  textarea.focus();
+                                }
+                              }}
+                            >
+                              <MessageSquare className="h-4 w-4 mr-2" />
+                              Add the first comment
+                            </Button>
+                          </div>
+                        </>
                       )}
                     </div>
                   )}
