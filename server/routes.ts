@@ -178,6 +178,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   };
   
+  // Notifications routes
+  app.get('/api/notifications', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // In a real implementation, these would be fetched from a database
+      // and filtered for the current user
+      const userId = req.user.id;
+      
+      // Sample data for demonstration
+      const notifications = [
+        {
+          id: 1,
+          type: 'task',
+          title: 'Task reminder',
+          description: 'You have a task "Client follow-up" due today',
+          read: false,
+          createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+          link: '/tasks'
+        },
+        {
+          id: 2,
+          type: 'meeting',
+          title: 'Meeting scheduled',
+          description: 'Product demo with Acme Corp at 2:00 PM',
+          read: false,
+          createdAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+          link: '/calendar'
+        },
+        {
+          id: 3,
+          type: 'opportunity',
+          title: 'Opportunity updated',
+          description: 'Deal "Enterprise solution" moved to Qualification stage',
+          read: true,
+          createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+          link: '/opportunities'
+        },
+        {
+          id: 4,
+          type: 'system',
+          title: 'System update',
+          description: 'New features available - Accounting module now live',
+          read: true,
+          createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+          link: '/accounting'
+        },
+        {
+          id: 5,
+          type: 'task',
+          title: 'Task assigned',
+          description: 'You have been assigned to "Prepare quarterly report"',
+          read: true,
+          createdAt: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
+          link: '/tasks'
+        }
+      ];
+      
+      res.json(notifications);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  app.post('/api/notifications/:id/read', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      // In a real implementation, this would update a record in the database
+      // For now, we just acknowledge the request
+      
+      res.json({ success: true, message: `Notification ${id} marked as read` });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  app.post('/api/notifications/read-all', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // In a real implementation, this would update all records for the user in the database
+      // For now, we just acknowledge the request
+      
+      res.json({ success: true, message: "All notifications marked as read" });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  app.get('/api/messages', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // In a real implementation, these would be fetched from a database
+      // and filtered for the current user
+      const userId = req.user.id;
+      
+      // Sample data for demonstration
+      const messages = [
+        {
+          id: 1,
+          sender: {
+            id: 2,
+            name: "John Smith",
+            avatar: null
+          },
+          content: "Hi there, can we discuss the proposal for XYZ Corp?",
+          read: false,
+          createdAt: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
+          urgent: true
+        },
+        {
+          id: 2,
+          sender: {
+            id: 3,
+            name: "Sarah Johnson",
+            avatar: null
+          },
+          content: "The client meeting went well. They're interested in our premium package.",
+          read: false,
+          createdAt: new Date(Date.now() - 5400000).toISOString(), // 1.5 hours ago
+        },
+        {
+          id: 3,
+          sender: {
+            id: 4,
+            name: "Michael Wong",
+            avatar: null
+          },
+          content: "Please review the latest design mockups when you get a chance.",
+          read: true,
+          createdAt: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
+        },
+        {
+          id: 4,
+          sender: {
+            id: 5,
+            name: "Emily Davis",
+            avatar: null
+          },
+          content: "Just following up on our conversation from yesterday about the marketing strategy.",
+          read: true,
+          createdAt: new Date(Date.now() - 129600000).toISOString(), // 1.5 days ago
+        }
+      ];
+      
+      res.json(messages);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  app.post('/api/messages/:id/read', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      // In a real implementation, this would update a record in the database
+      // For now, we just acknowledge the request
+      
+      res.json({ success: true, message: `Message ${id} marked as read` });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  app.post('/api/messages/read-all', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // In a real implementation, this would update all records for the user in the database
+      // For now, we just acknowledge the request
+      
+      res.json({ success: true, message: "All messages marked as read" });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
   // Special endpoint to make the current user an admin (for demo purposes only)
   app.post('/api/make-admin', async (req: Request, res: Response) => {
     try {

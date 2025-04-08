@@ -1,7 +1,8 @@
-import { formatDistanceToNow } from "date-fns";
+import { useNotifications, Message } from "@/hooks/use-notifications";
 import { useLocation } from "wouter";
-import { MessageCircle, Check, CheckCheck } from "lucide-react";
-import { 
+import { MessageSquare, CheckCheck, User } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -11,131 +12,129 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNotifications, Message } from "@/hooks/use-notifications";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function MessagesDropdown() {
-  const [, setLocation] = useLocation();
   const { 
     messages, 
-    unreadMessageCount, 
-    markMessageAsRead,
-    markAllMessagesAsRead,
-    isLoading
+    unreadMessagesCount, 
+    markMessageAsRead, 
+    markAllMessagesAsRead, 
+    isLoading 
   } = useNotifications();
+  const [, setLocation] = useLocation();
   
   const handleMessageClick = (message: Message) => {
     if (!message.read) {
       markMessageAsRead(message.id);
     }
     
-    // Navigate to communication center with the sender's conversation open
-    setLocation(`/communication-center?contact=${message.sender.id}`);
+    // Navigate to communications center
+    setLocation('/communication-center');
   };
+  
+  const handleViewAllClick = () => {
+    setLocation('/communication-center');
+  };
+  
+  // Show only the 5 most recent messages
+  const recentMessages = Array.isArray(messages) && messages.length > 0 
+    ? messages.slice(0, 5) 
+    : [];
   
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="p-1 ml-3 text-neutral-400 hover:text-neutral-500 relative">
-          <span className="sr-only">View messages</span>
-          <MessageCircle className="w-6 h-6" />
-          {unreadMessageCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-primary text-white text-xs rounded-full font-semibold">
-              {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
-            </span>
+        <Button variant="ghost" size="icon" className="relative">
+          <MessageSquare className="h-[1.2rem] w-[1.2rem]" />
+          {unreadMessagesCount > 0 && (
+            <Badge variant="destructive" className="absolute -right-1 -top-1 min-w-[18px] h-[18px] text-xs flex items-center justify-center p-0">
+              {unreadMessagesCount}
+            </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-96" align="end">
+      <DropdownMenuContent className="w-80" align="end">
         <DropdownMenuLabel className="flex justify-between items-center">
           <span>Messages</span>
-          {unreadMessageCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-7"
+          {unreadMessagesCount > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 text-xs gap-1 px-2"
               onClick={() => markAllMessagesAsRead()}
             >
-              <CheckCheck className="h-3 w-3 mr-1" />
+              <CheckCheck className="h-3 w-3" />
               Mark all as read
             </Button>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <ScrollArea className="max-h-[400px]">
+        <DropdownMenuGroup className="max-h-[300px] overflow-y-auto">
           {isLoading ? (
-            <div className="p-4 space-y-4">
+            <>
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-start space-x-4">
-                  <Skeleton className="h-9 w-9 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-1/3" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="p-4 text-center text-sm text-neutral-500">
-              No messages to display
-            </div>
-          ) : (
-            <DropdownMenuGroup>
-              {messages.map((message) => (
-                <DropdownMenuItem
-                  key={message.id}
-                  className={`cursor-pointer p-3 flex items-start gap-3 ${!message.read ? 'bg-accent/20' : ''}`}
-                  onClick={() => handleMessageClick(message)}
-                >
-                  <div className="flex-shrink-0">
-                    <Avatar>
-                      {message.sender.avatar ? (
-                        <AvatarImage src={message.sender.avatar} alt={message.sender.name} />
-                      ) : (
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {message.sender.name.split(' ').map(part => part[0]).join('')}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium text-sm truncate">{message.sender.name}</div>
-                      {message.urgent && (
-                        <Badge className="ml-1" variant="destructive">Urgent</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-neutral-500 line-clamp-2 mt-0.5">
-                      {message.content}
-                    </p>
-                    <div className="flex items-center mt-1 gap-3">
-                      <span className="text-xs text-neutral-400">
-                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                      </span>
-                      {message.read && (
-                        <span className="flex items-center text-xs text-green-600">
-                          <Check className="h-3 w-3 mr-1" />
-                          Read
-                        </span>
-                      )}
+                <DropdownMenuItem key={i} className="flex flex-col items-start cursor-default py-2">
+                  <div className="flex w-full items-start gap-2">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-1/3 mb-1" />
+                      <Skeleton className="h-3 w-3/4" />
                     </div>
                   </div>
                 </DropdownMenuItem>
               ))}
-            </DropdownMenuGroup>
+            </>
+          ) : recentMessages.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">
+              <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-20" />
+              <p>No messages yet</p>
+            </div>
+          ) : (
+            <>
+              {recentMessages.map((message) => (
+                <DropdownMenuItem 
+                  key={message.id}
+                  className={`flex flex-col items-start cursor-pointer py-2 ${!message.read ? 'bg-accent/10' : ''}`}
+                  onClick={() => handleMessageClick(message)}
+                >
+                  <div className="flex w-full items-start gap-2">
+                    <Avatar className="h-8 w-8">
+                      {message.sender.avatar ? (
+                        <AvatarImage src={message.sender.avatar} alt={message.sender.name} />
+                      ) : (
+                        <AvatarFallback className="bg-primary/10">
+                          <User className="h-4 w-4" />
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className={`text-sm ${!message.read ? 'font-medium' : ''}`}>{message.sender.name}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{message.content}</p>
+                    </div>
+                    {message.urgent && <Badge variant="destructive" className="text-xs h-4 px-1">Urgent</Badge>}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1 w-full flex justify-between">
+                    <span>
+                      {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                    </span>
+                    {!message.read && (
+                      <Badge variant="outline" className="text-xs h-4 px-1">New</Badge>
+                    )}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </>
           )}
-        </ScrollArea>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          className="cursor-pointer justify-center text-center text-primary"
-          onClick={() => setLocation("/communication-center")}
-        >
-          Go to Communication Center
-        </DropdownMenuItem>
+        <div className="p-2">
+          <Button variant="outline" className="w-full text-center" onClick={handleViewAllClick}>
+            View all messages
+          </Button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

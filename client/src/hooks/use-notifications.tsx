@@ -1,196 +1,196 @@
-import { createContext, ReactNode, useContext, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+import { createContext, ReactNode, useContext, useCallback, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
-// Types for the notifications system
-export interface Notification {
+export type Notification = {
   id: number;
-  type: 'task' | 'meeting' | 'opportunity' | 'system' | 'message';
+  type: string;
   title: string;
   description: string;
   read: boolean;
   createdAt: string;
   link?: string;
-}
+};
 
-export interface Message {
+export type Message = {
   id: number;
   sender: {
     id: number;
     name: string;
-    avatar?: string;
+    avatar: string | null;
   };
   content: string;
   read: boolean;
   createdAt: string;
   urgent?: boolean;
-}
+};
 
-interface NotificationsContextType {
+type NotificationsContextType = {
   notifications: Notification[];
+  unreadNotificationsCount: number;
   messages: Message[];
-  unreadNotificationCount: number;
-  unreadMessageCount: number;
+  unreadMessagesCount: number;
   markNotificationAsRead: (id: number) => void;
-  markMessageAsRead: (id: number) => void;
   markAllNotificationsAsRead: () => void;
+  markMessageAsRead: (id: number) => void;
   markAllMessagesAsRead: () => void;
-  refresh: () => void;
   isLoading: boolean;
-}
+  refresh: () => void;
+};
 
-const NotificationsContext = createContext<NotificationsContextType | null>(null);
+export const NotificationsContext = createContext<NotificationsContextType | null>(null);
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Query for notification data
   const {
-    data: notificationsData,
+    data: notifications = [],
     isLoading: isLoadingNotifications,
     refetch: refetchNotifications,
-  } = useQuery({
-    queryKey: ['/api/notifications'],
+  } = useQuery<Notification[]>({
+    queryKey: ["/api/notifications"],
     queryFn: async () => {
-      try {
-        const res = await fetch('/api/notifications');
-        if (!res.ok) {
-          throw new Error('Failed to fetch notifications');
-        }
-        return await res.json();
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-        return { notifications: [] };
+      const res = await apiRequest("GET", "/api/notifications");
+      if (!res.ok) {
+        throw new Error('Failed to fetch notifications');
       }
+      return await res.json();
     },
-    enabled: !!user,
+    staleTime: 30000, // 30 seconds
   });
-  
-  // Query for messages data
+
   const {
-    data: messagesData,
+    data: messages = [],
     isLoading: isLoadingMessages,
     refetch: refetchMessages,
-  } = useQuery({
-    queryKey: ['/api/communications/unread'],
+  } = useQuery<Message[]>({
+    queryKey: ["/api/messages"],
     queryFn: async () => {
-      try {
-        const res = await fetch('/api/communications/unread');
-        if (!res.ok) {
-          throw new Error('Failed to fetch messages');
-        }
-        return await res.json();
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-        return { messages: [] };
+      const res = await apiRequest("GET", "/api/messages");
+      if (!res.ok) {
+        throw new Error('Failed to fetch messages');
       }
+      return await res.json();
     },
-    enabled: !!user,
+    staleTime: 30000, // 30 seconds
   });
-  
-  // Update local state when data is fetched
-  useEffect(() => {
-    if (notificationsData?.notifications) {
-      setNotifications(notificationsData.notifications);
-    }
-  }, [notificationsData]);
-  
-  useEffect(() => {
-    if (messagesData?.messages) {
-      setMessages(messagesData.messages);
-    }
-  }, [messagesData]);
-  
-  // Calculate unread counts
-  const unreadNotificationCount = notifications.filter(n => !n.read).length;
-  const unreadMessageCount = messages.filter(m => !m.read).length;
-  
-  // Functions to mark items as read
-  const markNotificationAsRead = async (id: number) => {
-    try {
-      const res = await fetch(`/api/notifications/${id}/read`, {
-        method: 'PUT',
+
+  const markNotificationAsReadMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("POST", `/api/notifications/${id}/read`);
+      return id;
+    },
+    onSuccess: (id) => {
+      queryClient.setQueryData<Notification[]>(["/api/notifications"], (prevData) => {
+        if (!prevData) return [];
+        return prevData.map((notification) =>
+          notification.id === id ? { ...notification, read: true } : notification
+        );
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to mark notification as read",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markAllNotificationsAsReadMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/notifications/read-all");
+    },
+    onSuccess: () => {
+      queryClient.setQueryData<Notification[]>(["/api/notifications"], (prevData) => {
+        if (!prevData) return [];
+        return prevData.map((notification) => ({ ...notification, read: true }));
       });
       
-      if (res.ok) {
-        setNotifications(prev => 
-          prev.map(n => n.id === id ? { ...n, read: true } : n)
+      toast({
+        title: "All notifications marked as read",
+        variant: "default",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to mark all notifications as read",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markMessageAsReadMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("POST", `/api/messages/${id}/read`);
+      return id;
+    },
+    onSuccess: (id) => {
+      queryClient.setQueryData<Message[]>(["/api/messages"], (prevData) => {
+        if (!prevData) return [];
+        return prevData.map((message) =>
+          message.id === id ? { ...message, read: true } : message
         );
-      }
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-  
-  const markMessageAsRead = async (id: number) => {
-    try {
-      const res = await fetch(`/api/communications/${id}/read`, {
-        method: 'PUT',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to mark message as read",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markAllMessagesAsReadMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/messages/read-all");
+    },
+    onSuccess: () => {
+      queryClient.setQueryData<Message[]>(["/api/messages"], (prevData) => {
+        if (!prevData) return [];
+        return prevData.map((message) => ({ ...message, read: true }));
       });
       
-      if (res.ok) {
-        setMessages(prev => 
-          prev.map(m => m.id === id ? { ...m, read: true } : m)
-        );
-      }
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  };
-  
-  const markAllNotificationsAsRead = async () => {
-    try {
-      const res = await fetch('/api/notifications/read-all', {
-        method: 'PUT',
+      toast({
+        title: "All messages marked as read",
+        variant: "default",
       });
-      
-      if (res.ok) {
-        setNotifications(prev => 
-          prev.map(n => ({ ...n, read: true }))
-        );
-      }
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
-  };
-  
-  const markAllMessagesAsRead = async () => {
-    try {
-      const res = await fetch('/api/communications/read-all', {
-        method: 'PUT',
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to mark all messages as read",
+        description: error.message,
+        variant: "destructive",
       });
-      
-      if (res.ok) {
-        setMessages(prev => 
-          prev.map(m => ({ ...m, read: true }))
-        );
-      }
-    } catch (error) {
-      console.error('Error marking all messages as read:', error);
-    }
-  };
-  
-  // Function to refresh data
-  const refresh = () => {
-    refetchNotifications();
-    refetchMessages();
-  };
-  
+    },
+  });
+
+  const refresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([refetchNotifications(), refetchMessages()]);
+    setIsRefreshing(false);
+  }, [refetchNotifications, refetchMessages]);
+
+  const unreadNotificationsCount = Array.isArray(notifications) ? notifications.filter((n) => !n.read).length : 0;
+  const unreadMessagesCount = Array.isArray(messages) ? messages.filter((m) => !m.read).length : 0;
+
   return (
     <NotificationsContext.Provider
       value={{
         notifications,
+        unreadNotificationsCount,
         messages,
-        unreadNotificationCount,
-        unreadMessageCount,
-        markNotificationAsRead,
-        markMessageAsRead,
-        markAllNotificationsAsRead,
-        markAllMessagesAsRead,
+        unreadMessagesCount,
+        markNotificationAsRead: markNotificationAsReadMutation.mutate,
+        markAllNotificationsAsRead: markAllNotificationsAsReadMutation.mutate,
+        markMessageAsRead: markMessageAsReadMutation.mutate,
+        markAllMessagesAsRead: markAllMessagesAsReadMutation.mutate,
+        isLoading: isLoadingNotifications || isLoadingMessages || isRefreshing,
         refresh,
-        isLoading: isLoadingNotifications || isLoadingMessages,
       }}
     >
       {children}
@@ -201,7 +201,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 export function useNotifications() {
   const context = useContext(NotificationsContext);
   if (!context) {
-    throw new Error('useNotifications must be used within a NotificationsProvider');
+    throw new Error("useNotifications must be used within a NotificationsProvider");
   }
   return context;
 }

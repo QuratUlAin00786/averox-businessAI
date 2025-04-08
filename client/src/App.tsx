@@ -48,6 +48,7 @@ import TransactionsPage from "@/pages/accounting/transactions";
 import SupportTickets from "@/pages/support-tickets";
 import Ecommerce from "@/pages/ecommerce";
 import EcommerceStore from "@/pages/ecommerce-store";
+import NotificationsPage from "@/pages/notifications";
 
 function Router() {
   return (
@@ -315,6 +316,12 @@ function Router() {
       <ProtectedRoute path="/ecommerce-store" component={() => (
         <Layout>
           <EcommerceStore />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/notifications" component={() => (
+        <Layout>
+          <NotificationsPage />
         </Layout>
       )} />
       

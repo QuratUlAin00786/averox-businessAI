@@ -1,7 +1,8 @@
-import { formatDistanceToNow } from "date-fns";
+import { useNotifications, Notification } from "@/hooks/use-notifications";
 import { useLocation } from "wouter";
-import { Bell, Check, CheckCheck, Calendar, Clock, FileText, AlertTriangle } from "lucide-react";
-import { 
+import { Bell, CheckCheck, FileText, Calendar, Clock, AlertTriangle } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -11,21 +12,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { useNotifications, Notification } from "@/hooks/use-notifications";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function NotificationDropdown() {
-  const [, setLocation] = useLocation();
   const { 
     notifications, 
-    unreadNotificationCount, 
-    markNotificationAsRead,
-    markAllNotificationsAsRead,
-    isLoading
+    unreadNotificationsCount, 
+    markNotificationAsRead, 
+    markAllNotificationsAsRead, 
+    isLoading 
   } = useNotifications();
+  const [, setLocation] = useLocation();
   
-  // Get appropriate icon for notification type
   const getNotificationIcon = (type: string) => {
     switch(type) {
       case 'task':
@@ -51,93 +50,99 @@ export function NotificationDropdown() {
     }
   };
   
+  const handleViewAllClick = () => {
+    setLocation('/notifications');
+  };
+  
+  // Show only the 5 most recent notifications
+  const recentNotifications = Array.isArray(notifications) && notifications.length > 0 
+    ? notifications.slice(0, 5) 
+    : [];
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="p-1 ml-3 text-neutral-400 hover:text-neutral-500 relative">
-          <span className="sr-only">View notifications</span>
-          <Bell className="w-6 h-6" />
-          {unreadNotificationCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-destructive text-white text-xs rounded-full font-semibold">
-              {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
-            </span>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-[1.2rem] w-[1.2rem]" />
+          {unreadNotificationsCount > 0 && (
+            <Badge variant="destructive" className="absolute -right-1 -top-1 min-w-[18px] h-[18px] text-xs flex items-center justify-center p-0">
+              {unreadNotificationsCount}
+            </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-96" align="end">
+      <DropdownMenuContent className="w-80" align="end">
         <DropdownMenuLabel className="flex justify-between items-center">
           <span>Notifications</span>
-          {unreadNotificationCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-7"
+          {unreadNotificationsCount > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 text-xs gap-1 px-2"
               onClick={() => markAllNotificationsAsRead()}
             >
-              <CheckCheck className="h-3 w-3 mr-1" />
+              <CheckCheck className="h-3 w-3" />
               Mark all as read
             </Button>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <ScrollArea className="max-h-[400px]">
+        <DropdownMenuGroup className="max-h-[300px] overflow-y-auto">
           {isLoading ? (
-            <div className="p-4 space-y-4">
+            <>
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-start space-x-4">
-                  <Skeleton className="h-9 w-9 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-1/3" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="p-4 text-center text-sm text-neutral-500">
-              No notifications to display
-            </div>
-          ) : (
-            <DropdownMenuGroup>
-              {notifications.map((notification) => (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className={`cursor-pointer p-3 flex items-start gap-3 ${!notification.read ? 'bg-accent/20' : ''}`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className="flex-shrink-0 h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                    {getNotificationIcon(notification.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{notification.title}</div>
-                    <p className="text-xs text-neutral-500 line-clamp-2 mt-0.5">
-                      {notification.description}
-                    </p>
-                    <div className="flex items-center mt-1 gap-3">
-                      <span className="text-xs text-neutral-400">
-                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                      </span>
-                      {notification.read && (
-                        <span className="flex items-center text-xs text-green-600">
-                          <Check className="h-3 w-3 mr-1" />
-                          Read
-                        </span>
-                      )}
+                <DropdownMenuItem key={i} className="flex flex-col items-start cursor-default py-2">
+                  <div className="flex w-full items-start gap-2">
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-3/4 mb-1" />
+                      <Skeleton className="h-3 w-1/2" />
                     </div>
                   </div>
                 </DropdownMenuItem>
               ))}
-            </DropdownMenuGroup>
+            </>
+          ) : recentNotifications.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">
+              <Bell className="h-10 w-10 mx-auto mb-2 opacity-20" />
+              <p>No notifications yet</p>
+            </div>
+          ) : (
+            <>
+              {recentNotifications.map((notification) => (
+                <DropdownMenuItem 
+                  key={notification.id}
+                  className={`flex flex-col items-start cursor-pointer py-2 ${!notification.read ? 'bg-accent/10' : ''}`}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <div className="flex w-full items-start gap-2">
+                    <div className={`h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center`}>
+                      {getNotificationIcon(notification.type)}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm ${!notification.read ? 'font-medium' : ''}`}>{notification.title}</p>
+                      <p className="text-xs text-muted-foreground">{notification.description}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1 w-full flex justify-between">
+                    <span>
+                      {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                    </span>
+                    {!notification.read && (
+                      <Badge variant="outline" className="text-xs h-4 px-1">New</Badge>
+                    )}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </>
           )}
-        </ScrollArea>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          className="cursor-pointer justify-center text-center text-primary"
-          onClick={() => setLocation("/notifications")}
-        >
-          View all notifications
-        </DropdownMenuItem>
+        <div className="p-2">
+          <Button variant="outline" className="w-full text-center" onClick={handleViewAllClick}>
+            View all notifications
+          </Button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
