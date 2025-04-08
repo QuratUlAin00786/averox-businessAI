@@ -733,7 +733,18 @@ export function ProposalEditor({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[1000px] max-h-[90vh] p-0">
+      <DialogContent className="sm:max-w-[1000px] max-h-[90vh] p-0 relative">
+        <button 
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          <span className="sr-only">Close</span>
+        </button>
+        
         <DialogHeader className="sticky top-0 z-10 bg-white pt-6 px-6 pb-2 border-b">
           <div className="flex justify-between items-center">
             <div>
@@ -1117,7 +1128,7 @@ export function ProposalEditor({
             )}
           </TabsContent>
 
-          <TabsContent value="comments" className="p-6">
+          <TabsContent value="comments" className="p-6 max-h-[calc(90vh-180px)] overflow-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Comments</h3>
             </div>
@@ -1128,8 +1139,8 @@ export function ProposalEditor({
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="max-h-[calc(90vh-250px)] overflow-auto">
-                  <div className="space-y-4 pr-4">
+                <div className="overflow-auto pr-2 mb-4" style={{ maxHeight: 'calc(90vh - 320px)' }}>
+                  <div className="space-y-4">
                     {Array.isArray(comments) && comments.length > 0 ? (
                       comments.map((comment) => (
                         <div key={comment.id} className="flex gap-3">
@@ -1143,18 +1154,20 @@ export function ProposalEditor({
                             )}
                           </Avatar>
                           <div className="flex-1">
-                            <div className="flex items-start justify-between">
-                              <div className="font-medium">
-                                {comment.user ? 
-                                  `${comment.user.firstName || ''} ${comment.user.lastName || ''}`.trim() || comment.user.username 
-                                  : 'Unknown User'
-                                }
+                            <div className="bg-muted p-3 rounded-lg">
+                              <div className="flex items-start justify-between">
+                                <div className="font-medium text-sm">
+                                  {comment.user ? 
+                                    `${comment.user.firstName || ''} ${comment.user.lastName || ''}`.trim() || comment.user.username 
+                                    : 'Unknown User'
+                                  }
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : ''}
+                                </div>
                               </div>
-                              <div className="text-xs text-neutral-500">
-                                {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : ''}
-                              </div>
+                              <p className="mt-1 text-sm">{comment.content}</p>
                             </div>
-                            <p className="text-neutral-700 mt-1">{comment.content}</p>
                           </div>
                         </div>
                       ))
@@ -1195,24 +1208,40 @@ export function ProposalEditor({
                     )}
                   </div>
                 </div>
-
+                
                 {!isReadOnly && (
-                  <div className="mt-6 pt-4 border-t">
-                    <h4 className="text-sm font-medium mb-2">Add a comment</h4>
-                    <div className="flex gap-2">
-                      <Textarea
-                        id="comment-textarea"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Type your comment here..."
-                        className="flex-1"
-                      />
-                      <Button
-                        onClick={handleAddComment}
-                        disabled={!newComment.trim()}
-                      >
-                        Post
-                      </Button>
+                  <div className="pt-4 border-t sticky bottom-0 bg-white">
+                    <div className="flex gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          ME
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1">
+                        <Textarea 
+                          id="comment-textarea"
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          placeholder="Add your comment..."
+                          className="mb-2 resize-none"
+                          rows={3}
+                        />
+                        
+                        <div className="flex justify-end">
+                          <Button
+                            onClick={handleAddComment}
+                            disabled={!newComment.trim() || addCommentMutation.isPending}
+                          >
+                            {addCommentMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Posting...
+                              </>
+                            ) : "Post Comment"}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
