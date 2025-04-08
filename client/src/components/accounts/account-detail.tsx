@@ -1,3 +1,4 @@
+import { EntityReminders } from "@/components/shared/entity-reminders";
 import { useState, useEffect } from "react";
 import { Account } from "@shared/schema";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
@@ -210,6 +211,7 @@ export function AccountDetail({
                 <Tabs defaultValue="communications" className="mt-6">
                   <TabsList className="mb-4">
                     <TabsTrigger value="notes">Notes</TabsTrigger>
+                    <TabsTrigger value="reminders">Reminders</TabsTrigger>
                     <TabsTrigger value="communications" title="Click to view all communication channels and history, including phone, SMS, WhatsApp">
                       Communications
                     </TabsTrigger>
@@ -225,6 +227,22 @@ export function AccountDetail({
                       </CardHeader>
                       <CardContent className="p-4 text-sm min-h-[100px]">
                         {account.notes || "No notes available for this account."}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="reminders">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">Reminders</CardTitle>
+                        <CardDescription>Set reminders for follow-ups and important dates</CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <EntityReminders
+                          entityId={account.id}
+                          entityType="account"
+                          entityName={account.name}
+                        />
                       </CardContent>
                     </Card>
                   </TabsContent>

@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarDays, Mail, MapPin, Phone, Tag, UserRound, X, Building, ArrowLeft } from "lucide-react";
 import { CommunicationPanel } from "@/components/communications/communication-panel";
 import AssignmentManager from "@/components/assignment/assignment-manager";
+import { EntityReminders } from "@/components/shared/entity-reminders";
 
 interface ContactDetailProps {
   contactId: number;
@@ -253,6 +254,7 @@ export function ContactDetail({ contactId, onBack }: ContactDetailProps) {
           <Tabs defaultValue="communications">
             <TabsList className="mb-4">
               <TabsTrigger value="notes">Notes</TabsTrigger>
+              <TabsTrigger value="reminders">Reminders</TabsTrigger>
               <TabsTrigger value="communications" title="View all communication channels including phone, SMS, and WhatsApp">
                 Communications
               </TabsTrigger>
@@ -274,6 +276,24 @@ export function ContactDetail({ contactId, onBack }: ContactDetailProps) {
                     contact={contact}
                     onSaveNotes={handleSaveNotes}
                     isSubmittingNotes={updateNotesMutation.isPending}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="reminders">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reminders</CardTitle>
+                  <CardDescription>
+                    Set reminders for follow-ups and important dates
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <EntityReminders
+                    entityId={contact.id}
+                    entityType="contact"
+                    entityName={`${contact.firstName} ${contact.lastName}`}
                   />
                 </CardContent>
               </Card>

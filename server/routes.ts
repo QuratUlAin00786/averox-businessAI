@@ -638,6 +638,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleError(res, error);
     }
   });
+  
+  // Reminders endpoint - for entity-specific reminders
+  app.get('/api/tasks/reminders', async (req: Request, res: Response) => {
+    try {
+      const { relatedToType, relatedToId } = req.query;
+      
+      if (!relatedToType || !relatedToId) {
+        return res.status(400).json({ error: "Missing relatedToType or relatedToId parameters" });
+      }
+      
+      const entityId = parseInt(relatedToId as string);
+      if (isNaN(entityId)) {
+        return res.status(400).json({ error: "Invalid relatedToId parameter" });
+      }
+      
+      const tasks = await storage.listTasks();
+      const reminders = tasks.filter(task => 
+        task.isReminder && 
+        task.relatedToType === relatedToType && 
+        task.relatedToId === entityId
+      );
+      
+      res.json(reminders);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
 
   app.post('/api/tasks', async (req: Request, res: Response) => {
     try {
