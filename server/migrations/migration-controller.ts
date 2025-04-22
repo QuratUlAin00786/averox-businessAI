@@ -880,15 +880,15 @@ export class MigrationController {
           // Parse CSV
           const csvContent = file.buffer.toString('utf8');
           const lines = csvContent.split('\n');
-          const headers = lines[0].split(',').map(h => h.trim());
+          const headers = lines[0].split(',').map((h: string) => h.trim());
           
           for (let i = 1; i < lines.length; i++) {
             if (!lines[i].trim()) continue;
             
-            const values = lines[i].split(',').map(v => v.trim());
-            const record: any = {};
+            const values = lines[i].split(',').map((v: string) => v.trim());
+            const record: Record<string, string> = {};
             
-            headers.forEach((header, index) => {
+            headers.forEach((header: string, index: number) => {
               record[header] = values[index] || '';
             });
             
@@ -1116,36 +1116,50 @@ export class MigrationController {
     try {
       // Update job status to processing
       const job = this.migrationJobs.get(jobId);
+      if (!job) {
+        console.error(`Migration job ${jobId} not found`);
+        return;
+      }
       job.status = 'processing';
       job.updatedTime = new Date();
       this.migrationJobs.set(jobId, job);
       
       // Initialize handler if we have one for this CRM type
-      let handler: MigrationHandler = null;
+      let handler: MigrationHandler | null = null;
       if (this.migrationHandlers.has(crmType.toLowerCase())) {
-        handler = this.migrationHandlers.get(crmType.toLowerCase());
-        
-        // Initialize the handler with authentication data
-        try {
-          await handler.initialize(authData);
+        const tempHandler = this.migrationHandlers.get(crmType.toLowerCase());
+        if (tempHandler) {
+          handler = tempHandler;
           
-          // Test connection
-          const connectionTest = await handler.testConnection();
-          if (!connectionTest.success) {
-            throw new Error(`Connection test failed: ${connectionTest.message}`);
+          // Initialize the handler with authentication data
+          try {
+            await handler.initialize(authData);
+            
+            // Test connection
+            const connectionTest = await handler.testConnection();
+            if (!connectionTest.success) {
+              throw new Error(`Connection test failed: ${connectionTest.message}`);
+            }
+            
+            job.currentStep = 'Successfully connected to CRM';
+            job.updatedTime = new Date();
+            this.migrationJobs.set(jobId, job);
+          } catch (error: unknown) {
+            console.error(`Error initializing handler for ${crmType}:`, error);
+            if (job) {
+              job.errors.push({
+                message: `Failed to initialize handler: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                time: new Date()
+              });
+            }
+            handler = null; // Fall back to mock data
           }
-          
-          job.currentStep = 'Successfully connected to CRM';
-          job.updatedTime = new Date();
-          this.migrationJobs.set(jobId, job);
-        } catch (error) {
-          console.error(`Error initializing handler for ${crmType}:`, error);
-          job.errors.push({
-            message: `Failed to initialize handler: ${error.message}`,
-            time: new Date()
-          });
-          handler = null; // Fall back to mock data
         }
+      }
+      
+      // Initialize completed object if not exists
+      if (!job.completed) {
+        job.completed = { total: 0, byEntity: {} };
       }
       
       // Process each entity type
@@ -1162,13 +1176,15 @@ export class MigrationController {
             try {
               sourceData = await handler.fetchData(entityType);
               job.currentStep = `Fetched ${sourceData.length} records for ${entityType}`;
-            } catch (error) {
+            } catch (error: unknown) {
               console.error(`Error fetching data for ${entityType}:`, error);
-              job.errors.push({
-                entity: entityType,
-                message: `Failed to fetch data: ${error.message}`,
-                time: new Date()
-              });
+              if (job) {
+                job.errors.push({
+                  entity: entityType,
+                  message: `Failed to fetch data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                  time: new Date()
+                });
+              }
               // Simulate some data for testing if we couldn't fetch real data
               sourceData = this.generateMockDataForEntityType(entityType, 10);
             }
@@ -1209,16 +1225,18 @@ export class MigrationController {
           job.progress += progressIncrement * 0.4; // 40% for importing
           job.updatedTime = new Date();
           this.migrationJobs.set(jobId, job);
-        } catch (error) {
+        } catch (error: unknown) {
           // Log error for this entity but continue with others
           console.error(`Error migrating ${entityType}:`, error);
-          job.errors.push({
-            entity: entityType,
-            message: error.message,
-            time: new Date()
-          });
-          job.updatedTime = new Date();
-          this.migrationJobs.set(jobId, job);
+          if (job) {
+            job.errors.push({
+              entity: entityType,
+              message: error instanceof Error ? error.message : 'Unknown error',
+              time: new Date()
+            });
+            job.updatedTime = new Date();
+            this.migrationJobs.set(jobId, job);
+          }
         }
       }
       
