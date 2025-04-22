@@ -116,9 +116,13 @@ migrationRouter.get('/providers', (req: Request, res: Response) => {
   res.json(providers);
 });
 
-// Add another public endpoint for testing
+// Add public endpoints for testing
 migrationRouter.post('/available-entities', (req: Request, res: Response) => {
   migrationController.getAvailableEntities(req, res);
+});
+
+migrationRouter.post('/analyze-fields', (req: Request, res: Response) => {
+  migrationController.analyzeFieldMapping(req, res);
 });
 
 // Apply authentication middleware to all other migration routes
@@ -135,10 +139,6 @@ migrationRouter.get('/auth-callback', (req: Request, res: Response) => {
 
 migrationRouter.post('/validate-api-key', (req: Request, res: Response) => {
   migrationController.validateApiKey(req, res);
-});
-
-migrationRouter.post('/analyze-fields', (req: Request, res: Response) => {
-  migrationController.analyzeFieldMapping(req, res);
 });
 
 migrationRouter.post('/start', (req: Request, res: Response) => {
