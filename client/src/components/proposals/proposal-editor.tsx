@@ -656,8 +656,9 @@ export function ProposalEditor({
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "editor" | "collaborators" | "comments")} className="w-full">
           <div className="px-6 pt-2">
-            <TabsList className="grid grid-cols-3 mb-4">
+            <TabsList className="grid grid-cols-4 mb-4">
               <TabsTrigger value="editor">Content</TabsTrigger>
+              <TabsTrigger value="elements">Elements</TabsTrigger>
               <TabsTrigger value="collaborators">Collaborators</TabsTrigger>
               <TabsTrigger value="comments">Comments</TabsTrigger>
             </TabsList>
