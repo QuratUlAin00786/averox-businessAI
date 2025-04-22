@@ -37,7 +37,46 @@ function optionalEnv(key: string, defaultValue: string): string {
 /**
  * Application configuration
  */
-export const config = {
+export const config: {
+  server: {
+    port: string | number;
+    env: string;
+    isProduction: boolean;
+  };
+  database: {
+    url: string;
+  };
+  auth: {
+    sessionSecret: string;
+    cookieMaxAge: number;
+  };
+  apis: {
+    stripe: {
+      secretKey: string;
+      webhookSecret: string;
+    };
+    openai: {
+      apiKey: string;
+      defaultModel: string;
+    };
+    sendgrid: {
+      apiKey: string;
+      fromEmail: string;
+    };
+  };
+  security: {
+    corsOrigins: string[];
+    bcryptRounds: number;
+  };
+  features: {
+    openAiIntegration: boolean;
+    stripeIntegration: boolean;
+    emailNotifications: boolean;
+  };
+  logs: {
+    level: string;
+  };
+} = {
   server: {
     port: process.env.PORT || 5000,
     env: process.env.NODE_ENV || 'development',
@@ -61,7 +100,7 @@ export const config = {
     
     openai: {
       apiKey: optionalEnv('OPENAI_API_KEY', ''),
-      defaultModel: optionalEnv('OPENAI_DEFAULT_MODEL', 'gpt-4'),
+      defaultModel: optionalEnv('OPENAI_DEFAULT_MODEL', 'gpt-4o'),
     },
     
     sendgrid: {
@@ -82,7 +121,7 @@ export const config = {
   },
   
   logs: {
-    level: optionalEnv('LOG_LEVEL', config.server.isProduction ? 'info' : 'debug'),
+    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   },
 };
 

@@ -7,6 +7,20 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
 
+// Define a basic user type for the middleware
+interface BasicUser {
+  id: number;
+  role: string;
+  permissions?: Record<string, string[]>;
+}
+
+// Augment Express Request to include our user type
+declare global {
+  namespace Express {
+    interface User extends BasicUser {}
+  }
+}
+
 /**
  * Check if user is authenticated
  * @param req Express request
@@ -44,7 +58,7 @@ export function isAdmin(req: Request, res: Response, next: NextFunction): void {
   logger.warn('Unauthorized admin access attempt', {
     path: req.path,
     method: req.method,
-    userId: req.user?.id || null,
+    userId: req.user?.id?.toString() || '',
     ip: req.ip
   });
   
@@ -69,8 +83,8 @@ export function hasRole(roles: string[]) {
     logger.warn('Unauthorized role access attempt', {
       path: req.path,
       method: req.method,
-      userId: req.user?.id || null,
-      userRole: req.user?.role || null,
+      userId: req.user?.id?.toString() || '',
+      userRole: req.user?.role || '',
       requiredRoles: roles,
       ip: req.ip
     });
@@ -107,7 +121,7 @@ export function isResourceOwnerOrHasRole(paramIdField: string, allowedRoles: str
     logger.warn('Unauthorized resource access attempt', {
       path: req.path,
       method: req.method,
-      userId: req.user?.id || null,
+      userId: req.user?.id?.toString() || '',
       resourceId,
       ip: req.ip
     });
@@ -134,11 +148,14 @@ export function hasPermission(module: string, action: string) {
     }
     
     // Check if user has the specific permission
-    // This would typically query a permissions table
+    // This would typically query a permissions table from the database
     // For now, we'll use a simplified approach
-    const hasPermission = req.user && req.user.permissions && 
+    const hasPermission = Boolean(
+      req.user && 
+      req.user.permissions && 
       req.user.permissions[module] && 
-      req.user.permissions[module].includes(action);
+      req.user.permissions[module].includes(action)
+    );
     
     if (hasPermission) {
       return next();
@@ -147,7 +164,7 @@ export function hasPermission(module: string, action: string) {
     logger.warn('Permission denied', {
       path: req.path,
       method: req.method,
-      userId: req.user?.id || null,
+      userId: req.user?.id?.toString() || '',
       module,
       action,
       ip: req.ip

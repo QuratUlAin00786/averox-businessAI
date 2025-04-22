@@ -74,7 +74,13 @@ export const errorMiddleware = (err: any, req: Request, res: Response, next: Nex
   }
   
   // Prepare response object
-  const errorResponse = {
+  const errorResponse: {
+    success: boolean;
+    error: string;
+    message: string;
+    code?: string;
+    stack?: string;
+  } = {
     success: false,
     error: statusCode >= 500 ? 'Server Error' : err.name || 'Request Error',
     message: err.message,
@@ -83,7 +89,7 @@ export const errorMiddleware = (err: any, req: Request, res: Response, next: Nex
   
   // Add stack trace in development
   if (process.env.NODE_ENV !== 'production') {
-    errorResponse['stack'] = err.stack;
+    errorResponse.stack = err.stack;
   }
   
   // Send error response

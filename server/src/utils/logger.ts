@@ -1,92 +1,125 @@
 /**
  * @file Logger utility
  * @description Provides logging functionality throughout the application
+ * This is a lightweight implementation of a logger that doesn't depend on external packages
  * @module utils/logger
  */
 
-import winston from 'winston';
 import { config } from '../config';
 
-// Define log format
-const logFormat = winston.format.combine(
-  winston.format.timestamp(),
-  winston.format.errors({ stack: true }),
-  winston.format.splat(),
-  winston.format.printf(({ level, message, timestamp, ...meta }) => {
-    // Format metadata
-    const metaString = Object.keys(meta).length
-      ? ` ${JSON.stringify(meta)}`
-      : '';
-    
-    // Format log message
-    return `${timestamp} [${level.toUpperCase()}] ${message}${metaString}`;
-  })
-);
-
-// Define console transport
-const consoleTransport = new winston.transports.Console({
-  format: winston.format.combine(
-    winston.format.colorize(),
-    logFormat
-  ),
-  level: config.logs.level,
-});
-
-// Create the logger
-const logger = winston.createLogger({
-  level: config.logs.level,
-  defaultMeta: { service: 'api' },
-  format: logFormat,
-  transports: [consoleTransport],
-});
-
-// Add file transports in production
-if (config.server.isProduction) {
-  // Create combined log file
-  logger.add(
-    new winston.transports.File({
-      filename: 'logs/combined.log',
-      level: 'info',
-    })
-  );
-  
-  // Create error log file
-  logger.add(
-    new winston.transports.File({
-      filename: 'logs/error.log',
-      level: 'error',
-    })
-  );
+/**
+ * Log levels
+ */
+enum LogLevel {
+  ERROR = 0,
+  WARN = 1,
+  INFO = 2,
+  DEBUG = 3,
 }
 
-// Create wrapper methods with string interpolation support
-const enhancedLogger = {
-  error: (message: string, ...args: any[]) => {
-    if (args.length > 0) {
-      if (args[0] instanceof Error) {
-        const error = args[0];
-        logger.error(`${message}: ${error.message}`, { 
-          stack: error.stack,
-          ...args.slice(1) 
-        });
+/**
+ * Get the current log level from configuration
+ */
+function getLogLevel(): LogLevel {
+  switch (config.logs.level.toLowerCase()) {
+    case 'error':
+      return LogLevel.ERROR;
+    case 'warn':
+      return LogLevel.WARN;
+    case 'info':
+      return LogLevel.INFO;
+    case 'debug':
+      return LogLevel.DEBUG;
+    default:
+      return LogLevel.INFO;
+  }
+}
+
+/**
+ * Get the current timestamp formatted for logs
+ */
+function getTimestamp(): string {
+  return new Date().toISOString();
+}
+
+/**
+ * Format metadata for the log message
+ */
+function formatMeta(meta: any): string {
+  if (!meta || typeof meta !== 'object' || Object.keys(meta).length === 0) {
+    return '';
+  }
+  
+  try {
+    return ' ' + JSON.stringify(meta);
+  } catch (e) {
+    return ' [Unable to stringify metadata]';
+  }
+}
+
+/**
+ * Write a log message to the console
+ */
+function writeLog(level: string, message: string, meta?: any): void {
+  const timestamp = getTimestamp();
+  const metaStr = formatMeta(meta);
+  const logMessage = `${timestamp} [${level}] ${message}${metaStr}`;
+  
+  switch (level) {
+    case 'ERROR':
+      console.error(logMessage);
+      break;
+    case 'WARN':
+      console.warn(logMessage);
+      break;
+    case 'DEBUG':
+      console.debug(logMessage);
+      break;
+    default:
+      console.log(logMessage);
+  }
+  
+  // In a real implementation, this would also write to log files in production
+}
+
+/**
+ * Logger implementation
+ */
+export const logger = {
+  error: (message: string, ...args: any[]): void => {
+    if (getLogLevel() >= LogLevel.ERROR) {
+      if (args.length > 0) {
+        if (args[0] instanceof Error) {
+          const error = args[0];
+          writeLog('ERROR', `${message}: ${error.message}`, { 
+            stack: error.stack,
+            ...(args.length > 1 ? args.slice(1) : {})
+          });
+        } else {
+          writeLog('ERROR', message, args.length ? args[0] : undefined);
+        }
       } else {
-        logger.error(message, ...args);
+        writeLog('ERROR', message);
       }
-    } else {
-      logger.error(message);
     }
   },
   
-  warn: (message: string, ...args: any[]) => {
-    logger.warn(message, ...args);
+  warn: (message: string, ...args: any[]): void => {
+    if (getLogLevel() >= LogLevel.WARN) {
+      writeLog('WARN', message, args.length ? args[0] : undefined);
+    }
   },
   
-  info: (message: string, ...args: any[]) => {
-    logger.info(message, ...args);
+  info: (message: string, ...args: any[]): void => {
+    if (getLogLevel() >= LogLevel.INFO) {
+      writeLog('INFO', message, args.length ? args[0] : undefined);
+    }
   },
   
-  debug: (message: string, ...args: any[]) => {
-    logger.debug(message, ...args);
+  debug: (message: string, ...args: any[]): void => {
+    if (getLogLevel() >= LogLevel.DEBUG) {
+      writeLog('DEBUG', message, args.length ? args[0] : undefined);
+    }
   },
   
   /**
@@ -96,8 +129,10 @@ const enhancedLogger = {
    * @param status HTTP status code
    * @param responseTime Response time in milliseconds
    */
-  httpRequest: (method: string, url: string, status: number, responseTime: number) => {
-    logger.info(`${method} ${url} ${status} in ${responseTime}ms`);
+  httpRequest: (method: string, url: string, status: number, responseTime: number): void => {
+    if (getLogLevel() >= LogLevel.INFO) {
+      writeLog('INFO', `${method} ${url} ${status} in ${responseTime}ms`);
+    }
   },
   
   /**
@@ -107,11 +142,13 @@ const enhancedLogger = {
    * @param status HTTP status code
    * @param error Error object or message
    */
-  apiError: (method: string, url: string, status: number, error: any) => {
-    const errorMessage = error instanceof Error ? error.message : error;
-    logger.error(`${method} ${url} ${status} - ${errorMessage}`, {
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+  apiError: (method: string, url: string, status: number, error: any): void => {
+    if (getLogLevel() >= LogLevel.ERROR) {
+      const errorMessage = error instanceof Error ? error.message : error;
+      writeLog('ERROR', `${method} ${url} ${status} - ${errorMessage}`, {
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+    }
   },
   
   /**
@@ -120,9 +157,9 @@ const enhancedLogger = {
    * @param entity Entity being operated on (e.g., 'users', 'tasks')
    * @param details Additional details
    */
-  databaseOperation: (operation: string, entity: string, details?: any) => {
-    logger.debug(`DB Operation: ${operation} on ${entity}`, details);
+  databaseOperation: (operation: string, entity: string, details?: any): void => {
+    if (getLogLevel() >= LogLevel.DEBUG) {
+      writeLog('DEBUG', `DB Operation: ${operation} on ${entity}`, details);
+    }
   },
 };
-
-export { enhancedLogger as logger };

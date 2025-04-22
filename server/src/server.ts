@@ -1,41 +1,70 @@
 /**
- * @file Server entry point
- * @description Starts the Express server
+ * @file Server
+ * @description HTTP server setup and initialization
  * @module server
  */
 
 import http from 'http';
-import { createApp } from './app';
-import { initDatabase, closeDatabase } from './utils/db';
-import { logger } from './utils/logger';
+import app from './app';
 import { config } from './config';
+import { logger } from './utils/logger';
+import { initDatabase } from './utils/db';
+
+// Get port from config
+const port = config.server.port;
+
+// Create HTTP server
+const server = http.createServer(app);
 
 /**
- * Initializes and starts the server
+ * Initialize the server
+ * Sets up all necessary services and starts the server
  */
-async function startServer() {
+export async function startServer(): Promise<http.Server> {
   try {
-    // Validate configuration
-    // validateConfig();
-    
     // Initialize database connection
     await initDatabase();
     logger.info('Database initialized successfully');
     
-    // Create Express app
-    const app = createApp();
+    // Additional initialization can go here:
+    // - Initialize authentication
+    // - Initialize WebSocket server
+    // - Initialize cron jobs
     
-    // Create HTTP server
-    const server = http.createServer(app);
+    // Start listening
+    server.listen(port);
     
-    // Start listening for requests
-    server.listen(config.server.port, () => {
-      logger.info(`Server running on port ${config.server.port} in ${config.server.env} mode`);
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.syscall !== 'listen') {
+        throw error;
+      }
+      
+      const bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
+      
+      // Handle specific listen errors with friendly messages
+      switch (error.code) {
+        case 'EACCES':
+          logger.error(`${bind} requires elevated privileges`);
+          process.exit(1);
+          break;
+        case 'EADDRINUSE':
+          logger.error(`${bind} is already in use`);
+          process.exit(1);
+          break;
+        default:
+          throw error;
+      }
     });
     
-    // Handle shutdown signals
-    process.on('SIGTERM', () => gracefulShutdown(server));
-    process.on('SIGINT', () => gracefulShutdown(server));
+    server.on('listening', () => {
+      const addr = server.address();
+      const bind = typeof addr === 'string' 
+        ? `pipe ${addr}` 
+        : `port ${addr?.port}`;
+      logger.info(`serving on ${bind}`);
+    });
+    
+    return server;
   } catch (error) {
     logger.error('Failed to start server', error);
     process.exit(1);
@@ -43,39 +72,17 @@ async function startServer() {
 }
 
 /**
- * Gracefully shuts down the server
- * @param server HTTP server instance
+ * Shutdown the server gracefully
  */
-async function gracefulShutdown(server: http.Server) {
+export async function stopServer(): Promise<void> {
   logger.info('Shutting down server...');
   
-  // Close the server
-  server.close(async () => {
-    logger.info('HTTP server closed');
-    
-    try {
-      // Close database connections
-      await closeDatabase();
-      logger.info('Database connections closed');
-      
-      // Exit process
-      process.exit(0);
-    } catch (error) {
-      logger.error('Error during shutdown', error);
-      process.exit(1);
-    }
+  return new Promise((resolve) => {
+    server.close(() => {
+      logger.info('Server shut down successfully');
+      resolve();
+    });
   });
-  
-  // Force exit if graceful shutdown takes too long
-  setTimeout(() => {
-    logger.error('Forced shutdown due to timeout');
-    process.exit(1);
-  }, 30000);
 }
 
-// Start the server
-if (require.main === module) {
-  startServer();
-}
-
-export { startServer };
+export default server;

@@ -1,29 +1,73 @@
 /**
- * @file Main entry point
- * @description Starting point for the AVEROX CRM application
- * @module index
+ * @file Application entry point
+ * @description Server initialization and process signal handling
  */
 
-import dotenv from 'dotenv';
-import { startServer } from './server';
-import { setupVite } from '../vite';
+import { startServer, stopServer } from './server';
+import { closeDatabase } from './utils/db';
 import { logger } from './utils/logger';
-import path from 'path';
+import { validateConfig } from './config';
 
-// Load environment variables
-dotenv.config({ path: path.join(process.cwd(), '.env') });
-
-async function main() {
+/**
+ * Main function
+ * Entry point for the application
+ */
+async function main(): Promise<void> {
   try {
-    // Setup Vite for development mode
-    if (process.env.NODE_ENV !== 'production') {
-      await setupVite();
-    }
+    // Validate configuration
+    validateConfig();
     
     // Start the server
     await startServer();
+    logger.info('Application started successfully');
+    
+    // Handle graceful shutdown
+    setupShutdownHandlers();
   } catch (error) {
-    logger.error('Application startup failed', error);
+    logger.error('Failed to start application', error);
+    process.exit(1);
+  }
+}
+
+/**
+ * Set up process signal handlers for graceful shutdown
+ */
+function setupShutdownHandlers(): void {
+  // Handle termination signals
+  process.on('SIGTERM', gracefulShutdown);
+  process.on('SIGINT', gracefulShutdown);
+  
+  // Handle uncaught exceptions and unhandled rejections
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught exception', error);
+    gracefulShutdown();
+  });
+  
+  process.on('unhandledRejection', (reason) => {
+    logger.error('Unhandled rejection', { reason });
+    gracefulShutdown();
+  });
+}
+
+/**
+ * Perform graceful shutdown
+ */
+async function gracefulShutdown(): Promise<void> {
+  logger.info('Received shutdown signal');
+  
+  try {
+    // Stop the server
+    await stopServer();
+    
+    // Close database connections
+    await closeDatabase();
+    
+    // Clean up other resources if needed
+    
+    logger.info('Graceful shutdown completed');
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during shutdown', error);
     process.exit(1);
   }
 }
