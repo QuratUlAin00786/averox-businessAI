@@ -1,11 +1,22 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
+import { MigrationHandler, MigrationJob, MigrationEntityMap, MigrationFieldMap } from './migration-types';
+import { OdooMigrationHandler } from './odoo-migration-handler';
+import { OracleCRMMigrationHandler } from './oracle-crm-migration-handler';
 
 /**
  * Migration controller handling the data migration process from various CRM systems
  */
 export class MigrationController {
-  private migrationJobs: Map<string, any> = new Map();
+  private migrationJobs: Map<string, MigrationJob> = new Map();
+  private migrationHandlers: Map<string, MigrationHandler> = new Map();
+  
+  constructor() {
+    // Register available CRM migration handlers
+    this.migrationHandlers.set('odoo', new OdooMigrationHandler());
+    this.migrationHandlers.set('oracle', new OracleCRMMigrationHandler());
+    // The existing handlers (salesforce, hubspot, etc.) would be registered here
+  }
   
   /**
    * Initiates the authentication process with the source CRM
@@ -333,6 +344,12 @@ export class MigrationController {
         return 'https://accounts.zoho.com/oauth/v2/auth?scope=ZohoCRM.modules.ALL&client_id=YOUR_CLIENT_ID&response_type=code&access_type=offline&redirect_uri=YOUR_CALLBACK_URI';
       case 'dynamics':
         return 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=YOUR_CLIENT_ID&response_type=code&redirect_uri=YOUR_CALLBACK_URI&response_mode=query&scope=https://graph.microsoft.com/.default';
+      case 'odoo':
+        // Odoo typically uses a direct API key or API endpoint rather than OAuth
+        return '/settings/data-migration?manual=true&provider=odoo';
+      case 'oracle':
+        // Oracle CRM OnDemand often uses basic auth or API keys
+        return '/settings/data-migration?manual=true&provider=oracle';
       default:
         throw new Error(`Unsupported CRM type: ${crmType}`);
     }
@@ -349,6 +366,18 @@ export class MigrationController {
       { id: 'leads', name: 'Leads', count: '~3000' },
       { id: 'opportunities', name: 'Opportunities', count: '~800' }
     ];
+    
+    // For our new CRM types, use the migration handler if available
+    if (this.migrationHandlers.has(crmType.toLowerCase())) {
+      const handler = this.migrationHandlers.get(crmType.toLowerCase());
+      try {
+        // Start with available entities (this would be async in a real implementation)
+        return handler.getAvailableEntities() as any;
+      } catch (error) {
+        console.error(`Error getting entities for ${crmType}:`, error);
+        return commonEntities;
+      }
+    }
     
     switch (crmType.toLowerCase()) {
       case 'salesforce':
@@ -375,6 +404,25 @@ export class MigrationController {
           { id: 'incidents', name: 'Cases', count: '~500' },
           { id: 'activities', name: 'Activities', count: '~2800' }
         ];
+      case 'odoo':
+        return [
+          { id: 'res.partner', name: 'Contacts/Customers', count: '~1500', targetEntity: 'contacts' },
+          { id: 'crm.lead', name: 'Leads/Opportunities', count: '~750', targetEntity: 'leads' },
+          { id: 'sale.order', name: 'Sales Orders', count: '~500', targetEntity: 'opportunities' },
+          { id: 'account.move', name: 'Invoices', count: '~650', targetEntity: 'invoices' },
+          { id: 'product.product', name: 'Products', count: '~350', targetEntity: 'products' },
+        ];
+      case 'oracle':
+        return [
+          { id: 'Contact', name: 'Contacts', count: '~2800', targetEntity: 'contacts' },
+          { id: 'Account', name: 'Accounts', count: '~1200', targetEntity: 'accounts' },
+          { id: 'Lead', name: 'Leads', count: '~3500', targetEntity: 'leads' },
+          { id: 'Opportunity', name: 'Opportunities', count: '~900', targetEntity: 'opportunities' },
+          { id: 'Campaign', name: 'Campaigns', count: '~120', targetEntity: 'campaigns' },
+          { id: 'Task', name: 'Tasks', count: '~4500', targetEntity: 'tasks' },
+          { id: 'Activity', name: 'Activities', count: '~6200', targetEntity: 'activities' },
+          { id: 'Product', name: 'Products', count: '~450', targetEntity: 'products' },
+        ];
       default:
         return commonEntities;
     }
@@ -386,7 +434,27 @@ export class MigrationController {
   private getFieldMappings(crmType: string, entityTypes: string[]): any {
     const mappings: Record<string, any> = {};
     
-    // Base mappings for common entities
+    // Check if we have a handler for this CRM type
+    if (this.migrationHandlers.has(crmType.toLowerCase())) {
+      const handler = this.migrationHandlers.get(crmType.toLowerCase());
+      
+      // Process each entity type
+      for (const entityType of entityTypes) {
+        try {
+          // This would be async in a real implementation
+          mappings[entityType] = handler.getFieldMappings(entityType) as any;
+        } catch (error) {
+          console.error(`Error getting field mappings for ${crmType}/${entityType}:`, error);
+        }
+      }
+      
+      // If we have mappings from the handler, return them
+      if (Object.keys(mappings).length > 0) {
+        return mappings;
+      }
+    }
+    
+    // Base mappings for common entities if no handler available or handler failed
     const baseMappings = {
       contacts: {
         sourceFields: [
@@ -507,12 +575,12 @@ export class MigrationController {
       }
     };
     
-    // Add CRM-specific field mappings
+    // Add CRM-specific field mappings for the standard CRM types
     entityTypes.forEach(entityType => {
       if (entityType in baseMappings) {
         mappings[entityType] = {
           ...baseMappings[entityType],
-          // We could add CRM-specific field mappings here
+          // Additional CRM-specific field mappings could be added here
         };
       }
     });
@@ -785,16 +853,65 @@ export class MigrationController {
       job.updatedTime = new Date();
       this.migrationJobs.set(jobId, job);
       
+      // Initialize handler if we have one for this CRM type
+      let handler: MigrationHandler = null;
+      if (this.migrationHandlers.has(crmType.toLowerCase())) {
+        handler = this.migrationHandlers.get(crmType.toLowerCase());
+        
+        // Initialize the handler with authentication data
+        try {
+          await handler.initialize(authData);
+          
+          // Test connection
+          const connectionTest = await handler.testConnection();
+          if (!connectionTest.success) {
+            throw new Error(`Connection test failed: ${connectionTest.message}`);
+          }
+          
+          job.currentStep = 'Successfully connected to CRM';
+          job.updatedTime = new Date();
+          this.migrationJobs.set(jobId, job);
+        } catch (error) {
+          console.error(`Error initializing handler for ${crmType}:`, error);
+          job.errors.push({
+            message: `Failed to initialize handler: ${error.message}`,
+            time: new Date()
+          });
+          handler = null; // Fall back to mock data
+        }
+      }
+      
       // Process each entity type
       for (const entityType of entityTypes) {
         try {
           // Update job to show current entity processing
-          job.currentEntity = entityType;
+          job.currentStep = `Processing ${entityType}`;
           job.updatedTime = new Date();
           this.migrationJobs.set(jobId, job);
           
-          // Simulate time for fetching data from source CRM
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Fetch data using handler if available
+          let sourceData = [];
+          if (handler) {
+            try {
+              sourceData = await handler.fetchData(entityType);
+              job.currentStep = `Fetched ${sourceData.length} records for ${entityType}`;
+            } catch (error) {
+              console.error(`Error fetching data for ${entityType}:`, error);
+              job.errors.push({
+                entity: entityType,
+                message: `Failed to fetch data: ${error.message}`,
+                time: new Date()
+              });
+              // Simulate some data for testing if we couldn't fetch real data
+              sourceData = this.generateMockDataForEntityType(entityType, 10);
+            }
+          } else {
+            // Simulate some data since we don't have a handler
+            sourceData = this.generateMockDataForEntityType(entityType, 20);
+            
+            // Simulate delay to mimic API call
+            await new Promise(resolve => setTimeout(resolve, 1500));
+          }
           
           // Update progress
           const progressIncrement = 1 / entityTypes.length;
@@ -862,6 +979,115 @@ export class MigrationController {
   
   private getRandomItemCount(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+  
+  /**
+   * Generate mock data for a specific entity type
+   * This is used as a fallback when actual data retrieval fails
+   */
+  private generateMockDataForEntityType(entityType: string, count: number): any[] {
+    const result = [];
+    
+    // Generate mock data based on entity type
+    for (let i = 1; i <= count; i++) {
+      switch (entityType.toLowerCase()) {
+        case 'contacts':
+        case 'res.partner':
+        case 'contact':
+          result.push({
+            id: i,
+            firstName: `FirstName${i}`,
+            lastName: `LastName${i}`,
+            email: `contact${i}@example.com`,
+            phone: `555-${1000 + i}`,
+            title: i % 3 === 0 ? 'Manager' : (i % 2 === 0 ? 'Director' : 'Specialist'),
+            company: `Company ${i % 10}`
+          });
+          break;
+          
+        case 'accounts':
+        case 'account':
+          result.push({
+            id: i,
+            name: `Account ${i}`,
+            industry: ['Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Retail'][i % 5],
+            website: `www.account${i}.example.com`,
+            phone: `555-${2000 + i}`,
+            billingAddress: `${1000 + i} Main St`,
+            billingCity: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'][i % 5],
+            billingState: ['NY', 'CA', 'IL', 'TX', 'AZ'][i % 5],
+            billingZip: `${10000 + i}`,
+            billingCountry: 'USA'
+          });
+          break;
+          
+        case 'leads':
+        case 'crm.lead':
+        case 'lead':
+          result.push({
+            id: i,
+            firstName: `Lead${i}`,
+            lastName: `Contact${i}`,
+            email: `lead${i}@example.com`,
+            phone: `555-${3000 + i}`,
+            company: `Prospect ${i % 15}`,
+            status: ['New', 'Qualified', 'Contacted', 'Not Interested', 'Converted'][i % 5],
+            source: ['Website', 'Referral', 'Event', 'Social Media', 'Advertisement'][i % 5]
+          });
+          break;
+          
+        case 'opportunities':
+        case 'sale.order':
+        case 'opportunity':
+          result.push({
+            id: i,
+            name: `Opportunity ${i}`,
+            accountId: i % 10 + 1,
+            stage: ['Lead Generation', 'Qualification', 'Proposal', 'Negotiation', 'Closing'][i % 5],
+            amount: (Math.floor(Math.random() * 100) + 1) * 1000,
+            closeDate: new Date(Date.now() + ((Math.floor(Math.random() * 90) + 30) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+            probability: [10, 25, 50, 75, 90][i % 5]
+          });
+          break;
+          
+        case 'products':
+        case 'product.product':
+        case 'product':
+          result.push({
+            id: i,
+            name: `Product ${i}`,
+            description: `Description for product ${i}`,
+            price: (Math.floor(Math.random() * 1000) + 1) * 10,
+            category: ['Hardware', 'Software', 'Services', 'Consulting', 'Support'][i % 5],
+            sku: `SKU-${1000 + i}`
+          });
+          break;
+          
+        case 'invoices':
+        case 'account.move':
+        case 'invoice':
+          result.push({
+            id: i,
+            invoiceNumber: `INV-${10000 + i}`,
+            accountId: i % 10 + 1,
+            issueDate: new Date(Date.now() - ((Math.floor(Math.random() * 30)) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+            dueDate: new Date(Date.now() + ((Math.floor(Math.random() * 30) + 15) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+            totalAmount: (Math.floor(Math.random() * 1000) + 1) * 100,
+            status: ['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled'][i % 5]
+          });
+          break;
+          
+        default:
+          // Generic object with an ID
+          result.push({
+            id: i,
+            name: `${entityType} ${i}`,
+            createdAt: new Date().toISOString()
+          });
+      }
+    }
+    
+    return result;
   }
 }
 
