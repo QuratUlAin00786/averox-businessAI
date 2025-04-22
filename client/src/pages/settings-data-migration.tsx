@@ -265,10 +265,32 @@ export default function DataMigrationPage() {
         return entity ? entity.id : id;
       });
       
-      // Call API to get field mappings
-      const response = await apiRequest('POST', '/api/migration/analyze-fields', {
+      // Validate selected entities with the source CRM first
+      setMappingProgress(10);
+      addToProcessingLog("Validating entity types with source CRM...");
+      
+      // Using our new validation endpoint first
+      const validationResponse = await apiRequest('POST', '/api/migration/validate-entities', {
         crmType: selectedSystem,
         entityTypes: entityTypesToMap
+      });
+      
+      const validationData = await validationResponse.json();
+      if (!validationData.success) {
+        throw new Error(validationData.error || 'Failed to validate entity types');
+      }
+      
+      // Some entities might be filtered out if not available in source CRM
+      const validEntityTypes = validationData.validEntityTypes || entityTypesToMap;
+      
+      setMappingProgress(30);
+      addToProcessingLog(`Validated ${validEntityTypes.length} entity types. Analyzing field structure...`);
+      
+      // Call API to get field mappings with deep analysis
+      const response = await apiRequest('POST', '/api/migration/analyze-fields', {
+        crmType: selectedSystem,
+        entityTypes: validEntityTypes,
+        performDeepAnalysis: true // Use our enhanced field mapping analysis
       });
       
       const data = await response.json();
@@ -277,12 +299,24 @@ export default function DataMigrationPage() {
       }
       
       // Process field mappings
-      setMappingProgress(50);
-      addToProcessingLog("Analyzing source CRM field structure...");
+      setMappingProgress(70);
+      addToProcessingLog("Analyzing field relationships and data types...");
       
       // Update field mappings state
       if (data.fieldMappings) {
         setFieldMappings(data.fieldMappings);
+        
+        // Display information about the mapping
+        const mappingEntitiesCount = Object.keys(data.fieldMappings).length;
+        let totalFieldsMapped = 0;
+        
+        Object.values(data.fieldMappings).forEach((mapping: any) => {
+          if (mapping && mapping.defaultMapping) {
+            totalFieldsMapped += Object.keys(mapping.defaultMapping).length;
+          }
+        });
+        
+        addToProcessingLog(`Successfully mapped ${totalFieldsMapped} fields across ${mappingEntitiesCount} entities`);
       }
       
       // Complete the progress
@@ -306,11 +340,13 @@ export default function DataMigrationPage() {
       
       addToProcessingLog(`Migrating selected data: ${entityNames}`);
       
-      // Create a migration job and start the process
+      // Create a migration job and start the process with enhanced validation
       const response = await apiRequest('POST', '/api/migration/start', {
         crmType: selectedSystem,
         entityTypes: selectedEntities,
-        fieldMappings
+        fieldMappings,
+        validateBeforeMigration: true, // Use our enhanced validation
+        connectionValidation: true // Ensure connection is still valid before proceeding
       });
       
       const { migrationId, success, error } = await response.json();
@@ -322,13 +358,14 @@ export default function DataMigrationPage() {
       // Migration is now running on the server, poll for status updates
       let migrationComplete = false;
       let progress = 0;
+      let lastLogCount = 0;
       
       while (!migrationComplete) {
         // Wait a bit between status checks
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Check migration status
-        const statusResponse = await apiRequest('GET', `/api/migration/status/${migrationId}`);
+        // Check migration status with enhanced details
+        const statusResponse = await apiRequest('GET', `/api/migration/status/${migrationId}?includeErrors=true&includeStats=true`);
         const statusData = await statusResponse.json();
         
         if (statusData.error) {
@@ -346,16 +383,55 @@ export default function DataMigrationPage() {
           addToProcessingLog(statusData.currentStep);
         }
         
+        // Show any new errors that occurred
+        if (statusData.errors && statusData.errors.length > lastLogCount) {
+          const newErrors = statusData.errors.slice(lastLogCount);
+          newErrors.forEach(err => {
+            addToProcessingLog(`Error: ${err.message || 'Unknown error'}`);
+          });
+          lastLogCount = statusData.errors.length;
+        }
+        
+        // Show migration statistics if available
+        if (statusData.migrationStats) {
+          const stats = statusData.migrationStats;
+          
+          // Only log if we have meaningful stats to report
+          if (stats.recordsProcessed > 0 && statusData.progress % 20 === 0) {
+            addToProcessingLog(`Progress: Processed ${stats.recordsProcessed} records, Created: ${stats.recordsCreated}, Updated: ${stats.recordsUpdated}, Skipped: ${stats.recordsSkipped}`);
+          }
+        }
+        
         // Check if migration is complete
-        if (statusData.status === 'completed') {
+        if (statusData.status === 'completed' || statusData.status === 'completed_with_errors') {
           migrationComplete = true;
-          addToProcessingLog("Migration completed successfully!");
+          
+          if (statusData.status === 'completed') {
+            addToProcessingLog("Migration completed successfully!");
+          } else {
+            addToProcessingLog("Migration completed with some errors. Check the logs for details.");
+          }
+          
+          if (statusData.completed) {
+            addToProcessingLog(`Total records migrated: ${statusData.completed.total}`);
+            
+            // Show counts by entity type
+            if (statusData.completed.byEntity) {
+              Object.entries(statusData.completed.byEntity).forEach(([entity, count]) => {
+                const entityName = entityTypes.find(e => e.id === entity)?.name || entity;
+                addToProcessingLog(`${entityName}: ${count} records`);
+              });
+            }
+          }
+          
           return {
             entitiesMigrated: selectedEntities.length,
-            recordsCreated: statusData.recordsCreated || 0
+            recordsCreated: statusData.migrationStats?.recordsCreated || 0,
+            recordsUpdated: statusData.migrationStats?.recordsUpdated || 0,
+            status: statusData.status
           };
         } else if (statusData.status === 'failed') {
-          throw new Error(statusData.error || 'Migration failed');
+          throw new Error(statusData.errors?.[0]?.message || statusData.error || 'Migration failed');
         }
       }
       
@@ -405,12 +481,18 @@ export default function DataMigrationPage() {
           queryParams.append('entityTypes', JSON.stringify(selectedEntities));
         }
         
+        // Add additional import options
+        queryParams.append('detectEntityTypes', 'true'); // Try to auto-detect entities in the file
+        queryParams.append('validateBeforeImport', 'true'); // Validate data format before importing
+        
+        addToProcessingLog("Reading file contents...");
         // Get file content as ArrayBuffer
         const fileBuffer = await file.arrayBuffer();
         
         // Convert to appropriate format for sending
         const fileData = new Uint8Array(fileBuffer);
         
+        addToProcessingLog("Uploading file for processing...");
         // Start upload - using raw fetch with file binary data
         const response = await fetch(`/api/migration/import-file?${queryParams.toString()}`, {
           method: 'POST',
@@ -439,6 +521,7 @@ export default function DataMigrationPage() {
         }
         
         const data = await response.json();
+        addToProcessingLog("File uploaded successfully. Starting import process...");
         
         // Get migration ID from response
         const migrationId = data.migrationId;
@@ -446,13 +529,14 @@ export default function DataMigrationPage() {
         // Migration is now running on the server, poll for status updates
         let migrationComplete = false;
         let progress = 0;
+        let lastLogCount = 0;
         
         while (!migrationComplete) {
           // Wait a bit between status checks
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          // Check migration status
-          const statusResponse = await apiRequest('GET', `/api/migration/status/${migrationId}`);
+          // Check migration status with enhanced details
+          const statusResponse = await apiRequest('GET', `/api/migration/status/${migrationId}?includeErrors=true&includeStats=true`);
           const statusData = await statusResponse.json();
           
           if (statusData.error) {
@@ -470,16 +554,60 @@ export default function DataMigrationPage() {
             addToProcessingLog(statusData.currentStep);
           }
           
+          // Show any new errors that occurred
+          if (statusData.errors && statusData.errors.length > lastLogCount) {
+            const newErrors = statusData.errors.slice(lastLogCount);
+            newErrors.forEach(err => {
+              addToProcessingLog(`Error: ${err.message || 'Unknown error'}`);
+            });
+            lastLogCount = statusData.errors.length;
+          }
+          
+          // Show import statistics if available
+          if (statusData.migrationStats) {
+            const stats = statusData.migrationStats;
+            
+            // Only log if we have meaningful stats to report
+            if (stats.recordsProcessed > 0 && statusData.progress % 20 === 0) {
+              addToProcessingLog(`Progress: Processed ${stats.recordsProcessed} records, Created: ${stats.recordsCreated}, Updated: ${stats.recordsUpdated}, Skipped: ${stats.recordsSkipped}`);
+            }
+          }
+          
+          // If file import detected entity types, show them
+          if (statusData.detectedEntities && statusData.detectedEntities.length > 0 && progress === 10) {
+            addToProcessingLog(`Detected ${statusData.detectedEntities.length} entity types in the file: ${statusData.detectedEntities.join(', ')}`);
+          }
+          
           // Check if migration is complete
-          if (statusData.status === 'completed') {
+          if (statusData.status === 'completed' || statusData.status === 'completed_with_errors') {
             migrationComplete = true;
-            addToProcessingLog("File import completed successfully!");
+            
+            if (statusData.status === 'completed') {
+              addToProcessingLog("File import completed successfully!");
+            } else {
+              addToProcessingLog("File import completed with some errors. Check the logs for details.");
+            }
+            
+            if (statusData.completed) {
+              addToProcessingLog(`Total records imported: ${statusData.completed.total}`);
+              
+              // Show counts by entity type
+              if (statusData.completed.byEntity) {
+                Object.entries(statusData.completed.byEntity).forEach(([entity, count]) => {
+                  const entityName = entityTypes.find(e => e.id === entity)?.name || entity;
+                  addToProcessingLog(`${entityName}: ${count} records`);
+                });
+              }
+            }
+            
             return {
-              entitiesProcessed: statusData.entitiesProcessed || 1,
-              recordsCreated: statusData.recordsCreated || 0
+              entitiesProcessed: Object.keys(statusData.completed?.byEntity || {}).length || 1,
+              recordsCreated: statusData.migrationStats?.recordsCreated || 0,
+              recordsUpdated: statusData.migrationStats?.recordsUpdated || 0,
+              status: statusData.status
             };
           } else if (statusData.status === 'failed') {
-            throw new Error(statusData.error || 'File import failed');
+            throw new Error(statusData.errors?.[0]?.message || statusData.error || 'File import failed');
           }
         }
         
