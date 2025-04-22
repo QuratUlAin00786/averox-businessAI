@@ -38,10 +38,14 @@ import {
   FileIcon,
   MousePointerClickIcon,
   PlusIcon,
+  AlertCircle,
 } from 'lucide-react';
 
 // Import element renderer component
 import { ElementPreview, ElementRenderer } from './proposal-element-renderer';
+import { ElementEditorFactory } from './element-editors/element-editor-factory';
+import { DraggableElementList } from './dnd/draggable-element-list';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -621,114 +625,14 @@ export function ProposalEditor({
   const renderElementEditor = () => {
     if (!selectedElement) return null;
     
-    // Parse content if it's a string
-    let content;
-    try {
-      content = typeof selectedElement.content === 'string' 
-        ? JSON.parse(selectedElement.content) 
-        : selectedElement.content || {};
-    } catch (error) {
-      console.error("Error parsing content:", error);
-      content = {}; // Default to empty object if parsing fails
-    }
-    
-    switch (selectedElement.elementType) {
-      case 'Header':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Header Text</label>
-              <Input 
-                value={(content as any).text || ''}
-                onChange={e => {
-                  setSelectedElement({
-                    ...selectedElement,
-                    content: typeof selectedElement.content === 'string' 
-                      ? JSON.stringify({
-                          ...content,
-                          text: e.target.value,
-                        })
-                      : {
-                          ...content,
-                          text: e.target.value,
-                        }
-                  });
-                }}
-                disabled={isReadOnly}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Header Level</label>
-              <Select 
-                value={String((content as any).level || 1)}
-                onValueChange={value => {
-                  setSelectedElement({
-                    ...selectedElement,
-                    content: typeof selectedElement.content === 'string' 
-                      ? JSON.stringify({
-                          ...content,
-                          level: parseInt(value),
-                        })
-                      : {
-                          ...content,
-                          level: parseInt(value),
-                        }
-                  });
-                }}
-                disabled={isReadOnly}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select header level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">H1 - Main Title</SelectItem>
-                  <SelectItem value="2">H2 - Section Title</SelectItem>
-                  <SelectItem value="3">H3 - Subsection Title</SelectItem>
-                  <SelectItem value="4">H4 - Minor Title</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-      case 'Text':
-        return (
-          <div>
-            <label className="text-sm font-medium">Text Content</label>
-            <Textarea
-              value={(content as any).text || ''}
-              onChange={e => {
-                setSelectedElement({
-                  ...selectedElement,
-                  content: typeof selectedElement.content === 'string' 
-                    ? JSON.stringify({
-                        ...content,
-                        text: e.target.value,
-                      })
-                    : {
-                        ...content,
-                        text: e.target.value,
-                      }
-                });
-              }}
-              className="min-h-[200px]"
-              disabled={isReadOnly}
-            />
-          </div>
-        );
-      // Note: This is a simplified editor. In a real application, you would have more complex
-      // editors for each element type with full functionality.
-      default:
-        return (
-          <div className="p-4 bg-neutral-50 rounded text-center">
-            <p>
-              Editor for {selectedElement.elementType} elements is not fully implemented in this demo.
-            </p>
-            <p className="text-sm text-neutral-500 mt-2">
-              In a real application, this would be a full-featured editor specific to this element type.
-            </p>
-          </div>
-        );
-    }
+    // Use our new ElementEditorFactory to render the appropriate editor
+    return (
+      <ElementEditorFactory 
+        element={selectedElement}
+        onChange={(updatedElement) => setSelectedElement(updatedElement)}
+        disabled={isReadOnly}
+      />
+    );
   };
 
   return (
@@ -793,98 +697,62 @@ export function ProposalEditor({
                   <div className="flex justify-center p-6">
                     <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
                   </div>
-                ) : elements.length === 0 ? (
-                  <div className="text-center p-4 text-neutral-500 text-sm">
-                    No elements yet. {!isReadOnly && 'Use the + button to add elements.'}
-                  </div>
                 ) : (
-                  <div className="space-y-2">
-                    {elements.map((element) => (
-                      <div 
-                        key={element.id}
-                        className={cn(
-                          "p-2 rounded border cursor-pointer hover:bg-neutral-50 transition-colors",
-                          selectedElement?.id === element.id && "border-primary bg-primary/5"
-                        )}
-                        onClick={() => setSelectedElement(element)}
-                      >
-                        <div className="flex justify-between items-center mb-1">
-                          <Badge variant="outline" className="text-xs font-normal">
-                            {element.elementType}
-                          </Badge>
-                          
-                          {!isReadOnly && selectedElement?.id === element.id && (
-                            <div className="flex gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  moveElementMutation.mutate({ id: element.id, direction: 'up' }, {
-                                    onSuccess: (data) => {
-                                      toast({
-                                        title: 'Success',
-                                        description: 'Element moved up successfully'
-                                      });
-                                    },
-                                    onError: (error) => {
-                                      toast({
-                                        title: 'Error',
-                                        description: `Failed to move element: ${error.message}`,
-                                        variant: 'destructive'
-                                      });
-                                    }
-                                  });
-                                }}
-                                disabled={elements.indexOf(element) === 0}
-                              >
-                                <ChevronUp className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  moveElementMutation.mutate({ id: element.id, direction: 'down' }, {
-                                    onSuccess: (data) => {
-                                      toast({
-                                        title: 'Success',
-                                        description: 'Element moved down successfully'
-                                      });
-                                    },
-                                    onError: (error) => {
-                                      toast({
-                                        title: 'Error',
-                                        description: `Failed to move element: ${error.message}`,
-                                        variant: 'destructive'
-                                      });
-                                    }
-                                  });
-                                }}
-                                disabled={elements.indexOf(element) === elements.length - 1}
-                              >
-                                <ChevronDown className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6 text-red-600 hover:text-red-700" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteElement(element.id);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-xs truncate">{element.name}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <DraggableElementList
+                    elements={elements}
+                    selectedElementId={selectedElement?.id || null}
+                    isReadOnly={isReadOnly}
+                    onSelectElement={setSelectedElement}
+                    onReorderElement={(elementId, newIndex) => {
+                      // Get the current element and its index
+                      const elementToMove = elements.find(el => el.id === elementId);
+                      const currentIndex = elements.findIndex(el => el.id === elementId);
+                      
+                      if (!elementToMove || currentIndex === -1 || currentIndex === newIndex) {
+                        return;
+                      }
+                      
+                      // For our demo, we're using the moveElementMutation which requires direction
+                      // This is a simplification - in a real implementation, you would have a proper API endpoint
+                      // that accepts the new sort order or index directly
+                      
+                      const direction = currentIndex > newIndex ? 'up' : 'down';
+                      const steps = Math.abs(currentIndex - newIndex);
+                      
+                      // Create a chain of mutations
+                      let currentStep = 0;
+                      const moveNextStep = () => {
+                        if (currentStep < steps) {
+                          moveElementMutation.mutate(
+                            { id: elementId, direction }, 
+                            {
+                              onSuccess: () => {
+                                currentStep++;
+                                moveNextStep();
+                              },
+                              onError: (error) => {
+                                toast({
+                                  title: 'Error',
+                                  description: `Failed to reorder element: ${error.message}`,
+                                  variant: 'destructive'
+                                });
+                              }
+                            }
+                          );
+                        } else {
+                          // Done with all steps
+                          toast({
+                            title: 'Success',
+                            description: 'Element reordered successfully'
+                          });
+                        }
+                      };
+                      
+                      // Start the chain
+                      moveNextStep();
+                    }}
+                    onDeleteElement={handleDeleteElement}
+                  />
                 )}
               </ScrollArea>
             </div>
