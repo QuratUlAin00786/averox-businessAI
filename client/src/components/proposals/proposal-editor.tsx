@@ -41,6 +41,7 @@ import {
   MousePointerClickIcon,
   PlusIcon,
   AlertCircle,
+  X,
 } from 'lucide-react';
 
 // Import element renderer component
