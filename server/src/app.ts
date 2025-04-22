@@ -1,79 +1,110 @@
 /**
  * @file Express application
- * @description Application setup and middleware configuration
+ * @description Express application setup and middleware
  * @module app
  */
 
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import session from 'express-session';
+import passport from 'passport';
 import { config } from './config';
-import { errorMiddleware, notFoundHandler } from './utils/error-handler';
 import { logger } from './utils/logger';
+import { errorMiddleware, notFoundHandler } from './utils/error-handler';
+import { registerRoutes } from './routes';
+import { db } from './utils/db';
 
-// Initialize Express app
-const app = express();
+// Create Express application
+export const app: Express = express();
 
-// Body parsing middleware
+// Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS setup - simple implementation without the cors package
+// Basic CORS implementation to allow cross-origin requests
 app.use((req: Request, res: Response, next: NextFunction) => {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, PUT, PATCH, DELETE, OPTIONS'
-  );
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
-  );
+  // Define allowed origins
+  const allowedOrigins = ['http://localhost:3000', 'http://localhost:5000'];
+  const origin = req.headers.origin;
+  
+  // Set CORS headers if origin is allowed
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
+  // Allow common headers and methods
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return res.sendStatus(200);
   }
   
   next();
 });
 
-// Session configuration
-app.use(
-  session({
-    secret: config.auth.sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: config.server.isProduction,
-      httpOnly: true,
-      maxAge: config.auth.cookieMaxAge,
-    },
-  })
-);
-
-// Request logging middleware
+// Request logger middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const start = Date.now();
+  const startTime = Date.now();
   
+  // Log request
+  logger.debug(`Request: ${req.method} ${req.url}`);
+  
+  // Log response after completion
   res.on('finish', () => {
-    const responseTime = Date.now() - start;
-    logger.httpRequest(req.method, req.url, res.statusCode, responseTime);
+    const duration = Date.now() - startTime;
+    logger.httpRequest(req.method, req.url, res.statusCode, duration, req.body || null);
   });
   
   next();
 });
 
-// Import routes
-import { registerRoutes } from './routes';
+// Session configuration
+app.use(session({
+  secret: config.auth.sessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: config.auth.cookieMaxAge,
+    secure: config.server.isProduction,
+    httpOnly: true,
+    sameSite: 'lax',
+  },
+}));
 
-// Apply API routes
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Passport serialization/deserialization
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id: number, done) => {
+  try {
+    const user = await db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.id, id)
+    });
+    
+    if (!user) {
+      return done(null, false);
+    }
+    
+    // Remove sensitive data before passing to req.user
+    const { password, ...safeUser } = user;
+    done(null, safeUser);
+  } catch (error) {
+    done(error, null);
+  }
+});
+
+// Register API routes
 registerRoutes(app);
 
-// Not found handler
+// Handle 404 errors - if no routes matched
 app.use(notFoundHandler);
 
-// Error handling middleware
+// Global error handler - must be last middleware
 app.use(errorMiddleware);
-
-export default app;

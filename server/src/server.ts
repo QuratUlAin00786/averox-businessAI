@@ -1,88 +1,65 @@
 /**
- * @file Server
- * @description HTTP server setup and initialization
+ * @file Server implementation
+ * @description HTTP server setup and management
  * @module server
  */
 
-import http from 'http';
-import app from './app';
+import { createServer } from 'http';
+import { app } from './app';
 import { config } from './config';
 import { logger } from './utils/logger';
 import { initDatabase } from './utils/db';
 
-// Get port from config
-const port = config.server.port;
-
-// Create HTTP server
-const server = http.createServer(app);
+// HTTP server instance
+let server: any = null;
 
 /**
- * Initialize the server
- * Sets up all necessary services and starts the server
+ * Start the server
+ * @param port Optional port override
+ * @param host Optional host override
+ * @returns Promise that resolves when the server is started
  */
-export async function startServer(): Promise<http.Server> {
+export async function startServer(port = config.server.port, host = config.server.host): Promise<void> {
   try {
-    // Initialize database connection
+    // Initialize database
     await initDatabase();
-    logger.info('Database initialized successfully');
     
-    // Additional initialization can go here:
-    // - Initialize authentication
-    // - Initialize WebSocket server
-    // - Initialize cron jobs
+    // Create HTTP server
+    server = createServer(app);
     
-    // Start listening
-    server.listen(port);
-    
-    server.on('error', (error: NodeJS.ErrnoException) => {
-      if (error.syscall !== 'listen') {
-        throw error;
-      }
-      
-      const bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
-      
-      // Handle specific listen errors with friendly messages
-      switch (error.code) {
-        case 'EACCES':
-          logger.error(`${bind} requires elevated privileges`);
-          process.exit(1);
-          break;
-        case 'EADDRINUSE':
-          logger.error(`${bind} is already in use`);
-          process.exit(1);
-          break;
-        default:
-          throw error;
-      }
+    // Start the server
+    return new Promise((resolve) => {
+      server.listen(port, host, () => {
+        logger.info(`serving on port ${port}`);
+        resolve();
+      });
     });
-    
-    server.on('listening', () => {
-      const addr = server.address();
-      const bind = typeof addr === 'string' 
-        ? `pipe ${addr}` 
-        : `port ${addr?.port}`;
-      logger.info(`serving on ${bind}`);
-    });
-    
-    return server;
   } catch (error) {
     logger.error('Failed to start server', error);
-    process.exit(1);
+    throw error;
   }
 }
 
 /**
- * Shutdown the server gracefully
+ * Stop the server
+ * @returns Promise that resolves when the server is stopped
  */
 export async function stopServer(): Promise<void> {
-  logger.info('Shutting down server...');
+  if (!server) {
+    logger.warn('Server not running, nothing to stop');
+    return Promise.resolve();
+  }
   
-  return new Promise((resolve) => {
-    server.close(() => {
-      logger.info('Server shut down successfully');
-      resolve();
+  return new Promise((resolve, reject) => {
+    server.close((err: Error) => {
+      if (err) {
+        logger.error('Error stopping server', err);
+        reject(err);
+      } else {
+        logger.info('Server stopped');
+        server = null;
+        resolve();
+      }
     });
   });
 }
-
-export default server;

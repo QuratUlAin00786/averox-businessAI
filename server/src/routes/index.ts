@@ -1,106 +1,60 @@
 /**
- * @file Route registry
- * @description Registers all API routes for the application
+ * @file Routes registration
+ * @description Central registry for all API routes
  * @module routes
  */
 
 import { Express } from 'express';
-import authRoutes from './auth.routes';
-import userRoutes from './user.routes';
-import leadRoutes from './lead.routes';
-import contactRoutes from './contact.routes';
-import taskRoutes from './task.routes';
-import openaiRoutes from './openai.routes';
-import { errorMiddleware, notFoundHandler } from '../utils/error-handler';
 import { logger } from '../utils/logger';
 
+// Import route registration functions
+import { registerAuthRoutes } from './auth.routes';
+import { registerUserRoutes } from './user.routes';
+
 /**
- * Registers all API routes with the Express application
+ * Register all API routes
  * @param app Express application
  */
 export function registerRoutes(app: Express): void {
-  // Log routes registration
-  logger.info('Registering API routes');
-  
-  // Register route modules
-  app.use('/api', authRoutes);
-  app.use('/api', userRoutes);
-  app.use('/api', leadRoutes);
-  app.use('/api', contactRoutes);
-  app.use('/api', taskRoutes);
-  app.use('/api', openaiRoutes);
-
-  // ToDo: Register other route modules as they are created
-  // app.use('/api', accountRoutes);
-  // app.use('/api', opportunityRoutes);
-  // app.use('/api', eventRoutes);
-  // app.use('/api', activityRoutes);
-  // app.use('/api', invoiceRoutes);
-  // app.use('/api', productRoutes);
-  // app.use('/api', proposalRoutes);
-  
-  // Register 404 handler
-  app.use(notFoundHandler);
-  
-  // Register error middleware
-  app.use(errorMiddleware);
-  
-  logger.info('API routes registered successfully');
+  try {
+    logger.info('Registering API routes...');
+    
+    // Authentication and user routes
+    registerAuthRoutes(app);
+    registerUserRoutes(app);
+    
+    // Register additional API route modules here as they are implemented
+    // For example:
+    // registerContactRoutes(app);
+    // registerLeadRoutes(app);
+    // registerTaskRoutes(app);
+    // registerOpportunityRoutes(app);
+    // registerDashboardRoutes(app);
+    // registerTeamRoutes(app);
+    // registerAiRoutes(app);
+    
+    // API health check
+    app.get('/api/health', (req, res) => {
+      res.status(200).json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+      });
+    });
+    
+    // API info endpoint
+    app.get('/api/info', (req, res) => {
+      res.status(200).json({
+        name: 'AVEROX CRM API',
+        version: '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
+        timestamp: new Date().toISOString()
+      });
+    });
+    
+    logger.info('All API routes registered successfully');
+  } catch (error) {
+    logger.error('Error registering API routes', error);
+    throw error;
+  }
 }
-
-/**
- * List of all API endpoints
- * This is useful for documentation and testing
- */
-export const apiEndpoints = {
-  auth: {
-    login: { method: 'POST', path: '/api/login' },
-    logout: { method: 'POST', path: '/api/logout' },
-    register: { method: 'POST', path: '/api/register' },
-    updateProfile: { method: 'PATCH', path: '/api/profile' },
-    authStatus: { method: 'GET', path: '/api/auth/status' },
-  },
-  users: {
-    getAll: { method: 'GET', path: '/api/users' },
-    create: { method: 'POST', path: '/api/users' },
-    getById: { method: 'GET', path: '/api/users/:id' },
-    update: { method: 'PATCH', path: '/api/users/:id' },
-    delete: { method: 'DELETE', path: '/api/users/:id' },
-    getCurrent: { method: 'GET', path: '/api/user' },
-    makeAdmin: { method: 'POST', path: '/api/make-admin' },
-  },
-  leads: {
-    getAll: { method: 'GET', path: '/api/leads' },
-    create: { method: 'POST', path: '/api/leads' },
-    getStats: { method: 'GET', path: '/api/leads/stats' },
-    getById: { method: 'GET', path: '/api/leads/:id' },
-    update: { method: 'PATCH', path: '/api/leads/:id' },
-    delete: { method: 'DELETE', path: '/api/leads/:id' },
-    convert: { method: 'POST', path: '/api/leads/:id/convert' },
-  },
-  contacts: {
-    getAll: { method: 'GET', path: '/api/contacts' },
-    create: { method: 'POST', path: '/api/contacts' },
-    search: { method: 'GET', path: '/api/contacts/search' },
-    getById: { method: 'GET', path: '/api/contacts/:id' },
-    update: { method: 'PATCH', path: '/api/contacts/:id' },
-    delete: { method: 'DELETE', path: '/api/contacts/:id' },
-  },
-  tasks: {
-    getAll: { method: 'GET', path: '/api/tasks' },
-    create: { method: 'POST', path: '/api/tasks' },
-    upcoming: { method: 'GET', path: '/api/tasks/upcoming' },
-    overdue: { method: 'GET', path: '/api/tasks/overdue' },
-    getById: { method: 'GET', path: '/api/tasks/:id' },
-    update: { method: 'PATCH', path: '/api/tasks/:id' },
-    delete: { method: 'DELETE', path: '/api/tasks/:id' },
-  },
-  ai: {
-    insights: { method: 'POST', path: '/api/ai/insights' },
-    analysis: { method: 'POST', path: '/api/ai/analysis' },
-    recommendations: { method: 'POST', path: '/api/ai/recommendations' },
-    emailTemplate: { method: 'POST', path: '/api/ai/email-template' },
-    summarizeMeeting: { method: 'POST', path: '/api/ai/summarize-meeting' },
-  },
-  // Add other endpoint categories as they are implemented
-};

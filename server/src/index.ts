@@ -1,28 +1,32 @@
 /**
- * @file Application entry point
- * @description Server initialization and process signal handling
+ * @file Server entry point
+ * @description Application startup and error handling
+ * @module index
  */
 
+import { config, validateConfig } from './config';
 import { startServer, stopServer } from './server';
-import { closeDatabase } from './utils/db';
 import { logger } from './utils/logger';
-import { validateConfig } from './config';
+import { closeDatabase } from './utils/db';
 
 /**
- * Main function
- * Entry point for the application
+ * Main application startup function
  */
 async function main(): Promise<void> {
   try {
     // Validate configuration
     validateConfig();
     
-    // Start the server
+    // Start server
     await startServer();
-    logger.info('Application started successfully');
+    
+    logger.info('AVEROX CRM server started successfully');
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`OpenAI API: ${config.externalServices.openai.hasValidKey ? 'Available' : 'Not configured'}`);
+    logger.info(`Stripe API: ${config.externalServices.stripe.hasValidKeys ? 'Available' : 'Not configured'}`);
     
     // Handle graceful shutdown
-    setupShutdownHandlers();
+    setupGracefulShutdown();
   } catch (error) {
     logger.error('Failed to start application', error);
     process.exit(1);
@@ -30,42 +34,49 @@ async function main(): Promise<void> {
 }
 
 /**
- * Set up process signal handlers for graceful shutdown
+ * Setup graceful shutdown handlers
  */
-function setupShutdownHandlers(): void {
-  // Handle termination signals
-  process.on('SIGTERM', gracefulShutdown);
-  process.on('SIGINT', gracefulShutdown);
-  
-  // Handle uncaught exceptions and unhandled rejections
-  process.on('uncaughtException', (error) => {
-    logger.error('Uncaught exception', error);
-    gracefulShutdown();
+function setupGracefulShutdown(): void {
+  // Handle process termination signals
+  process.on('SIGTERM', async () => {
+    logger.info('SIGTERM received. Shutting down gracefully');
+    await shutdown();
   });
   
-  process.on('unhandledRejection', (reason) => {
-    logger.error('Unhandled rejection', { reason });
-    gracefulShutdown();
+  process.on('SIGINT', async () => {
+    logger.info('SIGINT received. Shutting down gracefully');
+    await shutdown();
+  });
+  
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught exception', error);
+    shutdown(1);
+  });
+  
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled promise rejection', { reason, promise });
+    shutdown(1);
   });
 }
 
 /**
- * Perform graceful shutdown
+ * Shutdown function to close connections and exit
+ * @param exitCode Process exit code (default: 0)
  */
-async function gracefulShutdown(): Promise<void> {
-  logger.info('Received shutdown signal');
-  
+async function shutdown(exitCode: number = 0): Promise<void> {
   try {
-    // Stop the server
+    logger.info('Shutting down server...');
+    
+    // Stop HTTP server
     await stopServer();
     
     // Close database connections
     await closeDatabase();
     
-    // Clean up other resources if needed
-    
-    logger.info('Graceful shutdown completed');
-    process.exit(0);
+    logger.info('Shutdown complete. Exiting.');
+    process.exit(exitCode);
   } catch (error) {
     logger.error('Error during shutdown', error);
     process.exit(1);

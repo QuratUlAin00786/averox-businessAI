@@ -1,6 +1,6 @@
 /**
  * @file Error handler
- * @description Centralized error handling for the application
+ * @description Error handling middleware and utilities
  * @module utils/error-handler
  */
 
@@ -8,142 +8,154 @@ import { Request, Response, NextFunction } from 'express';
 import { logger } from './logger';
 
 /**
+ * Common error types
+ */
+export enum ErrorType {
+  VALIDATION = 'VALIDATION_ERROR',
+  NOT_FOUND = 'NOT_FOUND_ERROR',
+  UNAUTHORIZED = 'UNAUTHORIZED_ERROR',
+  FORBIDDEN = 'FORBIDDEN_ERROR',
+  DATABASE = 'DATABASE_ERROR',
+  EXTERNAL_SERVICE = 'EXTERNAL_SERVICE_ERROR',
+  INTERNAL = 'INTERNAL_ERROR',
+}
+
+/**
  * Custom API error class
- * Extends Error with additional properties
  */
 export class ApiError extends Error {
   statusCode: number;
-  code?: string;
-  
-  /**
-   * Create a new API error
-   * @param message Error message
-   * @param statusCode HTTP status code
-   * @param code Optional error code for client identification
-   */
-  constructor(message: string, statusCode: number = 500, code?: string) {
+  type: ErrorType;
+  details?: any;
+
+  constructor(message: string, statusCode: number, type: ErrorType, details?: any) {
     super(message);
-    this.name = this.constructor.name;
     this.statusCode = statusCode;
-    this.code = code;
-    
-    // Capture stack trace
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
+    this.type = type;
+    this.details = details;
+    this.name = 'ApiError';
+  }
+
+  static validation(message: string, details?: any): ApiError {
+    return new ApiError(message, 400, ErrorType.VALIDATION, details);
+  }
+
+  static notFound(message: string, details?: any): ApiError {
+    return new ApiError(message, 404, ErrorType.NOT_FOUND, details);
+  }
+
+  static unauthorized(message: string, details?: any): ApiError {
+    return new ApiError(message, 401, ErrorType.UNAUTHORIZED, details);
+  }
+
+  static forbidden(message: string, details?: any): ApiError {
+    return new ApiError(message, 403, ErrorType.FORBIDDEN, details);
+  }
+
+  static database(message: string, details?: any): ApiError {
+    return new ApiError(message, 500, ErrorType.DATABASE, details);
+  }
+
+  static externalService(message: string, details?: any): ApiError {
+    return new ApiError(message, 502, ErrorType.EXTERNAL_SERVICE, details);
+  }
+
+  static internal(message: string, details?: any): ApiError {
+    return new ApiError(message, 500, ErrorType.INTERNAL, details);
   }
 }
 
 /**
- * Async error handler for route controllers
- * Wraps async route handlers to catch errors
- * @param fn Async route handler function
- * @returns Wrapped route handler that catches errors
+ * Async error handler wrapper for route handlers
+ * Catches errors in async route handlers and passes them to the error middleware
+ * 
+ * @param fn The route handler function
+ * @returns Wrapped route handler
  */
-export const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
+export const asyncHandler = (
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
+) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
 };
 
 /**
- * Error handler middleware
- * Central error handling for Express
+ * Not found handler middleware
+ * This should be applied after all routes
+ * 
+ * @param req Express request
+ * @param res Express response
+ * @param next Express next function
+ */
+export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {
+  const error = ApiError.notFound(`Resource not found: ${req.method} ${req.originalUrl}`);
+  next(error);
+};
+
+/**
+ * Error handling middleware
+ * This should be the last middleware in the chain
+ * 
  * @param err Error object
  * @param req Express request
  * @param res Express response
  * @param next Express next function
  */
-export const errorMiddleware = (err: any, req: Request, res: Response, next: NextFunction) => {
-  // Set default status code
-  const statusCode = err.statusCode || 500;
-  
-  // Determine error details to log
-  const errorDetails = {
+export const errorMiddleware = (
+  err: Error | ApiError,
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  // Default values
+  let statusCode = 500;
+  let errorType = ErrorType.INTERNAL;
+  let message = 'Internal server error';
+  let details = undefined;
+
+  // If this is our ApiError, use its properties
+  if (err instanceof ApiError) {
+    statusCode = err.statusCode;
+    errorType = err.type;
+    message = err.message;
+    details = err.details;
+  } else {
+    // For other errors, just use the message
+    message = err.message || message;
+  }
+
+  // Log the error with appropriate level
+  const logData = {
+    type: errorType,
     path: req.path,
     method: req.method,
     statusCode,
-    message: err.message,
-    code: err.code,
-    stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
+    error: err.stack || err.message,
+    requestId: req.headers['x-request-id'] || '',
+    userId: req.user?.id || null,
   };
-  
-  // Log the error
+
   if (statusCode >= 500) {
-    logger.error('Server error', errorDetails);
-  } else {
-    logger.warn('Client error', errorDetails);
+    logger.error(`Server error: ${message}`, logData);
+  } else if (statusCode >= 400) {
+    logger.warn(`Client error: ${message}`, logData);
   }
-  
-  // Prepare response object
-  const errorResponse: {
-    success: boolean;
-    error: string;
-    message: string;
-    code?: string;
-    stack?: string;
-  } = {
+
+  // Send the response
+  const errorResponse = {
+    error: {
+      type: errorType,
+      message,
+      ...(details && { details }),
+    },
     success: false,
-    error: statusCode >= 500 ? 'Server Error' : err.name || 'Request Error',
-    message: err.message,
-    code: err.code,
   };
-  
-  // Add stack trace in development
-  if (process.env.NODE_ENV !== 'production') {
-    errorResponse.stack = err.stack;
+
+  // Only include stack trace in development environment
+  if (process.env.NODE_ENV !== 'production' && err.stack) {
+    errorResponse.error['stack'] = err.stack.split('\n');
   }
-  
-  // Send error response
+
   res.status(statusCode).json(errorResponse);
-};
-
-/**
- * 404 Not Found handler
- * Handles requests to non-existent routes
- * @param req Express request
- * @param res Express response
- * @param next Express next function
- */
-export const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
-  // Skip for non-API routes (let Vite or static files handler deal with it)
-  if (!req.path.startsWith('/api/')) {
-    return next();
-  }
-  
-  // Log 404 error
-  logger.warn(`Route not found: ${req.method} ${req.path}`);
-  
-  // Send 404 response
-  res.status(404).json({
-    success: false,
-    error: 'Not Found',
-    message: `The requested resource does not exist: ${req.path}`,
-  });
-};
-
-/**
- * Controller error handler
- * Helper function to handle errors in controllers
- * @param res Express response object
- * @param error Error to handle
- */
-export const handleControllerError = (res: Response, error: any) => {
-  if (error instanceof ApiError) {
-    // Known API error
-    return res.status(error.statusCode).json({
-      success: false,
-      error: error.name,
-      message: error.message,
-      code: error.code
-    });
-  }
-  
-  // Log unexpected errors
-  logger.error('Unexpected controller error', error);
-  
-  // Generic error response
-  res.status(500).json({
-    success: false,
-    error: 'Server Error',
-    message: 'An unexpected error occurred'
-  });
 };

@@ -1,155 +1,121 @@
 /**
- * @file Configuration
- * @description Central configuration for the application
+ * @file Configuration module
+ * @description Centralized application configuration
  * @module config
  */
 
-import dotenv from 'dotenv';
-import path from 'path';
-
 // Load environment variables
-dotenv.config({ path: path.join(process.cwd(), '.env') });
+import dotenv from 'dotenv';
+dotenv.config();
 
-/**
- * Get a required environment variable
- * @param key Environment variable name
- * @returns Environment variable value
- * @throws Error if environment variable is not set
- */
-function requiredEnv(key: string): string {
-  const value = process.env[key];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value;
-}
-
-/**
- * Get an optional environment variable
- * @param key Environment variable name
- * @param defaultValue Default value if not set
- * @returns Environment variable value or default
- */
-function optionalEnv(key: string, defaultValue: string): string {
+// Utility function to get environment variables with defaults
+function getEnv(key: string, defaultValue: string = ''): string {
   return process.env[key] || defaultValue;
 }
 
-/**
- * Application configuration
- */
-export const config: {
-  server: {
-    port: string | number;
-    env: string;
-    isProduction: boolean;
-  };
-  database: {
-    url: string;
-  };
-  auth: {
-    sessionSecret: string;
-    cookieMaxAge: number;
-  };
-  apis: {
-    stripe: {
-      secretKey: string;
-      webhookSecret: string;
-    };
-    openai: {
-      apiKey: string;
-      defaultModel: string;
-    };
-    sendgrid: {
-      apiKey: string;
-      fromEmail: string;
-    };
-  };
-  security: {
-    corsOrigins: string[];
-    bcryptRounds: number;
-  };
-  features: {
-    openAiIntegration: boolean;
-    stripeIntegration: boolean;
-    emailNotifications: boolean;
-  };
-  logs: {
-    level: string;
-  };
-} = {
-  server: {
-    port: process.env.PORT || 5000,
-    env: process.env.NODE_ENV || 'development',
-    isProduction: process.env.NODE_ENV === 'production',
+// Utility function to get boolean environment variables
+function getBoolEnv(key: string, defaultValue: boolean = false): boolean {
+  const value = process.env[key];
+  if (value === undefined) return defaultValue;
+  return value.toLowerCase() === 'true';
+}
+
+// Utility function to get numeric environment variables
+function getNumEnv(key: string, defaultValue: number): number {
+  const value = process.env[key];
+  if (value === undefined) return defaultValue;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? defaultValue : parsed;
+}
+
+// Server configuration
+const serverConfig = {
+  port: getNumEnv('PORT', 3000),
+  host: getEnv('HOST', '0.0.0.0'),
+  isProduction: getEnv('NODE_ENV', 'development') === 'production',
+  isDevelopment: getEnv('NODE_ENV', 'development') === 'development',
+};
+
+// Database configuration
+const databaseConfig = {
+  url: getEnv('DATABASE_URL', ''),
+};
+
+// Authentication configuration
+const authConfig = {
+  sessionSecret: getEnv('SESSION_SECRET', 'averox-crm-secret-key-change-in-production'),
+  cookieMaxAge: getNumEnv('COOKIE_MAX_AGE', 86400000), // 24 hours in milliseconds
+  passwordSaltRounds: getNumEnv('PASSWORD_SALT_ROUNDS', 10),
+};
+
+// External services configuration
+const externalServicesConfig = {
+  openai: {
+    apiKey: getEnv('OPENAI_API_KEY', ''),
+    hasValidKey: !!getEnv('OPENAI_API_KEY', ''),
+    defaultModel: getEnv('OPENAI_DEFAULT_MODEL', 'gpt-4o'),
+    timeout: getNumEnv('OPENAI_TIMEOUT', 30000),
   },
-  
-  database: {
-    url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/averox',
-  },
-  
-  auth: {
-    sessionSecret: optionalEnv('SESSION_SECRET', 'averox-session-secret'),
-    cookieMaxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-  },
-  
-  apis: {
-    stripe: {
-      secretKey: optionalEnv('STRIPE_SECRET_KEY', ''),
-      webhookSecret: optionalEnv('STRIPE_WEBHOOK_SECRET', ''),
-    },
-    
-    openai: {
-      apiKey: optionalEnv('OPENAI_API_KEY', ''),
-      defaultModel: optionalEnv('OPENAI_DEFAULT_MODEL', 'gpt-4o'),
-    },
-    
-    sendgrid: {
-      apiKey: optionalEnv('SENDGRID_API_KEY', ''),
-      fromEmail: optionalEnv('SENDGRID_FROM_EMAIL', 'noreply@averox-crm.com'),
-    },
-  },
-  
-  security: {
-    corsOrigins: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['http://localhost:5000'],
-    bcryptRounds: parseInt(optionalEnv('BCRYPT_ROUNDS', '10')),
-  },
-  
-  features: {
-    openAiIntegration: optionalEnv('FEATURE_OPENAI_INTEGRATION', 'true') === 'true',
-    stripeIntegration: optionalEnv('FEATURE_STRIPE_INTEGRATION', 'true') === 'true',
-    emailNotifications: optionalEnv('FEATURE_EMAIL_NOTIFICATIONS', 'true') === 'true',
-  },
-  
-  logs: {
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  stripe: {
+    secretKey: getEnv('STRIPE_SECRET_KEY', ''),
+    publicKey: getEnv('VITE_STRIPE_PUBLIC_KEY', ''),
+    hasValidKeys: !!(getEnv('STRIPE_SECRET_KEY', '') && getEnv('VITE_STRIPE_PUBLIC_KEY', '')),
+    webhookSecret: getEnv('STRIPE_WEBHOOK_SECRET', ''),
   },
 };
 
+// Logging configuration
+const logsConfig = {
+  level: getEnv('LOG_LEVEL', 'info'),
+  showTimestamp: getBoolEnv('LOG_SHOW_TIMESTAMP', true),
+  showColors: getBoolEnv('LOG_SHOW_COLORS', true),
+};
+
+// Email configuration
+const emailConfig = {
+  provider: getEnv('EMAIL_PROVIDER', 'sendgrid'),
+  fromEmail: getEnv('EMAIL_FROM', 'no-reply@averox-crm.com'),
+  fromName: getEnv('EMAIL_FROM_NAME', 'AVEROX CRM'),
+  sendgridApiKey: getEnv('SENDGRID_API_KEY', ''),
+};
+
+// File uploads configuration
+const uploadsConfig = {
+  maxSize: getNumEnv('UPLOAD_MAX_SIZE', 5 * 1024 * 1024), // 5MB
+  allowedTypes: getEnv('UPLOAD_ALLOWED_TYPES', 'image/jpeg,image/png,image/gif,application/pdf').split(','),
+  storageType: getEnv('UPLOAD_STORAGE_TYPE', 'local'), // 'local', 's3', etc.
+};
+
+// Consolidated configuration object
+export const config = {
+  server: serverConfig,
+  database: databaseConfig,
+  auth: authConfig,
+  externalServices: externalServicesConfig,
+  logs: logsConfig,
+  email: emailConfig,
+  uploads: uploadsConfig,
+};
+
 /**
- * Validate critical configuration
- * Ensure required values are set
+ * Validate critical configuration settings
+ * @throws Error if a critical configuration is missing
  */
 export function validateConfig(): void {
-  // Check database URL
+  const criticalErrors: string[] = [];
+  
+  // Database is required
   if (!config.database.url) {
-    throw new Error('Database URL is required');
+    criticalErrors.push('DATABASE_URL is not set');
   }
   
-  // Check session secret
-  if (!config.auth.sessionSecret) {
-    throw new Error('Session secret is required');
+  // Session secret should be changed in production
+  if (config.server.isProduction && config.auth.sessionSecret === 'averox-crm-secret-key-change-in-production') {
+    criticalErrors.push('Default SESSION_SECRET is being used in production');
   }
   
-  // Validate enabled feature dependencies
-  if (config.features.stripeIntegration && !config.apis.stripe.secretKey) {
-    throw new Error('Stripe integration is enabled but secret key is missing');
-  }
-  
-  if (config.features.openAiIntegration && !config.apis.openai.apiKey) {
-    throw new Error('OpenAI integration is enabled but API key is missing');
-  }
-  
-  if (config.features.emailNotifications && !config.apis.sendgrid.apiKey) {
-    throw new Error('Email notifications are enabled but SendGrid API key is missing');
+  // Throw error if any critical errors were found
+  if (criticalErrors.length > 0) {
+    throw new Error(`Configuration errors: ${criticalErrors.join(', ')}`);
   }
 }
