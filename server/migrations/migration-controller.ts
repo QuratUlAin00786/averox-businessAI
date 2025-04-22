@@ -899,16 +899,17 @@ export class MigrationController {
           data = JSON.parse(file.buffer.toString('utf8'));
           if (!Array.isArray(data)) {
             // If root is not an array, try to extract records collection
-            const possibleArrayKeys = Object.keys(data).filter(key => 
-              Array.isArray(data[key]) && data[key].length > 0
+            const dataAsRecord = data as Record<string, unknown>;
+            const possibleArrayKeys = Object.keys(dataAsRecord).filter(key => 
+              Array.isArray(dataAsRecord[key]) && (dataAsRecord[key] as unknown[]).length > 0
             );
             
             if (possibleArrayKeys.length > 0) {
               // Use the largest array found
               const largestArrayKey = possibleArrayKeys.reduce((prev, curr) => 
-                data[prev].length > data[curr].length ? prev : curr
+                (dataAsRecord[prev] as unknown[]).length > (dataAsRecord[curr] as unknown[]).length ? prev : curr
               );
-              data = data[largestArrayKey];
+              data = dataAsRecord[largestArrayKey] as any[];
             } else {
               // Wrap single object in array
               data = [data];
@@ -1022,14 +1023,16 @@ export class MigrationController {
             // Apply default field mappings
             for (const [targetField, sourceField] of Object.entries(mapping.defaultMapping)) {
               // Check for direct field match
-              if (record[sourceField]) {
-                mappedRecord[targetField] = record[sourceField];
+              // Use type assertion to handle unknown sourceField
+              const sourceFieldKey = sourceField as string;
+              if (record[sourceFieldKey]) {
+                mappedRecord[targetField] = record[sourceFieldKey];
               } else {
                 // Try alternative field names (case insensitive)
                 const sourceKeys = Object.keys(record);
                 const matchedKey = sourceKeys.find(k => 
-                  k.toLowerCase() === sourceField.toLowerCase() ||
-                  k.toLowerCase().replace(/[_\s]/g, '') === sourceField.toLowerCase().replace(/[_\s]/g, '')
+                  k.toLowerCase() === sourceFieldKey.toLowerCase() ||
+                  k.toLowerCase().replace(/[_\s]/g, '') === sourceFieldKey.toLowerCase().replace(/[_\s]/g, '')
                 );
                 
                 if (matchedKey) {
@@ -1064,11 +1067,11 @@ export class MigrationController {
           
           // Simulate processing time
           await new Promise(resolve => setTimeout(resolve, 1500));
-        } catch (error) {
+        } catch (error: unknown) {
           console.error(`Error importing ${entityType}:`, error);
           job.errors.push({
             entity: entityType,
-            message: error.message,
+            message: error instanceof Error ? error.message : 'Unknown error',
             time: new Date()
           });
         }
