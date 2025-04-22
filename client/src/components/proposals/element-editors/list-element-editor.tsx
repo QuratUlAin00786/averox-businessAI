@@ -111,7 +111,7 @@ export function ListElementEditor({ element, onChange, disabled = false }: ListE
               No items. Add items using the form below.
             </div>
           ) : (
-            items.map((item, index) => (
+            items.map((item: string, index: number) => (
               <div key={index} className="flex items-center gap-2">
                 <div className="flex-shrink-0 text-gray-400 cursor-grab">
                   <GripVertical className="h-4 w-4" />

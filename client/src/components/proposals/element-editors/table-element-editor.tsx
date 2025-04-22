@@ -50,7 +50,7 @@ export function TableElementEditor({ element, onChange, disabled = false }: Tabl
 
   const handleAddColumn = () => {
     const newHeaders = [...headers, `Column ${headers.length + 1}`];
-    const newRows = rows.map(row => [...row, `Cell`]);
+    const newRows = rows.map((row: string[]) => [...row, `Cell`]);
     updateTable(newHeaders, newRows);
   };
 
@@ -60,7 +60,7 @@ export function TableElementEditor({ element, onChange, disabled = false }: Tabl
     const newHeaders = [...headers];
     newHeaders.splice(colIndex, 1);
     
-    const newRows = rows.map(row => {
+    const newRows = rows.map((row: string[]) => {
       const newRow = [...row];
       newRow.splice(colIndex, 1);
       return newRow;
@@ -70,7 +70,7 @@ export function TableElementEditor({ element, onChange, disabled = false }: Tabl
   };
 
   const handleAddRow = () => {
-    const newRow = headers.map((_, index) => `Cell ${rows.length + 1}-${index + 1}`);
+    const newRow = headers.map((_: string, index: number) => `Cell ${rows.length + 1}-${index + 1}`);
     const newRows = [...rows, newRow];
     updateTable(headers, newRows);
   };
@@ -92,7 +92,7 @@ export function TableElementEditor({ element, onChange, disabled = false }: Tabl
             <thead>
               <tr>
                 <th className="p-1 w-10"></th>
-                {headers.map((header, colIndex) => (
+                {headers.map((header: string, colIndex: number) => (
                   <th key={colIndex} className="p-1">
                     <div className="flex gap-1">
                       <Input
@@ -128,7 +128,7 @@ export function TableElementEditor({ element, onChange, disabled = false }: Tabl
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, rowIndex) => (
+              {rows.map((row: string[], rowIndex: number) => (
                 <tr key={rowIndex}>
                   <td className="p-1">
                     <Button
@@ -141,7 +141,7 @@ export function TableElementEditor({ element, onChange, disabled = false }: Tabl
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </td>
-                  {row.map((cell, colIndex) => (
+                  {row.map((cell: string, colIndex: number) => (
                     <td key={colIndex} className="p-1">
                       <Input
                         value={cell}
