@@ -22,7 +22,7 @@ interface DraggableElementListProps {
   onDeleteElement: (elementId: number) => void;
 }
 
-export function DraggableElementList({
+export default function DraggableElementList({
   elements,
   selectedElementId,
   isReadOnly,

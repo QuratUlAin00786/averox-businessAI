@@ -21,7 +21,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { apiRequestJson } from '@/lib/queryClient';
 import { ElementEditorFactory } from './element-editors/element-editor-factory';
-import { DraggableElementList } from './dnd/draggable-element-list';
+import DraggableElementList from './dnd/draggable-element-list';
 import { 
   Loader2, 
   Save, 
@@ -511,14 +511,23 @@ export function ProposalEditor({
       elementType: type,
       content: jsonContent, // Send serialized content to match API expectations
       isActive: true,
+      sortOrder: elements.length // Add at the end
     };
     
     console.log("Element data being sent:", elementData);
     addElementMutation.mutate(elementData, {
       onSuccess: (data) => {
         console.log("Element successfully added:", data);
-        // If the data is in standardized format, it will be properly extracted
-        // in the addElementMutation function
+        // Select the newly created element
+        setSelectedElement(data);
+        // If we're not on the elements tab, switch to it to show what was created
+        if (activeTab !== 'elements') {
+          setActiveTab('elements');
+        }
+        toast({
+          title: "Element added",
+          description: `Added new ${type} element to your proposal`
+        });
       }
     });
   };
