@@ -1070,13 +1070,19 @@ export function ProposalEditor({
                         Collaborators can view or edit this proposal based on their assigned role.
                         Share this proposal with team members to work together on it.
                       </p>
+                      <Alert className="mb-4 bg-amber-50 text-amber-800 border-amber-200">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          Use the "Add New Collaborator" section above to select users and assign roles.
+                        </AlertDescription>
+                      </Alert>
                       <div className="flex flex-col items-center">
                         <Button 
                           variant="outline" 
                           className="mb-2 w-full md:w-auto"
                           onClick={() => {
                             // Focus the user select dropdown
-                            const userSelect = document.querySelector('[id^="radix-"][id*="-trigger-"]') as HTMLElement;
+                            const userSelect = document.getElementById('collaborator-user-select') as HTMLElement;
                             if (userSelect) {
                               userSelect.click();
                             }
@@ -1186,6 +1192,12 @@ export function ProposalEditor({
                                 Comments allow team members to discuss this proposal, provide feedback, 
                                 and keep a record of important conversations.
                               </p>
+                              <Alert className="mb-4 bg-amber-50 text-amber-800 border-amber-200">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>
+                                  Use the comment box at the bottom of this panel to add comments.
+                                </AlertDescription>
+                              </Alert>
                               <div className="flex flex-col items-center">
                                 <Button 
                                   variant="outline" 
