@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { apiRequestJson } from '@/lib/queryClient';
+import { ElementEditorFactory } from './element-editors/element-editor-factory';
+import { DraggableElementList } from './dnd/draggable-element-list';
 import { 
   Loader2, 
   Save, 
@@ -43,8 +45,6 @@ import {
 
 // Import element renderer component
 import { ElementPreview, ElementRenderer } from './proposal-element-renderer';
-import { ElementEditorFactory } from './element-editors/element-editor-factory';
-import { DraggableElementList } from './dnd/draggable-element-list';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
