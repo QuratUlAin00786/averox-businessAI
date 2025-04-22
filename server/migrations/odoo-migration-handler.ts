@@ -41,10 +41,10 @@ export class OdooMigrationHandler implements MigrationHandler {
       
       // Simulate successful connection
       return { success: true, message: 'Successfully connected to Odoo API' };
-    } catch (error) {
+    } catch (error: unknown) {
       return { 
         success: false, 
-        message: `Failed to connect to Odoo API: ${error.message}` 
+        message: `Failed to connect to Odoo API: ${error instanceof Error ? error.message : 'Unknown error'}` 
       };
     }
   }

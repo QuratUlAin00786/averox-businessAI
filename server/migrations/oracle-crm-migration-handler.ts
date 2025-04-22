@@ -41,10 +41,10 @@ export class OracleCRMMigrationHandler implements MigrationHandler {
       
       // Simulate successful connection
       return { success: true, message: 'Successfully connected to Oracle CRM API' };
-    } catch (error) {
+    } catch (error: unknown) {
       return { 
         success: false, 
-        message: `Failed to connect to Oracle CRM API: ${error.message}` 
+        message: `Failed to connect to Oracle CRM API: ${error instanceof Error ? error.message : 'Unknown error'}` 
       };
     }
   }

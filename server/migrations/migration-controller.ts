@@ -4,6 +4,18 @@ import { MigrationHandler, MigrationJob, MigrationEntityMap, MigrationFieldMap }
 import { OdooMigrationHandler } from './odoo-migration-handler';
 import { OracleCRMMigrationHandler } from './oracle-crm-migration-handler';
 
+// Define custom session type that includes our CRM connections
+declare module 'express-session' {
+  interface SessionData {
+    crmConnections?: Record<string, any>;
+    odooAuth?: Record<string, any>;
+    oracleAuth?: Record<string, any>;
+    salesforceAuth?: Record<string, any>;
+    hubspotAuth?: Record<string, any>;
+    [key: string]: any;
+  }
+}
+
 /**
  * Migration controller handling the data migration process from various CRM systems
  */
@@ -47,12 +59,12 @@ export class MigrationController {
         success: true,
         authUrl
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error initiating auth:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Failed to initiate authentication process',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -87,9 +99,10 @@ export class MigrationController {
       
       // Redirect to migration UI with success
       res.redirect('/settings/data-migration?auth=success&provider=' + crmType);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Auth callback error:', error);
-      res.redirect('/settings/data-migration?auth=error&message=' + encodeURIComponent(error.message));
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.redirect('/settings/data-migration?auth=error&message=' + encodeURIComponent(errorMessage));
     }
   }
   
@@ -130,11 +143,11 @@ export class MigrationController {
         if (initialized) {
           connectionTest = await handler.testConnection();
         }
-      } catch (connErr) {
+      } catch (connErr: unknown) {
         console.error(`Connection test error for ${crmType}:`, connErr);
         return res.status(401).json({
           success: false,
-          error: `Connection failed: ${connErr.message || 'Unknown error'}`
+          error: `Connection failed: ${connErr instanceof Error ? connErr.message : 'Unknown error'}`
         });
       }
       
@@ -230,8 +243,9 @@ export class MigrationController {
               authenticated: true
             });
           }
-        } catch (connErr) {
-          console.warn(`Connection error getting entities for ${crmType}:`, connErr);
+        } catch (connErr: unknown) {
+          console.warn(`Connection error getting entities for ${crmType}:`, 
+            connErr instanceof Error ? connErr.message : 'Unknown error');
           // Continue with fallback entities
         }
       }
@@ -316,8 +330,9 @@ export class MigrationController {
               });
             }
           }
-        } catch (connErr) {
-          console.warn(`Connection error analyzing fields for ${crmType}:`, connErr);
+        } catch (connErr: unknown) {
+          console.warn(`Connection error analyzing fields for ${crmType}:`, 
+            connErr instanceof Error ? connErr.message : 'Unknown error');
           // Continue with fallback mappings
         }
       }
@@ -479,12 +494,12 @@ export class MigrationController {
         success: true,
         status: jobStatus
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error getting migration status:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Failed to get migration status',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -562,12 +577,12 @@ export class MigrationController {
         migrationId,
         message: 'File import started'
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error importing from file:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Failed to import from file',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -701,7 +716,7 @@ export class MigrationController {
     }
     
     // Base mappings for common entities if no handler available or handler failed
-    const baseMappings = {
+    const baseMappings: Record<string, MigrationFieldMap> = {
       contacts: {
         sourceFields: [
           { id: 'firstName', name: 'First Name', type: 'string' },
@@ -923,7 +938,10 @@ export class MigrationController {
       } catch (error) {
         console.error('Error parsing file:', error);
         job.status = 'failed';
-        job.error = `Failed to parse file: ${error.message}`;
+        job.errors.push({
+          message: `Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          time: new Date()
+        });
         job.updatedTime = new Date();
         this.migrationJobs.set(migrationId, job);
         return;
@@ -1073,12 +1091,15 @@ export class MigrationController {
         this.migrationJobs.delete(migrationId);
       }, 24 * 60 * 60 * 1000);
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error processing file import:', error);
       const job = this.migrationJobs.get(migrationId);
       if (job) {
         job.status = 'failed';
-        job.error = error.message;
+        job.errors.push({
+          message: `File import failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          time: new Date()
+        });
         job.updatedTime = new Date();
         this.migrationJobs.set(migrationId, job);
       }
@@ -1213,13 +1234,18 @@ export class MigrationController {
         this.migrationJobs.delete(jobId);
       }, 24 * 60 * 60 * 1000);
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error in migration process:', error);
       const job = this.migrationJobs.get(jobId);
-      job.status = 'failed';
-      job.error = error.message;
-      job.updatedTime = new Date();
-      this.migrationJobs.set(jobId, job);
+      if (job) {
+        job.status = 'failed';
+        job.errors.push({
+          message: `Migration process failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          time: new Date()
+        });
+        job.updatedTime = new Date();
+        this.migrationJobs.set(jobId, job);
+      }
     }
   }
   
