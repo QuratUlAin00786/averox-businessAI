@@ -19,6 +19,17 @@ export class MigrationController {
   }
   
   /**
+   * Get the appropriate migration handler for the specified CRM type
+   */
+  private getMigrationHandler(crmType: string): MigrationHandler | null {
+    const handlerKey = crmType.toLowerCase();
+    if (this.migrationHandlers.has(handlerKey)) {
+      return this.migrationHandlers.get(handlerKey) || null;
+    }
+    return null;
+  }
+  
+  /**
    * Initiates the authentication process with the source CRM
    */
   async initiateAuth(req: Request, res: Response) {
@@ -93,24 +104,84 @@ export class MigrationController {
         return res.status(400).json({ error: 'CRM type and API key are required' });
       }
       
-      // Here we would validate the API key with the respective CRM provider
-      // For this implementation, we'll simulate a successful validation
+      // Get the appropriate handler
+      const handler = this.getMigrationHandler(crmType);
       
-      // Store API creds securely - in real implementation, encrypt these values
+      if (!handler) {
+        return res.status(400).json({
+          success: false,
+          error: `Unsupported CRM type: ${crmType}`
+        });
+      }
+      
+      // Create config object with the provided credentials
+      const config: Record<string, string> = { 
+        apiKey, 
+        apiSecret: apiSecret || '',
+        domain: domain || ''
+      };
+      
+      // Initialize handler with credentials and test connection
+      let initialized = false;
+      let connectionTest = { success: false, message: 'Connection not tested' };
+      
+      try {
+        initialized = await handler.initialize(config);
+        if (initialized) {
+          connectionTest = await handler.testConnection();
+        }
+      } catch (connErr) {
+        console.error(`Connection test error for ${crmType}:`, connErr);
+        return res.status(401).json({
+          success: false,
+          error: `Connection failed: ${connErr.message || 'Unknown error'}`
+        });
+      }
+      
+      if (!initialized || !connectionTest.success) {
+        return res.status(401).json({
+          success: false,
+          error: connectionTest.message || 'Failed to validate API credentials'
+        });
+      }
+      
+      // Store auth info in session with enhanced data structure
       if (req.session) {
-        req.session[`${crmType}Auth`] = { apiKey, apiSecret, domain };
+        // Create crmConnections object if it doesn't exist
+        if (!req.session.crmConnections) {
+          req.session.crmConnections = {};
+        }
+        
+        // Store connection details with metadata
+        req.session.crmConnections[crmType] = {
+          config,
+          authenticated: true,
+          timestamp: new Date().toISOString(),
+          connectionInfo: {
+            status: 'connected',
+            lastChecked: new Date().toISOString()
+          }
+        };
+        
+        // Maintain backward compatibility
+        req.session[`${crmType}Auth`] = config;
       }
       
       res.status(200).json({
         success: true,
-        message: 'API key validated successfully'
+        message: 'API key validated successfully',
+        connectionInfo: {
+          status: 'connected',
+          provider: crmType,
+          timestamp: new Date().toISOString()
+        }
       });
     } catch (error) {
       console.error('API key validation error:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Failed to validate API key',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -123,24 +194,64 @@ export class MigrationController {
       const { crmType } = req.body;
       
       if (!crmType) {
-        return res.status(400).json({ error: 'CRM type is required' });
+        return res.status(400).json({ 
+          success: false,
+          error: 'CRM type is required' 
+        });
       }
       
-      // TEMPORARILY BYPASSING AUTHENTICATION FOR TESTING
-      // Get available entities for migration
+      // Check if authenticated to the CRM using the enhanced session structure
+      let authConfig = null;
+      
+      if (req.session) {
+        // First try the new structure
+        if (req.session.crmConnections && req.session.crmConnections[crmType]) {
+          authConfig = req.session.crmConnections[crmType].config;
+        } 
+        // Fallback to the old structure
+        else if (req.session[`${crmType}Auth`]) {
+          authConfig = req.session[`${crmType}Auth`];
+        }
+      }
+      
+      // Get handler for this CRM type
+      const handler = this.getMigrationHandler(crmType);
+      
+      // If we have a handler and auth config, try to get real entities
+      if (handler && authConfig) {
+        try {
+          // Initialize connection with stored credentials
+          const initialized = await handler.initialize(authConfig);
+          if (initialized) {
+            const availableEntities = await handler.getAvailableEntities();
+            return res.status(200).json({
+              success: true,
+              entities: availableEntities,
+              authenticated: true
+            });
+          }
+        } catch (connErr) {
+          console.warn(`Connection error getting entities for ${crmType}:`, connErr);
+          // Continue with fallback entities
+        }
+      }
+      
+      // Fallback: Get available entities from our predefined list
       const entities = await this.getEntitiesForCrm(crmType);
       
-      // Ensure consistent response format
+      // Include metadata about authentication status
       res.status(200).json({
         success: true,
-        entities: Array.isArray(entities) ? entities : []
+        entities: Array.isArray(entities) ? entities : [],
+        authenticated: !!authConfig,
+        note: !authConfig ? 'Using sample entity list. Connect to CRM for actual data.' : undefined
       });
     } catch (error) {
       console.error('Error getting available entities:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Failed to get available entities',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -182,19 +293,76 @@ export class MigrationController {
       const { crmType, entityTypes, fieldMappings } = req.body;
       
       if (!crmType || !entityTypes || !fieldMappings) {
-        return res.status(400).json({ error: 'Missing required parameters' });
+        return res.status(400).json({ 
+          success: false,
+          error: 'Missing required parameters' 
+        });
       }
       
-      // Check if authenticated to the CRM
-      if (!req.session || !req.session[`${crmType}Auth`]) {
-        return res.status(401).json({ error: 'Authentication required for this CRM' });
+      // Check if authenticated to the CRM using the enhanced session structure
+      let authConfig = null;
+      
+      if (req.session) {
+        // First try the new structure
+        if (req.session.crmConnections && req.session.crmConnections[crmType]) {
+          authConfig = req.session.crmConnections[crmType].config;
+        } 
+        // Fallback to the old structure
+        else if (req.session[`${crmType}Auth`]) {
+          authConfig = req.session[`${crmType}Auth`];
+        }
+      }
+      
+      if (!authConfig) {
+        return res.status(401).json({ 
+          success: false,
+          error: 'Authentication required for this CRM',
+          hint: 'Please connect to the CRM before starting migration' 
+        });
+      }
+      
+      // Get the handler for this CRM type
+      const handler = this.getMigrationHandler(crmType);
+      if (!handler) {
+        return res.status(400).json({
+          success: false,
+          error: `Unsupported CRM type: ${crmType}`
+        });
+      }
+      
+      // Verify connection is still valid before starting migration
+      try {
+        const initialized = await handler.initialize(authConfig);
+        if (!initialized) {
+          return res.status(401).json({
+            success: false,
+            error: 'Failed to initialize connection with saved credentials', 
+            hint: 'Please reconnect to the CRM'
+          });
+        }
+        
+        const connectionTest = await handler.testConnection();
+        if (!connectionTest.success) {
+          return res.status(401).json({
+            success: false,
+            error: connectionTest.message || 'Connection test failed',
+            hint: 'Please reconnect to the CRM'
+          });
+        }
+      } catch (connErr) {
+        return res.status(401).json({
+          success: false,
+          error: `Connection error: ${connErr instanceof Error ? connErr.message : 'Unknown error'}`,
+          hint: 'Please reconnect to the CRM'
+        });
       }
       
       // Generate a unique job ID for this migration
       const jobId = `migration-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       
-      // Initialize the migration job
+      // Initialize the migration job with improved job structure
       this.migrationJobs.set(jobId, {
+        id: jobId,
         status: 'initializing',
         progress: 0,
         errors: [],
@@ -206,23 +374,33 @@ export class MigrationController {
         completed: {
           total: 0,
           byEntity: {}
+        },
+        userId: req.user?.id || 0, // Track which user initiated this migration
+        migrationStats: {
+          recordsProcessed: 0,
+          recordsCreated: 0,
+          recordsUpdated: 0,
+          recordsSkipped: 0,
+          recordsFailed: 0
         }
       });
       
       // Start the migration process in background
-      this.processMigrationInBackground(jobId, crmType, entityTypes, fieldMappings, req.session[`${crmType}Auth`]);
+      this.processMigrationInBackground(jobId, crmType, entityTypes, fieldMappings, authConfig);
       
       res.status(200).json({
         success: true,
         jobId,
-        message: 'Migration job started'
+        message: 'Migration job started',
+        status: 'initializing',
+        startTime: new Date().toISOString()
       });
     } catch (error) {
       console.error('Error starting migration:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Failed to start migration',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
