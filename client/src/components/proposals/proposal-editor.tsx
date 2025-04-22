@@ -868,15 +868,32 @@ export function ProposalEditor({
                       <h3 className="font-medium">
                         Editing: {selectedElement.name}
                       </h3>
-                      {!isReadOnly && (
+                      <div className="flex space-x-2">
                         <Button 
                           size="sm" 
-                          onClick={handleSaveElement}
-                          disabled={isReadOnly}
+                          variant="outline"
+                          onClick={() => setSelectedElement(null)}
                         >
-                          <Save className="h-4 w-4 mr-2" /> Save Element
+                          <X className="h-4 w-4 mr-2" /> Close
                         </Button>
-                      )}
+                        {!isReadOnly && (
+                          <Button 
+                            size="sm" 
+                            onClick={handleSaveElement}
+                            disabled={updateElementMutation.isPending}
+                          >
+                            {updateElementMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-2" /> Save
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <div className="mb-4">
                       <label className="text-sm font-medium">Element Name</label>
@@ -891,6 +908,33 @@ export function ProposalEditor({
                       />
                       
                       {renderElementEditor()}
+                      
+                      {!isReadOnly && (
+                        <div className="flex justify-end space-x-2 pt-4 mt-4 border-t">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setSelectedElement(null)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            onClick={handleSaveElement}
+                            disabled={updateElementMutation.isPending}
+                          >
+                            {updateElementMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-2" /> Save Changes
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
