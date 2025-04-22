@@ -68,6 +68,23 @@ export class OracleCRMMigrationHandler implements MigrationHandler {
   }
 
   /**
+   * Analyze field mapping (for active connection)
+   */
+  async analyzeFieldMapping(entityType: string): Promise<MigrationFieldMap> {
+    // In a real implementation, this would fetch field metadata from Oracle CRM API
+    // and dynamically generate the mapping based on field types/relations
+    return this.getFieldMappings(entityType);
+  }
+  
+  /**
+   * Validate that an entity type exists in Oracle CRM
+   */
+  async validateEntity(entityType: string): Promise<boolean> {
+    const validEntities = ['Contact', 'Account', 'Lead', 'Opportunity', 'Campaign', 'Task', 'Activity', 'Product'];
+    return validEntities.includes(entityType);
+  }
+  
+  /**
    * Get field mappings for Oracle CRM entity types
    */
   async getFieldMappings(entityType: string): Promise<MigrationFieldMap> {

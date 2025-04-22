@@ -39,8 +39,10 @@ export interface MigrationHandler {
   testConnection(): Promise<{ success: boolean, message: string }>;
   getAvailableEntities(): Promise<MigrationEntityMap[]>;
   getFieldMappings(entityType: string): Promise<MigrationFieldMap>;
+  analyzeFieldMapping(entityType: string): Promise<MigrationFieldMap>;
   fetchData(entityType: string, options?: Record<string, any>): Promise<any[]>;
   transformData(entityType: string, sourceData: any[], fieldMapping: MigrationFieldMap): any[];
+  validateEntity(entityType: string): Promise<boolean>;
 }
 
 /**
@@ -50,6 +52,8 @@ export interface MigrationJob {
   id: string;
   status: 'initializing' | 'processing' | 'completed' | 'completed_with_errors' | 'failed';
   progress: number;   // 0 to 1
+  crmType: string;    // Source CRM type
+  entityTypes: string[]; // Entity types being migrated
   currentStep?: string;
   entitiesProcessed?: number;
   recordsCreated?: number;
@@ -61,6 +65,8 @@ export interface MigrationJob {
   startTime: Date;
   updatedTime?: Date;
   endTime?: Date;
+  userId?: number;     // User who initiated the migration
+  fieldMappings?: Record<string, any>; // Field mappings for each entity type
   fileDetails?: {
     name: string,
     size: number,
@@ -69,6 +75,13 @@ export interface MigrationJob {
   completed?: {
     total: number,
     byEntity: Record<string, number>
+  };
+  migrationStats?: {
+    recordsProcessed: number,
+    recordsCreated: number,
+    recordsUpdated: number,
+    recordsSkipped: number,
+    recordsFailed: number
   };
 }
 

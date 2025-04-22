@@ -264,23 +264,80 @@ export class MigrationController {
       const { crmType, entityTypes } = req.body;
       
       if (!crmType || !entityTypes || !Array.isArray(entityTypes)) {
-        return res.status(400).json({ error: 'CRM type and entity types are required' });
+        return res.status(400).json({ 
+          success: false,
+          error: 'CRM type and entity types are required' 
+        });
       }
       
-      // TEMPORARILY BYPASSING AUTHENTICATION FOR TESTING
-      // Generate field mappings between source CRM and AVEROX CRM
+      // Check if authenticated to the CRM using the enhanced session structure
+      let authConfig = null;
+      
+      if (req.session) {
+        // First try the new structure
+        if (req.session.crmConnections && req.session.crmConnections[crmType]) {
+          authConfig = req.session.crmConnections[crmType].config;
+        } 
+        // Fallback to the old structure
+        else if (req.session[`${crmType}Auth`]) {
+          authConfig = req.session[`${crmType}Auth`];
+        }
+      }
+      
+      // Get handler for this CRM type
+      const handler = this.getMigrationHandler(crmType);
+      
+      // If we have a handler and auth config, try to get real field mappings
+      if (handler && authConfig) {
+        try {
+          // Initialize connection with stored credentials
+          const initialized = await handler.initialize(authConfig);
+          if (initialized) {
+            // For each entity type, get fields and analyze mapping
+            const fieldMappings: Record<string, any> = {};
+            for (const entityType of entityTypes) {
+              try {
+                const mappingResult = await handler.analyzeFieldMapping(entityType);
+                if (mappingResult) {
+                  fieldMappings[entityType] = mappingResult;
+                }
+              } catch (entityError) {
+                console.warn(`Error analyzing fields for entity ${entityType}:`, entityError);
+                // Continue with next entity
+              }
+            }
+            
+            // If we got any mappings, return them
+            if (Object.keys(fieldMappings).length > 0) {
+              return res.status(200).json({
+                success: true,
+                fieldMappings,
+                authenticated: true
+              });
+            }
+          }
+        } catch (connErr) {
+          console.warn(`Connection error analyzing fields for ${crmType}:`, connErr);
+          // Continue with fallback mappings
+        }
+      }
+      
+      // Fallback: Get field mappings from our predefined settings
       const fieldMappings = await this.getFieldMappings(crmType, entityTypes);
       
+      // Include metadata about authentication status
       res.status(200).json({
         success: true,
-        fieldMappings
+        fieldMappings,
+        authenticated: !!authConfig,
+        note: !authConfig ? 'Using sample field mappings. Connect to CRM for actual field analysis.' : undefined
       });
     } catch (error) {
       console.error('Error analyzing field mappings:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Failed to analyze field mappings',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -473,15 +530,26 @@ export class MigrationController {
         id: migrationId,
         status: 'processing',
         progress: 0,
+        crmType: crmType,
+        entityTypes: entityTypes || [],
         currentStep: 'Analyzing file content',
         entitiesProcessed: 0,
         recordsCreated: 0,
         errors: [],
         startTime: new Date(),
+        updatedTime: new Date(),
+        userId: req.user?.id || 0,
         fileDetails: {
           name: fileName,
           size: fileData.size,
           type: contentType
+        },
+        migrationStats: {
+          recordsProcessed: 0,
+          recordsCreated: 0,
+          recordsUpdated: 0,
+          recordsSkipped: 0,
+          recordsFailed: 0
         }
       });
       
