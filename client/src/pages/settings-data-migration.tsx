@@ -386,8 +386,10 @@ export default function DataMigrationPage() {
         // Show any new errors that occurred
         if (statusData.errors && statusData.errors.length > lastLogCount) {
           const newErrors = statusData.errors.slice(lastLogCount);
-          newErrors.forEach(err => {
-            addToProcessingLog(`Error: ${err.message || 'Unknown error'}`);
+          newErrors.forEach((err: { message?: string, entity?: string, time?: Date }) => {
+            const errorMessage = err.message || 'Unknown error';
+            const entityContext = err.entity ? ` (in ${err.entity})` : '';
+            addToProcessingLog(`Error${entityContext}: ${errorMessage}`);
           });
           lastLogCount = statusData.errors.length;
         }
@@ -438,9 +440,18 @@ export default function DataMigrationPage() {
       return { success: true };
     },
     onSuccess: (data: any) => {
+      const status = data.status === 'completed_with_errors' 
+        ? 'completed with some warnings' 
+        : 'successfully completed';
+        
+      const recordsInfo = data.recordsCreated > 0
+        ? `${data.recordsCreated} records created` +
+          (data.recordsUpdated > 0 ? `, ${data.recordsUpdated} records updated` : '')
+        : 'No records were modified';
+      
       toast({
         title: "Migration Completed!",
-        description: `Successfully migrated data from ${selectedCrm?.name}`,
+        description: `Migration from ${selectedCrm?.name} ${status}. ${recordsInfo}.`,
         variant: "default"
       });
     },
@@ -557,8 +568,10 @@ export default function DataMigrationPage() {
           // Show any new errors that occurred
           if (statusData.errors && statusData.errors.length > lastLogCount) {
             const newErrors = statusData.errors.slice(lastLogCount);
-            newErrors.forEach(err => {
-              addToProcessingLog(`Error: ${err.message || 'Unknown error'}`);
+            newErrors.forEach((err: { message?: string, entity?: string, time?: Date }) => {
+              const errorMessage = err.message || 'Unknown error';
+              const entityContext = err.entity ? ` (in ${err.entity})` : '';
+              addToProcessingLog(`Error${entityContext}: ${errorMessage}`);
             });
             lastLogCount = statusData.errors.length;
           }
@@ -618,9 +631,22 @@ export default function DataMigrationPage() {
       }
     },
     onSuccess: (data: any) => {
+      const status = data.status === 'completed_with_errors' 
+        ? 'completed with some warnings' 
+        : 'successfully completed';
+        
+      const recordsInfo = data.recordsCreated > 0
+        ? `${data.recordsCreated} records created` +
+          (data.recordsUpdated > 0 ? `, ${data.recordsUpdated} records updated` : '')
+        : 'No records were modified';
+            
+      const entityCount = data.entitiesProcessed > 1 
+        ? `across ${data.entitiesProcessed} entity types` 
+        : '';
+        
       toast({
         title: "File Import Completed!",
-        description: `Successfully imported data from file with ${data.recordsCreated || 0} records created`,
+        description: `Import ${status}. ${recordsInfo} ${entityCount}.`,
         variant: "default"
       });
     },
