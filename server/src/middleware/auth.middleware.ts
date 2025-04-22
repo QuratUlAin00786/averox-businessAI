@@ -1,103 +1,162 @@
 /**
  * @file Authentication middleware
- * @description Handles authentication and authorization checks for routes
+ * @description Middleware for authentication and authorization
  * @module middleware/auth
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { ApiError } from '../utils/error-handler';
 import { logger } from '../utils/logger';
 
 /**
- * Middleware to check if user is authenticated
- * This attaches to routes that require authentication
+ * Check if user is authenticated
+ * @param req Express request
+ * @param res Express response
+ * @param next Express next function
  */
-export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
-  if (!req.isAuthenticated()) {
-    logger.warn('Unauthorized access attempt', { 
-      path: req.path, 
-      ip: req.ip 
-    });
-    return next(new ApiError('Not authenticated', 401));
+export function isAuthenticated(req: Request, res: Response, next: NextFunction): void {
+  if (req.isAuthenticated()) {
+    return next();
   }
-  next();
+  
+  logger.warn('Unauthorized access attempt', {
+    path: req.path,
+    method: req.method,
+    ip: req.ip
+  });
+  
+  res.status(401).json({
+    success: false,
+    error: 'Not authenticated'
+  });
 }
 
 /**
- * Middleware to check for specific user roles
+ * Check if user has admin role
+ * @param req Express request
+ * @param res Express response
+ * @param next Express next function
+ */
+export function isAdmin(req: Request, res: Response, next: NextFunction): void {
+  if (req.user && req.user.role === 'Admin') {
+    return next();
+  }
+  
+  logger.warn('Unauthorized admin access attempt', {
+    path: req.path,
+    method: req.method,
+    userId: req.user?.id || null,
+    ip: req.ip
+  });
+  
+  res.status(403).json({
+    success: false,
+    error: 'Permission denied',
+    message: 'Admin role required'
+  });
+}
+
+/**
+ * Check if user has one of the specified roles
  * @param roles Array of allowed roles
+ * @returns Middleware function
  */
 export function hasRole(roles: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.isAuthenticated()) {
-      return next(new ApiError('Not authenticated', 401));
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (req.user && roles.includes(req.user.role)) {
+      return next();
     }
     
-    const userRole = req.user.role;
+    logger.warn('Unauthorized role access attempt', {
+      path: req.path,
+      method: req.method,
+      userId: req.user?.id || null,
+      userRole: req.user?.role || null,
+      requiredRoles: roles,
+      ip: req.ip
+    });
     
-    if (!roles.includes(userRole)) {
-      logger.warn('Permission denied - insufficient role', { 
-        path: req.path, 
-        userRole, 
-        requiredRoles: roles 
-      });
-      return next(new ApiError('Permission denied', 403, 'INSUFFICIENT_ROLE'));
-    }
-    
-    next();
+    res.status(403).json({
+      success: false,
+      error: 'Permission denied',
+      message: `Required role: ${roles.join(' or ')}`
+    });
   };
 }
 
 /**
- * Middleware to check if user has admin role
+ * Check if user is the owner of the resource or has one of the specified roles
+ * @param paramIdField Name of the request parameter containing the resource ID
+ * @param allowedRoles Array of roles that can access regardless of ownership
+ * @returns Middleware function
  */
-export function isAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.isAuthenticated()) {
-    return next(new ApiError('Not authenticated', 401));
-  }
-  
-  if (req.user.role !== 'Admin') {
-    logger.warn('Admin access denied', { 
-      path: req.path, 
-      userId: req.user.id 
+export function isResourceOwnerOrHasRole(paramIdField: string, allowedRoles: string[] = ['Admin']) {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    // If user has an allowed role, allow access
+    if (req.user && allowedRoles.includes(req.user.role)) {
+      return next();
+    }
+    
+    // Get resource ID from request parameters
+    const resourceId = req.params[paramIdField];
+    
+    // If resource ID matches user ID, allow access
+    if (req.user && req.user.id === parseInt(resourceId)) {
+      return next();
+    }
+    
+    logger.warn('Unauthorized resource access attempt', {
+      path: req.path,
+      method: req.method,
+      userId: req.user?.id || null,
+      resourceId,
+      ip: req.ip
     });
-    return next(new ApiError('Admin access required', 403, 'ADMIN_REQUIRED'));
-  }
-  
-  next();
+    
+    res.status(403).json({
+      success: false,
+      error: 'Permission denied',
+      message: 'You can only access your own resources or need higher privileges'
+    });
+  };
 }
 
 /**
- * Middleware to check if user is accessing their own resource
- * or has sufficient role to access others' resources
- * @param paramIdField The parameter name containing the resource owner ID
- * @param allowedRoles Array of roles allowed to access any resource
+ * Check if user has permission for a specific action
+ * @param module Module name
+ * @param action Permission action
+ * @returns Middleware function
  */
-export function isResourceOwnerOrHasRole(paramIdField: string, allowedRoles: string[] = ['Admin']) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.isAuthenticated()) {
-      return next(new ApiError('Not authenticated', 401));
-    }
-    
-    const resourceId = parseInt(req.params[paramIdField]);
-    const userId = req.user.id;
-    
-    // Allow if user is the resource owner
-    if (resourceId === userId) {
+export function hasPermission(module: string, action: string) {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    // If user has Admin role, allow all actions
+    if (req.user && req.user.role === 'Admin') {
       return next();
     }
     
-    // Allow if user has one of the allowed roles
-    if (allowedRoles.includes(req.user.role)) {
+    // Check if user has the specific permission
+    // This would typically query a permissions table
+    // For now, we'll use a simplified approach
+    const hasPermission = req.user && req.user.permissions && 
+      req.user.permissions[module] && 
+      req.user.permissions[module].includes(action);
+    
+    if (hasPermission) {
       return next();
     }
     
-    logger.warn('Resource access denied', { 
-      path: req.path, 
-      userId, 
-      resourceId, 
-      userRole: req.user.role 
+    logger.warn('Permission denied', {
+      path: req.path,
+      method: req.method,
+      userId: req.user?.id || null,
+      module,
+      action,
+      ip: req.ip
     });
-    return next(new ApiError('Permission denied', 403, 'INSUFFICIENT_PERMISSION'));
+    
+    res.status(403).json({
+      success: false,
+      error: 'Permission denied',
+      message: `You don't have permission for this action: ${action} ${module}`
+    });
   };
 }

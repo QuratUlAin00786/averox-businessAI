@@ -1,186 +1,143 @@
 /**
- * @file Error handling utilities
- * @description Centralizes error handling logic for consistent error responses
+ * @file Error handler
+ * @description Centralized error handling for the application
  * @module utils/error-handler
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
 import { logger } from './logger';
 
 /**
- * Custom API error class with additional properties
+ * Custom API error class
+ * Extends Error with additional properties
  */
 export class ApiError extends Error {
   statusCode: number;
-  errorCode?: string;
-  details?: any;
+  code?: string;
   
   /**
-   * Creates a new API error
+   * Create a new API error
    * @param message Error message
    * @param statusCode HTTP status code
-   * @param errorCode Optional error code for client
-   * @param details Optional detailed error information
+   * @param code Optional error code for client identification
    */
-  constructor(message: string, statusCode: number, errorCode?: string, details?: any) {
+  constructor(message: string, statusCode: number = 500, code?: string) {
     super(message);
-    this.name = 'ApiError';
+    this.name = this.constructor.name;
     this.statusCode = statusCode;
-    this.errorCode = errorCode;
-    this.details = details;
-  }
-
-  /**
-   * Converts the error to a response object
-   */
-  toResponse() {
-    return {
-      success: false,
-      error: this.message,
-      errorCode: this.errorCode,
-      details: this.details,
-    };
+    this.code = code;
+    
+    // Capture stack trace
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
   }
 }
 
 /**
- * Global error handling middleware
- * This should be added after all routes to catch errors
+ * Async error handler for route controllers
+ * Wraps async route handlers to catch errors
+ * @param fn Async route handler function
+ * @returns Wrapped route handler that catches errors
  */
-export function errorMiddleware(err: Error, req: Request, res: Response, _next: NextFunction) {
-  logger.error('API Error:', {
-    error: err.message,
-    stack: err.stack,
+export const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+/**
+ * Error handler middleware
+ * Central error handling for Express
+ * @param err Error object
+ * @param req Express request
+ * @param res Express response
+ * @param next Express next function
+ */
+export const errorMiddleware = (err: any, req: Request, res: Response, next: NextFunction) => {
+  // Set default status code
+  const statusCode = err.statusCode || 500;
+  
+  // Determine error details to log
+  const errorDetails = {
     path: req.path,
     method: req.method,
-  });
-
-  // Handle ApiError instances
-  if (err instanceof ApiError) {
-    return res.status(err.statusCode).json(err.toResponse());
-  }
-
-  // Handle Zod validation errors
-  if (err instanceof z.ZodError) {
-    return res.status(400).json({ 
-      success: false,
-      error: "Validation Error", 
-      message: "The provided data does not meet validation requirements",
-      details: err.errors 
-    });
-  }
-
-  // Handle database errors
-  if (err && typeof err === 'object' && 'code' in err) {
-    // PostgreSQL error codes
-    const pgError = err as { code: string; message?: string; detail?: string };
-    logger.error('Database error code:', pgError.code);
-    
-    if (pgError.code === '42P01') { // undefined_table
-      return res.status(500).json({
-        success: false,
-        error: "Database Error",
-        message: "Table not found. Database schema may be outdated or incomplete.",
-        details: pgError.detail || pgError.message
-      });
-    }
-    
-    if (pgError.code.startsWith('23')) { // integrity constraint violations
-      return res.status(400).json({
-        success: false,
-        error: "Database Constraint Error",
-        message: pgError.message || "Data violates database constraints",
-        details: pgError.detail
-      });
-    }
-  }
-
-  // Default server error response
-  return res.status(500).json({ 
-    success: false,
-    error: "Server Error", 
-    message: err instanceof Error ? err.message : "Unknown error",
-    ...(process.env.NODE_ENV !== 'production' && err instanceof Error && { 
-      stack: err.stack 
-    })
-  });
-}
-
-/**
- * Wraps an async route handler to catch errors and pass them to next()
- * This eliminates the need for try/catch blocks in every route handler
- */
-export function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+    statusCode,
+    message: err.message,
+    code: err.code,
+    stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
   };
-}
+  
+  // Log the error
+  if (statusCode >= 500) {
+    logger.error('Server error', errorDetails);
+  } else {
+    logger.warn('Client error', errorDetails);
+  }
+  
+  // Prepare response object
+  const errorResponse = {
+    success: false,
+    error: statusCode >= 500 ? 'Server Error' : err.name || 'Request Error',
+    message: err.message,
+    code: err.code,
+  };
+  
+  // Add stack trace in development
+  if (process.env.NODE_ENV !== 'production') {
+    errorResponse['stack'] = err.stack;
+  }
+  
+  // Send error response
+  res.status(statusCode).json(errorResponse);
+};
 
 /**
- * Not found error handler
- * Use this middleware after all routes to handle 404 errors
+ * 404 Not Found handler
+ * Handles requests to non-existent routes
+ * @param req Express request
+ * @param res Express response
+ * @param next Express next function
  */
-export function notFoundHandler(req: Request, res: Response) {
+export const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
+  // Skip for non-API routes (let Vite or static files handler deal with it)
+  if (!req.path.startsWith('/api/')) {
+    return next();
+  }
+  
+  // Log 404 error
   logger.warn(`Route not found: ${req.method} ${req.path}`);
-  res.status(404).json({ 
-    success: false, 
-    error: 'Not Found', 
-    message: `The requested URL ${req.path} was not found` 
+  
+  // Send 404 response
+  res.status(404).json({
+    success: false,
+    error: 'Not Found',
+    message: `The requested resource does not exist: ${req.path}`,
   });
-}
+};
 
 /**
- * Standard error handling function for controllers
+ * Controller error handler
+ * Helper function to handle errors in controllers
  * @param res Express response object
  * @param error Error to handle
  */
-export function handleControllerError(res: Response, error: unknown) {
+export const handleControllerError = (res: Response, error: any) => {
   if (error instanceof ApiError) {
-    return res.status(error.statusCode).json(error.toResponse());
-  }
-  
-  logger.error('Controller error:', error);
-  
-  if (error instanceof z.ZodError) {
-    return res.status(400).json({ 
+    // Known API error
+    return res.status(error.statusCode).json({
       success: false,
-      error: "Validation Error", 
-      message: "The provided data does not meet validation requirements",
-      details: error.errors 
+      error: error.name,
+      message: error.message,
+      code: error.code
     });
   }
   
-  if (error && typeof error === 'object' && 'code' in error) {
-    // PostgreSQL error codes
-    const pgError = error as { code: string; message?: string; detail?: string };
-    logger.error('Database error code:', pgError.code);
-    
-    if (pgError.code === '42P01') { // undefined_table
-      return res.status(500).json({
-        success: false,
-        error: "Database Error",
-        message: "Table not found. Database schema may be outdated or incomplete.",
-        details: pgError.detail || pgError.message
-      });
-    }
-    
-    if (pgError.code.startsWith('23')) { // integrity constraint violations
-      return res.status(400).json({
-        success: false,
-        error: "Database Constraint Error",
-        message: pgError.message || "Data violates database constraints",
-        details: pgError.detail
-      });
-    }
-  }
+  // Log unexpected errors
+  logger.error('Unexpected controller error', error);
   
-  return res.status(500).json({ 
+  // Generic error response
+  res.status(500).json({
     success: false,
-    error: "Server Error", 
-    message: error instanceof Error ? error.message : "Unknown error",
-    ...(process.env.NODE_ENV !== 'production' && error instanceof Error && { 
-      stack: error.stack 
-    })
+    error: 'Server Error',
+    message: 'An unexpected error occurred'
   });
-}
+};
