@@ -128,7 +128,7 @@ export class MigrationController {
       
       // TEMPORARILY BYPASSING AUTHENTICATION FOR TESTING
       // Get available entities for migration
-      const entities = this.getEntitiesForCrm(crmType);
+      const entities = await this.getEntitiesForCrm(crmType);
       
       res.status(200).json({
         success: true,
@@ -354,7 +354,7 @@ export class MigrationController {
   /**
    * Get available entity types for the specified CRM
    */
-  private getEntitiesForCrm(crmType: string): any[] {
+  private async getEntitiesForCrm(crmType: string): Promise<any[]> {
     // This would have specific implementations for each CRM
     const commonEntities = [
       { id: 'contacts', name: 'Contacts', count: '~2500' },
@@ -367,8 +367,12 @@ export class MigrationController {
     if (this.migrationHandlers.has(crmType.toLowerCase())) {
       const handler = this.migrationHandlers.get(crmType.toLowerCase());
       try {
-        // Start with available entities (this would be async in a real implementation)
-        return handler.getAvailableEntities() as any;
+        // Properly await the Promise from getAvailableEntities
+        if (handler) {
+          const entities = await handler.getAvailableEntities();
+          return entities;
+        }
+        return commonEntities;
       } catch (error) {
         console.error(`Error getting entities for ${crmType}:`, error);
         return commonEntities;
