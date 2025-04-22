@@ -501,6 +501,12 @@ export function ProposalEditor({
     
     console.log(`Adding new ${type} element to proposal ${proposal.id}`);
     
+    // Show toast notification for feedback
+    toast({
+      title: "Adding element...",
+      description: `Creating a new ${type} element`,
+    });
+    
     // Get the default content for this element type and stringify it
     const defaultContent = getDefaultElementContent(type);
     const jsonContent = JSON.stringify(defaultContent);
@@ -527,6 +533,17 @@ export function ProposalEditor({
         toast({
           title: "Element added",
           description: `Added new ${type} element to your proposal`
+        });
+        
+        // Force refetch to ensure we have the latest data
+        refetchElements();
+      },
+      onError: (error) => {
+        console.error("Error adding element:", error);
+        toast({
+          title: "Error",
+          description: `Failed to add ${type} element: ${error.message}`,
+          variant: "destructive"
         });
       }
     });
@@ -555,12 +572,24 @@ export function ProposalEditor({
       return;
     }
     
+    // Set the name to a default if it's empty
+    const elementName = selectedElement.name.trim() 
+      ? selectedElement.name 
+      : `${selectedElement.elementType} Element`;
+    
     const updateData = {
-      name: selectedElement.name,
+      name: elementName,
       content: processedContent,
     };
     
     console.log("Update data being sent:", JSON.stringify(updateData, null, 2));
+    
+    // Show saving indicator
+    toast({
+      title: 'Saving...',
+      description: 'Updating element content',
+    });
+    
     updateElementMutation.mutate({
       id: selectedElement.id,
       data: updateData
@@ -570,6 +599,17 @@ export function ProposalEditor({
         toast({
           title: 'Success',
           description: 'Element saved successfully',
+        });
+        
+        // Force refetch to ensure we have the latest data
+        refetchElements();
+      },
+      onError: (error) => {
+        console.error("Error saving element:", error);
+        toast({
+          title: 'Error',
+          description: `Failed to save element: ${error.message}`,
+          variant: 'destructive',
         });
       }
     });
@@ -634,11 +674,33 @@ export function ProposalEditor({
   const renderElementEditor = () => {
     if (!selectedElement) return null;
     
-    // Use our new ElementEditorFactory to render the appropriate editor
+    // Prepare content for editor - ensure it's properly formatted
+    let preparedElement = { ...selectedElement };
+    
+    // If content is a string (from API), parse it to an object for the editor
+    if (typeof preparedElement.content === 'string') {
+      try {
+        preparedElement.content = JSON.parse(preparedElement.content);
+      } catch (error) {
+        console.error("Error parsing element content:", error);
+        toast({
+          title: "Error",
+          description: "Could not parse element content. Using default instead.",
+          variant: "destructive"
+        });
+        // Fallback to empty object if parsing fails
+        preparedElement.content = {};
+      }
+    }
+    
+    // Use our ElementEditorFactory to render the appropriate editor
     return (
       <ElementEditorFactory 
-        element={selectedElement}
-        onChange={(updatedElement) => setSelectedElement(updatedElement)}
+        element={preparedElement}
+        onChange={(updatedElement) => {
+          console.log("Element updated in editor:", updatedElement);
+          setSelectedElement(updatedElement);
+        }}
         disabled={isReadOnly}
       />
     );
