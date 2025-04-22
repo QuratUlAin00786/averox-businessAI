@@ -34,7 +34,7 @@ import {
   CheckSquare
 } from "lucide-react";
 import { FaSalesforce, FaHubspot, FaMicrosoft } from "react-icons/fa";
-import { SiZoho } from "react-icons/si";
+import { SiZoho, SiOdoo, SiOracle } from "react-icons/si";
 
 const crmSystems = [
   { 
@@ -98,6 +98,36 @@ const crmSystems = [
       "Copy the Client ID and Client Secret"
     ]
   },
+  { 
+    id: "odoo", 
+    name: "Odoo", 
+    icon: <SiOdoo className="h-6 w-6" />,
+    description: "Import contacts, leads, opportunities, and products from Odoo",
+    color: "bg-green-100 text-green-800 border-green-300",
+    apiUrl: "https://yourodooinstance.odoo.com/web/login",
+    docUrl: "https://www.odoo.com/documentation/16.0/developer/api/external_api.html",
+    setupSteps: [
+      "Login to your Odoo instance as an Administrator",
+      "Go to Settings > Technical > Database Structure > API Keys",
+      "Create a new API key for external access",
+      "Copy your API key, database name, and username"
+    ]
+  },
+  { 
+    id: "oracle", 
+    name: "Oracle CRM", 
+    icon: <SiOracle className="h-6 w-6" />,
+    description: "Import contacts, accounts, leads, and opportunities from Oracle CRM",
+    color: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    apiUrl: "https://your-instance.oraclecloud.com",
+    docUrl: "https://docs.oracle.com/en/cloud/saas/service/18a/",
+    setupSteps: [
+      "Login to your Oracle CRM instance as an Administrator",
+      "Navigate to Administration > Web Services",
+      "Create a new API key for external integration",
+      "Copy your instance URL, API key, username, and password"
+    ]
+  },
 ];
 
 const entityTypes = [
@@ -139,7 +169,7 @@ export default function DataMigrationPage() {
       // API authentication varies based on selected mode
       if (migrationMode === 'oauth') {
         // OAuth flow - call API to get authentication URL
-        const response = await apiRequest('POST', '/api/migration/auth/init', {
+        const response = await apiRequest('POST', '/api/migration/initiate-auth', {
           crmType: crmId
         });
         
@@ -154,20 +184,53 @@ export default function DataMigrationPage() {
           throw new Error(data.error || 'Failed to initiate OAuth flow');
         }
       } else if (migrationMode === 'apikey') {
-        // Direct API key authentication
-        const response = await apiRequest('POST', '/api/migration/auth/apikey', {
-          crmType: crmId,
-          apiKey,
-          apiSecret,
-          domain: instanceUrl || undefined
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-          addToProcessingLog("API key validation successful! Access granted.");
-          return { authValidated: true };
+        // Handle Odoo and Oracle CRM specially since they have their own connection endpoints
+        if (crmId === 'odoo') {
+          const response = await apiRequest('POST', '/api/migration/odoo/connect', {
+            baseUrl: instanceUrl,
+            apiKey: apiKey,
+            database: apiSecret,
+            username: apiSecret.split(':')[0] // In case user puts username:database in the second field
+          });
+          
+          const data = await response.json();
+          if (data.success) {
+            addToProcessingLog("Odoo connection successful! Access granted.");
+            return { authValidated: true };
+          } else {
+            throw new Error(data.error || 'Failed to connect to Odoo');
+          }
+        } else if (crmId === 'oracle') {
+          const response = await apiRequest('POST', '/api/migration/oracle/connect', {
+            instanceUrl: instanceUrl,
+            apiKey: apiKey,
+            username: apiSecret.split(':')[0], 
+            password: apiSecret.split(':')[1] || apiSecret // Allow username:password format or just password
+          });
+          
+          const data = await response.json();
+          if (data.success) {
+            addToProcessingLog("Oracle CRM connection successful! Access granted.");
+            return { authValidated: true };
+          } else {
+            throw new Error(data.error || 'Failed to connect to Oracle CRM');
+          }
         } else {
-          throw new Error(data.error || 'Failed to validate API key');
+          // Generic API key validation for other CRMs
+          const response = await apiRequest('POST', '/api/migration/validate-api-key', {
+            crmType: crmId,
+            apiKey,
+            apiSecret,
+            domain: instanceUrl || undefined
+          });
+          
+          const data = await response.json();
+          if (data.success) {
+            addToProcessingLog("API key validation successful! Access granted.");
+            return { authValidated: true };
+          } else {
+            throw new Error(data.error || 'Failed to validate API key');
+          }
         }
       }
       
@@ -580,35 +643,102 @@ export default function DataMigrationPage() {
                   
                   {migrationMode === 'apikey' && (
                     <div className="grid gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="apiKey">API Key</Label>
-                        <Input
-                          id="apiKey"
-                          value={apiKey}
-                          onChange={(e) => setApiKey(e.target.value)}
-                          placeholder="Enter your API Key"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="apiSecret">API Secret</Label>
-                        <Input
-                          id="apiSecret"
-                          type="password"
-                          value={apiSecret}
-                          onChange={(e) => setApiSecret(e.target.value)}
-                          placeholder="Enter your API Secret"
-                        />
-                      </div>
-                      {selectedSystem === 'salesforce' && (
-                        <div className="grid gap-2">
-                          <Label htmlFor="instanceUrl">Instance URL</Label>
-                          <Input
-                            id="instanceUrl"
-                            value={instanceUrl}
-                            onChange={(e) => setInstanceUrl(e.target.value)}
-                            placeholder="https://yourinstance.my.salesforce.com"
-                          />
-                        </div>
+                      {/* Odoo specific fields */}
+                      {selectedSystem === 'odoo' ? (
+                        <>
+                          <div className="grid gap-2">
+                            <Label htmlFor="instanceUrl">Odoo Instance URL</Label>
+                            <Input
+                              id="instanceUrl"
+                              value={instanceUrl}
+                              onChange={(e) => setInstanceUrl(e.target.value)}
+                              placeholder="https://yourodooinstance.odoo.com"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="apiKey">API Key</Label>
+                            <Input
+                              id="apiKey"
+                              value={apiKey}
+                              onChange={(e) => setApiKey(e.target.value)}
+                              placeholder="Enter your Odoo API Key"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="apiSecret">Database & Username</Label>
+                            <Input
+                              id="apiSecret"
+                              value={apiSecret}
+                              onChange={(e) => setApiSecret(e.target.value)}
+                              placeholder="database_name:username"
+                            />
+                            <p className="text-sm text-muted-foreground">Enter your database name and username separated by a colon</p>
+                          </div>
+                        </>
+                      ) : selectedSystem === 'oracle' ? (
+                        <>
+                          <div className="grid gap-2">
+                            <Label htmlFor="instanceUrl">Oracle CRM Instance URL</Label>
+                            <Input
+                              id="instanceUrl"
+                              value={instanceUrl}
+                              onChange={(e) => setInstanceUrl(e.target.value)}
+                              placeholder="https://yourinstance.oraclecloud.com"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="apiKey">API Key</Label>
+                            <Input
+                              id="apiKey"
+                              value={apiKey}
+                              onChange={(e) => setApiKey(e.target.value)}
+                              placeholder="Enter your Oracle CRM API Key"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="apiSecret">Username & Password</Label>
+                            <Input
+                              id="apiSecret"
+                              value={apiSecret}
+                              onChange={(e) => setApiSecret(e.target.value)}
+                              placeholder="username:password"
+                            />
+                            <p className="text-sm text-muted-foreground">Enter your username and password separated by a colon</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="grid gap-2">
+                            <Label htmlFor="apiKey">API Key</Label>
+                            <Input
+                              id="apiKey"
+                              value={apiKey}
+                              onChange={(e) => setApiKey(e.target.value)}
+                              placeholder="Enter your API Key"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="apiSecret">API Secret</Label>
+                            <Input
+                              id="apiSecret"
+                              type="password"
+                              value={apiSecret}
+                              onChange={(e) => setApiSecret(e.target.value)}
+                              placeholder="Enter your API Secret"
+                            />
+                          </div>
+                          {selectedSystem === 'salesforce' && (
+                            <div className="grid gap-2">
+                              <Label htmlFor="instanceUrl">Instance URL</Label>
+                              <Input
+                                id="instanceUrl"
+                                value={instanceUrl}
+                                onChange={(e) => setInstanceUrl(e.target.value)}
+                                placeholder="https://yourinstance.my.salesforce.com"
+                              />
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
