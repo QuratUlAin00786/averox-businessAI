@@ -126,7 +126,7 @@ export function ProposalEditor({
 }: ProposalEditorProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'editor' | 'collaborators' | 'comments'>('editor');
+  const [activeTab, setActiveTab] = useState<'editor' | 'elements' | 'collaborators' | 'comments'>('editor');
   const [isDraggingElement, setIsDraggingElement] = useState<number | null>(null);
   const [selectedElement, setSelectedElement] = useState<ProposalElement | null>(null);
   const [newComment, setNewComment] = useState('');
@@ -171,7 +171,7 @@ export function ProposalEditor({
         throw error;
       }
     },
-    enabled: isOpen,
+    enabled: isOpen && (activeTab === 'editor' || activeTab === 'elements'),
   });
   
   // Log any errors with elements
@@ -654,7 +654,7 @@ export function ProposalEditor({
           </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "editor" | "collaborators" | "comments")} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "editor" | "elements" | "collaborators" | "comments")} className="w-full">
           <div className="px-6 pt-2">
             <TabsList className="grid grid-cols-4 mb-4">
               <TabsTrigger value="editor">Content</TabsTrigger>
@@ -664,7 +664,36 @@ export function ProposalEditor({
             </TabsList>
           </div>
 
-          <TabsContent value="editor" className="flex flex-col md:flex-row h-[calc(90vh-180px)]">
+          <TabsContent value="editor" className="h-[calc(90vh-180px)] overflow-auto">
+            <div className="p-6">
+              <div className="bg-white p-6 shadow rounded border max-w-4xl mx-auto">
+                <h3 className="text-lg font-medium mb-4">Document Content</h3>
+                <p className="mb-6 text-neutral-600">Edit the overall document content here. Arrange individual elements in the Elements tab.</p>
+                
+                <div className="space-y-8">
+                  {elements.map(element => (
+                    <div key={element.id} className="border rounded-md p-4 bg-white shadow-sm">
+                      {getElementDisplay(element)}
+                    </div>
+                  ))}
+
+                  {elements.length === 0 && (
+                    <div className="text-center py-12 border border-dashed rounded-md">
+                      <h4 className="text-lg font-medium text-neutral-600 mb-2">No Content Yet</h4>
+                      <p className="text-neutral-500 mb-4">Start adding elements to build your proposal document</p>
+                      {!isReadOnly && (
+                        <Button onClick={() => setActiveTab('elements')}>
+                          <Plus className="h-4 w-4 mr-2" /> Add Elements
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="elements" className="flex flex-col md:flex-row h-[calc(90vh-180px)]">
             {/* Elements list and controls */}
             <div className="w-full md:w-64 border-r p-4 flex flex-col">
               <div className="flex justify-between items-center mb-3">
