@@ -1,85 +1,128 @@
 /**
- * @file Logging utility
- * @description Provides a consistent logging interface throughout the application
+ * @file Logger utility
+ * @description Provides logging functionality throughout the application
  * @module utils/logger
  */
 
+import winston from 'winston';
 import { config } from '../config';
 
-/**
- * Log levels
- */
-type LogLevel = 'error' | 'warn' | 'info' | 'debug';
+// Define log format
+const logFormat = winston.format.combine(
+  winston.format.timestamp(),
+  winston.format.errors({ stack: true }),
+  winston.format.splat(),
+  winston.format.printf(({ level, message, timestamp, ...meta }) => {
+    // Format metadata
+    const metaString = Object.keys(meta).length
+      ? ` ${JSON.stringify(meta)}`
+      : '';
+    
+    // Format log message
+    return `${timestamp} [${level.toUpperCase()}] ${message}${metaString}`;
+  })
+);
 
-/**
- * Logger utility class
- * Provides methods for logging with different severity levels
- */
-class Logger {
-  private env: string;
+// Define console transport
+const consoleTransport = new winston.transports.Console({
+  format: winston.format.combine(
+    winston.format.colorize(),
+    logFormat
+  ),
+  level: config.logs.level,
+});
 
-  constructor() {
-    this.env = config.server.env;
-  }
+// Create the logger
+const logger = winston.createLogger({
+  level: config.logs.level,
+  defaultMeta: { service: 'api' },
+  format: logFormat,
+  transports: [consoleTransport],
+});
 
-  /**
-   * Formats the log message with timestamp and level
-   */
-  private formatMessage(level: LogLevel, message: string, data?: any): string {
-    const timestamp = new Date().toISOString();
-    return `${timestamp} [${level.toUpperCase()}] ${message}${data ? ' ' + JSON.stringify(data) : ''}`;
-  }
-
-  /**
-   * Logs an error message
-   */
-  error(message: string, data?: any): void {
-    console.error(this.formatMessage('error', message, data));
-  }
-
-  /**
-   * Logs a warning message
-   */
-  warn(message: string, data?: any): void {
-    console.warn(this.formatMessage('warn', message, data));
-  }
-
-  /**
-   * Logs an info message
-   */
-  info(message: string, data?: any): void {
-    console.info(this.formatMessage('info', message, data));
-  }
-
-  /**
-   * Logs a debug message
-   * Only displayed in non-production environments
-   */
-  debug(message: string, data?: any): void {
-    if (this.env !== 'production') {
-      console.debug(this.formatMessage('debug', message, data));
-    }
-  }
-
-  /**
-   * Logs an API request
-   */
-  logRequest(req: any): void {
-    this.info(`${req.method} ${req.originalUrl}`, {
-      ip: req.ip,
-      userId: req.user?.id || 'unauthenticated',
-    });
-  }
-
-  /**
-   * Logs an API response
-   */
-  logResponse(req: any, res: any, time: number): void {
-    this.info(`${req.method} ${req.originalUrl} ${res.statusCode} in ${time}ms`);
-  }
+// Add file transports in production
+if (config.server.isProduction) {
+  // Create combined log file
+  logger.add(
+    new winston.transports.File({
+      filename: 'logs/combined.log',
+      level: 'info',
+    })
+  );
+  
+  // Create error log file
+  logger.add(
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+    })
+  );
 }
 
-/**
- * Singleton logger instance
- */
-export const logger = new Logger();
+// Create wrapper methods with string interpolation support
+const enhancedLogger = {
+  error: (message: string, ...args: any[]) => {
+    if (args.length > 0) {
+      if (args[0] instanceof Error) {
+        const error = args[0];
+        logger.error(`${message}: ${error.message}`, { 
+          stack: error.stack,
+          ...args.slice(1) 
+        });
+      } else {
+        logger.error(message, ...args);
+      }
+    } else {
+      logger.error(message);
+    }
+  },
+  
+  warn: (message: string, ...args: any[]) => {
+    logger.warn(message, ...args);
+  },
+  
+  info: (message: string, ...args: any[]) => {
+    logger.info(message, ...args);
+  },
+  
+  debug: (message: string, ...args: any[]) => {
+    logger.debug(message, ...args);
+  },
+  
+  /**
+   * Log HTTP request information
+   * @param method HTTP method
+   * @param url Request URL
+   * @param status HTTP status code
+   * @param responseTime Response time in milliseconds
+   */
+  httpRequest: (method: string, url: string, status: number, responseTime: number) => {
+    logger.info(`${method} ${url} ${status} in ${responseTime}ms`);
+  },
+  
+  /**
+   * Log API error response
+   * @param method HTTP method
+   * @param url Request URL
+   * @param status HTTP status code
+   * @param error Error object or message
+   */
+  apiError: (method: string, url: string, status: number, error: any) => {
+    const errorMessage = error instanceof Error ? error.message : error;
+    logger.error(`${method} ${url} ${status} - ${errorMessage}`, {
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+  },
+  
+  /**
+   * Log database operation
+   * @param operation Database operation (e.g., 'query', 'insert')
+   * @param entity Entity being operated on (e.g., 'users', 'tasks')
+   * @param details Additional details
+   */
+  databaseOperation: (operation: string, entity: string, details?: any) => {
+    logger.debug(`DB Operation: ${operation} on ${entity}`, details);
+  },
+};
+
+export { enhancedLogger as logger };

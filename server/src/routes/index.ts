@@ -8,6 +8,8 @@ import { Express } from 'express';
 import authRoutes from './auth.routes';
 import userRoutes from './user.routes';
 import leadRoutes from './lead.routes';
+import contactRoutes from './contact.routes';
+import taskRoutes from './task.routes';
 import openaiRoutes from './openai.routes';
 import { errorMiddleware, notFoundHandler } from '../utils/error-handler';
 import { logger } from '../utils/logger';
@@ -24,13 +26,13 @@ export function registerRoutes(app: Express): void {
   app.use('/api', authRoutes);
   app.use('/api', userRoutes);
   app.use('/api', leadRoutes);
+  app.use('/api', contactRoutes);
+  app.use('/api', taskRoutes);
   app.use('/api', openaiRoutes);
 
   // ToDo: Register other route modules as they are created
-  // app.use('/api', contactRoutes);
   // app.use('/api', accountRoutes);
   // app.use('/api', opportunityRoutes);
-  // app.use('/api', taskRoutes);
   // app.use('/api', eventRoutes);
   // app.use('/api', activityRoutes);
   // app.use('/api', invoiceRoutes);
@@ -75,6 +77,23 @@ export const apiEndpoints = {
     update: { method: 'PATCH', path: '/api/leads/:id' },
     delete: { method: 'DELETE', path: '/api/leads/:id' },
     convert: { method: 'POST', path: '/api/leads/:id/convert' },
+  },
+  contacts: {
+    getAll: { method: 'GET', path: '/api/contacts' },
+    create: { method: 'POST', path: '/api/contacts' },
+    search: { method: 'GET', path: '/api/contacts/search' },
+    getById: { method: 'GET', path: '/api/contacts/:id' },
+    update: { method: 'PATCH', path: '/api/contacts/:id' },
+    delete: { method: 'DELETE', path: '/api/contacts/:id' },
+  },
+  tasks: {
+    getAll: { method: 'GET', path: '/api/tasks' },
+    create: { method: 'POST', path: '/api/tasks' },
+    upcoming: { method: 'GET', path: '/api/tasks/upcoming' },
+    overdue: { method: 'GET', path: '/api/tasks/overdue' },
+    getById: { method: 'GET', path: '/api/tasks/:id' },
+    update: { method: 'PATCH', path: '/api/tasks/:id' },
+    delete: { method: 'DELETE', path: '/api/tasks/:id' },
   },
   ai: {
     insights: { method: 'POST', path: '/api/ai/insights' },
