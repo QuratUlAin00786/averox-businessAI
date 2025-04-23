@@ -28,6 +28,7 @@ import {
   Plus,
   Trash2,
   MoveUp,
+  Send,
   MoveDown,
   Users,
   MessageSquare,
@@ -680,6 +681,8 @@ export function ProposalEditor({
     const isSelected = selectedElement?.id === element.id;
     return <ElementPreview element={element} isSelected={isSelected} />;
   };
+  
+  // We already have a handleAddComment function defined
 
   const renderElementEditor = () => {
     if (!selectedElement) return null;
