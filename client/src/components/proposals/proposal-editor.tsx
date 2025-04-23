@@ -271,70 +271,43 @@ export function ProposalEditor({
 
   const updateElementMutation = useMutation({
     mutationFn: async (element: ProposalElement) => {
-      // Create a simplified element with only the fields we need to update
-      const simplifiedElement = {
-        id: element.id,
-        proposalId: element.proposalId,
-        name: element.name,
-        elementType: element.elementType,
-        sortOrder: element.sortOrder,
-        // Handle the content separately
-      };
+      console.log("Starting element update for ID:", element.id);
       
-      // Prepare content properly
-      let contentString = "";
-      if (typeof element.content === 'string') {
-        try {
-          // Validate it's proper JSON by parsing and re-stringifying it
-          const parsed = JSON.parse(element.content);
-          contentString = JSON.stringify(parsed);
-        } catch (e) {
-          console.error("Content was string but not valid JSON:", e);
-          contentString = JSON.stringify({ text: String(element.content) });
-        }
-      } else if (typeof element.content === 'object') {
-        contentString = JSON.stringify(element.content);
-      } else {
-        // Fallback for any other type
-        contentString = JSON.stringify({ text: "Content could not be processed" });
+      // Keep it simple - copy the element and ensure content is a string
+      const updateData = { ...element };
+      
+      // Ensure content is a string
+      if (typeof updateData.content === 'object') {
+        updateData.content = JSON.stringify(updateData.content);
       }
       
-      // Create the final data to send
-      const dataToSend = {
-        ...simplifiedElement,
-        content: contentString
-      };
-      
-      console.log("Sending data for update:", dataToSend);
+      // Simple logging 
+      console.log(`Updating element ${element.id} with data:`, {
+        id: updateData.id,
+        name: updateData.name,
+        elementType: updateData.elementType,
+        // Not logging full content to avoid console spam
+      });
       
       try {
-        // Use the correct endpoint
-        const response = await fetch(`/api/proposal-elements/${element.id}`, {
+        // Use original API endpoint format to avoid disruption
+        const response = await fetch(`/api/proposals/${proposal.id}/elements/${element.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(dataToSend),
+          body: JSON.stringify(updateData),
         });
         
-        const responseText = await response.text();
-        console.log("Raw server response:", responseText);
-        
         if (!response.ok) {
-          console.error("Error updating element. Status:", response.status, "Message:", responseText);
-          throw new Error(`Failed to update element: Status ${response.status}`);
+          const errorText = await response.text();
+          console.error("Error updating element. Status:", response.status, "Message:", errorText);
+          throw new Error(`Failed to update element: ${response.status}`);
         }
         
-        let json;
-        try {
-          json = JSON.parse(responseText);
-        } catch (e) {
-          console.error("Failed to parse server response as JSON:", e);
-          throw new Error("Invalid response from server");
-        }
-        
-        console.log("Update element response:", json);
-        return json.data || json;
+        const json = await response.json();
+        console.log("Element successfully updated:", element.id);
+        return json.data;
       } catch (error) {
         console.error("Exception in updateElementMutation:", error);
         throw error;
@@ -362,8 +335,8 @@ export function ProposalEditor({
       console.log("Deleting element with ID:", elementId, "from proposal:", proposal.id);
       
       try {
-        // Use the correct endpoint format
-        const response = await fetch(`/api/proposal-elements/${elementId}`, {
+        // Use the original endpoint format for consistency
+        const response = await fetch(`/api/proposals/${proposal.id}/elements/${elementId}`, {
           method: 'DELETE',
         });
         
@@ -402,16 +375,13 @@ export function ProposalEditor({
 
   const moveElementMutation = useMutation({
     mutationFn: async ({ id, direction }: { id: number; direction: 'up' | 'down' }) => {
-      // Use the correct endpoint format
-      const response = await fetch(`/api/proposal-elements/${id}/move`, {
+      // Use the original endpoint format for consistency
+      const response = await fetch(`/api/proposals/${proposal.id}/elements/${id}/move`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          direction,
-          proposalId: proposal.id // Add proposal ID for context
-        }),
+        body: JSON.stringify({ direction }),
       });
       
       // Add proper error handling
