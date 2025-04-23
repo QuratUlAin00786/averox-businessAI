@@ -131,6 +131,11 @@ export function ProposalEditor({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'editor' | 'elements' | 'collaborators' | 'comments'>('editor');
+  
+  // Add a debug effect for tab changes
+  useEffect(() => {
+    console.log("Active tab changed to:", activeTab);
+  }, [activeTab]);
   const [isDraggingElement, setIsDraggingElement] = useState<number | null>(null);
   const [selectedElement, setSelectedElement] = useState<ProposalElement | null>(null);
   const [newComment, setNewComment] = useState('');
@@ -740,13 +745,16 @@ export function ProposalEditor({
           </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "editor" | "elements" | "collaborators" | "comments")} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => {
+            console.log("Tab clicked:", value);
+            setActiveTab(value as "editor" | "elements" | "collaborators" | "comments");
+          }} className="w-full">
           <div className="px-6 pt-2">
             <TabsList className="grid grid-cols-4 mb-4">
-              <TabsTrigger value="editor">Content</TabsTrigger>
-              <TabsTrigger value="elements">Elements</TabsTrigger>
-              <TabsTrigger value="collaborators">Collaborators</TabsTrigger>
-              <TabsTrigger value="comments">Comments</TabsTrigger>
+              <TabsTrigger value="editor" onClick={() => console.log("Content tab clicked")}>Content</TabsTrigger>
+              <TabsTrigger value="elements" onClick={() => console.log("Elements tab clicked")}>Elements</TabsTrigger>
+              <TabsTrigger value="collaborators" onClick={() => console.log("Collaborators tab clicked")}>Collaborators</TabsTrigger>
+              <TabsTrigger value="comments" onClick={() => console.log("Comments tab clicked")}>Comments</TabsTrigger>
             </TabsList>
           </div>
 

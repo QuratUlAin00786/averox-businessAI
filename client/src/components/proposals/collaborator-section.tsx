@@ -71,6 +71,7 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
       return usersData;
     },
     staleTime: 60000, // Keep data fresh for 1 minute
+    enabled: !isReadOnly, // Only fetch users if not in read-only mode to reduce API calls
   });
 
   // Add collaborator mutation
