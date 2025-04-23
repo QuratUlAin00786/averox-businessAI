@@ -187,42 +187,42 @@ export default function Dashboard() {
                     <Button 
                       variant="outline" 
                       className="w-full justify-start text-left h-auto py-2.5"
-                      onClick={() => setLocation("/leads/new")}
+                      onClick={() => setLocation("/leads")}
                     >
                       <div className="rounded-full bg-primary/10 p-1.5 mr-3">
                         <Users className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="font-medium">Add Lead</div>
-                        <div className="text-xs text-muted-foreground">Create a new potential customer</div>
+                        <div className="font-medium">Manage Leads</div>
+                        <div className="text-xs text-muted-foreground">View and create potential customers</div>
                       </div>
                     </Button>
                     
                     <Button 
                       variant="outline" 
                       className="w-full justify-start text-left h-auto py-2.5"
-                      onClick={() => setLocation("/opportunities/new")}
+                      onClick={() => setLocation("/opportunities")}
                     >
                       <div className="rounded-full bg-primary/10 p-1.5 mr-3">
                         <BarChart3 className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="font-medium">New Opportunity</div>
-                        <div className="text-xs text-muted-foreground">Create a new sales opportunity</div>
+                        <div className="font-medium">Opportunities</div>
+                        <div className="text-xs text-muted-foreground">Manage sales opportunities</div>
                       </div>
                     </Button>
                     
                     <Button 
                       variant="outline" 
                       className="w-full justify-start text-left h-auto py-2.5"
-                      onClick={() => setLocation("/proposals/new")}
+                      onClick={() => setLocation("/reports")}
                     >
                       <div className="rounded-full bg-primary/10 p-1.5 mr-3">
                         <ArrowRight className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="font-medium">Create Proposal</div>
-                        <div className="text-xs text-muted-foreground">Draft a new client proposal</div>
+                        <div className="font-medium">View Reports</div>
+                        <div className="text-xs text-muted-foreground">Access sales and lead reports</div>
                       </div>
                     </Button>
                   </div>
@@ -259,7 +259,7 @@ export default function Dashboard() {
                       variant="outline" 
                       size="sm" 
                       className="w-full"
-                      onClick={() => setLocation("/settings/data-migration")}
+                      onClick={() => setLocation("/settings")}
                     >
                       View All Migrations
                     </Button>

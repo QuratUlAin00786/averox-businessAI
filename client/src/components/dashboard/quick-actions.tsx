@@ -14,34 +14,34 @@ export default function QuickActions() {
 
   const actions = [
     {
-      name: "Add Lead",
+      name: "Manage Leads",
       icon: <UserPlus className="h-4 w-4" />,
-      onClick: () => setLocation("/leads/new"),
-      description: "Create a new potential customer"
+      onClick: () => setLocation("/leads"),
+      description: "View and create potential customers"
     },
     {
-      name: "New Opportunity",
+      name: "Opportunities",
       icon: <BarChart3 className="h-4 w-4" />,
-      onClick: () => setLocation("/opportunities/new"),
-      description: "Create a new sales opportunity"
+      onClick: () => setLocation("/opportunities"),
+      description: "Manage sales opportunities"
     },
     {
-      name: "Create Proposal",
-      icon: <FileText className="h-4 w-4" />,
-      onClick: () => setLocation("/proposals/new"),
-      description: "Draft a new client proposal"
-    },
-    {
-      name: "Run Report",
+      name: "View Reports",
       icon: <PieChart className="h-4 w-4" />,
       onClick: () => setLocation("/reports"),
-      description: "Generate business insights"
+      description: "Access sales and lead reports"
     },
     {
-      name: "Data Migration",
+      name: "Accounts",
+      icon: <FileText className="h-4 w-4" />,
+      onClick: () => setLocation("/accounts"),
+      description: "Manage customer accounts"
+    },
+    {
+      name: "Settings",
       icon: <CloudUpload className="h-4 w-4" />,
-      onClick: () => setLocation("/settings/data-migration"),
-      description: "Import data from other CRMs"
+      onClick: () => setLocation("/settings"),
+      description: "Configure system settings"
     }
   ];
 
