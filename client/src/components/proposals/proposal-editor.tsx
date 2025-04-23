@@ -14,7 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { apiRequestJson } from '@/lib/queryClient';
-import { ElementEditorFactory, getDefaultElementContent } from './element-editors/element-editor-factory';
+import { ElementEditorFactory } from './element-editors/element-editor-factory';
+import { createProposalElement, refreshProposalElements, getElementDefaultContent } from './fix-element-add';
 import DraggableElementList from './dnd/draggable-element-list';
 import { 
   Loader2, 
@@ -408,8 +409,8 @@ export function ProposalEditor({
     console.log("Adding new element of type:", type);
     
     try {
-      // Use the getDefaultElementContent from the factory to ensure consistency
-      const defaultContent = getDefaultElementContent(type);
+      // Use the getElementDefaultContent from our fixed implementation
+      const defaultContent = getElementDefaultContent(type);
       console.log("Default content for new element:", defaultContent);
       
       // Prepare the content
