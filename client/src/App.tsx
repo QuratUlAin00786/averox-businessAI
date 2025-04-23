@@ -53,6 +53,9 @@ import NotificationsPage from "@/pages/notifications";
 import Marketing from "@/pages/marketing";
 import MarketingCreate from "@/pages/marketing/create";
 import MarketingAutomations from "@/pages/marketing/automations";
+import WorkflowBuilder from "@/pages/marketing/workflow-builder";
+import SegmentBuilder from "@/pages/marketing/segment-builder";
+import EmailTemplateEditor from "@/pages/marketing/email-template-editor";
 
 function Router() {
   return (
@@ -350,6 +353,24 @@ function Router() {
       <ProtectedRoute path="/marketing/automations" component={() => (
         <Layout>
           <MarketingAutomations />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing/workflow-builder" component={() => (
+        <Layout>
+          <WorkflowBuilder />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing/segment-builder" component={() => (
+        <Layout>
+          <SegmentBuilder />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing/email-template-editor" component={() => (
+        <Layout>
+          <EmailTemplateEditor />
         </Layout>
       )} />
       
