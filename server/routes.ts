@@ -3698,6 +3698,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add the nested route form to support the client implementation
+  app.patch('/api/proposals/:proposalId/elements/:id', async (req: Request, res: Response) => {
+    try {
+      // Parse IDs
+      const proposalId = parseInt(req.params.proposalId);
+      const elementId = parseInt(req.params.id);
+      
+      console.log(`PATCH request for element ${elementId} in proposal ${proposalId}`);
+      
+      // Validate IDs
+      if (isNaN(proposalId) || isNaN(elementId)) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Valid proposal ID and element ID are required",
+          details: { 
+            proposalId: req.params.proposalId,
+            elementId: req.params.id 
+          }
+        });
+      }
+      
+      // Get the current element to verify it belongs to the right proposal
+      const currentElement = await storage.getProposalElement(elementId);
+      if (!currentElement) {
+        return res.status(404).json({
+          success: false,
+          error: "Not Found",
+          message: "Proposal element not found",
+          details: { id: elementId }
+        });
+      }
+      
+      // Verify the element belongs to the specified proposal
+      if (currentElement.proposalId !== proposalId) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Element does not belong to the specified proposal",
+          details: { 
+            elementId: elementId,
+            elementProposalId: currentElement.proposalId,
+            requestedProposalId: proposalId
+          }
+        });
+      }
+      
+      // Continue with the update using the original implementation
+      // Forward to the existing endpoint logic
+      req.params.id = elementId.toString();
+      
+      // Process the update using the same logic as the original endpoint
+      try {
+        const updatedElement = await storage.updateProposalElement(elementId, req.body);
+        return res.status(200).json({
+          success: true,
+          data: updatedElement,
+          message: "Element updated successfully"
+        });
+      } catch (error: any) {
+        console.error("Error updating proposal element:", error);
+        return res.status(500).json({
+          success: false,
+          error: "Server Error",
+          message: error.message || "Failed to update element"
+        });
+      }
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Keep the original endpoint for backward compatibility
   app.patch('/api/proposal-elements/:id', async (req: Request, res: Response) => {
     try {
       // Temporarily disable authentication check
@@ -3809,6 +3882,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add the nested route form for element deletion to support the client implementation
+  app.delete('/api/proposals/:proposalId/elements/:id', async (req: Request, res: Response) => {
+    try {
+      // Parse IDs
+      const proposalId = parseInt(req.params.proposalId);
+      const elementId = parseInt(req.params.id);
+      
+      console.log(`DELETE request for element ${elementId} in proposal ${proposalId}`);
+      
+      // Validate IDs
+      if (isNaN(proposalId) || isNaN(elementId)) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Valid proposal ID and element ID are required",
+          details: { 
+            proposalId: req.params.proposalId,
+            elementId: req.params.id 
+          }
+        });
+      }
+      
+      // First get the element to verify it belongs to the right proposal
+      const element = await storage.getProposalElement(elementId);
+      if (!element) {
+        return res.status(404).json({
+          success: false,
+          error: "Not Found",
+          message: "Proposal element not found",
+          details: { id: elementId }
+        });
+      }
+      
+      // Verify the element belongs to the specified proposal
+      if (element.proposalId !== proposalId) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Element does not belong to the specified proposal",
+          details: { 
+            elementId: elementId,
+            elementProposalId: element.proposalId,
+            requestedProposalId: proposalId
+          }
+        });
+      }
+      
+      // Store element data for activity log
+      const elementName = element.name;
+      const elementType = element.elementType;
+      
+      // Delete the element
+      const success = await storage.deleteProposalElement(elementId);
+      
+      if (!success) {
+        return res.status(404).json({
+          success: false,
+          error: "Not Found",
+          message: "Proposal element not found or already deleted",
+          details: { id: elementId }
+        });
+      }
+      
+      // Log activity
+      try {
+        await storage.createProposalActivity({
+          proposalId: proposalId,
+          activityType: "ELEMENT_DELETED",
+          description: `Element "${elementName}" deleted`,
+          userId: req.body.userId || 2, // Default to user ID 2 if not provided
+          metadata: {
+            elementId: elementId,
+            elementType: elementType
+          }
+        });
+      } catch (logError) {
+        console.error("Error logging proposal activity:", logError);
+        // Continue despite logging error
+      }
+      
+      // Return 200 with success message
+      return res.status(200).json({
+        success: true,
+        message: "Proposal element deleted successfully",
+        data: { id: elementId }
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Keep the original endpoint for backward compatibility
   app.delete('/api/proposal-elements/:id', async (req: Request, res: Response) => {
     try {
       // Temporarily disable authentication check
