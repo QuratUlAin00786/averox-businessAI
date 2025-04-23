@@ -116,13 +116,13 @@ export function ElementEditorFactory({ element, onChange, disabled = false }: El
           </div>
         );
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error rendering element editor:", error, element);
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Error rendering editor for {element.elementType}: {error.message}
+          Error rendering editor for {element.elementType}: {error.message || 'Unknown error'}
         </AlertDescription>
       </Alert>
     );

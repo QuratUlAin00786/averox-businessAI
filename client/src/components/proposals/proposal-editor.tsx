@@ -402,68 +402,78 @@ export function ProposalEditor({
     }, 2000);
   };
 
-  const handleAddElement = (type: ElementType) => {
+  const handleAddElement = async (type: ElementType) => {
     if (isReadOnly) return;
     
     console.log("Adding new element of type:", type);
     
-    // Use the getDefaultElementContent from the factory to ensure consistency
-    const defaultContent = getDefaultElementContent(type);
-    console.log("Default content for new element:", defaultContent);
-    
-    // Convert to JSON string for storage
-    const elementContent = JSON.stringify(defaultContent);
-    
-    const newElement: InsertProposalElement = {
-      proposalId: proposal.id,
-      elementType: type,
-      name: `New ${type}`,
-      content: elementContent,
-      sortOrder: elements.length
-    };
-    
-    console.log("New element data:", newElement);
-    
     try {
-      // Using fetch directly for more control
-      fetch(`/api/proposals/${proposal.id}/elements`, {
+      // Use the getDefaultElementContent from the factory to ensure consistency
+      const defaultContent = getDefaultElementContent(type);
+      console.log("Default content for new element:", defaultContent);
+      
+      // Convert to JSON string for storage
+      const elementContent = JSON.stringify(defaultContent);
+      
+      const newElement: InsertProposalElement = {
+        proposalId: proposal.id,
+        elementType: type,
+        name: `New ${type}`,
+        content: elementContent,
+        sortOrder: elements.length
+      };
+      
+      console.log("Sending new element data:", newElement);
+      
+      // Use async/await for cleaner code and better error handling
+      const response = await fetch(`/api/proposals/${proposal.id}/elements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(newElement),
-      })
-      .then(response => {
-        if (!response.ok) {
-          return response.text().then(text => {
-            throw new Error(`Failed to add element: ${text}`);
-          });
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log("Element added successfully:", data);
-        toast({
-          title: 'Element Added',
-          description: 'The element has been added to your proposal',
-        });
-        refetchElements();
-      })
-      .catch(error => {
-        console.error("Error adding element:", error);
-        toast({
-          title: 'Error',
-          description: `Failed to add element: ${error.message}`,
-          variant: 'destructive',
-        });
       });
-    } catch (error) {
-      console.error("Exception in handleAddElement:", error);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Server error adding element:", errorText);
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Element added successfully. Server response:", data);
+      
+      // Show success message
+      toast({
+        title: 'Element Added',
+        description: 'The element has been added to your proposal',
+      });
+      
+      // Refresh the elements list
+      const newElements = await refetchElements();
+      console.log("Refreshed elements after add:", newElements);
+      
+      // If this is our first element, switch to editor tab to show it
+      if (elements.length === 0) {
+        setTimeout(() => {
+          setActiveTab('editor');
+          toast({
+            title: 'Element Created',
+            description: 'Your first element has been added to the proposal.',
+          });
+        }, 500);
+      }
+      
+      return data.data || data;
+      
+    } catch (error: any) {
+      console.error("Error in handleAddElement:", error);
       toast({
         title: 'Error',
-        description: `Exception adding element: ${error.message}`,
+        description: `Failed to add element: ${error.message}`,
         variant: 'destructive',
       });
+      return null;
     }
   };
   
@@ -643,9 +653,42 @@ export function ProposalEditor({
                         <h4 className="text-lg font-medium text-neutral-600 mb-2">No Content Yet</h4>
                         <p className="text-neutral-500 mb-4">Start adding elements to build your proposal document</p>
                         {!isReadOnly && (
-                          <Button onClick={() => setActiveTab('elements')}>
-                            <Plus className="h-4 w-4 mr-2" /> Add Elements
-                          </Button>
+                          <div className="flex flex-col items-center gap-3">
+                            <Button onClick={() => setActiveTab('elements')}>
+                              <Plus className="h-4 w-4 mr-2" /> Go to Elements Tab
+                            </Button>
+                            
+                            <div className="flex flex-wrap justify-center gap-2 mt-4 max-w-md mx-auto">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleAddElement('Header')}
+                              >
+                                Add Header
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleAddElement('Text')}
+                              >
+                                Add Text
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleAddElement('Image')}
+                              >
+                                Add Image
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleAddElement('Table')}
+                              >
+                                Add Table
+                              </Button>
+                            </div>
+                          </div>
                         )}
                       </div>
                     )}
