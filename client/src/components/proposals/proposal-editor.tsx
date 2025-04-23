@@ -106,13 +106,18 @@ export function ProposalEditor({
     
     if (isOpen) {
       console.log("ProposalEditor is open, fetching elements for proposal:", proposal.id);
-      refetchElements();
+      refetchElements().then(() => {
+        console.log("Elements fetched, ready for editing");
+      });
     }
     
     return () => {
       console.log("ProposalEditor component unmounting");
     };
   }, []);
+  
+  // For now, we'll remove this effect as it causes issues with the initialization order
+  // We'll add it back after the elements query is defined
   const [isDraggingElement, setIsDraggingElement] = useState<number | null>(null);
   const [selectedElement, setSelectedElement] = useState<ProposalElement | null>(null);
   const [newComment, setNewComment] = useState('');
