@@ -1150,7 +1150,19 @@ export function ProposalManager({
         <div className="flex justify-between mb-4">
           <h3 className="font-medium">Document Overview</h3>
           <Button 
-            onClick={() => handleOpenEditor(fullProposal)}
+            onClick={() => {
+              console.log("Edit Document button clicked for proposal:", fullProposal.id);
+              // Direct approach instead of using the handler function
+              if (fullProposal) {
+                // Set the proposal first
+                setSelectedProposal(fullProposal);
+                // Then after a brief delay, show the editor
+                setTimeout(() => {
+                  setEditorVisible(true);
+                  console.log("Editor visibility set to true directly from button click");
+                }, 100);
+              }
+            }}
             variant="outline"
           >
             <ClipboardEdit className="h-4 w-4 mr-2" /> Edit Document

@@ -129,6 +129,20 @@ export function ProposalEditor({
   useEffect(() => {
     console.log("Active tab changed to:", activeTab);
   }, [activeTab]);
+  
+  // Component lifecycle effect
+  useEffect(() => {
+    console.log("ProposalEditor component mounted with isOpen:", isOpen, "proposalId:", proposal.id);
+    
+    if (isOpen) {
+      console.log("ProposalEditor is open, fetching elements for proposal:", proposal.id);
+      refetchElements();
+    }
+    
+    return () => {
+      console.log("ProposalEditor component unmounting");
+    };
+  }, []);
   const [isDraggingElement, setIsDraggingElement] = useState<number | null>(null);
   const [selectedElement, setSelectedElement] = useState<ProposalElement | null>(null);
   const [newComment, setNewComment] = useState('');
