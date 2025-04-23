@@ -255,19 +255,37 @@ export function ProposalEditor({
       // Ensure content is a string when sending to the server
       const preparedElement = { ...element };
       
+      console.log("Updating element, original data:", element);
+      
+      // Make sure we have the correct content format
       if (typeof preparedElement.content === 'object') {
         preparedElement.content = JSON.stringify(preparedElement.content);
       }
       
-      const response = await fetch(`/api/proposals/${proposal.id}/elements/${element.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(preparedElement),
-      });
-      const json = await response.json();
-      return json.data;
+      console.log("Prepared element for update:", preparedElement);
+      
+      try {
+        const response = await fetch(`/api/proposals/${proposal.id}/elements/${element.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(preparedElement),
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error updating element. Status:", response.status, "Message:", errorText);
+          throw new Error(`Failed to update element: ${errorText}`);
+        }
+        
+        const json = await response.json();
+        console.log("Update element response:", json);
+        return json.data;
+      } catch (error) {
+        console.error("Exception in updateElementMutation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -288,11 +306,26 @@ export function ProposalEditor({
 
   const deleteElementMutation = useMutation({
     mutationFn: async (elementId: number) => {
-      const response = await fetch(`/api/proposals/${proposal.id}/elements/${elementId}`, {
-        method: 'DELETE',
-      });
-      const json = await response.json();
-      return json.data;
+      console.log("Deleting element with ID:", elementId, "from proposal:", proposal.id);
+      
+      try {
+        const response = await fetch(`/api/proposals/${proposal.id}/elements/${elementId}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error deleting element. Status:", response.status, "Message:", errorText);
+          throw new Error(`Failed to delete element: ${errorText}`);
+        }
+        
+        const json = await response.json();
+        console.log("Delete element response:", json);
+        return json.data;
+      } catch (error) {
+        console.error("Exception in deleteElementMutation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -407,16 +440,100 @@ export function ProposalEditor({
     
     console.log("Adding new element of type:", type);
     
+    // Create element with hardcoded data for consistent format
+    let elementContent;
+    switch(type) {
+      case 'Header':
+        elementContent = JSON.stringify({ text: 'New Header', level: 2 });
+        break;
+      case 'Text':
+        elementContent = JSON.stringify({ text: 'Enter your text here. This can be a paragraph or longer content section.' });
+        break;
+      case 'Image':
+        elementContent = JSON.stringify({ url: '', alt: 'Image description', caption: '', width: 500 });
+        break;
+      case 'Table':
+        elementContent = JSON.stringify({ 
+          headers: ['Column 1', 'Column 2', 'Column 3'],
+          rows: [
+            ['Cell 1', 'Cell 2', 'Cell 3'],
+            ['Cell 4', 'Cell 5', 'Cell 6'],
+          ]
+        });
+        break;
+      case 'List':
+        elementContent = JSON.stringify({ items: ['Item 1', 'Item 2', 'Item 3'], ordered: false });
+        break;
+      case 'Quote':
+        elementContent = JSON.stringify({ text: 'Quote text', attribution: 'Source' });
+        break;
+      case 'ProductList':
+        elementContent = JSON.stringify({ productIds: [] });
+        break;
+      case 'Signature':
+        elementContent = JSON.stringify({ name: 'Signature', role: 'Title', date: true });
+        break;
+      case 'PageBreak':
+        elementContent = JSON.stringify({});
+        break;
+      case 'Custom':
+        elementContent = JSON.stringify({ html: '<div>Custom content</div>' });
+        break;
+      default:
+        elementContent = JSON.stringify({});
+    }
+    
     const newElement: InsertProposalElement = {
       proposalId: proposal.id,
       elementType: type,
       name: `New ${type}`,
-      content: JSON.stringify(getDefaultElementContent(type)),
+      content: elementContent,
       sortOrder: elements.length
     };
     
     console.log("New element data:", newElement);
-    addElementMutation.mutate(newElement);
+    
+    try {
+      // Using fetch directly for more control
+      fetch(`/api/proposals/${proposal.id}/elements`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newElement),
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.text().then(text => {
+            throw new Error(`Failed to add element: ${text}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log("Element added successfully:", data);
+        toast({
+          title: 'Element Added',
+          description: 'The element has been added to your proposal',
+        });
+        refetchElements();
+      })
+      .catch(error => {
+        console.error("Error adding element:", error);
+        toast({
+          title: 'Error',
+          description: `Failed to add element: ${error.message}`,
+          variant: 'destructive',
+        });
+      });
+    } catch (error) {
+      console.error("Exception in handleAddElement:", error);
+      toast({
+        title: 'Error',
+        description: `Exception adding element: ${error.message}`,
+        variant: 'destructive',
+      });
+    }
   };
   
   const handleDeleteElement = (id: number) => {
