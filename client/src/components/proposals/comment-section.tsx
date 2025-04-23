@@ -94,19 +94,19 @@ export function CommentSection({ proposalId, isReadOnly }: CommentSectionProps) 
 
       {/* Simple comment entry form */}
       {!isReadOnly && (
-        <Card className="mb-8">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Add Comment</CardTitle>
-            <CardDescription>
+        <Card className="mb-4">
+          <CardHeader className="pb-1 pt-3">
+            <CardTitle className="text-base">Add Comment</CardTitle>
+            <CardDescription className="text-sm">
               Share your thoughts about this proposal
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-2">
             <Textarea
               placeholder="Type your comment here..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              className="min-h-[100px]"
+              className="min-h-[80px]"
               id="comment-textarea"
             />
           </CardContent>
@@ -130,31 +130,31 @@ export function CommentSection({ proposalId, isReadOnly }: CommentSectionProps) 
       )}
 
       {isLoadingComments ? (
-        <div className="flex justify-center p-6">
-          <Loader2 className="h-12 w-12 animate-spin text-primary/50" />
+        <div className="flex justify-center p-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
         </div>
       ) : comments.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <MessageSquare className="h-16 w-16 text-neutral-300 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No comments yet</h3>
-            <p className="text-neutral-500 max-w-md mx-auto">
-              Be the first to start the discussion on this proposal. Comments help keep track of important feedback and decisions.
+          <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+            <MessageSquare className="h-12 w-12 text-neutral-300 mb-2" />
+            <h3 className="text-base font-medium mb-1">No comments yet</h3>
+            <p className="text-neutral-500 max-w-md mx-auto text-sm">
+              Add comments to track feedback and decisions
             </p>
           </CardContent>
         </Card>
       ) : (
         <div>
-          <h4 className="font-medium text-lg mb-3">Discussion Thread</h4>
-          <div className="space-y-4">
+          <h4 className="font-medium text-base mb-2">Discussion Thread</h4>
+          <div className="space-y-3">
             {comments.map((comment) => (
-              <div key={comment.id} className="border rounded-md p-4 bg-white hover:shadow-sm transition-shadow">
-                <div className="flex items-start gap-3">
-                  <Avatar className="h-10 w-10 flex-shrink-0">
+              <div key={comment.id} className="border rounded-md p-3 bg-white hover:shadow-sm transition-shadow">
+                <div className="flex items-start gap-2">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
                     {comment.user?.avatar ? (
                       <AvatarImage src={comment.user.avatar} alt={comment.user.username || 'User'} />
                     ) : (
-                      <AvatarFallback className="bg-primary/10 text-primary">
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
                         {comment.user?.firstName?.[0] || '?'}{comment.user?.lastName?.[0] || ''}
                       </AvatarFallback>
                     )}
@@ -162,7 +162,7 @@ export function CommentSection({ proposalId, isReadOnly }: CommentSectionProps) 
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-1">
                       <div>
-                        <div className="font-medium">
+                        <div className="font-medium text-sm">
                           {comment.user ? 
                             `${comment.user.firstName || ''} ${comment.user.lastName || ''}`.trim() || comment.user.username 
                             : 'Unknown User'
@@ -173,7 +173,7 @@ export function CommentSection({ proposalId, isReadOnly }: CommentSectionProps) 
                         </div>
                       </div>
                     </div>
-                    <div className="mt-2 text-neutral-700 whitespace-pre-wrap">{comment.content}</div>
+                    <div className="mt-1 text-neutral-700 whitespace-pre-wrap text-sm">{comment.content}</div>
                   </div>
                 </div>
               </div>
