@@ -284,7 +284,8 @@ export function ProposalEditor({
       console.log("Prepared element for update:", preparedElement);
       
       try {
-        const response = await fetch(`/api/proposals/${proposal.id}/elements/${element.id}`, {
+        // Use the correct endpoint - note the different URL format
+        const response = await fetch(`/api/proposal-elements/${element.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
