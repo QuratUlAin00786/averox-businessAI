@@ -17,6 +17,8 @@ interface CollaboratorSectionProps {
 }
 
 export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSectionProps) {
+  console.log("CollaboratorSection rendering with proposalId:", proposalId, "isReadOnly:", isReadOnly);
+  
   const { toast } = useToast();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('Viewer');
