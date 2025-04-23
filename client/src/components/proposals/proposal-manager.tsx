@@ -856,6 +856,7 @@ export function ProposalManager({
   const handleOpenEditor = async (proposal: Proposal) => {
     try {
       console.log("Opening editor for proposal via handleOpenEditor:", proposal);
+      console.log("Current editor state - editorVisible:", editorVisible, "selectedProposal:", selectedProposal?.id);
       
       // Safety check - make sure proposal has required properties
       if (!proposal || !proposal.id) {
@@ -870,8 +871,10 @@ export function ProposalManager({
       
       // First set the selected proposal ID
       setSelectedProposalId(proposal.id);
+      console.log("Set selectedProposalId to:", proposal.id);
       
       // Then fetch fresh data
+      console.log("Fetching fresh proposal data for ID:", proposal.id);
       const response = await fetch(`/api/proposals/${proposal.id}`);
       
       if (!response.ok) {
@@ -883,6 +886,7 @@ export function ProposalManager({
       console.log("Fetched fresh proposal data:", freshProposal);
       
       // Step 1: Set the proposal data first
+      console.log("Setting selectedProposal to:", freshProposal.id);
       setSelectedProposal(freshProposal);
       
       // Step 2: Pre-fetch the proposal elements so they're ready
@@ -915,6 +919,11 @@ export function ProposalManager({
           console.log("No elements found. Will create one automatically when editor opens.");
         }
       }
+      
+      // Important: Make sure we reset editorVisible to false before setting it to true
+      // This helps React properly detect the state change and re-render components
+      console.log("Setting editorVisible to false first");
+      setEditorVisible(false);
       
       // Step 3: Make the editor visible with a short delay
       // This ensures React has time to process the state updates
@@ -1189,10 +1198,24 @@ export function ProposalManager({
           <Button 
             onClick={() => {
               console.log("Edit Document button clicked for proposal:", fullProposal.id);
-              // Use the same handler as the "Edit Content" action in the card menu
+              
+              // Force a clean editor reset by using a fresh approach
               if (fullProposal) {
-                // Call our reusable handler function to ensure consistent logic
-                handleOpenEditor(fullProposal);
+                try {
+                  // Reset editor state completely
+                  setEditorVisible(false);
+                  
+                  // Clear session storage
+                  sessionStorage.removeItem(`proposal_${fullProposal.id}_selected_element`);
+                  sessionStorage.removeItem(`proposal_${fullProposal.id}_elements`);
+                  
+                  // Use our enhanced handler function after a brief delay
+                  setTimeout(() => {
+                    handleOpenEditor(fullProposal);
+                  }, 100);
+                } catch (error) {
+                  console.error("Error in Edit Document click handler:", error);
+                }
               }
             }}
             variant="outline"

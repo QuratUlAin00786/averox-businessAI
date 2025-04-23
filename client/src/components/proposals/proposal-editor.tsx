@@ -131,14 +131,24 @@ export function ProposalEditor({
             console.log("Setting stored element as selected:", foundElement.id);
             setSelectedElement(foundElement);
             setActiveTab('editor');
+          } else if (elements.length > 0) {
+            // If we can't find the exact stored element but have elements, select the first one
+            console.log("Stored element not found, selecting first element:", elements[0].id);
+            setSelectedElement(elements[0]);
+            setActiveTab('editor');
           }
+        } else if (elements.length > 0) {
+          // If we don't have a stored element but have elements, select the first one
+          console.log("No stored element, selecting first element:", elements[0].id);
+          setSelectedElement(elements[0]);
+          setActiveTab('editor');
         }
       });
     }
     
     // Clear the session storage on unmount
     return () => {
-      console.log("ProposalEditor component unmounting");
+      console.log("Complete cleanup on component unmount");
       try {
         sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
         sessionStorage.removeItem(`proposal_${proposal.id}_elements`);
