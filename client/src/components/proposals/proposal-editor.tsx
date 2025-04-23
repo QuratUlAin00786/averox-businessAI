@@ -8,7 +8,7 @@ import {
   ProposalCollaborator,
   ProposalComment,
 } from '@shared/schema';
-import { CommentSection } from './new-comment-section';
+import { CommentSection } from './comment-section';
 import { CollaboratorSection } from './collaborator-section';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
