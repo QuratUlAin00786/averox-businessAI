@@ -412,16 +412,18 @@ export function ProposalEditor({
       const defaultContent = getDefaultElementContent(type);
       console.log("Default content for new element:", defaultContent);
       
-      // Convert to JSON string for storage
-      const elementContent = JSON.stringify(defaultContent);
-      
+      // Prepare the content
+      // Important: we send as object, server will stringify if needed
       const newElement: InsertProposalElement = {
         proposalId: proposal.id,
         elementType: type,
         name: `New ${type}`,
-        content: elementContent,
-        sortOrder: elements.length
+        content: defaultContent, // Send the object directly
+        sortOrder: elements.length,
+        createdBy: 2 // This is hardcoded in the server anyway
       };
+      
+      console.log("Default content (without stringify):", defaultContent);
       
       console.log("Sending new element data:", newElement);
       
@@ -446,12 +448,22 @@ export function ProposalEditor({
       // Show success message
       toast({
         title: 'Element Added',
-        description: 'The element has been added to your proposal',
+        description: `New ${type} element has been added to your proposal`,
+      });
+      
+      // Explicitly log the response data structure
+      console.log("Response data structure:", {
+        success: data.success,
+        hasData: data.data ? 'yes' : 'no',
+        dataIsArray: Array.isArray(data.data),
+        message: data.message,
+        elementProperties: data.data ? Object.keys(data.data) : 'N/A'
       });
       
       // Refresh the elements list
+      console.log("Refreshing elements list...");
       const newElements = await refetchElements();
-      console.log("Refreshed elements after add:", newElements);
+      console.log("Elements after add:", newElements?.length || 0, "items found");
       
       // If this is our first element, switch to editor tab to show it
       if (elements.length === 0) {
