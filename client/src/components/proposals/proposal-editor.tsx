@@ -147,8 +147,9 @@ export function ProposalEditor({
     queryKey: ['/api/proposals', proposal.id, 'elements'],
     queryFn: async () => {
       try {
-        const response = await apiRequestJson(`/api/proposals/${proposal.id}/elements`);
-        const data = (response.data || []) as ProposalElement[];
+        const response = await fetch(`/api/proposals/${proposal.id}/elements`);
+        const json = await response.json();
+        const data = (json.data || []) as ProposalElement[];
         return data.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
       } catch (error) {
         console.error("Error fetching proposal elements:", error);
@@ -166,8 +167,9 @@ export function ProposalEditor({
     queryKey: ['/api/proposals', proposal.id, 'collaborators'],
     queryFn: async () => {
       try {
-        const response = await apiRequestJson(`/api/proposals/${proposal.id}/collaborators`);
-        return (response.data || []) as (ProposalCollaborator & { user?: User })[];
+        const response = await fetch(`/api/proposals/${proposal.id}/collaborators`);
+        const json = await response.json();
+        return (json.data || []) as (ProposalCollaborator & { user?: User })[];
       } catch (error) {
         console.error("Error fetching collaborators:", error);
         throw error;
@@ -316,7 +318,7 @@ export function ProposalEditor({
       // Add a header element with the file name
       addElementMutation.mutate({
         proposalId: proposal.id,
-        type: 'Header',
+        elementType: 'Header',
         name: 'Document Title',
         content: JSON.stringify({ 
           text: file.name.split('.')[0], 
@@ -328,7 +330,7 @@ export function ProposalEditor({
       // Add a text element with placeholder content
       addElementMutation.mutate({
         proposalId: proposal.id,
-        type: 'Text',
+        elementType: 'Text',
         name: 'Document Content',
         content: JSON.stringify({ 
           text: `Content imported from ${file.name}. You can edit this text with your actual document content.` 
@@ -357,7 +359,7 @@ export function ProposalEditor({
     
     const newElement: InsertProposalElement = {
       proposalId: proposal.id,
-      type: type,
+      elementType: type,
       name: `New ${type}`,
       content: JSON.stringify(getDefaultElementContent(type)),
       sortOrder: elements.length
