@@ -181,14 +181,39 @@ export function ProposalEditor({
   const addElementMutation = useMutation({
     mutationFn: async (elementData: InsertProposalElement) => {
       try {
+        console.log("Add element mutation called with data:", elementData);
+        
+        // Create a validated copy of the data
+        const validatedData = {
+          ...elementData,
+          // Ensure these fields are present and valid
+          proposalId: proposal.id,
+          elementType: elementData.elementType,
+          name: elementData.name || `New ${elementData.elementType}`,
+          // Ensure content is a string
+          content: typeof elementData.content === 'string' 
+            ? elementData.content 
+            : JSON.stringify(elementData.content)
+        };
+        
+        console.log("Sending validated element data:", validatedData);
+        
         const response = await fetch(`/api/proposals/${proposal.id}/elements`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(elementData),
+          body: JSON.stringify(validatedData),
         });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Server error response:", errorText);
+          throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
+        
         const json = await response.json();
+        console.log("Server response for add element:", json);
         return json.data;
       } catch (error) {
         console.error("Error adding element:", error);
@@ -366,6 +391,8 @@ export function ProposalEditor({
   const handleAddElement = (type: ElementType) => {
     if (isReadOnly) return;
     
+    console.log("Adding new element of type:", type);
+    
     const newElement: InsertProposalElement = {
       proposalId: proposal.id,
       elementType: type,
@@ -374,6 +401,7 @@ export function ProposalEditor({
       sortOrder: elements.length
     };
     
+    console.log("New element data:", newElement);
     addElementMutation.mutate(newElement);
   };
   

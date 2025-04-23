@@ -854,8 +854,13 @@ export function ProposalManager({
   };
 
   const handleOpenEditor = (proposal: Proposal) => {
+    console.log("Opening editor for proposal:", proposal);
     setSelectedProposal(proposal);
-    setEditorVisible(true);
+    // Use a small delay to ensure state is updated
+    setTimeout(() => {
+      setEditorVisible(true);
+      console.log("Editor visibility set to true");
+    }, 50);
   };
 
   const getFilteredProposals = () => {
