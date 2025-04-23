@@ -728,8 +728,8 @@ export function ProposalEditor({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[1000px] max-h-[90vh] p-0">
-        <DialogHeader className="sticky top-0 z-10 bg-white pt-6 px-6 pb-2 border-b">
+      <DialogContent className="sm:max-w-[1000px] h-[90vh] p-0 overflow-hidden">
+        <DialogHeader className="sticky top-0 z-10 bg-white pt-4 px-6 pb-2 border-b">
           <div className="flex justify-between items-center">
             <div>
               <DialogTitle>{proposal.name}</DialogTitle>
@@ -984,11 +984,11 @@ export function ProposalEditor({
             </div>
           </TabsContent>
 
-          <TabsContent value="collaborators" forceMount>
+          <TabsContent value="collaborators" forceMount className="h-[calc(90vh-180px)] overflow-hidden">
             <CollaboratorSection proposalId={proposal.id} isReadOnly={isReadOnly} />
           </TabsContent>
 
-          <TabsContent value="comments" forceMount>
+          <TabsContent value="comments" forceMount className="h-[calc(90vh-180px)] overflow-hidden">
             <CommentSection proposalId={proposal.id} isReadOnly={isReadOnly} />
           </TabsContent>
         </Tabs>
