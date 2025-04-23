@@ -78,13 +78,14 @@ async function createMarketingTables() {
         "id" SERIAL PRIMARY KEY,
         "name" TEXT NOT NULL,
         "description" TEXT,
-        "criteria" JSONB NOT NULL,
+        "conditions" JSONB DEFAULT '[]' NOT NULL,
+        "match_type" TEXT DEFAULT 'all' NOT NULL,
         "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         "updated_at" TIMESTAMP WITH TIME ZONE,
         "created_by" INTEGER,
-        "is_active" BOOLEAN,
         "contact_count" INTEGER DEFAULT 0,
-        "tags" TEXT[]
+        "last_updated" TIMESTAMP WITH TIME ZONE,
+        "is_active" BOOLEAN DEFAULT TRUE
       );
     `);
     
@@ -95,17 +96,16 @@ async function createMarketingTables() {
         "description" TEXT,
         "type" campaign_type NOT NULL,
         "status" campaign_status NOT NULL DEFAULT 'draft',
-        "content" JSONB,
-        "schedule" JSONB,
+        "content" JSONB DEFAULT '{}' NOT NULL,
         "segment_id" INTEGER,
+        "scheduled_at" TIMESTAMP WITH TIME ZONE,
+        "sent_at" TIMESTAMP WITH TIME ZONE,
+        "completed_at" TIMESTAMP WITH TIME ZONE,
         "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         "updated_at" TIMESTAMP WITH TIME ZONE,
         "created_by" INTEGER,
-        "stats" JSONB,
-        "template_id" INTEGER,
-        "send_time" TIMESTAMP WITH TIME ZONE,
-        "settings" JSONB,
-        "tags" TEXT[]
+        "stats" JSONB DEFAULT '{"sent": 0, "delivered": 0, "opened": 0, "clicked": 0, "bounced": 0, "unsubscribed": 0}',
+        "settings" JSONB DEFAULT '{"trackOpens": true, "trackClicks": true, "personalizeContent": true}'
       );
     `);
     
@@ -116,48 +116,45 @@ async function createMarketingTables() {
         "description" TEXT,
         "status" workflow_status NOT NULL DEFAULT 'draft',
         "trigger_type" workflow_trigger_type NOT NULL,
-        "trigger_settings" JSONB,
-        "nodes" JSONB NOT NULL,
-        "connections" JSONB NOT NULL,
+        "nodes" JSONB DEFAULT '{}' NOT NULL,
         "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         "updated_at" TIMESTAMP WITH TIME ZONE,
         "created_by" INTEGER,
-        "is_active" BOOLEAN,
-        "enrolled_contacts" INTEGER DEFAULT 0,
-        "settings" JSONB,
-        "tags" TEXT[]
+        "settings" JSONB DEFAULT '{"allowReEnrollment": false, "suppressFromOtherWorkflows": false, "businessHoursOnly": false}',
+        "stats" JSONB DEFAULT '{"activeContacts": 0, "completedContacts": 0, "conversionRate": 0}'
       );
     `);
     
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS "campaign_engagements" (
         "id" SERIAL PRIMARY KEY,
-        "campaign_id" INTEGER NOT NULL,
-        "contact_id" INTEGER NOT NULL,
-        "status" TEXT NOT NULL,
-        "engagement_time" TIMESTAMP WITH TIME ZONE,
-        "action" TEXT,
-        "details" JSONB,
-        "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        "updated_at" TIMESTAMP WITH TIME ZONE,
+        "campaign_id" INTEGER NOT NULL REFERENCES "marketing_campaigns"("id"),
+        "contact_id" INTEGER REFERENCES "contacts"("id"),
+        "lead_id" INTEGER REFERENCES "leads"("id"),
+        "status" TEXT NOT NULL DEFAULT 'pending',
+        "sent_at" TIMESTAMP WITH TIME ZONE,
+        "delivered_at" TIMESTAMP WITH TIME ZONE,
+        "opened_at" TIMESTAMP WITH TIME ZONE,
+        "clicked_at" TIMESTAMP WITH TIME ZONE,
+        "clicked_url" TEXT,
         "device_info" JSONB,
-        "location_info" JSONB
+        "location" JSONB,
+        "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       );
     `);
     
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS "workflow_enrollments" (
         "id" SERIAL PRIMARY KEY,
-        "workflow_id" INTEGER NOT NULL,
-        "contact_id" INTEGER NOT NULL,
-        "status" TEXT NOT NULL,
-        "current_step" TEXT,
-        "steps_completed" JSONB,
-        "enrollment_time" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        "completion_time" TIMESTAMP WITH TIME ZONE,
-        "data" JSONB,
-        "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        "updated_at" TIMESTAMP WITH TIME ZONE
+        "workflow_id" INTEGER NOT NULL REFERENCES "marketing_workflows"("id"),
+        "contact_id" INTEGER REFERENCES "contacts"("id"),
+        "lead_id" INTEGER REFERENCES "leads"("id"), 
+        "status" TEXT NOT NULL DEFAULT 'active',
+        "current_node_id" TEXT,
+        "enrolled_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        "completed_at" TIMESTAMP WITH TIME ZONE,
+        "exited_at" TIMESTAMP WITH TIME ZONE,
+        "exit_reason" TEXT
       );
     `);
     
