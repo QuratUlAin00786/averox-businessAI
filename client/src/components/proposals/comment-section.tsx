@@ -87,9 +87,9 @@ export function CommentSection({ proposalId, isReadOnly }: CommentSectionProps) 
   };
 
   return (
-    <div className="p-4 h-[calc(90vh-220px)] overflow-auto bg-white border-t">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-medium">Comments</h3>
+    <div className="p-3 h-[500px] overflow-auto bg-white border-t">
+      <div className="flex justify-between items-center mb-1">
+        <h3 className="text-base font-medium">Comments</h3>
       </div>
 
       {/* Simple comment entry form */}
@@ -110,18 +110,19 @@ export function CommentSection({ proposalId, isReadOnly }: CommentSectionProps) 
               id="comment-textarea"
             />
           </CardContent>
-          <CardFooter className="flex justify-end">
+          <CardFooter className="flex justify-end py-2">
             <Button
+              size="sm"
               onClick={handleAddComment}
               disabled={!newComment.trim() || addCommentMutation.isPending}
             >
               {addCommentMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Posting...
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Posting...
                 </>
               ) : (
                 <>
-                  <Send className="h-4 w-4 mr-2" /> Post Comment
+                  <Send className="h-3 w-3 mr-1" /> Post Comment
                 </>
               )}
             </Button>

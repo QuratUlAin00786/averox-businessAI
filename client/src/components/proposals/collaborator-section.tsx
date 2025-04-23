@@ -108,12 +108,12 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
   });
 
   return (
-    <div className="p-4 h-[calc(90vh-220px)] overflow-auto bg-white border-t">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-medium">Collaborators</h3>
+    <div className="p-3 h-[500px] overflow-auto bg-white border-t">
+      <div className="flex justify-between items-center mb-1">
+        <h3 className="text-base font-medium">Collaborators</h3>
       </div>
 
-      <div className="mb-4 space-y-4">
+      <div className="mb-3 space-y-3">
         {/* Simple user selector */}
         {!isReadOnly && (
           <Card className="mb-4">
@@ -202,8 +202,9 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
                 </div>
               )}
             </CardContent>
-            <CardFooter className="flex justify-end">
+            <CardFooter className="flex justify-end py-2">
               <Button
+                size="sm"
                 onClick={() => {
                   if (selectedUserId) {
                     addCollaboratorMutation.mutate({
@@ -216,11 +217,11 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
               >
                 {addCollaboratorMutation.isPending ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding...
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Adding...
                   </>
                 ) : (
                   <>
-                    <UserPlus className="h-4 w-4 mr-2" /> Add Collaborator
+                    <UserPlus className="h-3 w-3 mr-1" /> Add Collaborator
                   </>
                 )}
               </Button>
@@ -245,29 +246,29 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
         </Card>
       ) : (
         <div>
-          <h4 className="font-medium text-lg mb-3">Team Members</h4>
-          <div className="space-y-4">
+          <h4 className="font-medium text-base mb-2">Team Members</h4>
+          <div className="space-y-3">
             {collaborators.map((collaborator) => (
-              <div key={collaborator.id} className="border rounded-md p-4 bg-white hover:shadow-sm transition-shadow">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 flex-shrink-0">
+              <div key={collaborator.id} className="border rounded-md p-2 bg-white hover:shadow-sm transition-shadow">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-7 w-7 flex-shrink-0">
                     {collaborator.user?.avatar ? (
                       <AvatarImage src={collaborator.user.avatar} alt={collaborator.user.username || 'User'} />
                     ) : (
-                      <AvatarFallback className="bg-primary/10 text-primary">
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
                         {collaborator.user?.firstName?.[0] || '?'}{collaborator.user?.lastName?.[0] || ''}
                       </AvatarFallback>
                     )}
                   </Avatar>
                   <div className="flex-1">
-                    <div className="font-medium">
+                    <div className="font-medium text-sm">
                       {collaborator.user ? 
                         `${collaborator.user.firstName || ''} ${collaborator.user.lastName || ''}`.trim() || collaborator.user.username 
                         : 'Unknown User'
                       }
                     </div>
-                    <div className="text-sm flex items-center gap-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100">
+                    <div className="text-xs flex items-center gap-2">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-gray-100">
                         {collaborator.role}
                       </span>
                       <span className="text-neutral-500">
