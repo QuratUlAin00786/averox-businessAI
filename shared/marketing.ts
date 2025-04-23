@@ -33,24 +33,25 @@ export const workflowStatusEnum = pgEnum("workflow_status", [
 ]);
 
 export const workflowTriggerTypeEnum = pgEnum("workflow_trigger_type", [
-  "segment", 
   "form_submission", 
   "page_visit", 
-  "custom_event", 
-  "api", 
-  "manual"
+  "email_open", 
+  "email_click", 
+  "time_delay", 
+  "date", 
+  "contact_property_change", 
+  "segment_change", 
+  "custom"
 ]);
 
 export const nodeTypeEnum = pgEnum("node_type", [
   "trigger", 
-  "email", 
-  "delay", 
-  "condition", 
   "action", 
+  "condition", 
+  "delay", 
+  "email", 
   "webhook", 
-  "goal", 
-  "split", 
-  "cta"
+  "notification"
 ]);
 
 // Email Templates
