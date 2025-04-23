@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Info, Loader2, MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,11 @@ interface CommentSectionProps {
 
 export function CommentSection({ proposalId, isReadOnly }: CommentSectionProps) {
   console.log("CommentSection rendering with proposalId:", proposalId, "isReadOnly:", isReadOnly);
+  
+  // Force render debugging output to console
+  useEffect(() => {
+    console.log("CommentSection useEffect running for proposalId:", proposalId);
+  }, [proposalId]);
   
   const { toast } = useToast();
   const [newComment, setNewComment] = useState('');

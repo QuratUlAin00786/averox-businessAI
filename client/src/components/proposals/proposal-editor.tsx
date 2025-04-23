@@ -976,11 +976,11 @@ export function ProposalEditor({
             </div>
           </TabsContent>
 
-          <TabsContent value="collaborators">
+          <TabsContent value="collaborators" forceMount>
             <CollaboratorSection proposalId={proposal.id} isReadOnly={isReadOnly} />
           </TabsContent>
 
-          <TabsContent value="comments">
+          <TabsContent value="comments" forceMount>
             <CommentSection proposalId={proposal.id} isReadOnly={isReadOnly} />
           </TabsContent>
         </Tabs>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPlus, Users, EyeIcon, FileIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,11 @@ interface CollaboratorSectionProps {
 
 export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSectionProps) {
   console.log("CollaboratorSection rendering with proposalId:", proposalId, "isReadOnly:", isReadOnly);
+  
+  // Force render debugging output to console
+  useEffect(() => {
+    console.log("CollaboratorSection useEffect running for proposalId:", proposalId);
+  }, [proposalId]);
   
   const { toast } = useToast();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
