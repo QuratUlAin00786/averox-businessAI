@@ -42,7 +42,8 @@ import {
   AlertCircle,
   X,
   Upload,
-  ArrowLeft
+  ArrowLeft,
+  Pencil as PencilIcon
 } from 'lucide-react';
 
 // Import element renderer component
@@ -752,8 +753,35 @@ export function ProposalEditor({
                   
                   <div className="space-y-8">
                     {elements.map(element => (
-                      <div key={element.id} className="border rounded-md p-4 bg-white shadow-sm">
+                      <div 
+                        key={element.id} 
+                        className={`border rounded-md p-4 bg-white shadow-sm cursor-pointer transition-all ${
+                          selectedElement?.id === element.id ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/50'
+                        }`}
+                        onClick={() => {
+                          console.log("Element clicked in content view:", element.id);
+                          setSelectedElement(element);
+                          setActiveTab('elements');
+                        }}
+                      >
                         {getElementDisplay(element)}
+                        
+                        {/* Add an edit overlay with icon */}
+                        <div className="flex justify-end mt-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-muted-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent the parent onClick from firing
+                              console.log("Edit button clicked for element:", element.id);
+                              setSelectedElement(element);
+                              setActiveTab('elements');
+                            }}
+                          >
+                            <PencilIcon className="h-3 w-3 mr-1" /> Edit Content
+                          </Button>
+                        </div>
                       </div>
                     ))}
 

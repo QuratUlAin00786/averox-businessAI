@@ -1189,15 +1189,10 @@ export function ProposalManager({
           <Button 
             onClick={() => {
               console.log("Edit Document button clicked for proposal:", fullProposal.id);
-              // Direct approach instead of using the handler function
+              // Use the same handler as the "Edit Content" action in the card menu
               if (fullProposal) {
-                // Set the proposal first
-                setSelectedProposal(fullProposal);
-                // Then after a brief delay, show the editor
-                setTimeout(() => {
-                  setEditorVisible(true);
-                  console.log("Editor visibility set to true directly from button click");
-                }, 100);
+                // Call our reusable handler function to ensure consistent logic
+                handleOpenEditor(fullProposal);
               }
             }}
             variant="outline"
