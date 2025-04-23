@@ -868,42 +868,43 @@ export function ProposalManager({
         return;
       }
       
-      // Use try-catch with async/await for better error handling
-      try {
-        // First get fresh data
-        const response = await fetch(`/api/proposals/${proposal.id}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch proposal: ${response.status}`);
-        }
-        
-        const responseData = await response.json();
-        const freshProposal = responseData.data || responseData;
-        console.log("Fetched fresh proposal data:", freshProposal);
-        
-        // Set the state with the fresh proposal first
-        setSelectedProposal(freshProposal);
-        
-        // Make sure we set editor visible in the next tick to avoid React batching issues
-        // This ensures the proposal is set before the editor tries to render
-        setTimeout(() => {
-          // Debug log to track state changes
-          console.log("Setting editor visible to true, selected proposal is:", freshProposal.id);
-          setEditorVisible(true);
-        }, 100);
-      } catch (fetchError: any) {
-        console.error("Error fetching proposal for editor:", fetchError);
-        toast({
-          title: "Error",
-          description: `Could not open editor: ${fetchError.message}`,
-          variant: "destructive"
-        });
+      // First set the selected proposal ID
+      setSelectedProposalId(proposal.id);
+      
+      // Then fetch fresh data
+      const response = await fetch(`/api/proposals/${proposal.id}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch proposal: ${response.status}`);
       }
+      
+      const responseData = await response.json();
+      const freshProposal = responseData.data || responseData;
+      console.log("Fetched fresh proposal data:", freshProposal);
+      
+      // Use a 2-step process for updating React state to avoid batching issues
+      // Step 1: Set the proposal data first
+      setSelectedProposal(freshProposal);
+      
+      // Step 2: Then make the editor visible after a short delay
+      // This ensures React has time to process the state update
+      setTimeout(() => {
+        console.log("Setting editor visible to true, selected proposal is:", freshProposal.id);
+        setEditorVisible(true);
+        
+        // Force immediate focus on the editor panel
+        setTimeout(() => {
+          const editorTab = document.querySelector('[data-value="editor"]');
+          if (editorTab) {
+            (editorTab as HTMLElement).click();
+          }
+        }, 100);
+      }, 200);
     } catch (error: any) {
       console.error("Error in handleOpenEditor:", error);
       toast({
         title: "Error",
-        description: "An error occurred while opening the editor",
+        description: `An error occurred while opening the editor: ${error.message}`,
         variant: "destructive"
       });
     }
