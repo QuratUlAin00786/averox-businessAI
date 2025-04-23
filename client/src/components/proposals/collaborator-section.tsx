@@ -108,176 +108,154 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
   });
 
   return (
-    <div className="h-full overflow-auto bg-white">
-      {/* Header is now managed by the parent component */}
-
-      <div className="mb-3 space-y-3">
-        {/* Simple user selector */}
-        {!isReadOnly && (
-          <Card className="mb-4">
-            <CardHeader className="pb-1 pt-3">
-              <CardTitle className="text-base">Add Team Member</CardTitle>
-              <CardDescription className="text-sm">
-                Invite others to collaborate on this proposal
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="py-2">
-              {isLoadingUsers ? (
-                <div className="flex justify-center p-4">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <Label className="mb-2 block">Select User</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[100px] overflow-y-auto">
-                      {users && users.length > 0 ? (
-                        users.map((user) => (
-                          <div 
-                            key={user.id}
-                            className={`flex items-center border p-2 rounded-md cursor-pointer hover:bg-gray-50 ${
-                              selectedUserId === user.id ? 'ring-2 ring-primary' : ''
-                            }`}
-                            onClick={() => setSelectedUserId(selectedUserId === user.id ? null : user.id)}
-                          >
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2 text-primary font-medium text-sm">
-                              {user.firstName?.[0] || ''}
-                              {user.lastName?.[0] || ''}
-                            </div>
-                            <div className="flex-1">
-                              <div className="font-medium text-sm">{user.firstName} {user.lastName}</div>
-                              <div className="text-xs text-gray-500">{user.email || user.username}</div>
-                            </div>
-                            {selectedUserId === user.id && (
-                              <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center">
-                                ✓
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="col-span-2 p-4 border border-dashed rounded-md text-center">
-                          <p>No users available to add as collaborators</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {selectedUserId && (
-                    <div className="mt-4">
-                      <Label className="mb-1 block text-sm">Select Role</Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div 
-                          className={`p-2 border rounded-md cursor-pointer text-center ${
-                            selectedRole === 'Viewer' ? 'bg-primary/10 border-primary/50' : ''
-                          }`}
-                          onClick={() => setSelectedRole('Viewer')}
-                        >
-                          <EyeIcon className="h-4 w-4 mx-auto mb-1" />
-                          <div className="font-medium text-xs">Viewer</div>
-                        </div>
-                        <div 
-                          className={`p-2 border rounded-md cursor-pointer text-center ${
-                            selectedRole === 'Editor' ? 'bg-primary/10 border-primary/50' : ''
-                          }`}
-                          onClick={() => setSelectedRole('Editor')}
-                        >
-                          <FileIcon className="h-4 w-4 mx-auto mb-1" />
-                          <div className="font-medium text-xs">Editor</div>
-                        </div>
-                        <div 
-                          className={`p-2 border rounded-md cursor-pointer text-center ${
-                            selectedRole === 'Manager' ? 'bg-primary/10 border-primary/50' : ''
-                          }`}
-                          onClick={() => setSelectedRole('Manager')}
-                        >
-                          <Users className="h-4 w-4 mx-auto mb-1" />
-                          <div className="font-medium text-xs">Manager</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-end py-2">
-              <Button
-                size="sm"
-                onClick={() => {
-                  if (selectedUserId) {
-                    addCollaboratorMutation.mutate({
-                      userId: selectedUserId,
-                      role: selectedRole
-                    });
-                  }
-                }}
-                disabled={!selectedUserId || addCollaboratorMutation.isPending}
-              >
-                {addCollaboratorMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Adding...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-3 w-3 mr-1" /> Add Collaborator
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
-      </div>
-
+    <div className="h-full flex flex-col">
+      {/* Collaborators list */}
       {isLoadingCollaborators ? (
-        <div className="flex justify-center p-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+        <div className="flex items-center justify-center p-4 h-full">
+          <Loader2 className="h-6 w-6 animate-spin text-primary/50" />
         </div>
       ) : collaborators.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center p-4 text-center">
-            <Users className="h-12 w-12 text-neutral-300 mb-2" />
-            <h3 className="text-base font-medium mb-1">No collaborators yet</h3>
-            <p className="text-neutral-500 max-w-md mx-auto text-sm">
-              Add team members to work together on this proposal
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center h-40 p-4 text-center border-2 border-dashed rounded-md m-2">
+          <Users className="h-10 w-10 text-neutral-300 mb-2" />
+          <h3 className="text-sm font-medium mb-1">No collaborators yet</h3>
+          <p className="text-xs text-neutral-500 max-w-full mx-auto">
+            {!isReadOnly ? 'Add team members below' : 'This proposal has no collaborators'}
+          </p>
+        </div>
       ) : (
-        <div>
-          <h4 className="font-medium text-base mb-2">Team Members</h4>
-          <div className="space-y-3">
-            {collaborators.map((collaborator) => (
-              <div key={collaborator.id} className="border rounded-md p-2 bg-white hover:shadow-sm transition-shadow">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-7 w-7 flex-shrink-0">
-                    {collaborator.user?.avatar ? (
-                      <AvatarImage src={collaborator.user.avatar} alt={collaborator.user.username || 'User'} />
-                    ) : (
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {collaborator.user?.firstName?.[0] || '?'}{collaborator.user?.lastName?.[0] || ''}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">
-                      {collaborator.user ? 
-                        `${collaborator.user.firstName || ''} ${collaborator.user.lastName || ''}`.trim() || collaborator.user.username 
-                        : 'Unknown User'
-                      }
-                    </div>
-                    <div className="text-xs flex items-center gap-2">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-gray-100">
-                        {collaborator.role}
-                      </span>
-                      <span className="text-neutral-500">
-                        Added {collaborator.addedAt ? formatDistanceToNow(new Date(collaborator.addedAt), { addSuffix: true }) : 'recently'}
-                      </span>
-                    </div>
+        <div className="space-y-2 mb-4">
+          {collaborators.map((collaborator) => (
+            <div key={collaborator.id} className="border rounded-md p-2 bg-white hover:bg-gray-50 transition-colors">
+              <div className="flex items-center gap-2">
+                <Avatar className="h-7 w-7 flex-shrink-0">
+                  {collaborator.user?.avatar ? (
+                    <AvatarImage src={collaborator.user.avatar} alt={collaborator.user.username || 'User'} />
+                  ) : (
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                      {collaborator.user?.firstName?.[0] || '?'}{collaborator.user?.lastName?.[0] || ''}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">
+                    {collaborator.user ? 
+                      `${collaborator.user.firstName || ''} ${collaborator.user.lastName || ''}`.trim() || collaborator.user.username 
+                      : 'Unknown User'
+                    }
+                  </div>
+                  <div className="text-xs flex items-center gap-1">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-gray-100">
+                      {collaborator.role}
+                    </span>
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add collaborator section */}
+      {!isReadOnly && (
+        <div className="mt-auto pt-2 border-t">
+          <h4 className="text-xs font-medium mb-2 text-gray-500">ADD COLLABORATOR</h4>
+          
+          {/* User selection */}
+          <div className="mb-2">
+            <Label className="mb-1 block text-xs">Select User</Label>
+            {isLoadingUsers ? (
+              <div className="flex justify-center p-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-1 max-h-[120px] overflow-y-auto pr-1">
+                {users && users.length > 0 ? (
+                  users.map((user) => (
+                    <div 
+                      key={user.id}
+                      className={`flex items-center p-1.5 rounded-md cursor-pointer hover:bg-gray-100 ${
+                        selectedUserId === user.id ? 'bg-primary/10 border border-primary/30' : 'border border-transparent'
+                      }`}
+                      onClick={() => setSelectedUserId(selectedUserId === user.id ? null : user.id)}
+                    >
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 text-primary font-medium text-xs">
+                        {user.firstName?.[0] || ''}
+                        {user.lastName?.[0] || ''}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-xs truncate">{user.firstName || ''} {user.lastName || ''}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-2 border border-dashed rounded-md text-center text-xs">
+                    <p>No users available</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+          
+          {/* Role selection - only show if a user is selected */}
+          {selectedUserId && (
+            <div className="mb-3">
+              <Label className="mb-1 block text-xs">Select Role</Label>
+              <div className="grid grid-cols-3 gap-1">
+                <div 
+                  className={`p-1 border rounded-md cursor-pointer text-center ${
+                    selectedRole === 'Viewer' ? 'bg-primary/10 border-primary/50' : ''
+                  }`}
+                  onClick={() => setSelectedRole('Viewer')}
+                >
+                  <EyeIcon className="h-3 w-3 mx-auto mb-1" />
+                  <div className="font-medium text-xs">Viewer</div>
+                </div>
+                <div 
+                  className={`p-1 border rounded-md cursor-pointer text-center ${
+                    selectedRole === 'Editor' ? 'bg-primary/10 border-primary/50' : ''
+                  }`}
+                  onClick={() => setSelectedRole('Editor')}
+                >
+                  <FileIcon className="h-3 w-3 mx-auto mb-1" />
+                  <div className="font-medium text-xs">Editor</div>
+                </div>
+                <div 
+                  className={`p-1 border rounded-md cursor-pointer text-center ${
+                    selectedRole === 'Manager' ? 'bg-primary/10 border-primary/50' : ''
+                  }`}
+                  onClick={() => setSelectedRole('Manager')}
+                >
+                  <Users className="h-3 w-3 mx-auto mb-1" />
+                  <div className="font-medium text-xs">Manager</div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Add button */}
+          <Button
+            size="sm"
+            className="w-full mt-1"
+            onClick={() => {
+              if (selectedUserId) {
+                addCollaboratorMutation.mutate({
+                  userId: selectedUserId,
+                  role: selectedRole
+                });
+              }
+            }}
+            disabled={!selectedUserId || addCollaboratorMutation.isPending}
+          >
+            {addCollaboratorMutation.isPending ? (
+              <>
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Adding...
+              </>
+            ) : (
+              <>
+                <UserPlus className="h-3 w-3 mr-1" /> Add Collaborator
+              </>
+            )}
+          </Button>
         </div>
       )}
     </div>

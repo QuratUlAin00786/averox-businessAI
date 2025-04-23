@@ -745,8 +745,9 @@ export function ProposalEditor({
           </div>
         </DialogHeader>
 
+        {/* Main content layout with sidebar */}
         <div className="flex h-[calc(90vh-150px)] w-full">
-          {/* Main content area with tabs */}
+          {/* Left side: Main content area with tabs */}
           <div className="flex-1 overflow-hidden">
             <Tabs value={activeTab} onValueChange={(value) => {
                 console.log("Tab clicked:", value);
@@ -754,252 +755,252 @@ export function ProposalEditor({
               }} className="h-full flex flex-col">
               <div className="px-6 pt-2">
                 <TabsList className="grid grid-cols-3 mb-4">
-                  <TabsTrigger value="editor" onClick={() => console.log("Content tab clicked")}>Content</TabsTrigger>
-                  <TabsTrigger value="elements" onClick={() => console.log("Elements tab clicked")}>Elements</TabsTrigger>
-                  <TabsTrigger value="comments" onClick={() => console.log("Comments tab clicked")}>Comments</TabsTrigger>
+                  <TabsTrigger value="editor">Content</TabsTrigger>
+                  <TabsTrigger value="elements">Elements</TabsTrigger>
+                  <TabsTrigger value="comments">Comments</TabsTrigger>
                 </TabsList>
               </div>
 
-          <TabsContent value="editor" className="h-[calc(90vh-180px)] overflow-auto">
-            <div className="p-6">
-              <div className="bg-white p-6 shadow rounded border max-w-4xl mx-auto">
-                <h3 className="text-lg font-medium mb-4">Document Content</h3>
-                <p className="mb-6 text-neutral-600">Edit the overall document content here. Arrange individual elements in the Elements tab.</p>
-                
-                <div className="space-y-8">
-                  {elements.map(element => (
-                    <div key={element.id} className="border rounded-md p-4 bg-white shadow-sm">
-                      {getElementDisplay(element)}
-                    </div>
-                  ))}
+              <TabsContent value="editor" className="h-[calc(90vh-180px)] overflow-auto">
+                <div className="p-6">
+                  <div className="bg-white p-6 shadow rounded border max-w-4xl mx-auto">
+                    <h3 className="text-lg font-medium mb-4">Document Content</h3>
+                    <p className="mb-6 text-neutral-600">Edit the overall document content here. Arrange individual elements in the Elements tab.</p>
+                    
+                    <div className="space-y-8">
+                      {elements.map(element => (
+                        <div key={element.id} className="border rounded-md p-4 bg-white shadow-sm">
+                          {getElementDisplay(element)}
+                        </div>
+                      ))}
 
-                  {elements.length === 0 && (
-                    <div className="text-center py-12 border border-dashed rounded-md">
-                      <h4 className="text-lg font-medium text-neutral-600 mb-2">No Content Yet</h4>
-                      <p className="text-neutral-500 mb-4">Start adding elements to build your proposal document</p>
-                      {!isReadOnly && (
-                        <Button onClick={() => setActiveTab('elements')}>
-                          <Plus className="h-4 w-4 mr-2" /> Add Elements
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="elements" className="flex flex-col md:flex-row h-[calc(90vh-180px)]">
-            {/* Elements list and controls */}
-            <div className="w-full md:w-64 border-r p-4 flex flex-col">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-sm font-medium">Elements</h3>
-                {!isReadOnly && (
-                  <Select 
-                    onValueChange={(value) => handleAddElement(value as ElementType)}
-                    disabled={isReadOnly}
-                  >
-                    <SelectTrigger className="w-8 h-8 p-0 flex items-center justify-center">
-                      <Plus className="h-4 w-4" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Header">Header</SelectItem>
-                      <SelectItem value="Text">Text</SelectItem>
-                      <SelectItem value="Image">Image</SelectItem>
-                      <SelectItem value="Table">Table</SelectItem>
-                      <SelectItem value="List">List</SelectItem>
-                      <SelectItem value="Quote">Quote</SelectItem>
-                      <SelectItem value="ProductList">Product List</SelectItem>
-                      <SelectItem value="Signature">Signature</SelectItem>
-                      <SelectItem value="PageBreak">Page Break</SelectItem>
-                      <SelectItem value="Custom">Custom HTML</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              <ScrollArea className="flex-1 pr-3 -mr-3 max-h-[600px]">
-                {isLoadingElements ? (
-                  <div className="flex justify-center p-6">
-                    <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
-                  </div>
-                ) : (
-                  <DraggableElementList
-                    elements={elements}
-                    selectedElementId={selectedElement?.id || null}
-                    isReadOnly={isReadOnly}
-                    onSelectElement={setSelectedElement}
-                    onReorderElement={(elementId, newIndex) => {
-                      // Get the current element and its index
-                      const elementToMove = elements.find(el => el.id === elementId);
-                      const currentIndex = elements.findIndex(el => el.id === elementId);
-                      
-                      if (!elementToMove || currentIndex === -1 || currentIndex === newIndex) {
-                        return;
-                      }
-                      
-                      // For our demo, we're using the moveElementMutation which requires direction
-                      // This is a simplification - in a real implementation, you would have a proper API endpoint
-                      // that accepts the new sort order or index directly
-                      
-                      const direction = currentIndex > newIndex ? 'up' : 'down';
-                      const steps = Math.abs(currentIndex - newIndex);
-                      
-                      // Create a chain of mutations
-                      let currentStep = 0;
-                      const moveNextStep = () => {
-                        if (currentStep < steps) {
-                          moveElementMutation.mutate(
-                            { id: elementId, direction }, 
-                            {
-                              onSuccess: () => {
-                                currentStep++;
-                                moveNextStep();
-                              },
-                              onError: (error) => {
-                                toast({
-                                  title: 'Error',
-                                  description: `Failed to reorder element: ${error.message}`,
-                                  variant: 'destructive'
-                                });
-                              }
-                            }
-                          );
-                        } else {
-                          // Done with all steps
-                          toast({
-                            title: 'Success',
-                            description: 'Element reordered successfully'
-                          });
-                        }
-                      };
-                      
-                      // Start the chain
-                      moveNextStep();
-                    }}
-                    onDeleteElement={handleDeleteElement}
-                  />
-                )}
-              </ScrollArea>
-            </div>
-
-            {/* Editor and preview */}
-            <div className="flex-1 flex flex-col">
-              {selectedElement ? (
-                <div className="flex flex-col h-full">
-                  {/* Element editor */}
-                  <div className="p-4 border-b">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-medium">
-                        Editing: {selectedElement.name}
-                      </h3>
-                      <div className="flex space-x-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => setSelectedElement(null)}
-                        >
-                          <X className="h-4 w-4 mr-2" /> Close
-                        </Button>
-                        {!isReadOnly && (
-                          <Button 
-                            size="sm" 
-                            onClick={handleSaveElement}
-                            disabled={updateElementMutation.isPending}
-                          >
-                            {updateElementMutation.isPending ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
-                              </>
-                            ) : (
-                              <>
-                                <Save className="h-4 w-4 mr-2" /> Save
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <label className="text-sm font-medium">Element Name</label>
-                      <Input 
-                        value={selectedElement.name} 
-                        onChange={(e) => setSelectedElement({
-                          ...selectedElement,
-                          name: e.target.value,
-                        })}
-                        className="mb-4"
-                        disabled={isReadOnly}
-                      />
-                      
-                      {renderElementEditor()}
-                      
-                      {!isReadOnly && (
-                        <div className="flex justify-end space-x-2 pt-4 mt-4 border-t">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setSelectedElement(null)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            onClick={handleSaveElement}
-                            disabled={updateElementMutation.isPending}
-                          >
-                            {updateElementMutation.isPending ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
-                              </>
-                            ) : (
-                              <>
-                                <Save className="h-4 w-4 mr-2" /> Save Changes
-                              </>
-                            )}
-                          </Button>
+                      {elements.length === 0 && (
+                        <div className="text-center py-12 border border-dashed rounded-md">
+                          <h4 className="text-lg font-medium text-neutral-600 mb-2">No Content Yet</h4>
+                          <p className="text-neutral-500 mb-4">Start adding elements to build your proposal document</p>
+                          {!isReadOnly && (
+                            <Button onClick={() => setActiveTab('elements')}>
+                              <Plus className="h-4 w-4 mr-2" /> Add Elements
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
                   </div>
-                  
-                  {/* Preview */}
-                  <div className="p-4 flex-1 overflow-auto bg-neutral-50">
-                    <div className="bg-white p-6 shadow rounded max-w-3xl mx-auto">
-                      <h3 className="text-sm font-medium mb-2 text-neutral-500">Preview</h3>
-                      {getElementDisplay(selectedElement)}
-                    </div>
-                  </div>
                 </div>
-              ) : (
-                <div className="flex-1 p-6 flex items-center justify-center bg-neutral-50">
-                  <div className="text-center">
-                    <h3 className="font-medium mb-2">No Element Selected</h3>
-                    <p className="text-sm text-neutral-500">
-                      {elements.length > 0 
-                        ? 'Select an element from the list on the left to edit it' 
-                        : `No elements yet. ${!isReadOnly ? 'Add elements using the + button.' : ''}`}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </TabsContent>
+              </TabsContent>
 
-          <TabsContent value="comments" forceMount className="h-[calc(90vh-180px)] overflow-hidden flex-1">
-            <CommentSection proposalId={proposal.id} isReadOnly={isReadOnly} />
-          </TabsContent>
+              <TabsContent value="elements" className="flex flex-col md:flex-row h-[calc(90vh-180px)]">
+                {/* Elements list and controls */}
+                <div className="w-full md:w-64 border-r p-4 flex flex-col">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-sm font-medium">Elements</h3>
+                    {!isReadOnly && (
+                      <Select 
+                        onValueChange={(value) => handleAddElement(value as ElementType)}
+                        disabled={isReadOnly}
+                      >
+                        <SelectTrigger className="w-8 h-8 p-0 flex items-center justify-center">
+                          <Plus className="h-4 w-4" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Header">Header</SelectItem>
+                          <SelectItem value="Text">Text</SelectItem>
+                          <SelectItem value="Image">Image</SelectItem>
+                          <SelectItem value="Table">Table</SelectItem>
+                          <SelectItem value="List">List</SelectItem>
+                          <SelectItem value="Quote">Quote</SelectItem>
+                          <SelectItem value="ProductList">Product List</SelectItem>
+                          <SelectItem value="Signature">Signature</SelectItem>
+                          <SelectItem value="PageBreak">Page Break</SelectItem>
+                          <SelectItem value="Custom">Custom HTML</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+
+                  <ScrollArea className="flex-1 pr-3 -mr-3 max-h-[600px]">
+                    {isLoadingElements ? (
+                      <div className="flex justify-center p-6">
+                        <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+                      </div>
+                    ) : (
+                      <DraggableElementList
+                        elements={elements}
+                        selectedElementId={selectedElement?.id || null}
+                        isReadOnly={isReadOnly}
+                        onSelectElement={setSelectedElement}
+                        onReorderElement={(elementId, newIndex) => {
+                          // Get the current element and its index
+                          const elementToMove = elements.find(el => el.id === elementId);
+                          const currentIndex = elements.findIndex(el => el.id === elementId);
+                          
+                          if (!elementToMove || currentIndex === -1 || currentIndex === newIndex) {
+                            return;
+                          }
+                          
+                          // For our demo, we're using the moveElementMutation which requires direction
+                          // This is a simplification - in a real implementation, you would have a proper API endpoint
+                          // that accepts the new sort order or index directly
+                          
+                          const direction = currentIndex > newIndex ? 'up' : 'down';
+                          const steps = Math.abs(currentIndex - newIndex);
+                          
+                          // Create a chain of mutations
+                          let currentStep = 0;
+                          const moveNextStep = () => {
+                            if (currentStep < steps) {
+                              moveElementMutation.mutate(
+                                { id: elementId, direction }, 
+                                {
+                                  onSuccess: () => {
+                                    currentStep++;
+                                    moveNextStep();
+                                  },
+                                  onError: (error) => {
+                                    toast({
+                                      title: 'Error',
+                                      description: `Failed to reorder element: ${error.message}`,
+                                      variant: 'destructive'
+                                    });
+                                  }
+                                }
+                              );
+                            } else {
+                              // Done with all steps
+                              toast({
+                                title: 'Success',
+                                description: 'Element reordered successfully'
+                              });
+                            }
+                          };
+                          
+                          // Start the chain
+                          moveNextStep();
+                        }}
+                        onDeleteElement={handleDeleteElement}
+                      />
+                    )}
+                  </ScrollArea>
+                </div>
+
+                {/* Editor and preview */}
+                <div className="flex-1 flex flex-col">
+                  {selectedElement ? (
+                    <div className="flex flex-col h-full">
+                      {/* Element editor */}
+                      <div className="p-4 border-b">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-medium">
+                            Editing: {selectedElement.name}
+                          </h3>
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setSelectedElement(null)}
+                            >
+                              <X className="h-4 w-4 mr-2" /> Close
+                            </Button>
+                            {!isReadOnly && (
+                              <Button 
+                                size="sm" 
+                                onClick={handleSaveElement}
+                                disabled={updateElementMutation.isPending}
+                              >
+                                {updateElementMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save className="h-4 w-4 mr-2" /> Save
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mb-4">
+                          <label className="text-sm font-medium">Element Name</label>
+                          <Input 
+                            value={selectedElement.name} 
+                            onChange={(e) => setSelectedElement({
+                              ...selectedElement,
+                              name: e.target.value,
+                            })}
+                            className="mb-4"
+                            disabled={isReadOnly}
+                          />
+                          
+                          {renderElementEditor()}
+                          
+                          {!isReadOnly && (
+                            <div className="flex justify-end space-x-2 pt-4 mt-4 border-t">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => setSelectedElement(null)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                onClick={handleSaveElement}
+                                disabled={updateElementMutation.isPending}
+                              >
+                                {updateElementMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save className="h-4 w-4 mr-2" /> Save Changes
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Preview */}
+                      <div className="p-4 flex-1 overflow-auto bg-neutral-50">
+                        <div className="bg-white p-6 shadow rounded max-w-3xl mx-auto">
+                          <h3 className="text-sm font-medium mb-2 text-neutral-500">Preview</h3>
+                          {getElementDisplay(selectedElement)}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 p-6 flex items-center justify-center bg-neutral-50">
+                      <div className="text-center">
+                        <h3 className="font-medium mb-2">No Element Selected</h3>
+                        <p className="text-sm text-neutral-500">
+                          {elements.length > 0 
+                            ? 'Select an element from the list on the left to edit it' 
+                            : `No elements yet. ${!isReadOnly ? 'Add elements using the + button.' : ''}`}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="comments" className="h-[calc(90vh-180px)] overflow-auto">
+                <CommentSection proposalId={proposal.id} isReadOnly={isReadOnly} />
+              </TabsContent>
             </Tabs>
           </div>
           
-          {/* Collaborators sidebar */}
+          {/* Right side: Collaborators sidebar */}
           <div className="w-80 border-l overflow-hidden flex flex-col bg-gray-50">
             <div className="p-3 border-b bg-white">
               <h3 className="text-base font-medium flex items-center">
                 <Users className="h-4 w-4 mr-2" /> Collaborators
               </h3>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto p-3">
               <CollaboratorSection proposalId={proposal.id} isReadOnly={isReadOnly} />
             </div>
           </div>
