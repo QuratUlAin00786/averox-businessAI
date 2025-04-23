@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { apiRequestJson } from '@/lib/queryClient';
-import { ElementEditorFactory } from './element-editors/element-editor-factory';
+import { ElementEditorFactory, getDefaultElementContent } from './element-editors/element-editor-factory';
 import DraggableElementList from './dnd/draggable-element-list';
 import { 
   Loader2, 
@@ -80,39 +80,6 @@ interface ProposalEditorProps {
 }
 
 type ElementType = 'Header' | 'Text' | 'Image' | 'Table' | 'List' | 'Quote' | 'ProductList' | 'Signature' | 'PageBreak' | 'Custom';
-
-const getDefaultElementContent = (type: ElementType) => {
-  switch (type) {
-    case 'Header':
-      return { text: 'New Header', level: 2 };
-    case 'Text':
-      return { text: 'Enter your text here. This can be a paragraph or longer content section.' };
-    case 'Image':
-      return { url: '', alt: 'Image description', caption: '', width: 500 };
-    case 'Table':
-      return { 
-        headers: ['Column 1', 'Column 2', 'Column 3'],
-        rows: [
-          ['Cell 1', 'Cell 2', 'Cell 3'],
-          ['Cell 4', 'Cell 5', 'Cell 6'],
-        ]
-      };
-    case 'List':
-      return { items: ['Item 1', 'Item 2', 'Item 3'], ordered: false };
-    case 'Quote':
-      return { text: 'Quote text', attribution: 'Source' };
-    case 'ProductList':
-      return { productIds: [] };
-    case 'Signature':
-      return { name: 'Signature', role: 'Title', date: true };
-    case 'PageBreak':
-      return {};
-    case 'Custom':
-      return { html: '<div>Custom content</div>' };
-    default:
-      return {};
-  }
-};
 
 export function ProposalEditor({
   isOpen,
@@ -440,48 +407,12 @@ export function ProposalEditor({
     
     console.log("Adding new element of type:", type);
     
-    // Create element with hardcoded data for consistent format
-    let elementContent;
-    switch(type) {
-      case 'Header':
-        elementContent = JSON.stringify({ text: 'New Header', level: 2 });
-        break;
-      case 'Text':
-        elementContent = JSON.stringify({ text: 'Enter your text here. This can be a paragraph or longer content section.' });
-        break;
-      case 'Image':
-        elementContent = JSON.stringify({ url: '', alt: 'Image description', caption: '', width: 500 });
-        break;
-      case 'Table':
-        elementContent = JSON.stringify({ 
-          headers: ['Column 1', 'Column 2', 'Column 3'],
-          rows: [
-            ['Cell 1', 'Cell 2', 'Cell 3'],
-            ['Cell 4', 'Cell 5', 'Cell 6'],
-          ]
-        });
-        break;
-      case 'List':
-        elementContent = JSON.stringify({ items: ['Item 1', 'Item 2', 'Item 3'], ordered: false });
-        break;
-      case 'Quote':
-        elementContent = JSON.stringify({ text: 'Quote text', attribution: 'Source' });
-        break;
-      case 'ProductList':
-        elementContent = JSON.stringify({ productIds: [] });
-        break;
-      case 'Signature':
-        elementContent = JSON.stringify({ name: 'Signature', role: 'Title', date: true });
-        break;
-      case 'PageBreak':
-        elementContent = JSON.stringify({});
-        break;
-      case 'Custom':
-        elementContent = JSON.stringify({ html: '<div>Custom content</div>' });
-        break;
-      default:
-        elementContent = JSON.stringify({});
-    }
+    // Use the getDefaultElementContent from the factory to ensure consistency
+    const defaultContent = getDefaultElementContent(type);
+    console.log("Default content for new element:", defaultContent);
+    
+    // Convert to JSON string for storage
+    const elementContent = JSON.stringify(defaultContent);
     
     const newElement: InsertProposalElement = {
       proposalId: proposal.id,
