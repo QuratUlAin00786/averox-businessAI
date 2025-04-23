@@ -87,8 +87,8 @@ export function CommentSection({ proposalId, isReadOnly }: CommentSectionProps) 
   };
 
   return (
-    <div className="p-6 max-h-[calc(90vh-180px)] overflow-auto bg-white border-t">
-      <div className="flex justify-between items-center mb-4">
+    <div className="p-4 h-[calc(90vh-220px)] overflow-auto bg-white border-t">
+      <div className="flex justify-between items-center mb-2">
         <h3 className="text-lg font-medium">Comments</h3>
       </div>
 

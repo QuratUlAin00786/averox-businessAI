@@ -108,47 +108,47 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
   });
 
   return (
-    <div className="p-6 max-h-[calc(90vh-180px)] overflow-auto bg-white border-t">
-      <div className="flex justify-between items-center mb-4">
+    <div className="p-4 h-[calc(90vh-220px)] overflow-auto bg-white border-t">
+      <div className="flex justify-between items-center mb-2">
         <h3 className="text-lg font-medium">Collaborators</h3>
       </div>
 
-      <div className="mb-8 space-y-6">
+      <div className="mb-4 space-y-4">
         {/* Simple user selector */}
         {!isReadOnly && (
-          <Card className="mb-8">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Add Team Member</CardTitle>
-              <CardDescription>
+          <Card className="mb-4">
+            <CardHeader className="pb-1 pt-3">
+              <CardTitle className="text-base">Add Team Member</CardTitle>
+              <CardDescription className="text-sm">
                 Invite others to collaborate on this proposal
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="py-2">
               {isLoadingUsers ? (
-                <div className="flex justify-center p-6">
-                  <Loader2 className="h-8 w-8 animate-spin" />
+                <div className="flex justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <div>
                     <Label className="mb-2 block">Select User</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[200px] overflow-y-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[150px] overflow-y-auto">
                       {users && users.length > 0 ? (
                         users.map((user) => (
                           <div 
                             key={user.id}
-                            className={`flex items-center border p-3 rounded-md cursor-pointer hover:bg-gray-50 ${
+                            className={`flex items-center border p-2 rounded-md cursor-pointer hover:bg-gray-50 ${
                               selectedUserId === user.id ? 'ring-2 ring-primary' : ''
                             }`}
                             onClick={() => setSelectedUserId(selectedUserId === user.id ? null : user.id)}
                           >
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3 text-primary font-medium">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2 text-primary font-medium text-sm">
                               {user.firstName?.[0] || ''}
                               {user.lastName?.[0] || ''}
                             </div>
                             <div className="flex-1">
-                              <div className="font-medium">{user.firstName} {user.lastName}</div>
-                              <div className="text-sm text-gray-500">{user.email || user.username}</div>
+                              <div className="font-medium text-sm">{user.firstName} {user.lastName}</div>
+                              <div className="text-xs text-gray-500">{user.email || user.username}</div>
                             </div>
                             {selectedUserId === user.id && (
                               <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center">
@@ -166,35 +166,35 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
                   </div>
                   
                   {selectedUserId && (
-                    <div className="mt-6">
-                      <Label className="mb-2 block">Select Role</Label>
-                      <div className="grid grid-cols-3 gap-3">
+                    <div className="mt-4">
+                      <Label className="mb-1 block text-sm">Select Role</Label>
+                      <div className="grid grid-cols-3 gap-2">
                         <div 
-                          className={`p-3 border rounded-md cursor-pointer text-center ${
+                          className={`p-2 border rounded-md cursor-pointer text-center ${
                             selectedRole === 'Viewer' ? 'bg-primary/10 border-primary/50' : ''
                           }`}
                           onClick={() => setSelectedRole('Viewer')}
                         >
-                          <EyeIcon className="h-5 w-5 mx-auto mb-1" />
-                          <div className="font-medium">Viewer</div>
+                          <EyeIcon className="h-4 w-4 mx-auto mb-1" />
+                          <div className="font-medium text-xs">Viewer</div>
                         </div>
                         <div 
-                          className={`p-3 border rounded-md cursor-pointer text-center ${
+                          className={`p-2 border rounded-md cursor-pointer text-center ${
                             selectedRole === 'Editor' ? 'bg-primary/10 border-primary/50' : ''
                           }`}
                           onClick={() => setSelectedRole('Editor')}
                         >
-                          <FileIcon className="h-5 w-5 mx-auto mb-1" />
-                          <div className="font-medium">Editor</div>
+                          <FileIcon className="h-4 w-4 mx-auto mb-1" />
+                          <div className="font-medium text-xs">Editor</div>
                         </div>
                         <div 
-                          className={`p-3 border rounded-md cursor-pointer text-center ${
+                          className={`p-2 border rounded-md cursor-pointer text-center ${
                             selectedRole === 'Manager' ? 'bg-primary/10 border-primary/50' : ''
                           }`}
                           onClick={() => setSelectedRole('Manager')}
                         >
-                          <Users className="h-5 w-5 mx-auto mb-1" />
-                          <div className="font-medium">Manager</div>
+                          <Users className="h-4 w-4 mx-auto mb-1" />
+                          <div className="font-medium text-xs">Manager</div>
                         </div>
                       </div>
                     </div>
@@ -230,16 +230,16 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
       </div>
 
       {isLoadingCollaborators ? (
-        <div className="flex justify-center p-6">
-          <Loader2 className="h-12 w-12 animate-spin text-primary/50" />
+        <div className="flex justify-center p-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
         </div>
       ) : collaborators.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <Users className="h-16 w-16 text-neutral-300 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No collaborators yet</h3>
-            <p className="text-neutral-500 max-w-md mx-auto">
-              This proposal doesn't have any collaborators yet. Add team members to work together on this proposal.
+          <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+            <Users className="h-12 w-12 text-neutral-300 mb-2" />
+            <h3 className="text-base font-medium mb-1">No collaborators yet</h3>
+            <p className="text-neutral-500 max-w-md mx-auto text-sm">
+              Add team members to work together on this proposal
             </p>
           </CardContent>
         </Card>
