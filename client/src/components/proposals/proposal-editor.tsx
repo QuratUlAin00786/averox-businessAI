@@ -130,7 +130,7 @@ export function ProposalEditor({
 }: ProposalEditorProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'editor' | 'elements' | 'collaborators' | 'comments'>('editor');
+  const [activeTab, setActiveTab] = useState<'editor' | 'elements' | 'comments'>('editor');
   
   // Add a debug effect for tab changes
   useEffect(() => {
@@ -195,7 +195,7 @@ export function ProposalEditor({
     }
   }, [elementsError, toast]);
 
-  // Fetch proposal collaborators
+  // Fetch proposal collaborators (always needed for the sidebar)
   const {
     data: collaborators = [],
     isLoading: isLoadingCollaborators,
@@ -214,7 +214,7 @@ export function ProposalEditor({
       // Handle both standardized and legacy response formats
       return result.data || result;
     },
-    enabled: isOpen && activeTab === 'collaborators',
+    enabled: isOpen, // Always enabled when dialog is open for the sidebar
   });
 
   // Fetch proposal comments
@@ -261,7 +261,7 @@ export function ProposalEditor({
       
       return usersData;
     },
-    enabled: isOpen && activeTab === 'collaborators',
+    enabled: isOpen, // Always enabled when dialog is open for the sidebar
     staleTime: 60000, // Keep data fresh for 1 minute
   });
 
@@ -750,7 +750,7 @@ export function ProposalEditor({
           <div className="flex-1 overflow-hidden">
             <Tabs value={activeTab} onValueChange={(value) => {
                 console.log("Tab clicked:", value);
-                setActiveTab(value as "editor" | "elements" | "collaborators" | "comments");
+                setActiveTab(value as "editor" | "elements" | "comments");
               }} className="h-full flex flex-col">
               <div className="px-6 pt-2">
                 <TabsList className="grid grid-cols-3 mb-4">
