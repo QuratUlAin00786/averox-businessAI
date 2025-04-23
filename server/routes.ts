@@ -7,6 +7,7 @@ import { registerPermissionRoutes } from "./permission-routes";
 import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from "./permissions-manager";
 import { migrationRouter } from "./migrations/migration-routes";
 import { setupMarketingRoutes } from "./marketing-routes";
+import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -112,6 +113,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedSettings = await storage.saveSystemSettings(userId, settings);
       res.json(updatedSettings);
     } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  // AI Assistant API Endpoints
+  app.get('/api/ai/business-insights', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      const insights = await generateBusinessInsights();
+      res.json(insights);
+    } catch (error) {
+      console.error('Error generating business insights:', error);
+      if (error instanceof Error && error.message.includes('OpenAI')) {
+        return handleOpenAIError(res, error);
+      }
+      handleError(res, error);
+    }
+  });
+  
+  app.get('/api/ai/entity-advice/:entityType/:entityId', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      const { entityType, entityId } = req.params;
+      const idNumber = parseInt(entityId);
+      
+      if (isNaN(idNumber)) {
+        return res.status(400).json({ error: 'Invalid entity ID' });
+      }
+      
+      const validEntityTypes = ['lead', 'opportunity', 'contact', 'task', 'event'];
+      if (!validEntityTypes.includes(entityType)) {
+        return res.status(400).json({ error: 'Invalid entity type' });
+      }
+      
+      const advice = await getPersonalizedAdvice(entityType, idNumber);
+      res.json({ advice });
+    } catch (error) {
+      console.error('Error generating personalized advice:', error);
+      if (error instanceof Error && error.message.includes('OpenAI')) {
+        return handleOpenAIError(res, error);
+      }
       handleError(res, error);
     }
   });
