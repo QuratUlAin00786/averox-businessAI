@@ -8,6 +8,7 @@ import {
   ProposalCollaborator,
   ProposalComment,
 } from '@shared/schema';
+import { CommentSection } from './new-comment-section';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -1174,138 +1175,8 @@ export function ProposalEditor({
             )}
           </TabsContent>
 
-          <TabsContent value="comments" className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Comments</h3>
-            </div>
-
-            {/* ENHANCED COMMENT FORM */}
-            {!isReadOnly && (
-              <div className="mb-6 border-2 border-dashed rounded-md p-6 bg-green-50 hover:border-green-300 transition-colors">
-                <h4 className="font-medium text-xl mb-3">Add New Comment</h4>
-                <p className="text-sm text-neutral-600 mb-4">
-                  Share your thoughts, feedback, or questions about this proposal.
-                  Comments help keep track of important discussions.
-                </p>
-                
-                <div className="mb-4">
-                  <Textarea
-                    id="comment-textarea"
-                    placeholder="Type your comment here..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="min-h-[120px] text-base"
-                  />
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleAddComment}
-                    disabled={!newComment.trim() || addCommentMutation.isPending}
-                    className="w-full md:w-auto"
-                  >
-                    {addCommentMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Posting...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4 mr-2" /> Post Comment
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* COMMENTS LIST */}
-            {isLoadingComments ? (
-              <div className="flex justify-center p-6">
-                <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary/70 mx-auto mb-2" />
-                  <p className="text-neutral-600">Loading comments...</p>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <h4 className="font-medium text-lg mb-3">Discussion Thread</h4>
-                <div className="space-y-4 max-h-[calc(90vh-400px)] overflow-auto pr-2">
-                  {Array.isArray(comments) && comments.length > 0 ? (
-                    comments.map((comment) => (
-                      <div key={comment.id} className="border rounded-md p-4 bg-white hover:shadow-sm transition-shadow">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-10 w-10 flex-shrink-0">
-                            {comment.user?.avatar ? (
-                              <AvatarImage src={comment.user.avatar} alt={comment.user.username || 'User'} />
-                            ) : (
-                              <AvatarFallback className="bg-primary/10 text-primary">
-                                {comment.user?.firstName?.[0] || '?'}{comment.user?.lastName?.[0] || ''}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-1">
-                              <div>
-                                <div className="font-medium">
-                                  {comment.user ? 
-                                    `${comment.user.firstName || ''} ${comment.user.lastName || ''}`.trim() || comment.user.username 
-                                    : 'Unknown User'
-                                  }
-                                </div>
-                                <div className="text-xs text-neutral-500">
-                                  {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : ''}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-2 text-neutral-700 whitespace-pre-wrap">{comment.content}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <Card className="border-dashed">
-                      <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                        <MessageSquare className="h-12 w-12 text-neutral-300 mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No comments yet</h3>
-                        <p className="mb-4 text-neutral-500">
-                          This proposal doesn't have any comments or feedback yet.
-                        </p>
-                        {!isReadOnly && (
-                          <>
-                            <p className="text-sm text-neutral-600 mb-4">
-                              Comments allow team members to discuss this proposal, provide feedback, 
-                              and keep a record of important conversations.
-                            </p>
-                            <Alert className="mb-4 bg-amber-50 text-amber-800 border-amber-200">
-                              <AlertCircle className="h-4 w-4" />
-                              <AlertDescription>
-                                Use the comment form above to add your first comment to this proposal.
-                              </AlertDescription>
-                            </Alert>
-                            <div className="flex flex-col items-center">
-                              <Button 
-                                variant="outline" 
-                                className="mb-2 w-full md:w-auto"
-                                onClick={() => {
-                                  // Focus the comment textarea
-                                  const textarea = document.getElementById('comment-textarea');
-                                  if (textarea) {
-                                    textarea.focus();
-                                  }
-                                }}
-                              >
-                                <MessageSquare className="h-4 w-4 mr-2" />
-                                Add the first comment
-                              </Button>
-                            </div>
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              </div>
-            )}
+          <TabsContent value="comments">
+            <CommentSection proposalId={proposal.id} isReadOnly={isReadOnly} />
           </TabsContent>
         </Tabs>
 

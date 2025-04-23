@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, MessageSquare, Send } from 'lucide-react';
+import { Info, Loader2, MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -9,6 +9,7 @@ import { apiRequestJson } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface CommentSectionProps {
   proposalId: number;
