@@ -535,4 +535,121 @@ export function setupMarketingRoutes(app: Express) {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+
+  // Workflow Enrollments CRUD Endpoints
+  app.get("/api/marketing/workflow-enrollments", async (req, res) => {
+    try {
+      const workflowId = req.query.workflowId ? parseInt(req.query.workflowId as string) : undefined;
+      
+      let query = db.select().from(workflowEnrollments);
+      
+      if (workflowId && !isNaN(workflowId)) {
+        query = query.where(eq(workflowEnrollments.workflowId, workflowId));
+      }
+      
+      const enrollments = await query;
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching workflow enrollments:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/marketing/workflow-enrollments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+      }
+      
+      const [enrollment] = await db
+        .select()
+        .from(workflowEnrollments)
+        .where(eq(workflowEnrollments.id, id));
+      
+      if (!enrollment) {
+        return res.status(404).json({ error: "Workflow enrollment not found" });
+      }
+      
+      res.json(enrollment);
+    } catch (error) {
+      console.error("Error fetching workflow enrollment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/marketing/workflow-enrollments", async (req, res) => {
+    try {
+      const validatedData = insertWorkflowEnrollmentSchema.parse(req.body);
+      
+      const [enrollment] = await db
+        .insert(workflowEnrollments)
+        .values(validatedData)
+        .returning();
+      
+      res.status(201).json(enrollment);
+    } catch (error) {
+      console.error("Error creating workflow enrollment:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/marketing/workflow-enrollments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+      }
+      
+      // Partial update, so we only validate the fields provided
+      const validatedData = insertWorkflowEnrollmentSchema.partial().parse(req.body);
+      
+      const [updatedEnrollment] = await db
+        .update(workflowEnrollments)
+        .set(validatedData)
+        .where(eq(workflowEnrollments.id, id))
+        .returning();
+      
+      if (!updatedEnrollment) {
+        return res.status(404).json({ error: "Workflow enrollment not found" });
+      }
+      
+      res.json(updatedEnrollment);
+    } catch (error) {
+      console.error("Error updating workflow enrollment:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/marketing/workflow-enrollments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+      }
+      
+      const [deletedEnrollment] = await db
+        .delete(workflowEnrollments)
+        .where(eq(workflowEnrollments.id, id))
+        .returning();
+      
+      if (!deletedEnrollment) {
+        return res.status(404).json({ error: "Workflow enrollment not found" });
+      }
+      
+      res.json({ message: "Workflow enrollment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting workflow enrollment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 }
