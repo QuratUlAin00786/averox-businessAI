@@ -2,10 +2,10 @@
 // for the AVEROX CRM. It addresses issues with the element creation process.
 
 import { ProposalElement, InsertProposalElement } from '@shared/schema';
+import { toast } from '@/hooks/use-toast';
 
 // Define the type for element types
-type ProposalElementType = 'Header' | 'Text' | 'Image' | 'Table' | 'List' | 'Quote' | 'ProductList' | 'Signature' | 'PageBreak' | 'Custom';
-import { toast } from '@/hooks/use-toast';
+export type ProposalElementType = 'Header' | 'Text' | 'Image' | 'Table' | 'List' | 'Quote' | 'ProductList' | 'Signature' | 'PageBreak' | 'Custom';
 
 /**
  * Creates a default content object for different element types

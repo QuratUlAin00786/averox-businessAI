@@ -8,6 +8,8 @@ import {
   ProposalCollaborator,
   ProposalComment,
 } from '@shared/schema';
+// Import the ProposalElementType from our fix-element-add file
+import type { ProposalElementType } from './fix-element-add';
 import { CommentSection } from './comment-section';
 import { CollaboratorSection } from './collaborator-section';
 import { useToast } from '@/hooks/use-toast';
@@ -409,62 +411,23 @@ export function ProposalEditor({
     console.log("Adding new element of type:", type);
     
     try {
-      // Use the getElementDefaultContent from our fixed implementation
-      const defaultContent = getElementDefaultContent(type);
-      console.log("Default content for new element:", defaultContent);
+      // Use our new implementation for creating elements
+      const result = await createProposalElement(
+        proposal.id,
+        type as ProposalElementType,
+        2 // Default user ID
+      );
       
-      // Prepare the content
-      // Important: we send as object, server will stringify if needed
-      const newElement: InsertProposalElement = {
-        proposalId: proposal.id,
-        elementType: type,
-        name: `New ${type}`,
-        content: defaultContent, // Send the object directly
-        sortOrder: elements.length,
-        createdBy: 2 // This is hardcoded in the server anyway
-      };
-      
-      console.log("Default content (without stringify):", defaultContent);
-      
-      console.log("Sending new element data:", newElement);
-      
-      // Use async/await for cleaner code and better error handling
-      const response = await fetch(`/api/proposals/${proposal.id}/elements`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newElement),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Server error adding element:", errorText);
-        throw new Error(`Server error: ${response.status} - ${errorText}`);
+      if (!result) {
+        throw new Error("Element creation failed with no error message");
       }
       
-      const data = await response.json();
-      console.log("Element added successfully. Server response:", data);
-      
-      // Show success message
-      toast({
-        title: 'Element Added',
-        description: `New ${type} element has been added to your proposal`,
-      });
-      
-      // Explicitly log the response data structure
-      console.log("Response data structure:", {
-        success: data.success,
-        hasData: data.data ? 'yes' : 'no',
-        dataIsArray: Array.isArray(data.data),
-        message: data.message,
-        elementProperties: data.data ? Object.keys(data.data) : 'N/A'
-      });
+      console.log("Element created successfully:", result);
       
       // Refresh the elements list
-      console.log("Refreshing elements list...");
-      const newElements = await refetchElements();
-      console.log("Elements after add:", newElements?.length || 0, "items found");
+      console.log("Refreshing elements list after element creation...");
+      await refetchElements();
+      console.log("Elements after add: updated list");
       
       // If this is our first element, switch to editor tab to show it
       if (elements.length === 0) {
@@ -477,7 +440,7 @@ export function ProposalEditor({
         }, 500);
       }
       
-      return data.data || data;
+      return result;
       
     } catch (error: any) {
       console.error("Error in handleAddElement:", error);
