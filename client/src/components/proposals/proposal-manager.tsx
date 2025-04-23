@@ -854,13 +854,57 @@ export function ProposalManager({
   };
 
   const handleOpenEditor = (proposal: Proposal) => {
-    console.log("Opening editor for proposal:", proposal);
-    setSelectedProposal(proposal);
-    // Use a small delay to ensure state is updated
-    setTimeout(() => {
-      setEditorVisible(true);
-      console.log("Editor visibility set to true");
-    }, 50);
+    try {
+      console.log("Opening editor for proposal:", proposal);
+      
+      // Safety check - make sure proposal has required properties
+      if (!proposal || !proposal.id) {
+        console.error("Invalid proposal object:", proposal);
+        toast({
+          title: "Error",
+          description: "Invalid proposal data. Cannot open editor.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // First get fresh data
+      fetch(`/api/proposals/${proposal.id}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to fetch proposal: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          const freshProposal = data.data || data;
+          console.log("Fetched fresh proposal data:", freshProposal);
+          
+          // Set selected proposal with fresh data
+          setSelectedProposal(freshProposal);
+          
+          // Use a small delay to ensure state is updated
+          setTimeout(() => {
+            setEditorVisible(true);
+            console.log("Editor visibility set to true");
+          }, 50);
+        })
+        .catch(error => {
+          console.error("Error fetching proposal for editor:", error);
+          toast({
+            title: "Error",
+            description: `Could not open editor: ${error.message}`,
+            variant: "destructive"
+          });
+        });
+    } catch (error) {
+      console.error("Error in handleOpenEditor:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while opening the editor",
+        variant: "destructive"
+      });
+    }
   };
 
   const getFilteredProposals = () => {
@@ -1332,15 +1376,20 @@ export function ProposalManager({
         />
       )}
 
-      {/* Proposal content editor dialog */}
+      {/* Proposal content editor dialog - only render when visible and we have a selected proposal */}
       {editorVisible && selectedProposal && (
         <ProposalEditor
-          isOpen={editorVisible}
+          isOpen={true} // Always set to true because we're using conditional rendering
           proposal={selectedProposal}
           isReadOnly={selectedProposal.status !== 'Draft'}
-          onClose={() => setEditorVisible(false)}
-          onSave={() => {
+          onClose={() => {
+            console.log("Closing editor");
             setEditorVisible(false);
+          }}
+          onSave={() => {
+            console.log("Editor save callback triggered");
+            setEditorVisible(false);
+            // Fetch fresh data after saving
             refetchProposals();
             toast({
               title: 'Success',

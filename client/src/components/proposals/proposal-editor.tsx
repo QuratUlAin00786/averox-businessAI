@@ -458,8 +458,16 @@ export function ProposalEditor({
     );
   };
 
+  // If not open, don't even render the component
+  if (!isOpen) {
+    console.log("ProposalEditor is not open, not rendering");
+    return null;
+  }
+
+  console.log("ProposalEditor rendering in open state for proposal:", proposal.id);
+  
   return (
-    <div className={`fixed inset-0 z-50 bg-white ${isOpen ? 'block' : 'hidden'}`}>
+    <div className="fixed inset-0 z-50 bg-white">
       {/* Header area */}
       <div className="sticky top-0 z-10 bg-white p-4 border-b flex justify-between items-center shadow-sm">
         <div className="flex items-center">
