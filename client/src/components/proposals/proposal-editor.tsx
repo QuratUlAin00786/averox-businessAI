@@ -36,6 +36,7 @@ import {
   GripVertical as GripVerticalIcon,
   UserPlus,
   FileIcon,
+  FileText,
   MousePointerClickIcon,
   PlusIcon,
   AlertCircle,
@@ -104,15 +105,45 @@ export function ProposalEditor({
   useEffect(() => {
     console.log("ProposalEditor component mounted with isOpen:", isOpen, "proposalId:", proposal.id);
     
+    // Check if there are cached elements in session storage
+    let storedElement = null;
+    try {
+      const storedElementString = sessionStorage.getItem(`proposal_${proposal.id}_selected_element`);
+      if (storedElementString) {
+        const parsedElement = JSON.parse(storedElementString);
+        console.log("Found stored selected element:", parsedElement);
+        storedElement = parsedElement;
+      }
+    } catch (error) {
+      console.warn("Error reading from sessionStorage:", error);
+    }
+    
     if (isOpen) {
       console.log("ProposalEditor is open, fetching elements for proposal:", proposal.id);
       refetchElements().then(() => {
         console.log("Elements fetched, ready for editing");
+        
+        // If we had a stored element, try to match it with fetched elements
+        if (storedElement && elements.length > 0) {
+          const foundElement = elements.find(e => e.id === storedElement.id);
+          if (foundElement) {
+            console.log("Setting stored element as selected:", foundElement.id);
+            setSelectedElement(foundElement);
+            setActiveTab('editor');
+          }
+        }
       });
     }
     
+    // Clear the session storage on unmount
     return () => {
       console.log("ProposalEditor component unmounting");
+      try {
+        sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
+        sessionStorage.removeItem(`proposal_${proposal.id}_elements`);
+      } catch (error) {
+        console.warn("Error clearing sessionStorage:", error);
+      }
     };
   }, []);
   
@@ -346,6 +377,48 @@ export function ProposalEditor({
       });
     },
   });
+
+  // Add effect to automatically select the first element when elements are loaded
+  // Or create a default element if none exist
+  useEffect(() => {
+    const handleElementsLoaded = async () => {
+      // If we have elements already, just select the first one
+      if (elements.length > 0 && !selectedElement) {
+        console.log("Auto-selecting first element:", elements[0].id);
+        setSelectedElement(elements[0]);
+        
+        // Switch to editor tab if not already on it
+        if (activeTab !== 'editor') {
+          setActiveTab('editor');
+        }
+      } 
+      // If we have no elements but aren't currently loading, create a default text element
+      else if (elements.length === 0 && !isLoadingElements && !addElementMutation.isPending) {
+        console.log("No elements found. Creating a default text element...");
+        
+        try {
+          const newElement = await createProposalElement(
+            proposal.id,
+            'Text' as ProposalElementType,
+            2 // Default user ID
+          );
+          
+          if (newElement) {
+            console.log("Created default text element:", newElement);
+            // Will trigger a refetch of elements, which will then select this element
+            toast({
+              title: "Element Created",
+              description: "A default text element has been added to your proposal.",
+            });
+          }
+        } catch (error) {
+          console.error("Error creating default element:", error);
+        }
+      }
+    };
+    
+    handleElementsLoaded();
+  }, [elements, selectedElement, activeTab, isLoadingElements, addElementMutation.isPending]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {

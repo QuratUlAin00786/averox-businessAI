@@ -896,6 +896,20 @@ export function ProposalManager({
         const elements = elementsData.data || elementsData;
         console.log("Pre-fetched elements:", elements);
         
+        // Store element data in sessionStorage for the editor to use
+        // This ensures the editor has immediate access to elements
+        try {
+          sessionStorage.setItem(`proposal_${proposal.id}_elements`, JSON.stringify(elements));
+          
+          // If there are elements, store the first one as the selected element
+          if (elements && elements.length > 0) {
+            console.log("Storing first element as selected:", elements[0].id);
+            sessionStorage.setItem(`proposal_${proposal.id}_selected_element`, JSON.stringify(elements[0]));
+          }
+        } catch (error) {
+          console.warn("Could not store elements in sessionStorage:", error);
+        }
+        
         // If there are no elements, prepare to create one automatically
         if (!elements || elements.length === 0) {
           console.log("No elements found. Will create one automatically when editor opens.");
