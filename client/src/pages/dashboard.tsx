@@ -1,32 +1,29 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
 import { 
-  UserPlus, 
-  TrendingUp, 
-  DollarSign, 
-  Briefcase, 
   Download, 
   Plus,
-  HelpCircle 
+  HelpCircle,
+  ArrowRight,
+  ArrowUp,
+  CreditCard,
+  Users,
+  BarChart3
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { SimpleButton } from "@/components/ui/simple-button";
-import { StatCard } from "@/components/dashboard/stat-card";
-import { LeadsStatCard } from "@/components/dashboard/leads-stat-card";
-import { SalesPipeline } from "@/components/dashboard/sales-pipeline";
-import { RecentActivities } from "@/components/dashboard/recent-activities";
-import { MyTasks } from "@/components/dashboard/my-tasks";
-import { UpcomingEvents } from "@/components/dashboard/upcoming-events";
-import { AIInsights } from "@/components/dashboard/ai-insights";
-import { getDashboardData } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
 import { useSystemSettings } from "@/hooks/use-system-settings";
 import { SimpleTour, TourHelpButton, useTour } from "@/components/ui/simple-tour";
 import { dashboardTour } from "@/lib/simple-tour-data";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { getDashboardData } from "@/lib/data";
 
 export default function Dashboard() {
   const [currentDate, setCurrentDate] = useState<string>("");
@@ -90,236 +87,188 @@ export default function Dashboard() {
           </div>
           
           <div className="flex flex-col sm:flex-row mt-4 gap-2 sm:gap-3 md:mt-0 md:ml-4">
-            <SimpleButton 
+            <Button 
               variant="outline" 
-              className="text-primary border-primary hover:bg-primary/10 w-full sm:w-auto"
-              onClick={() => {
-                try {
-                  // Verify data is available and has expected structure
-                  if (!data || !data.stats || !Array.isArray(data.stats)) {
-                    window.alert("No dashboard data available to export");
-                    return;
-                  }
-                  
-                  // Basic dashboard information
-                  let csvRows = [];
-                  
-                  // Add stats section
-                  csvRows.push(["Dashboard Statistics"]);
-                  csvRows.push(["Metric", "Value", "Change"]);
-                  
-                  data.stats.forEach(stat => {
-                    csvRows.push([
-                      stat.title,
-                      stat.value,
-                      `${stat.change.value} (${stat.change.trend === 'up' ? 'Increase' : stat.change.trend === 'down' ? 'Decrease' : 'No change'})`
-                    ]);
-                  });
-                  
-                  // Add pipeline data
-                  if (data.pipelineStages && data.pipelineStages.length > 0) {
-                    csvRows.push([]);
-                    csvRows.push(["Sales Pipeline"]);
-                    csvRows.push(["Stage", "Value", "Percentage"]);
-                    
-                    data.pipelineStages.forEach(stage => {
-                      csvRows.push([
-                        stage.name,
-                        stage.value,
-                        `${stage.percentage}%`
-                      ]);
-                    });
-                  }
-                  
-                  // Add recent activities
-                  if (data.recentActivities && data.recentActivities.length > 0) {
-                    csvRows.push([]);
-                    csvRows.push(["Recent Activities"]);
-                    csvRows.push(["User", "Action", "Time"]);
-                    
-                    data.recentActivities.forEach(activity => {
-                      csvRows.push([
-                        activity.user.name,
-                        activity.action,
-                        activity.time
-                      ]);
-                    });
-                  }
-                  
-                  // Convert to CSV content
-                  const csvContent = csvRows.map(row => 
-                    row.map(cell => 
-                      typeof cell === 'string' ? `"${cell.replace(/"/g, '""')}"` : cell
-                    ).join(',')
-                  ).join('\n');
-                  
-                  // Create and trigger download
-                  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-                  const url = URL.createObjectURL(blob);
-                  const link = document.createElement("a");
-                  link.setAttribute("href", url);
-                  link.setAttribute("download", `averox_crm_dashboard_${new Date().toISOString().split('T')[0]}.csv`);
-                  
-                  // Append link, trigger download, then clean up
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                  URL.revokeObjectURL(url);
-                  
-                  console.log("Export completed successfully");
-                } catch (error) {
-                  console.error("Export failed:", error);
-                  window.alert("Failed to export dashboard data. Please try again.");
-                }
-              }}
+              className="w-full sm:w-auto"
               type="button"
+              onClick={() => setLocation("/reports")}
             >
-              <Download className="-ml-1 mr-2 h-5 w-5 text-primary" />
-              <span>{t.buttons.export}</span>
-            </SimpleButton>
-            <SimpleButton 
-              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white"
-              onClick={() => {
-                const reportTypes = [
-                  "Sales Performance", 
-                  "Lead Conversion", 
-                  "Customer Engagement", 
-                  "Team Activity"
-                ];
-                
-                const reportType = window.prompt(
-                  `Select a report type (enter number):\n${reportTypes.map((type, i) => `${i + 1}. ${type}`).join('\n')}`, 
-                  "1"
-                );
-                
-                if (!reportType) return;
-                
-                const selectedIndex = parseInt(reportType) - 1;
-                if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= reportTypes.length) {
-                  window.alert("Invalid selection. Please try again.");
-                  return;
-                }
-                
-                const selectedReport = reportTypes[selectedIndex];
-                window.alert(`Creating new ${selectedReport} report...\nNavigating to reports page.`);
-                setLocation("/reports?new=true&type=" + encodeURIComponent(selectedReport));
-              }}
+              <ArrowRight className="mr-2 h-4 w-4" />
+              <span>View Reports</span>
+            </Button>
+            <Button 
+              className="w-full sm:w-auto"
               type="button"
+              onClick={() => setLocation("/settings/dashboard")}
             >
-              <Plus className="-ml-1 mr-2 h-5 w-5" />
-              <span>{t.buttons.add} {t.navigation.reports}</span>
-            </SimpleButton>
+              <Plus className="mr-2 h-4 w-4" />
+              <span>Customize Dashboard</span>
+            </Button>
           </div>
         </div>
       </div>
       
       <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
-        {error ? (
-          <div className="p-4 mt-4 text-red-800 bg-red-100 border border-red-200 rounded-lg">
-            <h3 className="text-lg font-medium">Error loading dashboard data</h3>
-            <p className="mt-1">{error instanceof Error ? error.message : 'An unknown error occurred'}</p>
-          </div>
-        ) : isLoading ? (
-          // Loading state with skeletons
-          <>
-            {/* Stats Card Skeletons */}
-            <div className="grid grid-cols-1 gap-6 mt-4 sm:gap-5 sm:mt-2 sm:grid-cols-2 lg:grid-cols-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="p-6 bg-white rounded-lg shadow">
-                  <div className="flex flex-col sm:flex-row sm:items-center">
-                    <div className="flex-shrink-0 mb-3 sm:mb-0">
-                      <Skeleton className="h-20 w-20 sm:h-14 sm:w-14 rounded-md mx-auto sm:mx-0" />
-                    </div>
-                    <div className="flex-1 w-full sm:w-0 sm:ml-5 text-center sm:text-left">
-                      <Skeleton className="h-8 w-32 mx-auto sm:mx-0" />
-                      <Skeleton className="h-6 w-20 mt-2 mx-auto sm:mx-0" />
-                      <Skeleton className="h-4 w-24 mt-2 mx-auto sm:mx-0" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Charts & Tables Skeletons */}
-            <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
-              <div className="p-6 bg-white rounded-lg shadow">
-                <Skeleton className="h-6 w-40 mb-4" />
-                <Skeleton className="h-[250px] w-full rounded-md" />
-              </div>
-              <div className="p-6 bg-white rounded-lg shadow">
-                <Skeleton className="h-6 w-40 mb-4" />
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="flex-1">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-3 w-1/2 mt-2" />
+        {/* Dashboard Content */}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 space-y-6">
+              {/* Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <CardDescription>Total Revenue</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-2xl font-bold">$48,700</div>
+                        <div className="text-sm flex items-center text-green-600">
+                          <ArrowUp className="w-4 h-4 mr-1" />
+                          12%
+                        </div>
+                      </div>
+                      <div className="bg-primary/10 p-3 rounded-full">
+                        <CreditCard className="w-5 h-5 text-primary" />
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          // Loaded state with actual data
-          <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 gap-6 mt-4 sm:gap-5 sm:mt-2 sm:grid-cols-2 lg:grid-cols-4 stats-cards">
-              {data?.stats.map((stat, index) => {
-                const icons = [UserPlus, TrendingUp, DollarSign, Briefcase];
-                const colors = ["primary", "secondary", "accent", "info"] as const;
+                  </CardContent>
+                </Card>
                 
-                // Use special card for New Leads (typically first card)
-                if (index === 0 && stat.title === "New Leads") {
-                  return (
-                    <LeadsStatCard
-                      key={stat.id}
-                      value={stat.value}
-                      change={stat.change}
-                    />
-                  );
-                }
-                
-                // Use standard card for all other stats
-                return (
-                  <StatCard
-                    key={stat.id}
-                    title={stat.title}
-                    value={stat.value}
-                    change={stat.change}
-                    icon={icons[index % icons.length]}
-                    iconColor={colors[index % colors.length]}
-                  />
-                );
-              })}
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <CardDescription>New Leads</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-2xl font-bold">38</div>
+                        <div className="text-sm flex items-center text-green-600">
+                          <ArrowUp className="w-4 h-4 mr-1" />
+                          4%
+                        </div>
+                      </div>
+                      <div className="bg-primary/10 p-3 rounded-full">
+                        <Users className="w-5 h-5 text-primary" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Chart Placeholder */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Monthly Sales</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[300px] flex items-center justify-center">
+                  <div className="text-center p-8 border border-dashed rounded-lg w-full max-w-md mx-auto">
+                    <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Monthly Sales Chart</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Sales performance across months with revenue trends.
+                    </p>
+                    <Button variant="outline" size="sm" onClick={() => setLocation("/reports")}>
+                      View Detailed Report
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             
-            {/* Charts & Tables Section */}
-            <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
-              <div className="sales-pipeline">
-                <SalesPipeline stages={data?.pipelineStages || []} />
-              </div>
-              <div className="activities-section">
-                <RecentActivities activities={data?.recentActivities || []} />
-              </div>
+            <div className="space-y-6">
+              {/* Quick Actions Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start text-left h-auto py-2.5"
+                      onClick={() => setLocation("/leads/new")}
+                    >
+                      <div className="rounded-full bg-primary/10 p-1.5 mr-3">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-medium">Add Lead</div>
+                        <div className="text-xs text-muted-foreground">Create a new potential customer</div>
+                      </div>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start text-left h-auto py-2.5"
+                      onClick={() => setLocation("/opportunities/new")}
+                    >
+                      <div className="rounded-full bg-primary/10 p-1.5 mr-3">
+                        <BarChart3 className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-medium">New Opportunity</div>
+                        <div className="text-xs text-muted-foreground">Create a new sales opportunity</div>
+                      </div>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start text-left h-auto py-2.5"
+                      onClick={() => setLocation("/proposals/new")}
+                    >
+                      <div className="rounded-full bg-primary/10 p-1.5 mr-3">
+                        <ArrowRight className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-medium">Create Proposal</div>
+                        <div className="text-xs text-muted-foreground">Draft a new client proposal</div>
+                      </div>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Migration Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Migration Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-sm">Oracle CRM Migration</h3>
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">In Progress</Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span>Progress: 3,450 / 5,200 records</span>
+                          <span>66%</span>
+                        </div>
+                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: '66%' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => setLocation("/settings/data-migration")}
+                    >
+                      View All Migrations
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            
-            {/* AI Insights Section */}
-            <div className="mt-8">
-              <AIInsights className="w-full" />
-            </div>
-            
-            {/* Tasks and Upcoming Events */}
-            <div className="grid grid-cols-1 gap-5 mt-8 lg:grid-cols-2">
-              <div className="tasks-section">
-                <MyTasks tasks={data?.myTasks || []} />
-              </div>
-              <UpcomingEvents events={data?.upcomingEvents || []} />
-            </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );
