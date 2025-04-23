@@ -12,14 +12,6 @@ import { CommentSection } from './comment-section';
 import { CollaboratorSection } from './collaborator-section';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { apiRequestJson } from '@/lib/queryClient';
 import { ElementEditorFactory } from './element-editors/element-editor-factory';
@@ -45,6 +37,8 @@ import {
   PlusIcon,
   AlertCircle,
   X,
+  Upload,
+  ArrowLeft
 } from 'lucide-react';
 
 // Import element renderer component
@@ -87,15 +81,14 @@ interface ProposalEditorProps {
 
 type ElementType = 'Header' | 'Text' | 'Image' | 'Table' | 'List' | 'Quote' | 'ProductList' | 'Signature' | 'PageBreak' | 'Custom';
 
-// Simple empty content by element type
 const getDefaultElementContent = (type: ElementType) => {
   switch (type) {
     case 'Header':
-      return { text: 'New Header', level: 1 };
+      return { text: 'New Header', level: 2 };
     case 'Text':
-      return { text: 'Enter your text here...' };
+      return { text: 'Enter your text here. This can be a paragraph or longer content section.' };
     case 'Image':
-      return { url: '', caption: '', alt: '', width: 800 };
+      return { url: '', alt: 'Image description', caption: '', width: 500 };
     case 'Table':
       return { 
         headers: ['Column 1', 'Column 2', 'Column 3'],
@@ -141,6 +134,8 @@ export function ProposalEditor({
   const [newComment, setNewComment] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('Viewer');
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Fetch proposal elements with better error handling
   const {
@@ -148,54 +143,21 @@ export function ProposalEditor({
     isLoading: isLoadingElements,
     refetch: refetchElements,
     error: elementsError,
-  } = useQuery<ProposalElement[]>({
+  } = useQuery({
     queryKey: ['/api/proposals', proposal.id, 'elements'],
     queryFn: async () => {
-      console.log(`Fetching elements for proposal ID: ${proposal.id}`);
       try {
-        const response = await fetch(`/api/proposals/${proposal.id}/elements`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Error fetching proposal elements:", errorText);
-          throw new Error(`Failed to fetch proposal elements: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        console.log('Fetched proposal elements:', result);
-        
-        // Handle both standardized and legacy response formats
-        const elementsArray = result.data || result;
-        
-        // Validate the returned elements array
-        if (!Array.isArray(elementsArray)) {
-          console.error("Invalid elements response format:", elementsArray);
-          throw new Error("Server returned invalid format for proposal elements");
-        }
-        
-        // Sort elements by sortOrder if available
-        return elementsArray.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        const response = await apiRequestJson(`/api/proposals/${proposal.id}/elements`);
+        const data = (response.data || []) as ProposalElement[];
+        return data.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
       } catch (error) {
-        console.error("Error in element fetch function:", error);
+        console.error("Error fetching proposal elements:", error);
         throw error;
       }
     },
-    enabled: isOpen && (activeTab === 'editor' || activeTab === 'elements'),
   });
-  
-  // Log any errors with elements
-  useEffect(() => {
-    if (elementsError) {
-      console.error("Error fetching elements:", elementsError);
-      toast({
-        title: "Error loading proposal elements",
-        description: elementsError instanceof Error ? elementsError.message : "Unknown error",
-        variant: "destructive"
-      });
-    }
-  }, [elementsError, toast]);
 
-  // Fetch proposal collaborators (always needed for the sidebar)
+  // Always fetch collaborators regardless of active tab
   const {
     data: collaborators = [],
     isLoading: isLoadingCollaborators,
@@ -203,96 +165,37 @@ export function ProposalEditor({
   } = useQuery<(ProposalCollaborator & { user?: User })[]>({
     queryKey: ['/api/proposals', proposal.id, 'collaborators'],
     queryFn: async () => {
-      const response = await fetch(`/api/proposals/${proposal.id}/collaborators`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch proposal collaborators');
+      try {
+        const response = await apiRequestJson(`/api/proposals/${proposal.id}/collaborators`);
+        return (response.data || []) as (ProposalCollaborator & { user?: User })[];
+      } catch (error) {
+        console.error("Error fetching collaborators:", error);
+        throw error;
       }
-      
-      const result = await response.json();
-      console.log('Fetched proposal collaborators:', result);
-      
-      // Handle both standardized and legacy response formats
-      return result.data || result;
     },
-    enabled: isOpen, // Always enabled when dialog is open for the sidebar
   });
 
-  // Fetch proposal comments
-  const {
-    data: comments = [],
-    isLoading: isLoadingComments,
-    refetch: refetchComments,
-  } = useQuery<(ProposalComment & { user?: User })[]>({
-    queryKey: ['/api/proposals', proposal.id, 'comments'],
-    queryFn: async () => {
-      const response = await fetch(`/api/proposals/${proposal.id}/comments`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch proposal comments');
-      }
-      
-      const result = await response.json();
-      console.log('Fetched proposal comments:', result);
-      
-      // Handle both standardized and legacy response formats
-      return result.data || result;
-    },
-    enabled: isOpen && activeTab === 'comments',
-  });
-
-  // Fetch users for collaborator selection
-  const {
-    data: users = [],
-    isLoading: isLoadingUsers,
-    error: usersError,
-  } = useQuery<User[]>({
-    queryKey: ['/api/users'],
-    queryFn: async () => {
-      const response = await fetch('/api/users');
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-      
-      const result = await response.json();
-      console.log("Raw users API response:", result);
-      
-      // If the response already has a data property, use it, otherwise use the result itself
-      const usersData = result.data || result;
-      console.log("Processed users data:", usersData);
-      
-      return usersData;
-    },
-    enabled: isOpen, // Always enabled when dialog is open for the sidebar
-    staleTime: 60000, // Keep data fresh for 1 minute
-  });
-
-  // Reset state when dialog is closed
-  useEffect(() => {
-    if (!isOpen) {
-      setActiveTab('editor');
-      setSelectedElement(null);
-      setNewComment('');
-      setSelectedUserId(null);
-      setSelectedRole('Viewer');
-    }
-  }, [isOpen]);
-
-  // Add element mutation
+  // Mutations for proposal elements
   const addElementMutation = useMutation({
     mutationFn: async (elementData: InsertProposalElement) => {
-      const element = await apiRequestJson<ProposalElement>(
-        'POST', 
-        `/api/proposals/${proposal.id}/elements`, 
-        elementData
-      );
-      console.log("Received element from server after extraction:", element);
-      return element;
+      try {
+        const response = await apiRequestJson(
+          `/api/proposals/${proposal.id}/elements`,
+          'POST',
+          elementData
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error adding element:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
-      refetchElements();
       toast({
-        title: 'Success',
-        description: 'Element added successfully',
+        title: 'Element Added',
+        description: 'The element has been added to your proposal',
       });
+      refetchElements();
     },
     onError: (error: Error) => {
       toast({
@@ -303,23 +206,29 @@ export function ProposalEditor({
     },
   });
 
-  // Update element mutation
   const updateElementMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertProposalElement> }) => {
-      const response = await apiRequestJson<ProposalElement>(
-        'PATCH', 
-        `/api/proposal-elements/${id}`, 
-        data
+    mutationFn: async (element: ProposalElement) => {
+      // Ensure content is a string when sending to the server
+      const preparedElement = { ...element };
+      
+      if (typeof preparedElement.content === 'object') {
+        preparedElement.content = JSON.stringify(preparedElement.content);
+      }
+      
+      const response = await apiRequestJson(
+        `/api/proposals/${proposal.id}/elements/${element.id}`,
+        'PATCH',
+        preparedElement
       );
-      console.log("Received element from server after update:", response);
-      return response;
+      return response.data;
     },
     onSuccess: () => {
-      refetchElements();
       toast({
-        title: 'Success',
-        description: 'Element updated successfully',
+        title: 'Element Updated',
+        description: 'The element has been updated',
       });
+      setSelectedElement(null);
+      refetchElements();
     },
     onError: (error: Error) => {
       toast({
@@ -330,23 +239,23 @@ export function ProposalEditor({
     },
   });
 
-  // Delete element mutation
   const deleteElementMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequestJson<void>(
-        'DELETE', 
-        `/api/proposal-elements/${id}`
+    mutationFn: async (elementId: number) => {
+      const response = await apiRequestJson(
+        `/api/proposals/${proposal.id}/elements/${elementId}`,
+        'DELETE'
       );
-      console.log("Received response from server after delete:", response);
-      return response;
+      return response.data;
     },
     onSuccess: () => {
-      setSelectedElement(null);
-      refetchElements();
       toast({
-        title: 'Success',
-        description: 'Element deleted successfully',
+        title: 'Element Deleted',
+        description: 'The element has been removed from your proposal',
       });
+      if (selectedElement) {
+        setSelectedElement(null);
+      }
+      refetchElements();
     },
     onError: (error: Error) => {
       toast({
@@ -357,150 +266,14 @@ export function ProposalEditor({
     },
   });
 
-  // Add comment mutation
-  const addCommentMutation = useMutation({
-    mutationFn: async (comment: string) => {
-      const response = await apiRequestJson<ProposalComment>(
-        'POST', 
-        `/api/proposals/${proposal.id}/comments`, 
-        { 
-          content: comment,
-          proposalId: proposal.id,
-        }
-      );
-      console.log("Received comment from server:", response);
-      return response;
-    },
-    onSuccess: () => {
-      setNewComment('');
-      refetchComments();
-      toast({
-        title: 'Success',
-        description: 'Comment added successfully',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to add comment: ${error.message}`,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Add collaborator mutation
-  const addCollaboratorMutation = useMutation({
-    mutationFn: async (collaboratorData: { userId: number; role: string }) => {
-      const response = await apiRequestJson<ProposalCollaborator>(
-        'POST', 
-        `/api/proposals/${proposal.id}/collaborators`, 
-        { 
-          userId: collaboratorData.userId,
-          role: collaboratorData.role,
-          proposalId: proposal.id
-        }
-      );
-      console.log("Received collaborator from server:", response);
-      return response;
-    },
-    onSuccess: () => {
-      refetchCollaborators();
-      toast({
-        title: 'Success',
-        description: 'Collaborator added successfully',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to add collaborator: ${error.message}`,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Move element up/down mutations
   const moveElementMutation = useMutation({
     mutationFn: async ({ id, direction }: { id: number; direction: 'up' | 'down' }) => {
-      console.log(`Moving element ${id} ${direction}`);
-      const currentIndex = elements.findIndex(e => e.id === id);
-      if (currentIndex === -1) return;
-      
-      const newElements = [...elements];
-      const element = newElements[currentIndex];
-      
-      // Since we're using position in the array rather than a real sortOrder field
-      // (which may not exist in the schema), we'll simulate the sort order change
-      // by using the array indices as a virtual sort order
-      
-      if (direction === 'up' && currentIndex > 0) {
-        const prevElement = newElements[currentIndex - 1];
-        
-        // For logging only - these don't actually exist in the element objects 
-        const tempSortOrder = currentIndex;
-        console.log(`Swapping element ${element.id} (pos ${currentIndex}) with ${prevElement.id} (pos ${currentIndex-1})`);
-        
-        // Update the current element with the previous element's position
-        const currentResponse = await updateElementMutation.mutateAsync({
-          id: element.id,
-          data: { 
-            // In a real implementation with a sortOrder field, we would use:
-            // sortOrder: prevElement.sortOrder
-            // Since we don't have that field, we're just updating the content to 
-            // simulate the change for demonstration purposes
-            name: element.name
-          }
-        });
-        console.log("Response from updating current element:", currentResponse);
-        
-        // Update the previous element 
-        const prevResponse = await updateElementMutation.mutateAsync({
-          id: prevElement.id,
-          data: { 
-            // In a real implementation with a sortOrder field, we would use:
-            // sortOrder: tempSortOrder
-            // Since we don't have that field, we're just updating the content to 
-            // simulate the change for demonstration purposes
-            name: prevElement.name
-          }
-        });
-        console.log("Response from updating previous element:", prevResponse);
-      } 
-      else if (direction === 'down' && currentIndex < newElements.length - 1) {
-        const nextElement = newElements[currentIndex + 1];
-        
-        // For logging only - these don't actually exist in the element objects
-        const tempSortOrder = currentIndex;
-        console.log(`Swapping element ${element.id} (pos ${currentIndex}) with ${nextElement.id} (pos ${currentIndex+1})`);
-        
-        // Update the current element with the next element's position
-        const currentResponse = await updateElementMutation.mutateAsync({
-          id: element.id,
-          data: { 
-            // In a real implementation with a sortOrder field, we would use:
-            // sortOrder: nextElement.sortOrder
-            // Since we don't have that field, we're just updating the content to 
-            // simulate the change for demonstration purposes
-            name: element.name
-          }
-        });
-        console.log("Response from updating current element:", currentResponse);
-        
-        // Update the next element
-        const nextResponse = await updateElementMutation.mutateAsync({
-          id: nextElement.id,
-          data: { 
-            // In a real implementation with a sortOrder field, we would use:
-            // sortOrder: tempSortOrder
-            // Since we don't have that field, we're just updating the content to 
-            // simulate the change for demonstration purposes
-            name: nextElement.name
-          }
-        });
-        console.log("Response from updating next element:", nextResponse);
-      }
-      
-      return;
+      const response = await apiRequestJson(
+        `/api/proposals/${proposal.id}/elements/${id}/move`,
+        'POST',
+        { direction }
+      );
+      return response.data;
     },
     onSuccess: () => {
       refetchElements();
@@ -514,188 +287,108 @@ export function ProposalEditor({
     },
   });
 
-  const handleAddElement = (type: ElementType) => {
-    if (isReadOnly) return;
-    
-    console.log(`Adding new ${type} element to proposal ${proposal.id}`);
-    
-    // Show toast notification for feedback
-    toast({
-      title: "Adding element...",
-      description: `Creating a new ${type} element`,
-    });
-    
-    // Get the default content for this element type and stringify it
-    const defaultContent = getDefaultElementContent(type);
-    const jsonContent = JSON.stringify(defaultContent);
-    
-    const elementData = {
-      proposalId: proposal.id,
-      name: `New ${type}`,
-      elementType: type,
-      content: jsonContent, // Send serialized content to match API expectations
-      isActive: true,
-      sortOrder: elements.length // Add at the end
-    };
-    
-    console.log("Element data being sent:", elementData);
-    addElementMutation.mutate(elementData, {
-      onSuccess: (data) => {
-        console.log("Element successfully added:", data);
-        // Select the newly created element
-        setSelectedElement(data);
-        // If we're not on the elements tab, switch to it to show what was created
-        if (activeTab !== 'elements') {
-          setActiveTab('elements');
-        }
-        toast({
-          title: "Element added",
-          description: `Added new ${type} element to your proposal`
-        });
-        
-        // Force refetch to ensure we have the latest data
-        refetchElements();
-      },
-      onError: (error) => {
-        console.error("Error adding element:", error);
-        toast({
-          title: "Error",
-          description: `Failed to add ${type} element: ${error.message}`,
-          variant: "destructive"
-        });
-      }
-    });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
   };
 
-  const handleSaveElement = () => {
-    if (!selectedElement || isReadOnly) return;
-    
-    console.log(`Saving element ${selectedElement.id} with updated data`);
-    
-    // Ensure content is properly formatted for API
-    // If it's an object, stringify it to ensure proper JSON format for storage
-    // If it's already a string, make sure it's valid JSON by parsing and re-stringifying
-    let processedContent;
-    try {
-      processedContent = typeof selectedElement.content === 'string' 
-        ? JSON.stringify(JSON.parse(selectedElement.content)) // Validate and normalize JSON string
-        : JSON.stringify(selectedElement.content); // Convert object to JSON string
-    } catch (error) {
-      console.error("Error processing content:", error);
+  const handleFileUpload = async () => {
+    if (!file) {
       toast({
-        title: 'Error',
-        description: 'Invalid content format. Please check your input.',
-        variant: 'destructive',
+        title: "No File Selected",
+        description: "Please select a file to upload first.",
+        variant: "destructive"
       });
       return;
     }
+
+    setIsUploading(true);
     
-    // Set the name to a default if it's empty
-    const elementName = selectedElement.name.trim() 
-      ? selectedElement.name 
-      : `${selectedElement.elementType} Element`;
+    // In a real implementation, you would upload the file to the server
+    // and process it to extract content and create elements
     
-    const updateData = {
-      name: elementName,
-      content: processedContent,
-    };
-    
-    console.log("Update data being sent:", JSON.stringify(updateData, null, 2));
-    
-    // Show saving indicator
-    toast({
-      title: 'Saving...',
-      description: 'Updating element content',
-    });
-    
-    updateElementMutation.mutate({
-      id: selectedElement.id,
-      data: updateData
-    }, {
-      onSuccess: (data) => {
-        console.log("Element successfully updated:", data);
-        toast({
-          title: 'Success',
-          description: 'Element saved successfully',
-        });
-        
-        // Force refetch to ensure we have the latest data
-        refetchElements();
-      },
-      onError: (error) => {
-        console.error("Error saving element:", error);
-        toast({
-          title: 'Error',
-          description: `Failed to save element: ${error.message}`,
-          variant: 'destructive',
-        });
+    // Simulate processing delay
+    setTimeout(() => {
+      // Create some default elements based on file type
+      const fileType = file.name.split('.').pop()?.toLowerCase();
+      
+      // Add a header element with the file name
+      addElementMutation.mutate({
+        proposalId: proposal.id,
+        type: 'Header',
+        name: 'Document Title',
+        content: JSON.stringify({ 
+          text: file.name.split('.')[0], 
+          level: 1 
+        }),
+        sortOrder: 0
+      });
+      
+      // Add a text element with placeholder content
+      addElementMutation.mutate({
+        proposalId: proposal.id,
+        type: 'Text',
+        name: 'Document Content',
+        content: JSON.stringify({ 
+          text: `Content imported from ${file.name}. You can edit this text with your actual document content.` 
+        }),
+        sortOrder: 1
+      });
+      
+      setIsUploading(false);
+      setFile(null);
+      
+      toast({
+        title: "Document Imported",
+        description: "Your document has been imported. You can now edit the content.",
+      });
+      
+      // Reset the file input
+      const fileInput = document.getElementById('document-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
       }
-    });
+    }, 2000);
   };
 
+  const handleAddElement = (type: ElementType) => {
+    if (isReadOnly) return;
+    
+    const newElement: InsertProposalElement = {
+      proposalId: proposal.id,
+      type: type,
+      name: `New ${type}`,
+      content: JSON.stringify(getDefaultElementContent(type)),
+      sortOrder: elements.length
+    };
+    
+    addElementMutation.mutate(newElement);
+  };
+  
   const handleDeleteElement = (id: number) => {
     if (isReadOnly) return;
     
-    if (window.confirm('Are you sure you want to delete this element?')) {
-      console.log(`Deleting element with ID ${id}`);
-      deleteElementMutation.mutate(id, {
-        onSuccess: (data) => {
-          console.log("Element successfully deleted:", data);
-          toast({
-            title: 'Success',
-            description: 'Element deleted successfully',
-          });
-          setSelectedElement(null);
-        },
-        onError: (error) => {
-          console.error("Error deleting element:", error);
-          toast({
-            title: 'Error',
-            description: `Failed to delete element: ${error.message}`,
-            variant: 'destructive'
-          });
-        }
-      });
+    if (confirm('Are you sure you want to delete this element?')) {
+      deleteElementMutation.mutate(id);
     }
   };
-
-  const handleAddComment = () => {
-    if (!newComment.trim() || isReadOnly) return;
+  
+  const handleSaveElement = () => {
+    if (!selectedElement || isReadOnly) return;
     
-    console.log("Adding new comment:", newComment.trim());
-    addCommentMutation.mutate(newComment.trim(), {
-      onSuccess: (data) => {
-        console.log("Comment successfully added:", data);
-        toast({
-          title: 'Success',
-          description: 'Comment added successfully',
-        });
-        setNewComment('');
-      },
-      onError: (error) => {
-        console.error("Error adding comment:", error);
-        toast({
-          title: 'Error',
-          description: `Failed to add comment: ${error.message}`,
-          variant: 'destructive'
-        });
-      }
-    });
+    updateElementMutation.mutate(selectedElement);
   };
 
-  // Import our shared element renderer instead of defining the function inline
   const getElementDisplay = (element: ProposalElement) => {
-    const isSelected = selectedElement?.id === element.id;
-    return <ElementPreview element={element} isSelected={isSelected} />;
+    return <ElementRenderer element={element} />;
   };
   
-  // We already have a handleAddComment function defined
-
   const renderElementEditor = () => {
     if (!selectedElement) return null;
     
-    // Prepare content for editor - ensure it's properly formatted
-    let preparedElement = { ...selectedElement };
+    // Create a deep copy of the element to avoid mutating the original
+    const preparedElement = { ...selectedElement };
     
     // If content is a string (from API), parse it to an object for the editor
     if (typeof preparedElement.content === 'string') {
@@ -727,301 +420,372 @@ export function ProposalEditor({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[1000px] h-[90vh] p-0 overflow-hidden">
-        <DialogHeader className="sticky top-0 z-10 bg-white pt-4 px-6 pb-2 border-b">
-          <div className="flex justify-between items-center">
-            <div>
-              <DialogTitle>{proposal.name}</DialogTitle>
-              <DialogDescription>
-                {isReadOnly ? 'Viewing proposal content' : 'Edit proposal content and structure'}
-              </DialogDescription>
-            </div>
-            {isReadOnly && (
-              <Badge className="bg-yellow-100 text-yellow-800 flex items-center">
-                <LockIcon className="h-3 w-3 mr-1" /> Read Only
-              </Badge>
-            )}
+    <div className={`fixed inset-0 z-50 bg-white ${isOpen ? 'block' : 'hidden'}`}>
+      {/* Header area */}
+      <div className="sticky top-0 z-10 bg-white p-4 border-b flex justify-between items-center shadow-sm">
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClose} 
+            className="mr-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
+          <div>
+            <h1 className="text-xl font-semibold">{proposal.name}</h1>
+            <p className="text-sm text-muted-foreground">
+              {isReadOnly ? 'Viewing proposal content' : 'Edit proposal content and structure'}
+            </p>
           </div>
-        </DialogHeader>
+        </div>
+        <div className="flex items-center gap-3">
+          {isReadOnly && (
+            <Badge className="bg-yellow-100 text-yellow-800 flex items-center">
+              <LockIcon className="h-3 w-3 mr-1" /> Read Only
+            </Badge>
+          )}
+          {!isReadOnly && (
+            <Button 
+              onClick={() => onSave()}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Save className="h-4 w-4 mr-2" /> Save Changes
+            </Button>
+          )}
+        </div>
+      </div>
 
-        {/* Main content layout with sidebar */}
-        <div className="flex h-[calc(90vh-150px)] w-full">
-          {/* Left side: Main content area with tabs */}
-          <div className="flex-1 overflow-hidden">
-            <Tabs value={activeTab} onValueChange={(value) => {
-                console.log("Tab clicked:", value);
-                setActiveTab(value as "editor" | "elements" | "comments");
-              }} className="h-full flex flex-col">
-              <div className="px-6 pt-2">
-                <TabsList className="grid grid-cols-3 mb-4">
-                  <TabsTrigger value="editor">Content</TabsTrigger>
-                  <TabsTrigger value="elements">Elements</TabsTrigger>
-                  <TabsTrigger value="comments">Comments</TabsTrigger>
-                </TabsList>
+      {/* Main content layout with sidebar */}
+      <div className="flex h-[calc(100vh-120px)] w-full">
+        {/* Left side: Main content area with tabs */}
+        <div className="flex-1 overflow-hidden">
+          <Tabs value={activeTab} onValueChange={(value) => {
+              console.log("Tab clicked:", value);
+              setActiveTab(value as "editor" | "elements" | "comments");
+            }} className="h-full flex flex-col">
+            <div className="px-6 pt-4">
+              <TabsList className="grid grid-cols-3 mb-4">
+                <TabsTrigger value="editor">Content</TabsTrigger>
+                <TabsTrigger value="elements">Elements</TabsTrigger>
+                <TabsTrigger value="comments">Comments</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="editor" className="h-[calc(100vh-180px)] overflow-auto">
+              <div className="p-6">
+                {/* Document Upload Section */}
+                {elements.length === 0 && !isReadOnly && (
+                  <Card className="mb-6 bg-blue-50 border-blue-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Import Existing Document</CardTitle>
+                      <CardDescription>
+                        Upload an existing proposal or contract to use as a starting point
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4">
+                        <div className="grid w-full max-w-sm items-center gap-1.5">
+                          <Label htmlFor="document-upload">Upload Document</Label>
+                          <Input 
+                            id="document-upload" 
+                            type="file" 
+                            accept=".pdf,.doc,.docx,.txt"
+                            className="cursor-pointer"
+                            onChange={handleFileChange}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Supported formats: PDF, Word, Text
+                          </p>
+                        </div>
+                        <Button 
+                          className="mt-6"
+                          onClick={handleFileUpload}
+                          disabled={isUploading || !file}
+                        >
+                          {isUploading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" /> Import Document
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="bg-white p-6 shadow rounded border max-w-4xl mx-auto">
+                  <h3 className="text-lg font-medium mb-4">Document Content</h3>
+                  <p className="mb-6 text-neutral-600">Edit the overall document content here. Arrange individual elements in the Elements tab.</p>
+                  
+                  <div className="space-y-8">
+                    {elements.map(element => (
+                      <div key={element.id} className="border rounded-md p-4 bg-white shadow-sm">
+                        {getElementDisplay(element)}
+                      </div>
+                    ))}
+
+                    {elements.length === 0 && (
+                      <div className="text-center py-12 border border-dashed rounded-md">
+                        <h4 className="text-lg font-medium text-neutral-600 mb-2">No Content Yet</h4>
+                        <p className="text-neutral-500 mb-4">Start adding elements to build your proposal document</p>
+                        {!isReadOnly && (
+                          <Button onClick={() => setActiveTab('elements')}>
+                            <Plus className="h-4 w-4 mr-2" /> Add Elements
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="elements" className="flex flex-col md:flex-row h-[calc(100vh-180px)]">
+              {/* Elements list and controls */}
+              <div className="w-full md:w-64 border-r p-4 flex flex-col">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-medium">Elements</h3>
+                  {!isReadOnly && (
+                    <Select 
+                      onValueChange={(value) => handleAddElement(value as ElementType)}
+                      disabled={isReadOnly}
+                    >
+                      <SelectTrigger className="w-8 h-8 p-0 flex items-center justify-center">
+                        <Plus className="h-4 w-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Header">Header</SelectItem>
+                        <SelectItem value="Text">Text</SelectItem>
+                        <SelectItem value="Image">Image</SelectItem>
+                        <SelectItem value="Table">Table</SelectItem>
+                        <SelectItem value="List">List</SelectItem>
+                        <SelectItem value="Quote">Quote</SelectItem>
+                        <SelectItem value="ProductList">Product List</SelectItem>
+                        <SelectItem value="Signature">Signature</SelectItem>
+                        <SelectItem value="PageBreak">Page Break</SelectItem>
+                        <SelectItem value="Custom">Custom HTML</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                <ScrollArea className="flex-1 pr-3 -mr-3 max-h-[600px]">
+                  {isLoadingElements ? (
+                    <div className="flex justify-center p-6">
+                      <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+                    </div>
+                  ) : (
+                    <DraggableElementList
+                      elements={elements}
+                      selectedElementId={selectedElement?.id || null}
+                      isReadOnly={isReadOnly}
+                      onSelectElement={setSelectedElement}
+                      onReorderElement={(elementId, newIndex) => {
+                        // Get the current element and its index
+                        const elementToMove = elements.find(el => el.id === elementId);
+                        const currentIndex = elements.findIndex(el => el.id === elementId);
+                        
+                        if (!elementToMove || currentIndex === -1 || currentIndex === newIndex) {
+                          return;
+                        }
+                        
+                        // For our demo, we're using the moveElementMutation which requires direction
+                        // This is a simplification - in a real implementation, you would have a proper API endpoint
+                        // that accepts the new sort order or index directly
+                        
+                        const direction = currentIndex > newIndex ? 'up' : 'down';
+                        const steps = Math.abs(currentIndex - newIndex);
+                        
+                        // Create a chain of mutations
+                        let currentStep = 0;
+                        const moveNextStep = () => {
+                          if (currentStep < steps) {
+                            moveElementMutation.mutate(
+                              { id: elementId, direction }, 
+                              {
+                                onSuccess: () => {
+                                  currentStep++;
+                                  moveNextStep();
+                                },
+                                onError: (error) => {
+                                  toast({
+                                    title: 'Error',
+                                    description: `Failed to reorder element: ${error.message}`,
+                                    variant: 'destructive'
+                                  });
+                                }
+                              }
+                            );
+                          } else {
+                            // Done with all steps
+                            toast({
+                              title: 'Success',
+                              description: 'Element reordered successfully'
+                            });
+                          }
+                        };
+                        
+                        // Start the chain
+                        moveNextStep();
+                      }}
+                      onDeleteElement={handleDeleteElement}
+                    />
+                  )}
+                </ScrollArea>
               </div>
 
-              <TabsContent value="editor" className="h-[calc(90vh-180px)] overflow-auto">
-                <div className="p-6">
-                  <div className="bg-white p-6 shadow rounded border max-w-4xl mx-auto">
-                    <h3 className="text-lg font-medium mb-4">Document Content</h3>
-                    <p className="mb-6 text-neutral-600">Edit the overall document content here. Arrange individual elements in the Elements tab.</p>
-                    
-                    <div className="space-y-8">
-                      {elements.map(element => (
-                        <div key={element.id} className="border rounded-md p-4 bg-white shadow-sm">
-                          {getElementDisplay(element)}
-                        </div>
-                      ))}
-
-                      {elements.length === 0 && (
-                        <div className="text-center py-12 border border-dashed rounded-md">
-                          <h4 className="text-lg font-medium text-neutral-600 mb-2">No Content Yet</h4>
-                          <p className="text-neutral-500 mb-4">Start adding elements to build your proposal document</p>
+              {/* Editor and preview */}
+              <div className="flex-1 flex flex-col">
+                {selectedElement ? (
+                  <div className="flex flex-col h-full">
+                    {/* Element editor */}
+                    <div className="p-4 border-b">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-medium">
+                          Editing: {selectedElement.name}
+                        </h3>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setSelectedElement(null)}
+                          >
+                            <X className="h-4 w-4 mr-2" /> Close
+                          </Button>
                           {!isReadOnly && (
-                            <Button onClick={() => setActiveTab('elements')}>
-                              <Plus className="h-4 w-4 mr-2" /> Add Elements
+                            <Button 
+                              size="sm" 
+                              onClick={handleSaveElement}
+                              disabled={updateElementMutation.isPending}
+                            >
+                              {updateElementMutation.isPending ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="h-4 w-4 mr-2" /> Save
+                                </>
+                              )}
                             </Button>
                           )}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="elements" className="flex flex-col md:flex-row h-[calc(90vh-180px)]">
-                {/* Elements list and controls */}
-                <div className="w-full md:w-64 border-r p-4 flex flex-col">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-sm font-medium">Elements</h3>
-                    {!isReadOnly && (
-                      <Select 
-                        onValueChange={(value) => handleAddElement(value as ElementType)}
-                        disabled={isReadOnly}
-                      >
-                        <SelectTrigger className="w-8 h-8 p-0 flex items-center justify-center">
-                          <Plus className="h-4 w-4" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Header">Header</SelectItem>
-                          <SelectItem value="Text">Text</SelectItem>
-                          <SelectItem value="Image">Image</SelectItem>
-                          <SelectItem value="Table">Table</SelectItem>
-                          <SelectItem value="List">List</SelectItem>
-                          <SelectItem value="Quote">Quote</SelectItem>
-                          <SelectItem value="ProductList">Product List</SelectItem>
-                          <SelectItem value="Signature">Signature</SelectItem>
-                          <SelectItem value="PageBreak">Page Break</SelectItem>
-                          <SelectItem value="Custom">Custom HTML</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-
-                  <ScrollArea className="flex-1 pr-3 -mr-3 max-h-[600px]">
-                    {isLoadingElements ? (
-                      <div className="flex justify-center p-6">
-                        <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
                       </div>
-                    ) : (
-                      <DraggableElementList
-                        elements={elements}
-                        selectedElementId={selectedElement?.id || null}
-                        isReadOnly={isReadOnly}
-                        onSelectElement={setSelectedElement}
-                        onReorderElement={(elementId, newIndex) => {
-                          // Get the current element and its index
-                          const elementToMove = elements.find(el => el.id === elementId);
-                          const currentIndex = elements.findIndex(el => el.id === elementId);
-                          
-                          if (!elementToMove || currentIndex === -1 || currentIndex === newIndex) {
-                            return;
-                          }
-                          
-                          // For our demo, we're using the moveElementMutation which requires direction
-                          // This is a simplification - in a real implementation, you would have a proper API endpoint
-                          // that accepts the new sort order or index directly
-                          
-                          const direction = currentIndex > newIndex ? 'up' : 'down';
-                          const steps = Math.abs(currentIndex - newIndex);
-                          
-                          // Create a chain of mutations
-                          let currentStep = 0;
-                          const moveNextStep = () => {
-                            if (currentStep < steps) {
-                              moveElementMutation.mutate(
-                                { id: elementId, direction }, 
-                                {
-                                  onSuccess: () => {
-                                    currentStep++;
-                                    moveNextStep();
-                                  },
-                                  onError: (error) => {
-                                    toast({
-                                      title: 'Error',
-                                      description: `Failed to reorder element: ${error.message}`,
-                                      variant: 'destructive'
-                                    });
-                                  }
-                                }
-                              );
-                            } else {
-                              // Done with all steps
-                              toast({
-                                title: 'Success',
-                                description: 'Element reordered successfully'
-                              });
-                            }
-                          };
-                          
-                          // Start the chain
-                          moveNextStep();
-                        }}
-                        onDeleteElement={handleDeleteElement}
-                      />
-                    )}
-                  </ScrollArea>
-                </div>
-
-                {/* Editor and preview */}
-                <div className="flex-1 flex flex-col">
-                  {selectedElement ? (
-                    <div className="flex flex-col h-full">
-                      {/* Element editor */}
-                      <div className="p-4 border-b">
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="font-medium">
-                            Editing: {selectedElement.name}
-                          </h3>
-                          <div className="flex space-x-2">
+                      <div className="mb-4">
+                        <label className="text-sm font-medium">Element Name</label>
+                        <Input 
+                          value={selectedElement.name} 
+                          onChange={(e) => setSelectedElement({
+                            ...selectedElement,
+                            name: e.target.value,
+                          })}
+                          className="mb-4"
+                          disabled={isReadOnly}
+                        />
+                        
+                        {renderElementEditor()}
+                        
+                        {!isReadOnly && (
+                          <div className="flex justify-end space-x-2 pt-4 mt-4 border-t">
                             <Button 
                               size="sm" 
                               variant="outline"
                               onClick={() => setSelectedElement(null)}
                             >
-                              <X className="h-4 w-4 mr-2" /> Close
+                              Cancel
                             </Button>
-                            {!isReadOnly && (
-                              <Button 
-                                size="sm" 
-                                onClick={handleSaveElement}
-                                disabled={updateElementMutation.isPending}
-                              >
-                                {updateElementMutation.isPending ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Save className="h-4 w-4 mr-2" /> Save
-                                  </>
-                                )}
-                              </Button>
-                            )}
+                            <Button 
+                              size="sm" 
+                              onClick={handleSaveElement}
+                              disabled={updateElementMutation.isPending}
+                            >
+                              {updateElementMutation.isPending ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="h-4 w-4 mr-2" /> Save
+                                </>
+                              )}
+                            </Button>
                           </div>
-                        </div>
-                        <div className="mb-4">
-                          <label className="text-sm font-medium">Element Name</label>
-                          <Input 
-                            value={selectedElement.name} 
-                            onChange={(e) => setSelectedElement({
-                              ...selectedElement,
-                              name: e.target.value,
-                            })}
-                            className="mb-4"
-                            disabled={isReadOnly}
-                          />
-                          
-                          {renderElementEditor()}
-                          
-                          {!isReadOnly && (
-                            <div className="flex justify-end space-x-2 pt-4 mt-4 border-t">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => setSelectedElement(null)}
-                              >
-                                Cancel
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                onClick={handleSaveElement}
-                                disabled={updateElementMutation.isPending}
-                              >
-                                {updateElementMutation.isPending ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Save className="h-4 w-4 mr-2" /> Save Changes
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Preview */}
-                      <div className="p-4 flex-1 overflow-auto bg-neutral-50">
-                        <div className="bg-white p-6 shadow rounded max-w-3xl mx-auto">
-                          <h3 className="text-sm font-medium mb-2 text-neutral-500">Preview</h3>
-                          {getElementDisplay(selectedElement)}
-                        </div>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex-1 p-6 flex items-center justify-center bg-neutral-50">
-                      <div className="text-center">
-                        <h3 className="font-medium mb-2">No Element Selected</h3>
-                        <p className="text-sm text-neutral-500">
-                          {elements.length > 0 
-                            ? 'Select an element from the list on the left to edit it' 
-                            : `No elements yet. ${!isReadOnly ? 'Add elements using the + button.' : ''}`}
-                        </p>
+                    
+                    {/* Preview */}
+                    <div className="flex-1 p-4 overflow-auto">
+                      <div className="mb-3 flex justify-between items-center">
+                        <h3 className="text-sm font-medium">Preview</h3>
+                        <div className="text-xs text-neutral-500">
+                          Last Updated: {selectedElement.updatedAt ? new Date(selectedElement.updatedAt).toLocaleString() : 'Never'}
+                        </div>
+                      </div>
+                      <div className="p-4 border rounded-md bg-neutral-50">
+                        <ElementPreview element={selectedElement} />
                       </div>
                     </div>
-                  )}
-                </div>
-              </TabsContent>
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center p-8 text-center">
+                    <div>
+                      <FileIcon className="h-12 w-12 text-neutral-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">Element Editor</h3>
+                      <p className="text-neutral-500 max-w-md mb-6">
+                        Select an element from the list on the left to edit its content, or add a new element to get started.
+                      </p>
+                      {!isReadOnly && (
+                        <Select 
+                          onValueChange={(value) => handleAddElement(value as ElementType)}
+                          disabled={isReadOnly}
+                        >
+                          <SelectTrigger className="w-48 mx-auto">
+                            <Plus className="h-4 w-4 mr-2" /> Add New Element
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Header">Header</SelectItem>
+                            <SelectItem value="Text">Text</SelectItem>
+                            <SelectItem value="Image">Image</SelectItem>
+                            <SelectItem value="Table">Table</SelectItem>
+                            <SelectItem value="List">List</SelectItem>
+                            <SelectItem value="Quote">Quote</SelectItem>
+                            <SelectItem value="ProductList">Product List</SelectItem>
+                            <SelectItem value="Signature">Signature</SelectItem>
+                            <SelectItem value="PageBreak">Page Break</SelectItem>
+                            <SelectItem value="Custom">Custom HTML</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
 
-              <TabsContent value="comments" className="h-[calc(90vh-180px)] overflow-auto">
-                <CommentSection proposalId={proposal.id} isReadOnly={isReadOnly} />
-              </TabsContent>
-            </Tabs>
+            <TabsContent value="comments" className="h-[calc(100vh-180px)] overflow-auto">
+              <CommentSection proposalId={proposal.id} isReadOnly={isReadOnly} />
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        {/* Right side: Collaborators sidebar */}
+        <div className="w-64 border-l bg-neutral-50 flex flex-col">
+          <div className="p-4 border-b bg-white">
+            <h3 className="text-sm font-medium flex items-center">
+              <Users className="h-4 w-4 mr-2" /> Collaborators
+            </h3>
           </div>
-          
-          {/* Right side: Collaborators sidebar */}
-          <div className="w-80 border-l overflow-hidden flex flex-col bg-gray-50">
-            <div className="p-3 border-b bg-white">
-              <h3 className="text-base font-medium flex items-center">
-                <Users className="h-4 w-4 mr-2" /> Collaborators
-              </h3>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3">
-              <CollaboratorSection proposalId={proposal.id} isReadOnly={isReadOnly} />
-            </div>
+          <div className="flex-1 overflow-y-auto p-3">
+            <CollaboratorSection proposalId={proposal.id} isReadOnly={isReadOnly} />
           </div>
         </div>
-
-        <div className="bg-neutral-50 p-4 flex justify-between gap-2 border-t">
-          <div>
-            {!isReadOnly && activeTab === 'editor' && elements.length > 0 && (
-              <Button 
-                onClick={() => onSave()}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Save className="h-4 w-4 mr-2" /> Save All Changes
-              </Button>
-            )}
-          </div>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
