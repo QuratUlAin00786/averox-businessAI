@@ -271,37 +271,70 @@ export function ProposalEditor({
 
   const updateElementMutation = useMutation({
     mutationFn: async (element: ProposalElement) => {
-      // Ensure content is a string when sending to the server
-      const preparedElement = { ...element };
+      // Create a simplified element with only the fields we need to update
+      const simplifiedElement = {
+        id: element.id,
+        proposalId: element.proposalId,
+        name: element.name,
+        elementType: element.elementType,
+        sortOrder: element.sortOrder,
+        // Handle the content separately
+      };
       
-      console.log("Updating element, original data:", element);
-      
-      // Make sure we have the correct content format
-      if (typeof preparedElement.content === 'object') {
-        preparedElement.content = JSON.stringify(preparedElement.content);
+      // Prepare content properly
+      let contentString = "";
+      if (typeof element.content === 'string') {
+        try {
+          // Validate it's proper JSON by parsing and re-stringifying it
+          const parsed = JSON.parse(element.content);
+          contentString = JSON.stringify(parsed);
+        } catch (e) {
+          console.error("Content was string but not valid JSON:", e);
+          contentString = JSON.stringify({ text: String(element.content) });
+        }
+      } else if (typeof element.content === 'object') {
+        contentString = JSON.stringify(element.content);
+      } else {
+        // Fallback for any other type
+        contentString = JSON.stringify({ text: "Content could not be processed" });
       }
       
-      console.log("Prepared element for update:", preparedElement);
+      // Create the final data to send
+      const dataToSend = {
+        ...simplifiedElement,
+        content: contentString
+      };
+      
+      console.log("Sending data for update:", dataToSend);
       
       try {
-        // Use the correct endpoint - note the different URL format
+        // Use the correct endpoint
         const response = await fetch(`/api/proposal-elements/${element.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(preparedElement),
+          body: JSON.stringify(dataToSend),
         });
         
+        const responseText = await response.text();
+        console.log("Raw server response:", responseText);
+        
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Error updating element. Status:", response.status, "Message:", errorText);
-          throw new Error(`Failed to update element: ${errorText}`);
+          console.error("Error updating element. Status:", response.status, "Message:", responseText);
+          throw new Error(`Failed to update element: Status ${response.status}`);
         }
         
-        const json = await response.json();
+        let json;
+        try {
+          json = JSON.parse(responseText);
+        } catch (e) {
+          console.error("Failed to parse server response as JSON:", e);
+          throw new Error("Invalid response from server");
+        }
+        
         console.log("Update element response:", json);
-        return json.data;
+        return json.data || json;
       } catch (error) {
         console.error("Exception in updateElementMutation:", error);
         throw error;
@@ -329,7 +362,8 @@ export function ProposalEditor({
       console.log("Deleting element with ID:", elementId, "from proposal:", proposal.id);
       
       try {
-        const response = await fetch(`/api/proposals/${proposal.id}/elements/${elementId}`, {
+        // Use the correct endpoint format
+        const response = await fetch(`/api/proposal-elements/${elementId}`, {
           method: 'DELETE',
         });
         
@@ -368,14 +402,27 @@ export function ProposalEditor({
 
   const moveElementMutation = useMutation({
     mutationFn: async ({ id, direction }: { id: number; direction: 'up' | 'down' }) => {
-      const response = await fetch(`/api/proposals/${proposal.id}/elements/${id}/move`, {
+      // Use the correct endpoint format
+      const response = await fetch(`/api/proposal-elements/${id}/move`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ direction }),
+        body: JSON.stringify({ 
+          direction,
+          proposalId: proposal.id // Add proposal ID for context
+        }),
       });
+      
+      // Add proper error handling
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error moving element. Status:", response.status, "Message:", errorText);
+        throw new Error(`Failed to move element: ${response.status}`);
+      }
+      
       const json = await response.json();
+      console.log("Move element response:", json);
       return json.data;
     },
     onSuccess: () => {
@@ -597,7 +644,19 @@ export function ProposalEditor({
   };
   
   const handleSaveElement = () => {
-    if (!selectedElement || isReadOnly) return;
+    if (!selectedElement || isReadOnly) {
+      console.log("Cannot save element - no element selected or readonly mode");
+      return;
+    }
+    
+    console.log("Saving element with ID:", selectedElement.id);
+    console.log("Element data being saved:", selectedElement);
+    
+    // Add a UI indicator
+    toast({
+      title: "Saving...",
+      description: "Updating element content",
+    });
     
     updateElementMutation.mutate(selectedElement);
   };
