@@ -853,9 +853,9 @@ export function ProposalManager({
     setFormMode('edit');
   };
 
-  const handleOpenEditor = (proposal: Proposal) => {
+  const handleOpenEditor = async (proposal: Proposal) => {
     try {
-      console.log("Opening editor for proposal:", proposal);
+      console.log("Opening editor for proposal via handleOpenEditor:", proposal);
       
       // Safety check - make sure proposal has required properties
       if (!proposal || !proposal.id) {
@@ -868,36 +868,38 @@ export function ProposalManager({
         return;
       }
       
-      // First get fresh data
-      fetch(`/api/proposals/${proposal.id}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Failed to fetch proposal: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          const freshProposal = data.data || data;
-          console.log("Fetched fresh proposal data:", freshProposal);
-          
-          // Set selected proposal with fresh data
-          setSelectedProposal(freshProposal);
-          
-          // Use a small delay to ensure state is updated
-          setTimeout(() => {
-            setEditorVisible(true);
-            console.log("Editor visibility set to true");
-          }, 50);
-        })
-        .catch(error => {
-          console.error("Error fetching proposal for editor:", error);
-          toast({
-            title: "Error",
-            description: `Could not open editor: ${error.message}`,
-            variant: "destructive"
-          });
+      // Use try-catch with async/await for better error handling
+      try {
+        // First get fresh data
+        const response = await fetch(`/api/proposals/${proposal.id}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch proposal: ${response.status}`);
+        }
+        
+        const responseData = await response.json();
+        const freshProposal = responseData.data || responseData;
+        console.log("Fetched fresh proposal data:", freshProposal);
+        
+        // Set the state with the fresh proposal first
+        setSelectedProposal(freshProposal);
+        
+        // Make sure we set editor visible in the next tick to avoid React batching issues
+        // This ensures the proposal is set before the editor tries to render
+        setTimeout(() => {
+          // Debug log to track state changes
+          console.log("Setting editor visible to true, selected proposal is:", freshProposal.id);
+          setEditorVisible(true);
+        }, 100);
+      } catch (fetchError: any) {
+        console.error("Error fetching proposal for editor:", fetchError);
+        toast({
+          title: "Error",
+          description: `Could not open editor: ${fetchError.message}`,
+          variant: "destructive"
         });
-    } catch (error) {
+      }
+    } catch (error: any) {
       console.error("Error in handleOpenEditor:", error);
       toast({
         title: "Error",
