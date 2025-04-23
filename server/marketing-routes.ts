@@ -11,6 +11,8 @@ import {
   insertAudienceSegmentSchema,
   insertMarketingCampaignSchema,
   insertMarketingWorkflowSchema,
+  insertWorkflowEnrollmentSchema,
+  insertCampaignEngagementSchema,
 } from "@shared/marketing";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
