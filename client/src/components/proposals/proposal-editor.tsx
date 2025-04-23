@@ -146,6 +146,8 @@ export function ProposalEditor({
       }
     },
   });
+  
+  // We'll add this effect after the addElementMutation is defined, to avoid reference errors
 
   // Always fetch collaborators regardless of active tab
   const {
@@ -477,8 +479,61 @@ export function ProposalEditor({
   };
   
   const renderElementEditor = () => {
-    if (!selectedElement) return null;
+    // If we're still loading elements, show a loading indicator
+    if (isLoadingElements) {
+      return (
+        <div className="flex justify-center items-center h-48">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-sm text-gray-500">Loading proposal elements...</p>
+          </div>
+        </div>
+      );
+    }
     
+    // If we have no elements at all, show a helpful message
+    if (elements.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-48 text-center p-4">
+          <AlertCircle className="h-12 w-12 text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium mb-2">No Content Elements</h3>
+          <p className="text-sm text-gray-500 mb-4 max-w-md">
+            Your proposal doesn't have any content elements yet. Use the "Add Element" 
+            button to start adding content to your proposal.
+          </p>
+          <Button 
+            onClick={() => handleAddElement('Text')}
+            disabled={isReadOnly}
+          >
+            <Plus className="h-4 w-4 mr-2" /> 
+            Add Text Element
+          </Button>
+        </div>
+      );
+    }
+    
+    // If we have elements but none is selected, show element picker
+    if (!selectedElement) {
+      return (
+        <div className="flex flex-col items-center justify-center h-48 text-center p-4">
+          <FileText className="h-12 w-12 text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium mb-2">Select an Element</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Please select an element from the list on the left to edit its content.
+          </p>
+          {elements.length > 0 && (
+            <Button 
+              onClick={() => setSelectedElement(elements[0])}
+              variant="outline"
+            >
+              Edit First Element
+            </Button>
+          )}
+        </div>
+      );
+    }
+    
+    // We have a selected element, set up the editor
     // Create a deep copy of the element to avoid mutating the original
     const preparedElement = { ...selectedElement };
     

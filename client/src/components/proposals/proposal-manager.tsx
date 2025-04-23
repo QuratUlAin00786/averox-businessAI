@@ -882,24 +882,44 @@ export function ProposalManager({
       const freshProposal = responseData.data || responseData;
       console.log("Fetched fresh proposal data:", freshProposal);
       
-      // Use a 2-step process for updating React state to avoid batching issues
       // Step 1: Set the proposal data first
       setSelectedProposal(freshProposal);
       
-      // Step 2: Then make the editor visible after a short delay
-      // This ensures React has time to process the state update
+      // Step 2: Pre-fetch the proposal elements so they're ready
+      // when the editor loads
+      console.log("Pre-fetching proposal elements...");
+      const elementsResponse = await fetch(`/api/proposals/${proposal.id}/elements`);
+      if (!elementsResponse.ok) {
+        console.warn("Could not pre-fetch elements:", elementsResponse.status);
+      } else {
+        const elementsData = await elementsResponse.json();
+        const elements = elementsData.data || elementsData;
+        console.log("Pre-fetched elements:", elements);
+        
+        // If there are no elements, prepare to create one automatically
+        if (!elements || elements.length === 0) {
+          console.log("No elements found. Will create one automatically when editor opens.");
+        }
+      }
+      
+      // Step 3: Make the editor visible with a short delay
+      // This ensures React has time to process the state updates
       setTimeout(() => {
         console.log("Setting editor visible to true, selected proposal is:", freshProposal.id);
         setEditorVisible(true);
         
-        // Force immediate focus on the editor panel
+        // Force immediate focus on the editor panel and attempt to select "editor" tab
         setTimeout(() => {
+          console.log("Focusing editor tab...");
           const editorTab = document.querySelector('[data-value="editor"]');
           if (editorTab) {
+            console.log("Editor tab found, clicking it");
             (editorTab as HTMLElement).click();
+          } else {
+            console.log("Editor tab not found in DOM");
           }
-        }, 100);
-      }, 200);
+        }, 200);
+      }, 300);
     } catch (error: any) {
       console.error("Error in handleOpenEditor:", error);
       toast({
