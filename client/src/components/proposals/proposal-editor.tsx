@@ -181,12 +181,15 @@ export function ProposalEditor({
   const addElementMutation = useMutation({
     mutationFn: async (elementData: InsertProposalElement) => {
       try {
-        const response = await apiRequestJson(
-          `/api/proposals/${proposal.id}/elements`,
-          'POST',
-          elementData
-        );
-        return response.data;
+        const response = await fetch(`/api/proposals/${proposal.id}/elements`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(elementData),
+        });
+        const json = await response.json();
+        return json.data;
       } catch (error) {
         console.error("Error adding element:", error);
         throw error;
@@ -217,12 +220,15 @@ export function ProposalEditor({
         preparedElement.content = JSON.stringify(preparedElement.content);
       }
       
-      const response = await apiRequestJson(
-        `/api/proposals/${proposal.id}/elements/${element.id}`,
-        'PATCH',
-        preparedElement
-      );
-      return response.data;
+      const response = await fetch(`/api/proposals/${proposal.id}/elements/${element.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(preparedElement),
+      });
+      const json = await response.json();
+      return json.data;
     },
     onSuccess: () => {
       toast({
@@ -243,11 +249,11 @@ export function ProposalEditor({
 
   const deleteElementMutation = useMutation({
     mutationFn: async (elementId: number) => {
-      const response = await apiRequestJson(
-        `/api/proposals/${proposal.id}/elements/${elementId}`,
-        'DELETE'
-      );
-      return response.data;
+      const response = await fetch(`/api/proposals/${proposal.id}/elements/${elementId}`, {
+        method: 'DELETE',
+      });
+      const json = await response.json();
+      return json.data;
     },
     onSuccess: () => {
       toast({
@@ -270,12 +276,15 @@ export function ProposalEditor({
 
   const moveElementMutation = useMutation({
     mutationFn: async ({ id, direction }: { id: number; direction: 'up' | 'down' }) => {
-      const response = await apiRequestJson(
-        `/api/proposals/${proposal.id}/elements/${id}/move`,
-        'POST',
-        { direction }
-      );
-      return response.data;
+      const response = await fetch(`/api/proposals/${proposal.id}/elements/${id}/move`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ direction }),
+      });
+      const json = await response.json();
+      return json.data;
     },
     onSuccess: () => {
       refetchElements();
