@@ -87,7 +87,7 @@ export function CommentSection({ proposalId, isReadOnly }: CommentSectionProps) 
   };
 
   return (
-    <div className="p-3 h-[500px] overflow-auto bg-white border-t">
+    <div className="p-3 h-full overflow-auto bg-white border-t">
       <div className="flex justify-between items-center mb-1">
         <h3 className="text-base font-medium">Comments</h3>
       </div>
@@ -106,7 +106,7 @@ export function CommentSection({ proposalId, isReadOnly }: CommentSectionProps) 
               placeholder="Type your comment here..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              className="min-h-[80px]"
+              className="min-h-[60px]"
               id="comment-textarea"
             />
           </CardContent>

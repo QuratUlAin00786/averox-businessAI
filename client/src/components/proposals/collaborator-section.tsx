@@ -108,7 +108,7 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
   });
 
   return (
-    <div className="p-3 h-[500px] overflow-auto bg-white border-t">
+    <div className="p-3 h-full overflow-auto bg-white border-t">
       <div className="flex justify-between items-center mb-1">
         <h3 className="text-base font-medium">Collaborators</h3>
       </div>
@@ -132,7 +132,7 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
                 <div className="space-y-4">
                   <div>
                     <Label className="mb-2 block">Select User</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[150px] overflow-y-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[100px] overflow-y-auto">
                       {users && users.length > 0 ? (
                         users.map((user) => (
                           <div 
