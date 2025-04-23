@@ -71,7 +71,7 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
       return usersData;
     },
     staleTime: 60000, // Keep data fresh for 1 minute
-    enabled: !isReadOnly, // Only fetch users if not in read-only mode to reduce API calls
+    enabled: true, // Always fetch users regardless of readOnly status
   });
 
   // Add collaborator mutation
@@ -108,7 +108,7 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
   });
 
   return (
-    <div className="p-6 max-h-[calc(90vh-180px)] overflow-auto">
+    <div className="p-6 max-h-[calc(90vh-180px)] overflow-auto bg-white border-t">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium">Collaborators</h3>
       </div>
