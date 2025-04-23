@@ -976,74 +976,88 @@ export function ProposalEditor({
               <h3 className="text-lg font-medium">Collaborators</h3>
             </div>
 
-            {console.log("Rendering collaborators tab with users:", users, "Loading:", isLoadingUsers)}
-
-            {/* Debug info - Remove in production */}
-            <div className="border p-2 mb-4 text-xs bg-blue-50 rounded">
-              <p className="font-bold">Debug Info (Remove in production)</p>
-              <p>Users loaded: {users.length}</p>
-              <p>Loading users: {isLoadingUsers ? 'Yes' : 'No'}</p>
-              <p>Read-only mode: {isReadOnly ? 'Yes' : 'No'}</p>
-              <p>Active tab: {activeTab}</p>
-            </div>
-
-            {/* Add collaborator form */}
-            <div className="mb-6 border border-dashed rounded-md p-4 bg-yellow-50 hover:border-yellow-300 transition-colors">
-              <h4 className="font-medium text-base mb-3">Add New Collaborator</h4>
+            {/* SIMPLIFIED COLLABORATOR UI */}
+            <div className="mb-6 border-2 border-dashed rounded-md p-6 bg-orange-50 hover:border-orange-300 transition-colors">
+              <h4 className="font-medium text-xl mb-3">Add New Collaborator</h4>
               <p className="text-sm text-neutral-600 mb-4">
                 Share this proposal with team members by adding them as collaborators.
                 Assign roles to control their access level.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <Label htmlFor="user-select" className="mb-2 block font-medium">Select User</Label>
-                  <Select
-                    value={selectedUserId?.toString() || ""}
-                    onValueChange={(value) => setSelectedUserId(parseInt(value))}
-                  >
-                    <SelectTrigger id="collaborator-user-select">
-                      <SelectValue placeholder="Select a user" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Users</SelectLabel>
-                        {isLoadingUsers ? (
-                          <SelectItem value="loading" disabled>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2 inline" />
-                            Loading users...
-                          </SelectItem>
-                        ) : users.length === 0 ? (
-                          <SelectItem value="none" disabled>
-                            No users available
-                          </SelectItem>
-                        ) : (
-                          users.map(user => (
-                            <SelectItem key={user.id} value={user.id.toString()}>
-                              {user.firstName} {user.lastName} ({user.username})
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="role-select" className="mb-2 block font-medium">Assign Role</Label>
-                  <Select
-                    value={selectedRole}
-                    onValueChange={(value) => setSelectedRole(value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Viewer">Viewer (can only view)</SelectItem>
-                      <SelectItem value="Editor">Editor (can make changes)</SelectItem>
-                      <SelectItem value="Manager">Manager (full control)</SelectItem>
-                    </SelectContent>
-                  </Select>
+              
+              {/* User selection */}
+              <div className="mb-4">
+                <Label htmlFor="collaborator-select" className="mb-2 block font-medium">Select User</Label>
+                <div className="grid grid-cols-1 gap-2">
+                  {users.map(user => (
+                    <div 
+                      key={user.id}
+                      className={`p-3 border rounded-md cursor-pointer flex items-center ${
+                        selectedUserId === user.id ? 'bg-primary/20 border-primary' : 'bg-white hover:bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedUserId(user.id)}
+                    >
+                      <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3">
+                        {user.firstName?.[0] || ''}{user.lastName?.[0] || ''}
+                      </div>
+                      <div>
+                        <div className="font-medium">{user.firstName} {user.lastName}</div>
+                        <div className="text-xs text-neutral-500">{user.email || user.username}</div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {users.length === 0 && !isLoadingUsers && (
+                    <div className="p-4 border border-dashed rounded-md text-center text-neutral-500">
+                      No users available to add as collaborators
+                    </div>
+                  )}
+                  
+                  {isLoadingUsers && (
+                    <div className="p-4 border border-dashed rounded-md text-center">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                      <p>Loading available users...</p>
+                    </div>
+                  )}
                 </div>
               </div>
+              
+              {/* Role selection */}
+              {selectedUserId && (
+                <div className="mb-4">
+                  <Label htmlFor="role-select" className="mb-2 block font-medium">Assign Role</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div 
+                      className={`p-3 border rounded-md cursor-pointer text-center ${
+                        selectedRole === 'Viewer' ? 'bg-primary/20 border-primary' : 'bg-white hover:bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedRole('Viewer')}
+                    >
+                      <div className="font-medium">Viewer</div>
+                      <div className="text-xs text-neutral-500">Can only view</div>
+                    </div>
+                    <div 
+                      className={`p-3 border rounded-md cursor-pointer text-center ${
+                        selectedRole === 'Editor' ? 'bg-primary/20 border-primary' : 'bg-white hover:bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedRole('Editor')}
+                    >
+                      <div className="font-medium">Editor</div>
+                      <div className="text-xs text-neutral-500">Can make changes</div>
+                    </div>
+                    <div 
+                      className={`p-3 border rounded-md cursor-pointer text-center ${
+                        selectedRole === 'Manager' ? 'bg-primary/20 border-primary' : 'bg-white hover:bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedRole('Manager')}
+                    >
+                      <div className="font-medium">Manager</div>
+                      <div className="text-xs text-neutral-500">Full control</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Add button */}
               <Button 
                 onClick={() => {
                   if (selectedUserId) {
@@ -1056,7 +1070,6 @@ export function ProposalEditor({
                   }
                 }}
                 disabled={!selectedUserId || addCollaboratorMutation.isPending}
-                size="sm"
                 className="w-full md:w-auto"
               >
                 {addCollaboratorMutation.isPending ? (
@@ -1161,106 +1174,131 @@ export function ProposalEditor({
               <h3 className="text-lg font-medium">Comments</h3>
             </div>
 
+            {/* ENHANCED COMMENT FORM */}
+            {!isReadOnly && (
+              <div className="mb-6 border-2 border-dashed rounded-md p-6 bg-green-50 hover:border-green-300 transition-colors">
+                <h4 className="font-medium text-xl mb-3">Add New Comment</h4>
+                <p className="text-sm text-neutral-600 mb-4">
+                  Share your thoughts, feedback, or questions about this proposal.
+                  Comments help keep track of important discussions.
+                </p>
+                
+                <div className="mb-4">
+                  <Textarea
+                    id="comment-textarea"
+                    placeholder="Type your comment here..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="min-h-[120px] text-base"
+                  />
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleAddComment}
+                    disabled={!newComment.trim() || addCommentMutation.isPending}
+                    className="w-full md:w-auto"
+                  >
+                    {addCommentMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Posting...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" /> Post Comment
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* COMMENTS LIST */}
             {isLoadingComments ? (
               <div className="flex justify-center p-6">
-                <Loader2 className="h-8 w-8 animate-spin text-primary/70" />
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary/70 mx-auto mb-2" />
+                  <p className="text-neutral-600">Loading comments...</p>
+                </div>
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="max-h-[calc(90vh-250px)] overflow-auto">
-                  <div className="space-y-4 pr-4">
-                    {Array.isArray(comments) && comments.length > 0 ? (
-                      comments.map((comment) => (
-                        <div key={comment.id} className="flex gap-3">
-                          <Avatar className="h-8 w-8 flex-shrink-0">
+              <div>
+                <h4 className="font-medium text-lg mb-3">Discussion Thread</h4>
+                <div className="space-y-4 max-h-[calc(90vh-400px)] overflow-auto pr-2">
+                  {Array.isArray(comments) && comments.length > 0 ? (
+                    comments.map((comment) => (
+                      <div key={comment.id} className="border rounded-md p-4 bg-white hover:shadow-sm transition-shadow">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="h-10 w-10 flex-shrink-0">
                             {comment.user?.avatar ? (
                               <AvatarImage src={comment.user.avatar} alt={comment.user.username || 'User'} />
                             ) : (
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                              <AvatarFallback className="bg-primary/10 text-primary">
                                 {comment.user?.firstName?.[0] || '?'}{comment.user?.lastName?.[0] || ''}
                               </AvatarFallback>
                             )}
                           </Avatar>
                           <div className="flex-1">
-                            <div className="flex items-start justify-between">
-                              <div className="font-medium">
-                                {comment.user ? 
-                                  `${comment.user.firstName || ''} ${comment.user.lastName || ''}`.trim() || comment.user.username 
-                                  : 'Unknown User'
-                                }
-                              </div>
-                              <div className="text-xs text-neutral-500">
-                                {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : ''}
+                            <div className="flex items-start justify-between mb-1">
+                              <div>
+                                <div className="font-medium">
+                                  {comment.user ? 
+                                    `${comment.user.firstName || ''} ${comment.user.lastName || ''}`.trim() || comment.user.username 
+                                    : 'Unknown User'
+                                  }
+                                </div>
+                                <div className="text-xs text-neutral-500">
+                                  {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }) : ''}
+                                </div>
                               </div>
                             </div>
-                            <p className="text-neutral-700 mt-1">{comment.content}</p>
+                            <div className="mt-2 text-neutral-700 whitespace-pre-wrap">{comment.content}</div>
                           </div>
                         </div>
-                      ))
-                    ) : (
-                      <Card className="border-dashed">
-                        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                          <MessageSquare className="h-12 w-12 text-neutral-300 mb-4" />
-                          <h3 className="text-lg font-medium mb-2">No comments yet</h3>
-                          <p className="mb-4 text-neutral-500">
-                            This proposal doesn't have any comments or feedback yet.
-                          </p>
-                          {!isReadOnly && (
-                            <>
-                              <p className="text-sm text-neutral-600 mb-4">
-                                Comments allow team members to discuss this proposal, provide feedback, 
-                                and keep a record of important conversations.
-                              </p>
-                              <Alert className="mb-4 bg-amber-50 text-amber-800 border-amber-200">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertDescription>
-                                  Use the comment box at the bottom of this panel to add comments.
-                                </AlertDescription>
-                              </Alert>
-                              <div className="flex flex-col items-center">
-                                <Button 
-                                  variant="outline" 
-                                  className="mb-2 w-full md:w-auto"
-                                  onClick={() => {
-                                    // Focus the comment textarea
-                                    const textarea = document.getElementById('comment-textarea');
-                                    if (textarea) {
-                                      textarea.focus();
-                                    }
-                                  }}
-                                >
-                                  <MessageSquare className="h-4 w-4 mr-2" />
-                                  Add the first comment
-                                </Button>
-                              </div>
-                            </>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
+                      </div>
+                    ))
+                  ) : (
+                    <Card className="border-dashed">
+                      <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                        <MessageSquare className="h-12 w-12 text-neutral-300 mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No comments yet</h3>
+                        <p className="mb-4 text-neutral-500">
+                          This proposal doesn't have any comments or feedback yet.
+                        </p>
+                        {!isReadOnly && (
+                          <>
+                            <p className="text-sm text-neutral-600 mb-4">
+                              Comments allow team members to discuss this proposal, provide feedback, 
+                              and keep a record of important conversations.
+                            </p>
+                            <Alert className="mb-4 bg-amber-50 text-amber-800 border-amber-200">
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertDescription>
+                                Use the comment form above to add your first comment to this proposal.
+                              </AlertDescription>
+                            </Alert>
+                            <div className="flex flex-col items-center">
+                              <Button 
+                                variant="outline" 
+                                className="mb-2 w-full md:w-auto"
+                                onClick={() => {
+                                  // Focus the comment textarea
+                                  const textarea = document.getElementById('comment-textarea');
+                                  if (textarea) {
+                                    textarea.focus();
+                                  }
+                                }}
+                              >
+                                <MessageSquare className="h-4 w-4 mr-2" />
+                                Add the first comment
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
-                
-                {!isReadOnly && (
-                  <div className="mt-6 pt-4 border-t">
-                    <h4 className="text-sm font-medium mb-2">Add a comment</h4>
-                    <div className="flex gap-2">
-                      <Textarea
-                        id="comment-textarea"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Type your comment here..."
-                        className="flex-1"
-                      />
-                      <Button
-                        onClick={handleAddComment}
-                        disabled={!newComment.trim()}
-                      >
-                        Post
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </TabsContent>
