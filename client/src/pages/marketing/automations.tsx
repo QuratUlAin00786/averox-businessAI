@@ -217,9 +217,8 @@ export default function MarketingAutomationsPage() {
               <Card key={automation.id} className="overflow-hidden hover:shadow-md transition-shadow">
                 <CardHeader className="relative pb-3">
                   <Badge 
-                    className="absolute right-6 top-6"
                     variant="outline"
-                    className={`${
+                    className={`absolute right-6 top-6 ${
                       automation.status === 'active' 
                         ? 'bg-green-50 text-green-700 border-green-200' 
                         : automation.status === 'draft'

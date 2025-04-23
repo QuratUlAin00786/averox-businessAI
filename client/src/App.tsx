@@ -50,6 +50,9 @@ import SupportTickets from "@/pages/support-tickets";
 import Ecommerce from "@/pages/ecommerce";
 import EcommerceStore from "@/pages/ecommerce-store";
 import NotificationsPage from "@/pages/notifications";
+import Marketing from "@/pages/marketing";
+import MarketingCreate from "@/pages/marketing/create";
+import MarketingAutomations from "@/pages/marketing/automations";
 
 function Router() {
   return (
@@ -329,6 +332,24 @@ function Router() {
       <ProtectedRoute path="/notifications" component={() => (
         <Layout>
           <NotificationsPage />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing" component={() => (
+        <Layout>
+          <Marketing />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing/create" component={() => (
+        <Layout>
+          <MarketingCreate />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing/automations" component={() => (
+        <Layout>
+          <MarketingAutomations />
         </Layout>
       )} />
       

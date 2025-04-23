@@ -22,7 +22,9 @@ import {
   HelpCircle,
   TicketCheck,
   ShoppingCart,
-  Store
+  Store,
+  Mail,
+  Megaphone
 } from "lucide-react";
 import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
@@ -48,6 +50,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: t.navigation.opportunities, path: '/opportunities', icon: <TrendingUp className="w-5 h-5" />, key: 'opportunities' as keyof MenuVisibilitySettings },
     { name: t.navigation.calendar, path: '/calendar', icon: <Calendar className="w-5 h-5" />, key: 'calendar' as keyof MenuVisibilitySettings },
     { name: t.navigation.tasks, path: '/tasks', icon: <CheckSquare className="w-5 h-5" />, key: 'tasks' as keyof MenuVisibilitySettings },
+    { name: "Marketing", path: '/marketing', icon: <Megaphone className="w-5 h-5" />, key: null }, // Always visible for now
     { name: t.navigation.communicationCenter, path: '/communication-center', icon: <MessageSquare className="w-5 h-5" />, key: 'communicationCenter' as keyof MenuVisibilitySettings },
     { name: t.navigation.accounting, path: '/accounting', icon: <Calculator className="w-5 h-5" />, key: 'accounting' as keyof MenuVisibilitySettings },
     { name: t.navigation.inventory, path: '/inventory', icon: <PackageOpen className="w-5 h-5" />, key: 'inventory' as keyof MenuVisibilitySettings },
@@ -96,7 +99,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
 
   // Get visible items for each section
   const getCoreItems = () => {
-    return navItems.filter((_, index) => index >= 0 && index <= 6);
+    return navItems.filter((_, index) => index >= 0 && index <= 7);
   };
 
   const getCommunicationItems = () => {
