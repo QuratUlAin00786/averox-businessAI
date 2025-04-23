@@ -108,10 +108,8 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
   });
 
   return (
-    <div className="p-3 h-full overflow-auto bg-white border-t">
-      <div className="flex justify-between items-center mb-1">
-        <h3 className="text-base font-medium">Collaborators</h3>
-      </div>
+    <div className="h-full overflow-auto bg-white">
+      {/* Header is now managed by the parent component */}
 
       <div className="mb-3 space-y-3">
         {/* Simple user selector */}

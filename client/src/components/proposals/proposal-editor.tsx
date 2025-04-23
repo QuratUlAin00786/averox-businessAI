@@ -745,18 +745,20 @@ export function ProposalEditor({
           </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(value) => {
-            console.log("Tab clicked:", value);
-            setActiveTab(value as "editor" | "elements" | "collaborators" | "comments");
-          }} className="w-full">
-          <div className="px-6 pt-2">
-            <TabsList className="grid grid-cols-4 mb-4">
-              <TabsTrigger value="editor" onClick={() => console.log("Content tab clicked")}>Content</TabsTrigger>
-              <TabsTrigger value="elements" onClick={() => console.log("Elements tab clicked")}>Elements</TabsTrigger>
-              <TabsTrigger value="collaborators" onClick={() => console.log("Collaborators tab clicked")}>Collaborators</TabsTrigger>
-              <TabsTrigger value="comments" onClick={() => console.log("Comments tab clicked")}>Comments</TabsTrigger>
-            </TabsList>
-          </div>
+        <div className="flex h-[calc(90vh-150px)] w-full">
+          {/* Main content area with tabs */}
+          <div className="flex-1 overflow-hidden">
+            <Tabs value={activeTab} onValueChange={(value) => {
+                console.log("Tab clicked:", value);
+                setActiveTab(value as "editor" | "elements" | "collaborators" | "comments");
+              }} className="h-full flex flex-col">
+              <div className="px-6 pt-2">
+                <TabsList className="grid grid-cols-3 mb-4">
+                  <TabsTrigger value="editor" onClick={() => console.log("Content tab clicked")}>Content</TabsTrigger>
+                  <TabsTrigger value="elements" onClick={() => console.log("Elements tab clicked")}>Elements</TabsTrigger>
+                  <TabsTrigger value="comments" onClick={() => console.log("Comments tab clicked")}>Comments</TabsTrigger>
+                </TabsList>
+              </div>
 
           <TabsContent value="editor" className="h-[calc(90vh-180px)] overflow-auto">
             <div className="p-6">
@@ -984,14 +986,24 @@ export function ProposalEditor({
             </div>
           </TabsContent>
 
-          <TabsContent value="collaborators" forceMount className="h-[calc(90vh-180px)] overflow-hidden">
-            <CollaboratorSection proposalId={proposal.id} isReadOnly={isReadOnly} />
-          </TabsContent>
-
-          <TabsContent value="comments" forceMount className="h-[calc(90vh-180px)] overflow-hidden">
+          <TabsContent value="comments" forceMount className="h-[calc(90vh-180px)] overflow-hidden flex-1">
             <CommentSection proposalId={proposal.id} isReadOnly={isReadOnly} />
           </TabsContent>
-        </Tabs>
+            </Tabs>
+          </div>
+          
+          {/* Collaborators sidebar */}
+          <div className="w-80 border-l overflow-hidden flex flex-col bg-gray-50">
+            <div className="p-3 border-b bg-white">
+              <h3 className="text-base font-medium flex items-center">
+                <Users className="h-4 w-4 mr-2" /> Collaborators
+              </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <CollaboratorSection proposalId={proposal.id} isReadOnly={isReadOnly} />
+            </div>
+          </div>
+        </div>
 
         <div className="bg-neutral-50 p-4 flex justify-between gap-2 border-t">
           <div>
