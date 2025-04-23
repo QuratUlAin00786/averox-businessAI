@@ -979,112 +979,114 @@ export function ProposalEditor({
               <h3 className="text-lg font-medium">Collaborators</h3>
             </div>
 
-            {/* SIMPLIFIED COLLABORATOR UI */}
-            <div className="mb-6 border-2 border-dashed rounded-md p-6 bg-orange-50 hover:border-orange-300 transition-colors">
-              <h4 className="font-medium text-xl mb-3">Add New Collaborator</h4>
-              <p className="text-sm text-neutral-600 mb-4">
-                Share this proposal with team members by adding them as collaborators.
-                Assign roles to control their access level.
-              </p>
-              
-              {/* User selection */}
-              <div className="mb-4">
-                <Label htmlFor="collaborator-select" className="mb-2 block font-medium">Select User</Label>
-                <div className="grid grid-cols-1 gap-2">
-                  {users.map(user => (
-                    <div 
-                      key={user.id}
-                      className={`p-3 border rounded-md cursor-pointer flex items-center ${
-                        selectedUserId === user.id ? 'bg-primary/20 border-primary' : 'bg-white hover:bg-gray-50'
-                      }`}
-                      onClick={() => setSelectedUserId(user.id)}
-                    >
-                      <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3">
-                        {user.firstName?.[0] || ''}{user.lastName?.[0] || ''}
-                      </div>
-                      <div>
-                        <div className="font-medium">{user.firstName} {user.lastName}</div>
-                        <div className="text-xs text-neutral-500">{user.email || user.username}</div>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {users.length === 0 && !isLoadingUsers && (
-                    <div className="p-4 border border-dashed rounded-md text-center text-neutral-500">
-                      No users available to add as collaborators
-                    </div>
-                  )}
-                  
-                  {isLoadingUsers && (
-                    <div className="p-4 border border-dashed rounded-md text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                      <p>Loading available users...</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Role selection */}
-              {selectedUserId && (
-                <div className="mb-4">
-                  <Label htmlFor="role-select" className="mb-2 block font-medium">Assign Role</Label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div 
-                      className={`p-3 border rounded-md cursor-pointer text-center ${
-                        selectedRole === 'Viewer' ? 'bg-primary/20 border-primary' : 'bg-white hover:bg-gray-50'
-                      }`}
-                      onClick={() => setSelectedRole('Viewer')}
-                    >
-                      <div className="font-medium">Viewer</div>
-                      <div className="text-xs text-neutral-500">Can only view</div>
-                    </div>
-                    <div 
-                      className={`p-3 border rounded-md cursor-pointer text-center ${
-                        selectedRole === 'Editor' ? 'bg-primary/20 border-primary' : 'bg-white hover:bg-gray-50'
-                      }`}
-                      onClick={() => setSelectedRole('Editor')}
-                    >
-                      <div className="font-medium">Editor</div>
-                      <div className="text-xs text-neutral-500">Can make changes</div>
-                    </div>
-                    <div 
-                      className={`p-3 border rounded-md cursor-pointer text-center ${
-                        selectedRole === 'Manager' ? 'bg-primary/20 border-primary' : 'bg-white hover:bg-gray-50'
-                      }`}
-                      onClick={() => setSelectedRole('Manager')}
-                    >
-                      <div className="font-medium">Manager</div>
-                      <div className="text-xs text-neutral-500">Full control</div>
-                    </div>
+            <div className="mb-8 space-y-6">
+              {/* Super simple user selector */}
+              <div className="border border-gray-300 rounded-md p-6 bg-slate-50">
+                <h4 className="text-lg font-medium mb-3">Add Team Members</h4>
+                <p className="text-sm text-neutral-600 mb-4">
+                  Select users to collaborate on this proposal
+                </p>
+                
+                {/* User list */}
+                {isLoadingUsers ? (
+                  <div className="flex justify-center p-6">
+                    <Loader2 className="h-8 w-8 animate-spin" />
                   </div>
-                </div>
-              )}
-              
-              {/* Add button */}
-              <Button 
-                onClick={() => {
-                  if (selectedUserId) {
-                    addCollaboratorMutation.mutate({
-                      userId: selectedUserId,
-                      role: selectedRole
-                    });
-                    setSelectedUserId(null);
-                    setSelectedRole('Viewer');
-                  }
-                }}
-                disabled={!selectedUserId || addCollaboratorMutation.isPending}
-                className="w-full md:w-auto"
-              >
-                {addCollaboratorMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding...
-                  </>
                 ) : (
-                  <>
-                    <UserPlus className="h-4 w-4 mr-2" /> Add Collaborator
-                  </>
+                  <div className="space-y-4">
+                    {users && users.length > 0 ? (
+                      <>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {users.map((user) => (
+                            <div 
+                              key={user.id}
+                              className={`flex items-center border p-3 rounded-md cursor-pointer hover:bg-gray-50 ${
+                                selectedUserId === user.id ? 'ring-2 ring-primary' : ''
+                              }`}
+                              onClick={() => setSelectedUserId(selectedUserId === user.id ? null : user.id)}
+                            >
+                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3 text-primary font-medium">
+                                {user.firstName?.[0] || ''}
+                                {user.lastName?.[0] || ''}
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium">{user.firstName} {user.lastName}</div>
+                                <div className="text-sm text-gray-500">{user.email || user.username}</div>
+                              </div>
+                              {selectedUserId === user.id && (
+                                <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center">
+                                  ✓
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {selectedUserId && (
+                          <div className="mt-6 border-t pt-4">
+                            <Label htmlFor="role-select" className="mb-2 block">Select Role</Label>
+                            <div className="grid grid-cols-3 gap-3">
+                              <div 
+                                className={`p-3 border rounded-md cursor-pointer text-center ${
+                                  selectedRole === 'Viewer' ? 'bg-primary/10 border-primary/50' : ''
+                                }`}
+                                onClick={() => setSelectedRole('Viewer')}
+                              >
+                                <EyeIcon className="h-5 w-5 mx-auto mb-1" />
+                                <div className="font-medium">Viewer</div>
+                              </div>
+                              <div 
+                                className={`p-3 border rounded-md cursor-pointer text-center ${
+                                  selectedRole === 'Editor' ? 'bg-primary/10 border-primary/50' : ''
+                                }`}
+                                onClick={() => setSelectedRole('Editor')}
+                              >
+                                <FileIcon className="h-5 w-5 mx-auto mb-1" />
+                                <div className="font-medium">Editor</div>
+                              </div>
+                              <div 
+                                className={`p-3 border rounded-md cursor-pointer text-center ${
+                                  selectedRole === 'Manager' ? 'bg-primary/10 border-primary/50' : ''
+                                }`}
+                                onClick={() => setSelectedRole('Manager')}
+                              >
+                                <Users className="h-5 w-5 mx-auto mb-1" />
+                                <div className="font-medium">Manager</div>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-4 flex justify-end">
+                              <Button
+                                onClick={() => {
+                                  addCollaboratorMutation.mutate({
+                                    userId: selectedUserId,
+                                    role: selectedRole
+                                  });
+                                }}
+                                disabled={addCollaboratorMutation.isPending}
+                              >
+                                {addCollaboratorMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding...
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserPlus className="h-4 w-4 mr-2" /> Add Collaborator
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center p-8 border border-dashed rounded-md">
+                        <p className="text-neutral-600">No users available</p>
+                      </div>
+                    )}
+                  </div>
                 )}
-              </Button>
+              </div>
             </div>
 
             {isLoadingCollaborators ? (
