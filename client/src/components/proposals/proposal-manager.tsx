@@ -1199,22 +1199,40 @@ export function ProposalManager({
             onClick={() => {
               console.log("Edit Document button clicked for proposal:", fullProposal.id);
               
-              // Force a clean editor reset by using a fresh approach
+              // Simplest, most direct approach to open the editor
               if (fullProposal) {
                 try {
-                  // Reset editor state completely
-                  setEditorVisible(false);
-                  
-                  // Clear session storage
-                  sessionStorage.removeItem(`proposal_${fullProposal.id}_selected_element`);
-                  sessionStorage.removeItem(`proposal_${fullProposal.id}_elements`);
-                  
-                  // Use our enhanced handler function after a brief delay
-                  setTimeout(() => {
-                    handleOpenEditor(fullProposal);
-                  }, 100);
+                  // Get a fresh copy of the proposal
+                  fetch(`/api/proposals/${fullProposal.id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                      const updatedProposal = data.data || data;
+                      console.log("Fetched fresh proposal data:", updatedProposal.id);
+                      
+                      // Set the selected proposal directly
+                      setSelectedProposal(updatedProposal);
+                      
+                      // Important: Force a delay to ensure the state update processes
+                      setTimeout(() => {
+                        console.log("Opening editor with proposal:", updatedProposal.id);
+                        setEditorVisible(true);
+                      }, 100);
+                    })
+                    .catch(error => {
+                      console.error("Error fetching proposal details:", error);
+                      toast({ 
+                        title: "Error", 
+                        description: "Failed to open editor. Please try again.", 
+                        variant: "destructive" 
+                      });
+                    });
                 } catch (error) {
-                  console.error("Error in Edit Document click handler:", error);
+                  console.error("Critical error in Edit Document handler:", error);
+                  toast({ 
+                    title: "Error", 
+                    description: "An unexpected error occurred. Please try again.", 
+                    variant: "destructive" 
+                  });
                 }
               }
             }}

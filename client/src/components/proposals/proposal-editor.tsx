@@ -393,6 +393,11 @@ export function ProposalEditor({
   // Or create a default element if none exist
   useEffect(() => {
     const handleElementsLoaded = async () => {
+      console.log("Elements effect triggered, elements count:", elements.length, 
+                  "selectedElement:", selectedElement?.id || 'none',
+                  "isLoading:", isLoadingElements, 
+                  "isPending:", addElementMutation.isPending);
+      
       // If we have elements already, just select the first one
       if (elements.length > 0 && !selectedElement) {
         console.log("Auto-selecting first element:", elements[0].id);
@@ -408,15 +413,48 @@ export function ProposalEditor({
         console.log("No elements found. Creating a default text element...");
         
         try {
-          const newElement = await createProposalElement(
-            proposal.id,
-            'Text' as ProposalElementType,
-            2 // Default user ID
-          );
+          // Define the element content directly
+          const elementData = {
+            proposalId: proposal.id,
+            elementType: 'Text' as ProposalElementType,
+            name: "New Text",
+            content: {
+              text: "Enter your text here. This is a paragraph that can contain detailed information about your products or services.",
+              alignment: "left"
+            },
+            sortOrder: 0,
+            createdBy: 2 // Default user ID
+          };
           
-          if (newElement) {
+          console.log("Prepared element data:", elementData);
+          
+          // Use direct API call for more control
+          const response = await fetch(`/api/proposals/${proposal.id}/elements`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(elementData),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to create element: ${response.status}`);
+          }
+          
+          const result = await response.json();
+          console.log("Server response for element creation:", result);
+          
+          if (result.data) {
+            const newElement = result.data;
             console.log("Created default text element:", newElement);
-            // Will trigger a refetch of elements, which will then select this element
+            
+            // Set the element directly
+            setSelectedElement(newElement);
+            setActiveTab('editor');
+            
+            // Also refetch to ensure state consistency 
+            refetchElements();
+            
             toast({
               title: "Element Created",
               description: "A default text element has been added to your proposal.",
@@ -424,12 +462,17 @@ export function ProposalEditor({
           }
         } catch (error) {
           console.error("Error creating default element:", error);
+          toast({
+            title: "Error",
+            description: "Failed to create default element. Please try again.",
+            variant: "destructive",
+          });
         }
       }
     };
     
     handleElementsLoaded();
-  }, [elements, selectedElement, activeTab, isLoadingElements, addElementMutation.isPending]);
+  }, [elements, selectedElement, activeTab, isLoadingElements, addElementMutation.isPending, proposal.id]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
