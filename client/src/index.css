@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide any Replit branding elements */
+.replit-badge,
+[data-replit-badge],
+iframe[src*="replit.com"],
+[class*="replit"],
+[id*="replit"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  pointer-events: none !important;
+}
+
 /* RTL layout overrides */
 html[dir="rtl"] {
   /* General RTL layout */
