@@ -235,6 +235,7 @@ export function ProposalEditor({
   const {
     data: users = [],
     isLoading: isLoadingUsers,
+    error: usersError,
   } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
@@ -242,10 +243,18 @@ export function ProposalEditor({
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
+      
       const result = await response.json();
-      return result.data || result;
+      console.log("Raw users API response:", result);
+      
+      // If the response already has a data property, use it, otherwise use the result itself
+      const usersData = result.data || result;
+      console.log("Processed users data:", usersData);
+      
+      return usersData;
     },
     enabled: isOpen && activeTab === 'collaborators',
+    staleTime: 60000, // Keep data fresh for 1 minute
   });
 
   // Reset state when dialog is closed
@@ -967,90 +976,100 @@ export function ProposalEditor({
               <h3 className="text-lg font-medium">Collaborators</h3>
             </div>
 
-            {!isReadOnly && (
-              <div className="mb-6 border border-dashed rounded-md p-4 bg-neutral-50 hover:border-neutral-300 transition-colors">
-                <h4 className="font-medium text-base mb-3">Add New Collaborator</h4>
-                <p className="text-sm text-neutral-600 mb-4">
-                  Share this proposal with team members by adding them as collaborators.
-                  Assign roles to control their access level.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <Label htmlFor="user-select" className="mb-2 block font-medium">Select User</Label>
-                    <Select
-                      value={selectedUserId?.toString() || ""}
-                      onValueChange={(value) => setSelectedUserId(parseInt(value))}
-                    >
-                      <SelectTrigger id="collaborator-user-select">
-                        <SelectValue placeholder="Select a user" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Users</SelectLabel>
-                          {isLoadingUsers ? (
-                            <SelectItem value="loading" disabled>
-                              <Loader2 className="h-4 w-4 animate-spin mr-2 inline" />
-                              Loading users...
+            {console.log("Rendering collaborators tab with users:", users, "Loading:", isLoadingUsers)}
+
+            {/* Debug info - Remove in production */}
+            <div className="border p-2 mb-4 text-xs bg-blue-50 rounded">
+              <p className="font-bold">Debug Info (Remove in production)</p>
+              <p>Users loaded: {users.length}</p>
+              <p>Loading users: {isLoadingUsers ? 'Yes' : 'No'}</p>
+              <p>Read-only mode: {isReadOnly ? 'Yes' : 'No'}</p>
+              <p>Active tab: {activeTab}</p>
+            </div>
+
+            {/* Add collaborator form */}
+            <div className="mb-6 border border-dashed rounded-md p-4 bg-yellow-50 hover:border-yellow-300 transition-colors">
+              <h4 className="font-medium text-base mb-3">Add New Collaborator</h4>
+              <p className="text-sm text-neutral-600 mb-4">
+                Share this proposal with team members by adding them as collaborators.
+                Assign roles to control their access level.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="user-select" className="mb-2 block font-medium">Select User</Label>
+                  <Select
+                    value={selectedUserId?.toString() || ""}
+                    onValueChange={(value) => setSelectedUserId(parseInt(value))}
+                  >
+                    <SelectTrigger id="collaborator-user-select">
+                      <SelectValue placeholder="Select a user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Users</SelectLabel>
+                        {isLoadingUsers ? (
+                          <SelectItem value="loading" disabled>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2 inline" />
+                            Loading users...
+                          </SelectItem>
+                        ) : users.length === 0 ? (
+                          <SelectItem value="none" disabled>
+                            No users available
+                          </SelectItem>
+                        ) : (
+                          users.map(user => (
+                            <SelectItem key={user.id} value={user.id.toString()}>
+                              {user.firstName} {user.lastName} ({user.username})
                             </SelectItem>
-                          ) : users.length === 0 ? (
-                            <SelectItem value="none" disabled>
-                              No users available
-                            </SelectItem>
-                          ) : (
-                            users.map(user => (
-                              <SelectItem key={user.id} value={user.id.toString()}>
-                                {user.firstName} {user.lastName} ({user.username})
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="role-select" className="mb-2 block font-medium">Assign Role</Label>
-                    <Select
-                      value={selectedRole}
-                      onValueChange={(value) => setSelectedRole(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Viewer">Viewer (can only view)</SelectItem>
-                        <SelectItem value="Editor">Editor (can make changes)</SelectItem>
-                        <SelectItem value="Manager">Manager (full control)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                          ))
+                        )}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Button 
-                  onClick={() => {
-                    if (selectedUserId) {
-                      addCollaboratorMutation.mutate({
-                        userId: selectedUserId,
-                        role: selectedRole
-                      });
-                      setSelectedUserId(null);
-                      setSelectedRole('Viewer');
-                    }
-                  }}
-                  disabled={!selectedUserId || addCollaboratorMutation.isPending}
-                  size="sm"
-                  className="w-full md:w-auto"
-                >
-                  {addCollaboratorMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="h-4 w-4 mr-2" /> Add Collaborator
-                    </>
-                  )}
-                </Button>
+                <div>
+                  <Label htmlFor="role-select" className="mb-2 block font-medium">Assign Role</Label>
+                  <Select
+                    value={selectedRole}
+                    onValueChange={(value) => setSelectedRole(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Viewer">Viewer (can only view)</SelectItem>
+                      <SelectItem value="Editor">Editor (can make changes)</SelectItem>
+                      <SelectItem value="Manager">Manager (full control)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            )}
+              <Button 
+                onClick={() => {
+                  if (selectedUserId) {
+                    addCollaboratorMutation.mutate({
+                      userId: selectedUserId,
+                      role: selectedRole
+                    });
+                    setSelectedUserId(null);
+                    setSelectedRole('Viewer');
+                  }
+                }}
+                disabled={!selectedUserId || addCollaboratorMutation.isPending}
+                size="sm"
+                className="w-full md:w-auto"
+              >
+                {addCollaboratorMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" /> Add Collaborator
+                  </>
+                )}
+              </Button>
+            </div>
 
             {isLoadingCollaborators ? (
               <div className="flex justify-center p-6">
