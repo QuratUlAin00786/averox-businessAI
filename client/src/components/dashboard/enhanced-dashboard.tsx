@@ -12,7 +12,8 @@ import {
   CircleCheck,
   CircleAlert,
   PieChart,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +26,7 @@ import { useLocation } from "wouter";
 import ActivityFeed from "./activity-feed";
 import QuickActions from "./quick-actions";
 import MigrationStats from "./migration-stats";
+import { BusinessInsights } from "@/components/ai-assistant";
 
 interface DashboardStat {
   label: string;
@@ -239,6 +241,10 @@ export default function EnhancedDashboard() {
       <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="ai-assistant" className="flex items-center gap-1">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>AI Assistant</span>
+          </TabsTrigger>
           <TabsTrigger value="migrations">Data Migrations</TabsTrigger>
           <TabsTrigger value="proposals">Proposals</TabsTrigger>
           <TabsTrigger value="communication">Communication</TabsTrigger>
@@ -335,6 +341,31 @@ export default function EnhancedDashboard() {
                   <ActivityFeed activities={data.activities} />
                 </CardContent>
               </Card>
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="ai-assistant" className="space-y-6">
+          <div className="grid grid-cols-1 gap-6">
+            <div className="space-y-6">
+              <Card className="bg-primary/5 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    AI-Powered Business Assistant
+                  </CardTitle>
+                  <CardDescription>
+                    Receive proactive insights and actionable advice to improve your business performance.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Our AI assistant analyzes your CRM data to identify opportunities, potential issues, and priorities to help you focus on what matters most.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <BusinessInsights />
             </div>
           </div>
         </TabsContent>
