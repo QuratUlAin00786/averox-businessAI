@@ -6,6 +6,7 @@ import { setupAuth, hashPassword } from "./auth";
 import { registerPermissionRoutes } from "./permission-routes";
 import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from "./permissions-manager";
 import { migrationRouter } from "./migrations/migration-routes";
+import { setupMarketingRoutes } from "./marketing-routes";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -70,6 +71,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up permission system and register routes
   registerPermissionRoutes(app);
+  
+  // Set up marketing routes
+  setupMarketingRoutes(app);
   
   // Add permission methods to storage
   if ('initializePermissions' in storage) {

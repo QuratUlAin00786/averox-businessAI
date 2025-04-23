@@ -436,22 +436,24 @@ export function setupMarketingRoutes(app: Express) {
   app.get("/api/marketing/dashboard-stats", async (req, res) => {
     try {
       // Count of email templates
-      const [templateCount] = await db.select({ count: db.fn.count() }).from(emailTemplates);
+      const templateCount = await db.select().from(emailTemplates);
       
       // Count of campaigns by status
-      const campaignsByStatus = await db
-        .select({ 
-          status: marketingCampaigns.status, 
-          count: db.fn.count() 
-        })
-        .from(marketingCampaigns)
-        .groupBy(marketingCampaigns.status);
+      const campaigns = await db.select().from(marketingCampaigns);
+      const campaignsByStatus = Array.from(
+        campaigns.reduce((acc, campaign) => {
+          const status = campaign.status || 'unknown';
+          acc.set(status, (acc.get(status) || 0) + 1);
+          return acc;
+        }, new Map()),
+        ([status, count]) => ({ status, count })
+      );
       
       // Count of workflows
-      const [workflowCount] = await db.select({ count: db.fn.count() }).from(marketingWorkflows);
+      const workflows = await db.select().from(marketingWorkflows);
       
       // Count of audience segments
-      const [segmentCount] = await db.select({ count: db.fn.count() }).from(audienceSegments);
+      const segments = await db.select().from(audienceSegments);
 
       // Sample email engagement data (this would normally come from the engagement table)
       const emailStats = {
@@ -467,10 +469,10 @@ export function setupMarketingRoutes(app: Express) {
       };
 
       res.json({
-        emailTemplateCount: templateCount.count,
+        emailTemplateCount: templateCount.length || 0,
         campaignsByStatus,
-        workflowCount: workflowCount.count,
-        segmentCount: segmentCount.count,
+        workflowCount: workflows.length || 0,
+        segmentCount: segments.length || 0,
         emailStats
       });
     } catch (error) {

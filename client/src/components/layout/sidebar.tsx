@@ -35,6 +35,14 @@ interface SidebarProps {
   className?: string;
 }
 
+interface NavItem {
+  name: string;
+  path: string;
+  icon: React.ReactNode;
+  key: keyof MenuVisibilitySettings | null;
+  isSubmenu?: boolean;
+}
+
 export default function Sidebar({ className = "" }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
@@ -51,6 +59,10 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: t.navigation.calendar, path: '/calendar', icon: <Calendar className="w-5 h-5" />, key: 'calendar' as keyof MenuVisibilitySettings },
     { name: t.navigation.tasks, path: '/tasks', icon: <CheckSquare className="w-5 h-5" />, key: 'tasks' as keyof MenuVisibilitySettings },
     { name: "Marketing", path: '/marketing', icon: <Megaphone className="w-5 h-5" />, key: null }, // Always visible for now
+    { name: "Email Campaigns", path: '/marketing/create', icon: <Mail className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Automations", path: '/marketing/automations', icon: <Workflow className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Email Templates", path: '/marketing/email-template-editor', icon: <Mail className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Audience Segments", path: '/marketing/segment-builder', icon: <Users className="w-5 h-5" />, key: null, isSubmenu: true },
     { name: t.navigation.communicationCenter, path: '/communication-center', icon: <MessageSquare className="w-5 h-5" />, key: 'communicationCenter' as keyof MenuVisibilitySettings },
     { name: t.navigation.accounting, path: '/accounting', icon: <Calculator className="w-5 h-5" />, key: 'accounting' as keyof MenuVisibilitySettings },
     { name: t.navigation.inventory, path: '/inventory', icon: <PackageOpen className="w-5 h-5" />, key: 'inventory' as keyof MenuVisibilitySettings },
@@ -86,7 +98,8 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           className={`sidebar-nav-item flex items-center px-3 py-2 text-sm font-medium rounded-md group cursor-pointer
             ${isActive(item.path) 
               ? 'text-primary bg-blue-50' 
-              : 'text-neutral-600 hover:bg-neutral-50'}`}
+              : 'text-neutral-600 hover:bg-neutral-50'}
+            ${item.isSubmenu ? 'ml-4' : ''}`}
         >
           <span className={`mr-3 ${isActive(item.path) ? 'text-primary' : 'text-neutral-500 group-hover:text-primary'}`}>
             {item.icon}
@@ -99,7 +112,20 @@ export default function Sidebar({ className = "" }: SidebarProps) {
 
   // Get visible items for each section
   const getCoreItems = () => {
-    return navItems.filter((_, index) => index >= 0 && index <= 7);
+    // Include all main navigation items plus marketing submenu items (if Marketing is expanded)
+    return navItems.filter((item, index) => {
+      // Include all the standard core items
+      if (index >= 0 && index <= 7) {
+        return true;
+      }
+      
+      // Also include marketing submenu items 
+      if (item.isSubmenu && index > 7 && index <= 11) {
+        return true;
+      }
+      
+      return false;
+    });
   };
 
   const getCommunicationItems = () => {
