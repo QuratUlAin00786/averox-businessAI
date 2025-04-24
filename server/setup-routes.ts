@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { storage } from './storage';
-import { users, apiKeys, apiProvider } from '@shared/schema';
+import { users, apiKeys, apiProviderEnum } from '@shared/schema';
 import { hashPassword } from './auth';
 import { z } from 'zod';
 
