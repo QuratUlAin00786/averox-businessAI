@@ -218,7 +218,11 @@ export function setupRoutes(app: any) {
         });
         
         // 5. Mark setup as complete in system settings
-        await storage.saveSystemSettings({ setupComplete: true });
+        const finalSettings = {
+          ...systemSettings,
+          setupComplete: true
+        };
+        await storage.saveSystemSettings(user.id, finalSettings);
         
         return res.status(200).json({
           success: true,
@@ -252,8 +256,13 @@ export function setupRoutes(app: any) {
    */
   app.get('/api/setup/status', async (req: Request, res: Response) => {
     try {
-      const systemSettings = await storage.getSystemSettings();
-      const setupComplete = systemSettings?.setupComplete || false;
+      // Get system settings for the admin user (usually ID 1)
+      const adminId = 1;
+      const systemSettings = await storage.getSystemSettings(adminId);
+      
+      // Check if setupComplete property exists (added as a custom property)
+      const settings = systemSettings as any;
+      const setupComplete = settings?.setupComplete || false;
       
       return res.status(200).json({
         setupComplete,
