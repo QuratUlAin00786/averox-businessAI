@@ -131,6 +131,20 @@ export function setupAuth(app: Express) {
       if (!user) {
         return res.status(401).json({ error: "Invalid username or password" });
       }
+      
+      // Apply the remember me functionality if requested
+      if (req.body.rememberMe) {
+        // Update session cookie to last for 30 days when remember me is checked
+        if (req.session.cookie) {
+          req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+        }
+      } else {
+        // Use default session duration (typically until browser is closed)
+        if (req.session.cookie) {
+          req.session.cookie.expires = undefined; // Session cookie
+        }
+      }
+      
       req.login(user, (err) => {
         if (err) {
           return next(err);
