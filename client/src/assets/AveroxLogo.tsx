@@ -9,7 +9,7 @@ interface Props {
 
 const AveroxLogo: React.FC<Props> = ({ className, height = 40, showBusinessAI = true }) => {
   // Calculate Business AI text size based on logo height (scale appropriately)
-  const textSize = Math.max(11, Math.floor(height / 3.5));
+  const textSize = Math.max(13, Math.floor(height / 2.8));
   
   return (
     <div className={`flex flex-col items-center ${className || ""}`}>
@@ -26,10 +26,11 @@ const AveroxLogo: React.FC<Props> = ({ className, height = 40, showBusinessAI = 
       />
       {showBusinessAI && (
         <div 
-          className="mt-0.5 text-center font-semibold text-neutral-700"
+          className="mt-0.5 text-center font-bold text-neutral-700"
           style={{ 
             fontSize: `${textSize}px`,
             lineHeight: `${textSize * 1.2}px`,
+            letterSpacing: "0.01em",
           }}
         >
           Business AI
