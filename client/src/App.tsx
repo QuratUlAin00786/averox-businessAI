@@ -13,6 +13,7 @@ import Contacts from "@/pages/contacts";
 import SimpleContacts from "@/pages/simple-contacts";
 import Accounts from "@/pages/accounts";
 import Leads from "@/pages/leads";
+import LeadDetail from "@/pages/lead-detail";
 import Opportunities from "@/pages/opportunities";
 import Calendar from "@/pages/calendar";
 import Tasks from "@/pages/tasks";
@@ -89,6 +90,12 @@ function Router() {
       <ProtectedRoute path="/leads" component={() => (
         <Layout>
           <Leads />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/leads/:id" component={({ params }: { params: { id: string } }) => (
+        <Layout>
+          <LeadDetail />
         </Layout>
       )} />
       
