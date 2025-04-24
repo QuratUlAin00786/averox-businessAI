@@ -4,12 +4,12 @@ import logoImage from "./averox-logo.png";
 interface Props {
   className?: string;
   height?: number;
-  showCRM?: boolean;
+  showBusinessAI?: boolean;
 }
 
-const AveroxLogo: React.FC<Props> = ({ className, height = 40, showCRM = true }) => {
-  // Calculate CRM text size based on logo height (scale appropriately)
-  const textSize = Math.max(10, Math.floor(height / 3.5));
+const AveroxLogo: React.FC<Props> = ({ className, height = 40, showBusinessAI = true }) => {
+  // Calculate Business AI text size based on logo height (scale appropriately)
+  const textSize = Math.max(11, Math.floor(height / 3.5));
   
   return (
     <div className={`flex flex-col items-center ${className || ""}`}>
@@ -20,11 +20,11 @@ const AveroxLogo: React.FC<Props> = ({ className, height = 40, showCRM = true })
         style={{ 
           height: `${height}px`,
           minHeight: `${height}px`,
-          minWidth: `${height * 2.5}px`, // Maintain good aspect ratio
+          minWidth: `${height * 3}px`, // Wider to accommodate "Business AI" text
         }}
         className="object-contain"
       />
-      {showCRM && (
+      {showBusinessAI && (
         <div 
           className="mt-0.5 text-center font-semibold text-neutral-700"
           style={{ 
@@ -32,7 +32,7 @@ const AveroxLogo: React.FC<Props> = ({ className, height = 40, showCRM = true })
             lineHeight: `${textSize * 1.2}px`,
           }}
         >
-          CRM
+          Business AI
         </div>
       )}
     </div>
