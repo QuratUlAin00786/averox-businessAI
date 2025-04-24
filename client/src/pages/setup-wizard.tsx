@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Check, ChevronRight, Lock, ArrowRight, Building, Users, Key, Settings, Shield, Database, Layers, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,7 +65,7 @@ const LOCAL_STORAGE_KEY = "setup_wizard_progress";
 export default function SetupWizard() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [navigate, setLocation] = useNavigate();
+  const [_, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [setupComplete, setSetupComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -215,7 +215,7 @@ export default function SetupWizard() {
         
         // Redirect to dashboard after a short delay
         setTimeout(() => {
-          navigate("/");
+          setLocation("/");
         }, 3000);
       } else {
         const error = await response.json();
@@ -281,7 +281,7 @@ export default function SetupWizard() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-green-600 mb-6">You will be redirected to the dashboard in a few seconds...</p>
-            <Button onClick={() => navigate("/")}>
+            <Button onClick={() => setLocation("/")}>
               Go to Dashboard
             </Button>
           </CardContent>

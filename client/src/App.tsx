@@ -57,11 +57,14 @@ import MarketingAutomations from "@/pages/marketing/automations";
 import WorkflowBuilder from "@/pages/marketing/workflow-builder";
 import SegmentBuilder from "@/pages/marketing/segment-builder";
 import EmailTemplateEditor from "@/pages/marketing/email-template-editor";
+import SetupWizard from "@/pages/setup-wizard";
 
 function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      
+      <Route path="/setup" component={SetupWizard} />
       
       <ProtectedRoute path="/" component={() => (
         <Layout>
