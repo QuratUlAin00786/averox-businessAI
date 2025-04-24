@@ -10,10 +10,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ContactNotes } from "./contact-notes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, Mail, MapPin, Phone, Tag, UserRound, X, Building, ArrowLeft } from "lucide-react";
+import { CalendarDays, Mail, MapPin, Phone, Tag, UserRound, X, Building, ArrowLeft, Sparkles } from "lucide-react";
 import { CommunicationPanel } from "@/components/communications/communication-panel";
 import AssignmentManager from "@/components/assignment/assignment-manager";
 import { EntityReminders } from "@/components/shared/entity-reminders";
+import { EntityAdvice } from "@/components/ai-assistant";
 
 interface ContactDetailProps {
   contactId: number;
@@ -247,6 +248,11 @@ export function ContactDetail({ contactId, onBack }: ContactDetailProps) {
               </div>
             </CardContent>
           </Card>
+          
+          {/* AI Assistant Advice */}
+          <div className="mt-6">
+            <EntityAdvice entityType="contact" entityId={contact.id} />
+          </div>
         </div>
         
         {/* Notes and History Section */}
