@@ -7,6 +7,7 @@ import { registerPermissionRoutes } from "./permission-routes";
 import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from "./permissions-manager";
 import { migrationRouter } from "./migrations/migration-routes";
 import { setupMarketingRoutes } from "./marketing-routes";
+import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
 import { 
   insertUserSchema,
@@ -75,6 +76,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up marketing routes
   setupMarketingRoutes(app);
+  
+  // Set up company setup wizard routes
+  setupRoutes(app);
   
   // Add permission methods to storage
   if ('initializePermissions' in storage) {
