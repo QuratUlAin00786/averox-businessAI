@@ -142,85 +142,142 @@ export async function generateBusinessInsights(): Promise<BusinessInsight[]> {
 
 export async function getPersonalizedAdvice(entityType: string, entityId: number): Promise<string> {
   try {
+    // Check if OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn("OpenAI API key is missing. AI features cannot function without it.");
+      return "AI advice is not available because the OpenAI API key is not configured. Please ask your administrator to set up the OPENAI_API_KEY.";
+    }
+    
+    console.log(`Generating personalized advice for ${entityType} with ID ${entityId}`);
+    
     // Get entity data
     let entityData: any = null;
     
-    switch(entityType) {
-      case "lead":
-        const [lead] = await db.select().from(leads).where(eq(leads.id, entityId));
-        entityData = lead;
-        break;
-      case "opportunity":
-        const [opportunity] = await db.select().from(opportunities).where(eq(opportunities.id, entityId));
-        entityData = opportunity;
-        break;
-      case "contact":
-        const [contact] = await db.select().from(contacts).where(eq(contacts.id, entityId));
-        entityData = contact;
-        break;
-      case "task":
-        const [task] = await db.select().from(tasks).where(eq(tasks.id, entityId));
-        entityData = task;
-        break;
-      case "event":
-        const [event] = await db.select().from(events).where(eq(events.id, entityId));
-        entityData = event;
-        break;
-      default:
-        return "Unable to provide advice for this entity type.";
+    try {
+      switch(entityType) {
+        case "lead":
+          const [lead] = await db.select().from(leads).where(eq(leads.id, entityId));
+          entityData = lead;
+          break;
+        case "opportunity":
+          const [opportunity] = await db.select().from(opportunities).where(eq(opportunities.id, entityId));
+          entityData = opportunity;
+          break;
+        case "contact":
+          const [contact] = await db.select().from(contacts).where(eq(contacts.id, entityId));
+          entityData = contact;
+          break;
+        case "task":
+          const [task] = await db.select().from(tasks).where(eq(tasks.id, entityId));
+          entityData = task;
+          break;
+        case "event":
+          const [event] = await db.select().from(events).where(eq(events.id, entityId));
+          entityData = event;
+          break;
+        default:
+          return "Unable to provide advice for this entity type.";
+      }
+    } catch (dbError) {
+      console.error(`Database error when fetching ${entityType}:`, dbError);
+      return `Unable to retrieve ${entityType} data from the database. Please check your database connection.`;
     }
     
     if (!entityData) {
-      return "Entity not found.";
+      console.warn(`No data found for ${entityType} with ID ${entityId}`);
+      return `This ${entityType} was not found in the database. It may have been deleted or you might not have permission to view it.`;
     }
     
     // Get related activities for context
-    const relatedActivities = await db
-      .select()
-      .from(activities)
-      .where(
-        and(
-          eq(activities.relatedToType, entityType),
-          eq(activities.relatedToId, entityId)
+    let relatedActivities = [];
+    try {
+      relatedActivities = await db
+        .select()
+        .from(activities)
+        .where(
+          and(
+            eq(activities.relatedToType, entityType),
+            eq(activities.relatedToId, entityId)
+          )
         )
-      )
-      .orderBy(desc(activities.createdAt))
-      .limit(10);
+        .orderBy(desc(activities.createdAt))
+        .limit(10);
+    } catch (activityError) {
+      console.warn(`Error fetching activities for ${entityType} ${entityId}:`, activityError);
+      // Continue without activities - we can still generate advice
+    }
+    
+    // Create entity summary to reduce token usage
+    const entitySummary = {
+      id: entityData.id,
+      type: entityType,
+      name: entityType === 'lead' || entityType === 'contact' 
+        ? `${entityData.firstName || ''} ${entityData.lastName || ''}`.trim() 
+        : entityData.name,
+      company: entityData.company,
+      status: entityData.status,
+      source: entityData.source,
+      createdAt: entityData.createdAt,
+      notes: entityData.notes
+    };
+    
+    // Summarize activities
+    const activitySummary = relatedActivities.map(activity => ({
+      action: activity.action,
+      createdAt: activity.createdAt,
+      detail: activity.detail
+    }));
+    
+    console.log('Calling OpenAI API with model gpt-4o');
     
     // Query OpenAI for personalized advice
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are an AI sales and customer relationship assistant. Based on the entity data and related activities, 
-          provide personalized, actionable advice on how to best engage with this ${entityType}.
-          
-          Your advice should be:
-          1. Specific to the entity's situation and history
-          2. Strategic and action-oriented
-          3. Focused on increasing the likelihood of conversion or strengthening the relationship
-          4. About 3-5 sentences in length
-          5. Professional but conversational in tone
-          
-          Do not include any placeholder text, generic advice, or statements that could apply to any entity. 
-          Respond with the advice text only, no introductions or explanations.`
-        },
-        {
-          role: "user",
-          content: JSON.stringify({
-            entityType,
-            entityData,
-            relatedActivities
-          })
-        }
-      ]
-    });
-
-    return response.choices[0].message.content.trim();
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are an AI sales and customer relationship assistant. Based on the entity data and related activities, 
+            provide personalized, actionable advice on how to best engage with this ${entityType}.
+            
+            Your advice should be:
+            1. Specific to the entity's situation and history
+            2. Strategic and action-oriented
+            3. Focused on increasing the likelihood of conversion or strengthening the relationship
+            4. About 3-5 sentences in length
+            5. Professional but conversational in tone
+            
+            Do not include any placeholder text, generic advice, or statements that could apply to any entity. 
+            Respond with the advice text only, no introductions or explanations.`
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              entitySummary,
+              activitySummary,
+              currentDate: new Date().toISOString()
+            })
+          }
+        ]
+      });
+      
+      console.log('Successfully received response from OpenAI');
+      return response.choices[0].message.content.trim();
+      
+    } catch (aiError: any) {
+      // Handle specific OpenAI errors
+      console.error("OpenAI API error:", aiError);
+      if (aiError.status === 429) {
+        return "The AI advice service is currently at capacity. Please try again in a few minutes.";
+      } else if (aiError.status === 401 || aiError.status === 403) {
+        return "The AI advice service is unavailable due to an authentication issue. Please contact your administrator to check the OpenAI API key.";
+      } else {
+        return `Unable to generate AI advice at this time: ${aiError.message || 'Unknown error'}. Please try again later.`;
+      }
+    }
   } catch (error) {
-    console.error("Error generating personalized advice:", error);
-    return "Unable to generate personalized advice at this time. Please try again later.";
+    console.error("Unexpected error in getPersonalizedAdvice:", error);
+    return "An unexpected error occurred while generating AI advice. Please try again or contact support if the issue persists.";
   }
 }
