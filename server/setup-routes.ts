@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { storage } from './storage';
-import { users, apiKeys, apiProviderEnum, SystemSettings } from '@shared/schema';
+import { users, apiKeys, apiProviderEnum, SystemSettings, systemSettings } from '@shared/schema';
 import { hashPassword } from './auth';
 import { z } from 'zod';
-import { db } from './db';
+import { db, pool } from './db';
 import { eq } from 'drizzle-orm';
 
 // Define validation schemas for setup data
@@ -168,28 +168,26 @@ export function setupRoutes(app: any) {
             enableOnboarding: setupData.userSettings.enableOnboarding
           };
           
-          // Save as a separate system setting through direct database access
-          await db.insert(systemSettings)
-            .values({
-              userId: user.id,
-              settingKey: 'companyInfo',
-              settingValue: JSON.stringify(settingValue),
-              scope: 'global'
-            });
+          // Save company information as a system setting using Drizzle ORM
+          await db.insert(systemSettings).values({
+            userId: user.id,
+            settingKey: 'companyInfo',
+            settingValue: JSON.stringify(settingValue),
+            scope: 'global'
+          });
             
           console.log('Company information saved successfully');
           
-          // Mark setup as complete
-          await db.insert(systemSettings)
-            .values({
-              userId: user.id,
-              settingKey: 'setupStatus',
-              settingValue: JSON.stringify({
-                complete: true,
-                completedAt: new Date().toISOString()
-              }),
-              scope: 'global'
-            });
+          // Mark setup as complete using Drizzle ORM
+          await db.insert(systemSettings).values({
+            userId: user.id,
+            settingKey: 'setupStatus',
+            settingValue: JSON.stringify({
+              complete: true,
+              completedAt: new Date().toISOString()
+            }),
+            scope: 'global'
+          });
             
           console.log('Setup marked as complete');
           
@@ -237,17 +235,23 @@ export function setupRoutes(app: any) {
         // 3. Create demo data if requested
         if (setupData.userSettings.createDemoData) {
           try {
-            // Execute the demo data creation script directly
-            await import('./create-demo-users').then(module => {
-              // If the function exists with either name, call it
-              if (typeof module.createDemoUsers === 'function') {
-                return module.createDemoUsers();
-              } else if (typeof module.createDemoAccounts === 'function') {
-                return module.createDemoAccounts();
-              } else {
-                throw new Error('No demo data creation function found');
-              }
-            });
+            // Load the module first
+            const demoDataModule = await import('./create-demo-users');
+            
+            // Use any available demo data creation function
+            // TypeScript doesn't know which functions exist at compile time, so
+            // we check at runtime
+            const moduleAny = demoDataModule as any;
+            
+            if (typeof moduleAny.createDemoUsers === 'function') {
+              await moduleAny.createDemoUsers();
+              console.log("Demo users created successfully");
+            } else if (typeof moduleAny.createDemoAccounts === 'function') {
+              await moduleAny.createDemoAccounts();
+              console.log("Demo accounts created successfully");
+            } else {
+              console.warn("No demo data creation function found in create-demo-users module");
+            }
           } catch (demoError) {
             console.error("Error creating demo data:", demoError);
             // Continue with setup even if demo data creation fails
@@ -300,13 +304,27 @@ export function setupRoutes(app: any) {
    */
   app.get('/api/setup/status', async (req: Request, res: Response) => {
     try {
-      // Get system settings for the admin user (usually ID 1)
-      const adminId = 1;
-      const systemSettings = await storage.getSystemSettings(adminId);
+      // Check setup status directly from database
+      const result = await pool.query(`
+        SELECT setting_value 
+        FROM system_settings 
+        WHERE setting_key = 'setupStatus' 
+        ORDER BY created_at DESC 
+        LIMIT 1
+      `);
       
-      // Check if setupComplete property exists (added as a custom property)
-      const settings = systemSettings as any;
-      const setupComplete = settings?.setupComplete || false;
+      // Default to false if no setup status is found
+      let setupComplete = false;
+      
+      if (result.rows.length > 0) {
+        try {
+          // Parse the setting value
+          const settingValue = JSON.parse(result.rows[0].setting_value);
+          setupComplete = settingValue?.complete || false;
+        } catch (parseError) {
+          console.error("Error parsing setup status:", parseError);
+        }
+      }
       
       return res.status(200).json({
         setupComplete,
@@ -314,9 +332,11 @@ export function setupRoutes(app: any) {
       });
     } catch (error) {
       console.error("Error checking setup status:", error);
-      return res.status(500).json({
-        error: "Server Error",
-        message: "An error occurred while checking setup status"
+      // If there's an error, assume setup is required
+      return res.status(200).json({
+        setupComplete: false,
+        setupRequired: true,
+        error: "Could not determine setup status"
       });
     }
   });

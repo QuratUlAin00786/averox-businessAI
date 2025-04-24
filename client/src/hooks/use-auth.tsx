@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Registration successful",
-        description: `Welcome to AVEROX CRM, ${user.firstName || user.username}!`,
+        description: `Welcome to AVEROX Business AI, ${user.firstName || user.username}!`,
       });
     },
     onError: (error: Error) => {
