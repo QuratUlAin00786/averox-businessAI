@@ -221,10 +221,11 @@ export default function SetupWizard() {
         const error = await response.json();
         throw new Error(error.message || "Setup failed. Please try again.");
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "There was an error during setup. Please try again.";
       toast({
         title: "Setup Error",
-        description: error.message || "There was an error during setup. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -233,16 +234,16 @@ export default function SetupWizard() {
   };
   
   // Handle toggle for features and integrations
-  const handleToggle = (section, key) => {
+  const handleToggle = (section: 'features' | 'integrations', key: string) => {
     if (section === "features") {
       setFeatures({
         ...features,
-        [key]: !features[key]
+        [key]: !features[key as keyof typeof features]
       });
     } else if (section === "integrations") {
       setIntegrations({
         ...integrations,
-        [key]: !integrations[key]
+        [key]: !integrations[key as keyof typeof integrations]
       });
     }
   };
