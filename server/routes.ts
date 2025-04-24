@@ -118,14 +118,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // AI Assistant API Endpoints
-  app.get('/api/ai/business-insights', async (req: Request, res: Response) => {
+  app.get('/api/ai-assistant/business-insights', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
       
       const insights = await generateBusinessInsights();
-      res.json(insights);
+      // Add a unique id to each insight for frontend rendering
+      const insightsWithIds = insights.map((insight, index) => ({
+        ...insight,
+        id: index + 1,
+        timestamp: new Date().toISOString()
+      }));
+      res.json(insightsWithIds);
     } catch (error) {
       console.error('Error generating business insights:', error);
       if (error instanceof Error && error.message.includes('OpenAI')) {
@@ -135,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/ai/entity-advice/:entityType/:entityId', async (req: Request, res: Response) => {
+  app.get('/api/ai-assistant/entity-advice/:entityType/:entityId', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ error: 'Not authenticated' });
@@ -154,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const advice = await getPersonalizedAdvice(entityType, idNumber);
-      res.json({ advice });
+      res.json(advice);  // Return the string directly, not wrapped in an object
     } catch (error) {
       console.error('Error generating personalized advice:', error);
       if (error instanceof Error && error.message.includes('OpenAI')) {

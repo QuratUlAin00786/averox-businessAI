@@ -1,108 +1,204 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Sparkles, Loader2, SquareAsterisk, AlertTriangle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Sparkles,
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  RefreshCw,
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 
 interface EntityAdviceProps {
-  entityType: 'lead' | 'opportunity' | 'contact' | 'task' | 'event';
+  entityType: string;
   entityId: number;
 }
 
-export const EntityAdvice = ({ entityType, entityId }: EntityAdviceProps) => {
+export function EntityAdvice({ entityType, entityId }: EntityAdviceProps) {
   const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
   
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch
-  } = useQuery<{ advice: string }>({
-    queryKey: [`/api/ai/entity-advice/${entityType}/${entityId}`],
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    retry: 1,
+  // Fetch personalized advice from the AI assistant API
+  const { 
+    data: advice, 
+    isLoading, 
+    error, 
+    refetch,
+    isRefetching 
+  } = useQuery<string>({
+    queryKey: [`/api/ai-assistant/entity-advice/${entityType}/${entityId}`],
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  const handleRefresh = () => {
-    refetch();
-    toast({
-      title: "Refreshing advice",
-      description: "Generating new personalized advice..."
-    });
+  // Handle regenerating advice
+  const handleRegenerateAdvice = async () => {
+    setIsGenerating(true);
+    try {
+      await refetch();
+      toast({
+        title: "Advice Regenerated",
+        description: "New personalized advice has been generated.",
+      });
+    } catch (err) {
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate new advice. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
   
+  // If loading, show a skeleton UI
   if (isLoading) {
     return (
-      <Card className="bg-muted/30 border-dashed">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-md flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>AI Advice</span>
-          </CardTitle>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <div className="space-y-1">
+              <h3 className="font-medium leading-none">AI Assistant Advice</h3>
+              <p className="text-xs text-muted-foreground">
+                Personalized recommendations for this {entityType}
+              </p>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
+          <div className="animate-pulse flex flex-col gap-2">
+            <div className="h-4 w-full bg-muted rounded"></div>
+            <div className="h-4 w-full bg-muted rounded"></div>
+            <div className="h-4 w-3/4 bg-muted rounded"></div>
+            <div className="h-4 w-full bg-muted rounded mt-2"></div>
+            <div className="h-4 w-5/6 bg-muted rounded"></div>
+            <div className="h-4 w-2/3 bg-muted rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <div className="space-y-1">
+                <h3 className="font-medium leading-none">Error Loading Advice</h3>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-4">
+            <p className="text-center text-muted-foreground text-sm mb-4">
+              There was an error loading AI advice. This might be due to API limitations or service unavailability.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refetch()}
+              disabled={isRefetching}
+            >
+              {isRefetching ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                  Retrying...
+                </>
+              ) : (
+                "Try Again"
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
     );
   }
   
-  if (isError) {
-    return (
-      <Card className="bg-destructive/10 border-destructive/30">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-md flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-            <span>Unable to load advice</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-2">
-            {error instanceof Error 
-              ? error.message 
-              : "There was an error generating personalized advice. Please try again later."}
-          </p>
-          <Button variant="outline" size="sm" onClick={handleRefresh}>
-            Try Again
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Format advice for display - split into paragraphs
+  const formatAdvice = (adviceText: string | undefined | null) => {
+    if (!adviceText) return [];
+    return adviceText.split('\n').filter(para => para.trim().length > 0);
+  };
+  
+  const formattedAdvice = formatAdvice(advice || "");
   
   return (
     <Card className="bg-primary/5 border-primary/20">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-md flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <span>AI Advice</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 ml-auto"
-            onClick={handleRefresh}
-          >
-            <Loader2 className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="sr-only">Refresh Advice</span>
-          </Button>
-        </CardTitle>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <div className="space-y-1">
+              <h3 className="font-medium leading-none">AI Assistant Advice</h3>
+              <p className="text-xs text-muted-foreground">
+                Personalized recommendations for this {entityType}
+              </p>
+            </div>
+          </div>
+          <Badge variant="outline" className="bg-primary/10">
+            <Sparkles className="h-3 w-3 mr-1 text-primary" />
+            AI Powered
+          </Badge>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="relative py-2 px-3 bg-background rounded-md">
-          <SquareAsterisk className="absolute -top-1 -left-1 h-4 w-4 text-primary opacity-60" />
-          <SquareAsterisk className="absolute -bottom-1 -right-1 h-4 w-4 text-primary opacity-60" />
-          <p className="text-sm italic relative">
-            {data?.advice || "No advice available for this entity."}
-          </p>
+        <ScrollArea className="max-h-[300px] pr-3">
+          {formattedAdvice.length > 0 ? (
+            <div className="space-y-3">
+              {formattedAdvice.map((paragraph, index) => (
+                <p key={index} className="text-sm">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">
+              No specific advice available for this {entityType} yet.
+            </p>
+          )}
+        </ScrollArea>
+        
+        <div className="flex flex-col gap-2 mt-4">
+          <div className="grid grid-cols-2 gap-2">
+            <Button 
+              variant="default" 
+              size="sm"
+              className="w-full text-xs"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+              Apply Advice
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs"
+              onClick={handleRegenerateAdvice}
+              disabled={isGenerating || isRefetching}
+            >
+              {isGenerating || isRefetching ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                  Regenerate
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
-};
+}
