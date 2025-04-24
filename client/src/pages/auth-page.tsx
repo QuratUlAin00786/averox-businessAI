@@ -80,7 +80,7 @@ export default function AuthPage() {
             <div className="flex justify-center mb-4">
               <img src={averoxLogo} alt="AVEROX Logo" className="h-10 object-contain" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">AVEROX Business AI</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Business AI</h1>
             <p className="text-muted-foreground mt-2">
               Sign in to your account or create a new one
             </p>
@@ -168,7 +168,7 @@ export default function AuthPage() {
                 <CardHeader>
                   <CardTitle>Create Account</CardTitle>
                   <CardDescription>
-                    Register for a new AVEROX Business AI account
+                    Register for a new Business AI account
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -318,7 +318,7 @@ export default function AuthPage() {
               Revolutionize Your Customer Relationships
             </h2>
             <p className="text-blue-700 mb-8">
-              AVEROX Business AI brings intelligent lead management, advanced analytics, and seamless team collaboration to help your business grow.
+              Business AI brings intelligent lead management, advanced analytics, and seamless team collaboration to help your business grow.
             </p>
             <div className="space-y-6">
               <div className="flex items-center">
