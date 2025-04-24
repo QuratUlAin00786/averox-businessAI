@@ -133,30 +133,56 @@ export function setupRoutes(app: any) {
             marketing: setupData.features.marketingAutomation,
             intelligence: setupData.features.aiAssistant,
             ecommerce: setupData.features.eCommerce,
+            ecommerceStore: setupData.features.eCommerce,
             support: setupData.features.supportTickets,
+            communicationCenter: true,
+            accounting: setupData.features.invoicing,
+            inventory: true,
+            workflows: setupData.features.marketingAutomation,
+            subscriptions: true,
+            training: true
+          },
+          dashboardPreferences: {
+            showSalesPipeline: true,
+            showRecentActivities: true,
+            showTasks: true,
+            showEvents: true,
+            showLeadsStats: true,
+            showConversionStats: true,
+            showRevenueStats: true,
+            showOpportunitiesStats: true,
+            pipelineChartType: 'pie' as const,
+            revenueChartType: 'line' as const,
+            leadsChartType: 'line' as const,
+            defaultTimeRange: 'month' as const,
+            showAIInsights: setupData.features.aiAssistant,
+            aiInsightTypes: ['all'],
+            aiInsightsCount: 3
           },
           enableOnboarding: setupData.userSettings.enableOnboarding
         };
         
-        await storage.saveSystemSettings(systemSettings);
+        await storage.saveSystemSettings(user.id, systemSettings);
         
         // 2. Store API keys
         // OpenAI API Key
         await storage.createApiKey({
           name: "OpenAI API Key",
           key: setupData.apiKeys.openAiKey,
-          provider: "OpenAI" as any,
+          provider: "OpenAI",
           isActive: true,
-          createdBy: user.id
+          ownerId: user.id,
+          userId: user.id
         });
         
         // Stripe Secret Key
         await storage.createApiKey({
           name: "Stripe Secret Key",
           key: setupData.apiKeys.stripeKey,
-          provider: "Stripe" as any,
+          provider: "Stripe",
           isActive: true,
-          createdBy: user.id
+          ownerId: user.id,
+          userId: user.id
         });
         
         // Stripe Public Key (stored in env vars and settings)
@@ -167,9 +193,10 @@ export function setupRoutes(app: any) {
           await storage.createApiKey({
             name: "SendGrid API Key",
             key: setupData.apiKeys.sendgridKey,
-            provider: "Other" as any,
+            provider: "Other",
             isActive: true,
-            createdBy: user.id
+            ownerId: user.id,
+            userId: user.id
           });
         }
         
