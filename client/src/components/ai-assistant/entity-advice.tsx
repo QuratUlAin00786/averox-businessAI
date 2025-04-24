@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sparkles,
@@ -22,6 +22,7 @@ interface EntityAdviceProps {
 export function EntityAdvice({ entityType, entityId }: EntityAdviceProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // Fetch personalized advice from the AI assistant API
   const { 
@@ -33,7 +34,21 @@ export function EntityAdvice({ entityType, entityId }: EntityAdviceProps) {
   } = useQuery<string>({
     queryKey: [`/api/ai-assistant/entity-advice/${entityType}/${entityId}`],
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+    retryDelay: 1000,
   });
+  
+  // Log the query status for debugging
+  useEffect(() => {
+    console.log(`[AI Assistant] Entity Advice Query Status:`, { 
+      entityType, 
+      entityId, 
+      hasData: !!advice, 
+      isLoading, 
+      hasError: !!error,
+      errorMessage: error instanceof Error ? error.message : String(error)
+    });
+  }, [entityType, entityId, advice, isLoading, error]);
   
   // Handle regenerating advice
   const handleRegenerateAdvice = async () => {
