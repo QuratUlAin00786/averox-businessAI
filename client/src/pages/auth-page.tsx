@@ -399,10 +399,10 @@ export default function AuthPage() {
               <img src={averoxLogo} alt="AVEROX Logo" className="h-16 object-contain" />
             </div>
             <h2 className="text-3xl font-bold text-blue-900 mb-6">
-              Revolutionize Your Customer Relationships
+              Boost Your Business with AI-Powered Solutions
             </h2>
             <p className="text-blue-700 mb-8">
-              Business AI brings intelligent lead management, advanced analytics, and seamless team collaboration to help your business grow.
+              Business AI delivers a complete suite of intelligent tools - from CRM to inventory management - with advanced analytics and AI-driven insights to transform your entire operation.
             </p>
             <div className="space-y-6">
               <div className="flex items-center">
@@ -412,8 +412,8 @@ export default function AuthPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900">Secure Data</h3>
-                  <p className="text-sm text-blue-700">Enterprise-grade security for all your customer data</p>
+                  <h3 className="font-semibold text-blue-900">Complete Business Suite</h3>
+                  <p className="text-sm text-blue-700">CRM, inventory, marketing, analytics, and more in one platform</p>
                 </div>
               </div>
               <div className="flex items-center">
@@ -437,8 +437,8 @@ export default function AuthPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900">Team Collaboration</h3>
-                  <p className="text-sm text-blue-700">Seamless workflows for your entire sales team</p>
+                  <h3 className="font-semibold text-blue-900">Seamless Integration</h3>
+                  <p className="text-sm text-blue-700">Connect all your business processes into one unified system</p>
                 </div>
               </div>
             </div>
