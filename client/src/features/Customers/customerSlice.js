@@ -1,156 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
-// Helper functions for API calls
-const apiUrl = process.env.API_URL || '';
-
-/**
- * Fetch all customers async thunk
- * @returns {Promise<Array>} List of customers
- */
-export const fetchCustomers = createAsyncThunk(
-  'customers/fetchCustomers',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/customers`, {
-        credentials: 'include',
-      });
-      
-      if (response.status === 401) {
-        return rejectWithValue('Authentication required');
-      }
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return rejectWithValue(data.error || 'Failed to fetch customers');
-      }
-      
-      return data;
-    } catch (error) {
-      return rejectWithValue('Network error. Please try again later.');
-    }
-  }
-);
-
-/**
- * Fetch a single customer by ID async thunk
- * @param {number} id - Customer ID
- * @returns {Promise<Object>} Customer data
- */
-export const fetchCustomerById = createAsyncThunk(
-  'customers/fetchCustomerById',
-  async (id, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/customers/${id}`, {
-        credentials: 'include',
-      });
-      
-      if (response.status === 401) {
-        return rejectWithValue('Authentication required');
-      }
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return rejectWithValue(data.error || 'Failed to fetch customer');
-      }
-      
-      return data;
-    } catch (error) {
-      return rejectWithValue('Network error. Please try again later.');
-    }
-  }
-);
-
-/**
- * Create a new customer async thunk
- * @param {Object} customerData - Customer data
- * @returns {Promise<Object>} Created customer data
- */
-export const createCustomer = createAsyncThunk(
-  'customers/createCustomer',
-  async (customerData, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/customers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(customerData),
-        credentials: 'include',
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return rejectWithValue(data.error || 'Failed to create customer');
-      }
-      
-      return data;
-    } catch (error) {
-      return rejectWithValue('Network error. Please try again later.');
-    }
-  }
-);
-
-/**
- * Update an existing customer async thunk
- * @param {Object} param0 - Object containing id and customerData
- * @param {number} param0.id - Customer ID
- * @param {Object} param0.customerData - Updated customer data
- * @returns {Promise<Object>} Updated customer data
- */
-export const updateCustomer = createAsyncThunk(
-  'customers/updateCustomer',
-  async ({ id, customerData }, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/customers/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(customerData),
-        credentials: 'include',
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return rejectWithValue(data.error || 'Failed to update customer');
-      }
-      
-      return data;
-    } catch (error) {
-      return rejectWithValue('Network error. Please try again later.');
-    }
-  }
-);
-
-/**
- * Delete a customer async thunk
- * @param {number} id - Customer ID
- * @returns {Promise<number>} Deleted customer ID
- */
-export const deleteCustomer = createAsyncThunk(
-  'customers/deleteCustomer',
-  async (id, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/customers/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        return rejectWithValue(data.error || 'Failed to delete customer');
-      }
-      
-      return id;
-    } catch (error) {
-      return rejectWithValue('Network error. Please try again later.');
-    }
-  }
-);
+import customerService from '../../services/customerService';
 
 // Initial state
 const initialState = {
@@ -160,106 +9,161 @@ const initialState = {
   error: null,
 };
 
-// Customers slice
-const customersSlice = createSlice({
+// Async thunks
+export const fetchCustomers = createAsyncThunk(
+  'customers/fetchCustomers',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await customerService.getCustomers();
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchCustomerById = createAsyncThunk(
+  'customers/fetchCustomerById',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await customerService.getCustomerById(id);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createCustomer = createAsyncThunk(
+  'customers/createCustomer',
+  async (customerData, { rejectWithValue }) => {
+    try {
+      const response = await customerService.createCustomer(customerData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateCustomer = createAsyncThunk(
+  'customers/updateCustomer',
+  async ({ id, customerData }, { rejectWithValue }) => {
+    try {
+      const response = await customerService.updateCustomer(id, customerData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const deleteCustomer = createAsyncThunk(
+  'customers/deleteCustomer',
+  async (id, { rejectWithValue }) => {
+    try {
+      await customerService.deleteCustomer(id);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Slice
+const customerSlice = createSlice({
   name: 'customers',
   initialState,
   reducers: {
-    clearError: (state) => {
-      state.error = null;
+    // Synchronous actions
+    setCurrentCustomer: (state, action) => {
+      state.currentCustomer = action.payload;
     },
     clearCurrentCustomer: (state) => {
       state.currentCustomer = null;
     },
+    updateCustomerSuccess: (state, action) => {
+      // Update customer in the list and current customer
+      const index = state.customers.findIndex(c => c.id === action.payload.id);
+      if (index !== -1) {
+        state.customers[index] = action.payload;
+      }
+      if (state.currentCustomer && state.currentCustomer.id === action.payload.id) {
+        state.currentCustomer = action.payload;
+      }
+    }
   },
   extraReducers: (builder) => {
-    // Fetch Customers
     builder
+      // Fetch customers
       .addCase(fetchCustomers.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchCustomers.fulfilled, (state, action) => {
-        state.loading = false;
         state.customers = action.payload;
+        state.loading = false;
       })
       .addCase(fetchCustomers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
-    
-    // Fetch Customer By ID
-    builder
+      })
+      // Fetch customer by id
       .addCase(fetchCustomerById.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchCustomerById.fulfilled, (state, action) => {
-        state.loading = false;
         state.currentCustomer = action.payload;
+        state.loading = false;
       })
       .addCase(fetchCustomerById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
-    
-    // Create Customer
-    builder
+      })
+      // Create customer
       .addCase(createCustomer.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(createCustomer.fulfilled, (state, action) => {
-        state.loading = false;
         state.customers.push(action.payload);
-        state.currentCustomer = action.payload;
+        state.loading = false;
       })
       .addCase(createCustomer.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
-    
-    // Update Customer
-    builder
+      })
+      // Update customer
       .addCase(updateCustomer.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(updateCustomer.fulfilled, (state, action) => {
-        state.loading = false;
-        // Update in the customers array
-        const index = state.customers.findIndex(
-          (customer) => customer.id === action.payload.id
-        );
+        const index = state.customers.findIndex(c => c.id === action.payload.id);
         if (index !== -1) {
           state.customers[index] = action.payload;
         }
-        // Update current customer if it's the same one
         if (state.currentCustomer && state.currentCustomer.id === action.payload.id) {
           state.currentCustomer = action.payload;
         }
+        state.loading = false;
       })
       .addCase(updateCustomer.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
-    
-    // Delete Customer
-    builder
+      })
+      // Delete customer
       .addCase(deleteCustomer.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(deleteCustomer.fulfilled, (state, action) => {
-        state.loading = false;
-        // Remove from customers array
-        state.customers = state.customers.filter(
-          (customer) => customer.id !== action.payload
-        );
-        // Clear current customer if it's the same one
+        state.customers = state.customers.filter(c => c.id !== action.payload);
         if (state.currentCustomer && state.currentCustomer.id === action.payload) {
           state.currentCustomer = null;
         }
+        state.loading = false;
       })
       .addCase(deleteCustomer.rejected, (state, action) => {
         state.loading = false;
@@ -268,6 +172,12 @@ const customersSlice = createSlice({
   },
 });
 
-export const { clearError, clearCurrentCustomer } = customersSlice.actions;
+// Export actions and reducer
+export const { setCurrentCustomer, clearCurrentCustomer, updateCustomerSuccess } = customerSlice.actions;
+export default customerSlice.reducer;
 
-export default customersSlice.reducer;
+// Selectors
+export const selectAllCustomers = (state) => state.customers.customers;
+export const selectCurrentCustomer = (state) => state.customers.currentCustomer;
+export const selectCustomerLoading = (state) => state.customers.loading;
+export const selectCustomerError = (state) => state.customers.error;

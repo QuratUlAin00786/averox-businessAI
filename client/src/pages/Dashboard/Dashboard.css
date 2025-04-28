@@ -1,6 +1,6 @@
-.dashboard {
-  max-width: 1600px;
-  margin: 0 auto;
+/* Dashboard Page Styles */
+.dashboard-page {
+  padding: 1rem;
 }
 
 /* Dashboard Header */
@@ -12,15 +12,9 @@
 }
 
 .dashboard-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #1e293b;
-}
-
-.dashboard-subtitle {
-  font-size: 1rem;
-  color: #64748b;
   margin: 0;
 }
 
@@ -29,127 +23,57 @@
   gap: 0.75rem;
 }
 
-.action-button {
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
+.button-primary,
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  background-color: white;
-  color: #1e293b;
-  border: 1px solid #e2e8f0;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  text-decoration: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
-.action-button:hover {
-  background-color: #f8fafc;
-}
-
-.action-button.primary {
+.button-primary {
   background-color: #2563eb;
   color: white;
   border: none;
 }
 
-.action-button.primary:hover {
+.button-primary:hover {
   background-color: #1d4ed8;
 }
 
-/* Metrics Grid */
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.metric-card {
+.button-secondary {
   background-color: white;
-  border-radius: 0.5rem;
-  padding: 1.25rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  display: flex;
-  align-items: center;
-}
-
-.metric-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  margin-right: 1rem;
-}
-
-.metric-icon.leads {
-  background-color: #eff6ff;
   color: #2563eb;
+  border: 1px solid #2563eb;
 }
 
-.metric-icon.deals {
-  background-color: #f0fdf4;
-  color: #16a34a;
+.button-secondary:hover {
+  background-color: #f8fafc;
+  border-color: #1d4ed8;
 }
 
-.metric-icon.revenue {
-  background-color: #fef2f2;
-  color: #dc2626;
+/* Dashboard Content */
+.dashboard-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
 }
 
-.metric-icon.tasks {
-  background-color: #f5f3ff;
-  color: #7c3aed;
-}
-
-.metric-content {
-  flex: 1;
-}
-
-.metric-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 0.25rem;
-}
-
-.metric-label {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.metric-change {
-  font-size: 0.875rem;
-  font-weight: 500;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-}
-
-.metric-change.positive {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.metric-change.negative {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-/* Dashboard Sections */
 .dashboard-section {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .section-title {
@@ -159,24 +83,60 @@
   margin: 0;
 }
 
-.section-action {
-  font-size: 0.875rem;
+.section-link {
   color: #2563eb;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-.section-action:hover {
+.section-link:hover {
   text-decoration: underline;
 }
 
-/* Dashboard Grid */
-.dashboard-grid {
+/* Dashboard Widgets */
+.dashboard-widgets {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
+}
+
+.widget {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.widget-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.widget-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.widget-link:hover {
+  text-decoration: underline;
+}
+
+.widget-content {
+  padding: 1.25rem;
 }
 
 /* Activity List */
@@ -189,50 +149,72 @@
 .activity-item {
   display: flex;
   align-items: flex-start;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.activity-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+  gap: 1rem;
 }
 
 .activity-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.375rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  margin-right: 1rem;
   flex-shrink: 0;
 }
 
-.activity-content {
+.activity-icon.customer {
+  background-color: #dbeafe;
+  position: relative;
+}
+
+.activity-icon.customer::before {
+  content: "👤";
+  font-size: 1.25rem;
+}
+
+.activity-icon.deal {
+  background-color: #dcfce7;
+  position: relative;
+}
+
+.activity-icon.deal::before {
+  content: "💰";
+  font-size: 1.25rem;
+}
+
+.activity-icon.task {
+  background-color: #fef3c7;
+  position: relative;
+}
+
+.activity-icon.task::before {
+  content: "✓";
+  font-size: 1.25rem;
+}
+
+.activity-details {
   flex: 1;
 }
 
-.activity-title {
-  font-weight: 500;
-  margin-bottom: 0.25rem;
+.activity-text {
+  margin: 0 0 0.25rem;
+  color: #334155;
+  font-size: 0.875rem;
+}
+
+.activity-highlight {
+  font-weight: 600;
   color: #1e293b;
 }
 
-.activity-description {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin-bottom: 0.25rem;
-}
-
 .activity-time {
+  margin: 0;
+  color: #64748b;
   font-size: 0.75rem;
-  color: #94a3b8;
 }
 
-/* Task List */
-.task-list {
+/* Tasks List */
+.tasks-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -241,109 +223,43 @@
 .task-item {
   display: flex;
   align-items: center;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  background-color: #f8fafc;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.task-item:last-child {
+  border-bottom: none;
 }
 
 .task-checkbox {
   margin-right: 0.75rem;
-}
-
-.task-checkbox input {
-  display: none;
-}
-
-.task-checkbox label {
-  display: block;
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid #cbd5e1;
-  border-radius: 0.25rem;
+  width: 1rem;
+  height: 1rem;
   cursor: pointer;
-  position: relative;
 }
 
-.task-checkbox input:checked + label {
-  background-color: #2563eb;
-  border-color: #2563eb;
-}
-
-.task-checkbox input:checked + label:after {
-  content: '';
-  position: absolute;
-  left: 0.375rem;
-  top: 0.125rem;
-  width: 0.375rem;
-  height: 0.75rem;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.task-content {
+.task-label {
   flex: 1;
-}
-
-.task-title {
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-  color: #1e293b;
+  font-size: 0.875rem;
+  color: #334155;
+  cursor: pointer;
 }
 
 .task-due {
   font-size: 0.75rem;
   color: #64748b;
+  margin-left: 0.75rem;
 }
 
-.task-priority {
-  font-size: 0.75rem;
-  font-weight: 500;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  text-align: center;
-  min-width: 4rem;
-}
-
-.task-priority.high {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.task-priority.medium {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.task-priority.normal {
-  background-color: #e0f2fe;
-  color: #0ea5e9;
-}
-
-/* Responsive styles */
-@media (max-width: 1024px) {
-  .metrics-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
+/* Responsive Styles */
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 1rem;
   }
   
-  .dashboard-actions {
-    margin-top: 1rem;
-  }
-  
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 576px) {
-  .metrics-grid {
+  .dashboard-widgets {
     grid-template-columns: 1fr;
   }
 }
