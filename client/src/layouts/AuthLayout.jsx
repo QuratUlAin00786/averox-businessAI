@@ -13,7 +13,7 @@ const AuthLayout = ({ children, title, subtitle }) => {
         <div className="auth-content">
           <div className="auth-header">
             <Link to="/" className="logo">
-              <h1 className="logo-text">CRM Pro</h1>
+              <h1 className="logo-text">AVEROX Business AI</h1>
             </Link>
             
             {title && <h2 className="auth-title">{title}</h2>}
@@ -26,14 +26,14 @@ const AuthLayout = ({ children, title, subtitle }) => {
           
           <div className="auth-footer">
             <p className="copyright">
-              &copy; {new Date().getFullYear()} CRM Pro. All rights reserved.
+              &copy; {new Date().getFullYear()} AVEROX Business AI. All rights reserved.
             </p>
           </div>
         </div>
         
         <div className="auth-backdrop">
           <div className="auth-features">
-            <h2 className="features-title">Transform Your Business with CRM Pro</h2>
+            <h2 className="features-title">Transform Your Business with AVEROX Business AI</h2>
             <ul className="features-list">
               <li className="feature-item">
                 <span className="feature-icon">📊</span>

@@ -73,7 +73,7 @@ const MainLayout = ({ children }) => {
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h2 className="app-title">CRM Pro</h2>
+          <h2 className="app-title">AVEROX Business AI</h2>
           <button className="sidebar-toggle" onClick={toggleSidebar}>
             {sidebarOpen ? '◀' : '▶'}
           </button>
