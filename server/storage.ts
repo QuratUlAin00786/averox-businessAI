@@ -17,6 +17,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   // Subscriptions
   createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
 }
@@ -47,6 +48,32 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Database error in createUser:', error);
       throw new Error('Failed to create user');
+    }
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    try {
+      // Check if user exists
+      const existingUser = await this.getUser(id);
+      if (!existingUser) {
+        return undefined;
+      }
+      
+      // Hash password if provided
+      if (userData.password) {
+        userData.password = await hashPassword(userData.password);
+      }
+      
+      const [updatedUser] = await db
+        .update(users)
+        .set(userData)
+        .where(eq(users.id, id))
+        .returning();
+        
+      return updatedUser;
+    } catch (error) {
+      console.error('Database error in updateUser:', error);
+      return undefined;
     }
   }
 
