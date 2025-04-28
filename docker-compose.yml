@@ -1,81 +1,33 @@
 version: '3.8'
 
 services:
-  # Database
-  postgres:
-    image: postgres:16-alpine
-    container_name: crm-postgres
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-crmuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crmpassword}
-      POSTGRES_DB: ${POSTGRES_DB:-crmdb}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - ./volumes/crm-db:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - crm-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crmuser} -d ${POSTGRES_DB:-crmdb}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Server
-  server:
+  app:
     build:
       context: .
-      dockerfile: Dockerfile.server
-    container_name: crm-server
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgres://${POSTGRES_USER:-crmuser}:${POSTGRES_PASSWORD:-crmpassword}@postgres:5432/${POSTGRES_DB:-crmdb}
-      PGPORT: 5432
-      PGUSER: ${POSTGRES_USER:-crmuser}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-crmpassword}
-      PGDATABASE: ${POSTGRES_DB:-crmdb}
-      PGHOST: postgres
-      CREATE_DEMO_ACCOUNTS: ${CREATE_DEMO_ACCOUNTS:-true}
-      # Add any additional environment variables here
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
-    networks:
-      - crm-network
-    restart: always
-    volumes:
-      - ./server:/app/server:ro
-      - ./shared:/app/shared:ro
-      - ./node_modules:/app/node_modules
-      - ./scripts:/app/scripts:ro
-
-  # Client
-  client:
-    build:
-      context: .
-      dockerfile: Dockerfile.client
-    container_name: crm-client
     depends_on:
-      - server
-    ports:
-      - "80:80"
-    networks:
-      - crm-network
+      - postgres
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/averox
+      - NODE_ENV=production
+      # Add other environment variables here or use a .env file
+    env_file:
+      - .env
     restart: always
-    volumes:
-      - ./client:/app/client:ro
 
-networks:
-  crm-network:
-    driver: bridge
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=averox
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
 
 volumes:
-  crm-db-data:
-    driver: local
+  postgres_data:
