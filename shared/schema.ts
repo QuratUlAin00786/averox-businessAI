@@ -668,6 +668,14 @@ export const products = pgTable("products", {
   dimensions: jsonb("dimensions"), // {length, width, height} in cm
   barcode: text("barcode"),
   tags: text("tags").array(),
+  materialType: materialTypeEnum("material_type"), // For manufacturing classification
+  unitOfMeasure: unitOfMeasureEnum("unit_of_measure"), // Unit for measurements
+  leadTime: integer("lead_time"), // Manufacturing lead time in days
+  isBillOfMaterial: boolean("is_bill_of_material").default(false), // Whether this is a BOM
+  isManufactured: boolean("is_manufactured").default(false), // Whether this product is manufactured in-house
+  defaultWarehouseId: integer("default_warehouse_id"), // Default warehouse for storage
+  qualityInspectionRequired: boolean("quality_inspection_required").default(false), // Whether QC is required
+  technicalSpecifications: jsonb("technical_specifications"), // Technical product specifications
 });
 
 // Inventory Transactions
@@ -752,8 +760,8 @@ export const inventoryTransactions = pgTable("inventory_transactions", {
   productId: integer("product_id").references(() => products.id).notNull(),
   quantity: integer("quantity").notNull(),
   type: inventoryTransactionTypeEnum("type").notNull(),
-  referenceType: text("reference_type"), // 'sale', 'purchase', 'adjustment', etc.
-  referenceId: integer("reference_id"), // ID of the sale, purchase, etc.
+  referenceType: text("reference_type"), // 'sale', 'purchase', 'adjustment', 'production', etc.
+  referenceId: integer("reference_id"), // ID of the sale, purchase, production order etc.
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
@@ -762,6 +770,8 @@ export const inventoryTransactions = pgTable("inventory_transactions", {
   batchId: text("batch_id"), // For batch tracking
   expiryDate: date("expiry_date"), // For perishable items
   serialNumber: text("serial_number"), // For serialized inventory
+  workCenterId: integer("work_center_id"), // Reference to manufacturing work center
+  qualityInspectionId: integer("quality_inspection_id"), // Reference to quality inspection
 });
 
 // Invoices
@@ -1124,6 +1134,636 @@ export type ProposalComment = typeof proposalComments.$inferSelect;
 
 export type InsertProposalActivity = z.infer<typeof insertProposalActivitySchema>;
 export type ProposalActivity = typeof proposalActivities.$inferSelect;
+
+// Manufacturing Module Tables
+
+// Warehouses
+export const warehouses = pgTable("warehouses", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  description: text("description"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zip: text("zip"),
+  country: text("country"),
+  contactPerson: text("contact_person"),
+  contactPhone: text("contact_phone"),
+  contactEmail: text("contact_email"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  ownerId: integer("owner_id").references(() => users.id),
+  parentWarehouseId: integer("parent_warehouse_id").references((): any => warehouses.id),
+  capacity: numeric("capacity"), // in cubic meters
+  utilizationRate: numeric("utilization_rate"), // percentage of capacity used
+  isManufacturing: boolean("is_manufacturing").default(false), // Whether manufacturing happens here
+});
+
+// Warehouse Zones/Sections
+export const warehouseZones = pgTable("warehouse_zones", {
+  id: serial("id").primaryKey(),
+  warehouseId: integer("warehouse_id").references(() => warehouses.id).notNull(),
+  name: text("name").notNull(),
+  code: text("code").notNull(),
+  description: text("description"),
+  zoneType: text("zone_type").notNull(), // 'storage', 'receiving', 'shipping', 'production', 'quality', etc.
+  capacity: numeric("capacity"), // in cubic meters
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// Work Centers (Manufacturing Machines/Cells/Lines)
+export const workCenters = pgTable("work_centers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  description: text("description"),
+  warehouseId: integer("warehouse_id").references(() => warehouses.id),
+  status: workCenterStatusEnum("status").default("Active"),
+  hourlyRate: numeric("hourly_rate"), // Cost per hour for the work center
+  capacity: numeric("capacity"), // Units per hour or appropriate measure
+  setupTime: numeric("setup_time"), // Average setup time in minutes
+  operatingHours: jsonb("operating_hours"), // JSON with operating schedule
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  maintenanceSchedule: jsonb("maintenance_schedule"), // Maintenance schedule info
+  equipmentList: text("equipment_list").array(), // List of equipment in this work center
+  departmentId: integer("department_id"), // Optional department reference
+  industryType: text("industry_type"), // 'pharmaceutical', 'textile', 'cement', etc.
+});
+
+// Bill of Materials (BOM)
+export const billOfMaterials = pgTable("bill_of_materials", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id).notNull(), // Finished good
+  name: text("name").notNull(),
+  version: text("version").notNull(),
+  isActive: boolean("is_active").default(true),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvalDate: date("approval_date"),
+  manufacturingType: manufacturingTypeEnum("manufacturing_type").default("Discrete"),
+  isDefault: boolean("is_default").default(false), // Whether this is the default BOM for the product
+  totalCost: numeric("total_cost"), // Calculated total cost of all components
+  notes: text("notes"),
+  revisionNotes: text("revision_notes"), // Notes about version changes
+  yield: numeric("yield").default("100"), // Expected yield percentage
+});
+
+// BOM Items (Components in a BOM)
+export const bomItems = pgTable("bom_items", {
+  id: serial("id").primaryKey(),
+  bomId: integer("bom_id").references(() => billOfMaterials.id).notNull(),
+  componentId: integer("component_id").references(() => products.id).notNull(), // Component product
+  quantity: numeric("quantity").notNull(),
+  unitOfMeasure: unitOfMeasureEnum("unit_of_measure").notNull(),
+  position: integer("position").default(0), // Position in the manufacturing process
+  isSubAssembly: boolean("is_sub_assembly").default(false), // Whether this component is itself a sub-assembly
+  scrapRate: numeric("scrap_rate").default("0"), // Expected percentage of scrap
+  notes: text("notes"),
+  isOptional: boolean("is_optional").default(false), // Whether component is optional
+  substitutes: jsonb("substitutes"), // Potential substitute components
+  operation: text("operation"), // Manufacturing operation for this component
+  workCenterId: integer("work_center_id").references(() => workCenters.id), // Work center where component is used
+});
+
+// Routing (Manufacturing Process Steps)
+export const routings = pgTable("routings", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  productId: integer("product_id").references(() => products.id), // Product this routing is for
+  bomId: integer("bom_id").references(() => billOfMaterials.id), // Associated BOM
+  version: text("version").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvalDate: date("approval_date"),
+  totalStandardHours: numeric("total_standard_hours"), // Total standard time for all operations
+  isDefault: boolean("is_default").default(false), // Default routing for the product
+});
+
+// Routing Operations (Steps in a Routing)
+export const routingOperations = pgTable("routing_operations", {
+  id: serial("id").primaryKey(),
+  routingId: integer("routing_id").references(() => routings.id).notNull(),
+  sequence: integer("sequence").notNull(), // Order in the routing
+  name: text("name").notNull(),
+  description: text("description"),
+  workCenterId: integer("work_center_id").references(() => workCenters.id).notNull(),
+  setupTime: numeric("setup_time"), // Setup time in minutes
+  runTime: numeric("run_time"), // Run time per unit in minutes
+  queueTime: numeric("queue_time"), // Queue time in minutes
+  waitTime: numeric("wait_time"), // Wait time in minutes
+  instructions: text("instructions"), // Detailed work instructions
+  qualityCheckRequired: boolean("quality_check_required").default(false),
+  inputMaterials: jsonb("input_materials"), // Materials needed at this operation
+  outputProducts: jsonb("output_products"), // Products/by-products produced at this operation
+});
+
+// Production Orders
+export const productionOrders = pgTable("production_orders", {
+  id: serial("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  bomId: integer("bom_id").references(() => billOfMaterials.id),
+  routingId: integer("routing_id").references(() => routings.id),
+  quantity: numeric("quantity").notNull(),
+  unitOfMeasure: unitOfMeasureEnum("unit_of_measure").notNull(),
+  status: productionOrderStatusEnum("status").default("Draft"),
+  priority: productionPriorityEnum("priority").default("Medium"),
+  plannedStartDate: timestamp("planned_start_date"),
+  plannedEndDate: timestamp("planned_end_date"),
+  actualStartDate: timestamp("actual_start_date"),
+  actualEndDate: timestamp("actual_end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+  warehouseId: integer("warehouse_id").references(() => warehouses.id),
+  notes: text("notes"),
+  completedQuantity: numeric("completed_quantity").default("0"),
+  rejectedQuantity: numeric("rejected_quantity").default("0"),
+  salesOrderId: integer("sales_order_id"), // Optional reference to sales order
+  batchNumber: text("batch_number"), // Batch/lot number for traceability
+  industryType: text("industry_type"), // 'pharmaceutical', 'textile', 'cement', etc.
+});
+
+// Production Order Operations
+export const productionOrderOperations = pgTable("production_order_operations", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  routingOperationId: integer("routing_operation_id").references(() => routingOperations.id),
+  sequence: integer("sequence").notNull(),
+  workCenterId: integer("work_center_id").references(() => workCenters.id).notNull(),
+  status: text("status").default("Not Started"),
+  plannedStartDate: timestamp("planned_start_date"),
+  plannedEndDate: timestamp("planned_end_date"),
+  actualStartDate: timestamp("actual_start_date"),
+  actualEndDate: timestamp("actual_end_date"),
+  setupTime: numeric("setup_time"), // Actual setup time
+  runTime: numeric("run_time"), // Actual run time
+  completedQuantity: numeric("completed_quantity").default("0"),
+  rejectedQuantity: numeric("rejected_quantity").default("0"),
+  operatorNotes: text("operator_notes"),
+  assignedTo: integer("assigned_to").references(() => users.id),
+});
+
+// Material Consumption for Production
+export const materialConsumptions = pgTable("material_consumptions", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  operationId: integer("operation_id").references(() => productionOrderOperations.id),
+  quantity: numeric("quantity").notNull(),
+  unitOfMeasure: unitOfMeasureEnum("unit_of_measure").notNull(),
+  transactionDate: timestamp("transaction_date").defaultNow(),
+  warehouseId: integer("warehouse_id").references(() => warehouses.id),
+  batchNumber: text("batch_number"),
+  createdBy: integer("created_by").references(() => users.id),
+  notes: text("notes"),
+  inventoryTransactionId: integer("inventory_transaction_id").references(() => inventoryTransactions.id),
+  isBackflushed: boolean("is_backflushed").default(false), // Whether materials were automatically consumed
+});
+
+// Quality Inspections
+export const qualityInspections = pgTable("quality_inspections", {
+  id: serial("id").primaryKey(),
+  referenceType: text("reference_type").notNull(), // 'production_order', 'purchase_order', 'inventory'
+  referenceId: integer("reference_id").notNull(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  inspectionDate: timestamp("inspection_date").defaultNow(),
+  inspectedBy: integer("inspected_by").references(() => users.id),
+  result: qualityInspectionResultEnum("result").notNull(),
+  quantity: numeric("quantity").notNull(),
+  quantityPassed: numeric("quantity_passed"),
+  quantityFailed: numeric("quantity_failed"),
+  notes: text("notes"),
+  batchNumber: text("batch_number"),
+  checklistData: jsonb("checklist_data"), // Checklist data in JSON format
+  attachments: text("attachments").array(), // Attachments like images, documents
+  warehouseId: integer("warehouse_id").references(() => warehouses.id),
+  operationId: integer("operation_id").references(() => productionOrderOperations.id),
+});
+
+// Quality Parameters
+export const qualityParameters = pgTable("quality_parameters", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  productId: integer("product_id").references(() => products.id), // For product-specific parameters
+  parameterType: text("parameter_type").notNull(), // 'numeric', 'boolean', 'text', etc.
+  uom: text("uom"), // Unit of measure
+  minimumValue: text("minimum_value"), // Minimum acceptable value (for numeric)
+  maximumValue: text("maximum_value"), // Maximum acceptable value (for numeric)
+  targetValue: text("target_value"), // Target value
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+  industryType: text("industry_type"), // 'pharmaceutical', 'textile', 'cement', etc.
+});
+
+// Quality Inspection Results
+export const qualityInspectionResults = pgTable("quality_inspection_results", {
+  id: serial("id").primaryKey(),
+  inspectionId: integer("inspection_id").references(() => qualityInspections.id).notNull(),
+  parameterId: integer("parameter_id").references(() => qualityParameters.id).notNull(),
+  value: text("value").notNull(), // Actual measured value
+  isPassed: boolean("is_passed").notNull(), // Whether this parameter passed
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+// Equipment
+export const equipment = pgTable("equipment", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  workCenterId: integer("work_center_id").references(() => workCenters.id),
+  status: equipmentStatusEnum("status").default("Operational"),
+  manufacturer: text("manufacturer"),
+  model: text("model"),
+  serialNumber: text("serial_number"),
+  purchaseDate: date("purchase_date"),
+  warrantyExpiryDate: date("warranty_expiry_date"),
+  lastMaintenanceDate: date("last_maintenance_date"),
+  nextMaintenanceDate: date("next_maintenance_date"),
+  maintenanceFrequency: integer("maintenance_frequency"), // In days
+  specifications: jsonb("specifications"), // Technical specifications
+  operatingProcedure: text("operating_procedure"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+  location: text("location"),
+  capacityPerHour: numeric("capacity_per_hour"), // Production capacity
+  powerConsumption: numeric("power_consumption"), // Power usage
+  industryType: text("industry_type"), // 'pharmaceutical', 'textile', 'cement', etc.
+});
+
+// Maintenance Requests
+export const maintenanceRequests = pgTable("maintenance_requests", {
+  id: serial("id").primaryKey(),
+  equipmentId: integer("equipment_id").references(() => equipment.id).notNull(),
+  requestType: maintenanceTypeEnum("request_type").default("Corrective"),
+  status: maintenanceStatusEnum("status").default("Scheduled"),
+  priority: productionPriorityEnum("priority").default("Medium"),
+  description: text("description").notNull(),
+  requestedBy: integer("requested_by").references(() => users.id).notNull(),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  requestDate: timestamp("request_date").defaultNow(),
+  scheduledDate: timestamp("scheduled_date"),
+  completionDate: timestamp("completion_date"),
+  notes: text("notes"),
+  resolutionDetails: text("resolution_details"),
+  partsUsed: jsonb("parts_used"), // Parts used in the maintenance
+  downtime: numeric("downtime"), // Downtime in hours
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// Manufacturing Shifts
+export const manufacturingShifts = pgTable("manufacturing_shifts", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  startTime: text("start_time").notNull(), // Start time in 24-hour format (HH:MM)
+  endTime: text("end_time").notNull(), // End time in 24-hour format (HH:MM)
+  workCenterId: integer("work_center_id").references(() => workCenters.id),
+  warehouseId: integer("warehouse_id").references(() => warehouses.id),
+  daysOfWeek: text("days_of_week").array(), // Days when shift is active
+  isActive: boolean("is_active").default(true),
+  supervisorId: integer("supervisor_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  breakTimes: jsonb("break_times"), // Break schedule
+  capacityFactor: numeric("capacity_factor").default("1"), // Capacity multiplier for this shift
+});
+
+// Shift Assignments
+export const shiftAssignments = pgTable("shift_assignments", {
+  id: serial("id").primaryKey(),
+  shiftId: integer("shift_id").references(() => manufacturingShifts.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  workCenterId: integer("work_center_id").references(() => workCenters.id),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+// Industry-specific tables
+
+// Pharmaceutical Industry
+export const pharmaManufacturing = pgTable("pharma_manufacturing", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  regulatoryBatchNumber: text("regulatory_batch_number").notNull(),
+  expiryDate: date("expiry_date").notNull(),
+  manufacturingDate: date("manufacturing_date").notNull(),
+  sterility: boolean("sterility").default(false),
+  containsControlledSubstances: boolean("contains_controlled_substances").default(false),
+  storageConditions: text("storage_conditions"),
+  regulatoryApprovals: jsonb("regulatory_approvals"), // FDA, EMA, etc. approvals
+  stabilityTestingRequired: boolean("stability_testing_required").default(false),
+  analyticalTesting: jsonb("analytical_testing"), // Testing data
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+// Textile Industry
+export const textileManufacturing = pgTable("textile_manufacturing", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  fiberType: text("fiber_type").notNull(), // Cotton, polyester, etc.
+  dyeingMethod: text("dyeing_method"),
+  colorCode: text("color_code"),
+  patternCode: text("pattern_code"),
+  gsm: numeric("gsm"), // Grams per square meter
+  finishingProcess: text("finishing_process"),
+  textureDetails: text("texture_details"),
+  yarnCount: text("yarn_count"),
+  fabricWidth: numeric("fabric_width"),
+  shrinkagePercentage: numeric("shrinkage_percentage"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+// Cement Industry
+export const cementManufacturing = pgTable("cement_manufacturing", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  cementType: text("cement_type").notNull(), // Portland, Masonry, etc.
+  strengthClass: text("strength_class"), // 32.5, 42.5, 52.5 MPa
+  composition: jsonb("composition"), // Detailed composition percentages
+  settingTime: numeric("setting_time"), // In minutes
+  clinkerFactor: numeric("clinker_factor"), // Amount of clinker
+  additives: jsonb("additives"), // Additives used
+  packagingType: text("packaging_type"), // Bulk, bag, etc.
+  qualityStandard: text("quality_standard"), // ASTM, EN, etc.
+  moisture: numeric("moisture"), // Moisture percentage
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+// Manufacturing cost tracking
+export const manufacturingCosts = pgTable("manufacturing_costs", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  materialCost: numeric("material_cost").default("0"),
+  laborCost: numeric("labor_cost").default("0"),
+  overheadCost: numeric("overhead_cost").default("0"),
+  setupCost: numeric("setup_cost").default("0"),
+  energyCost: numeric("energy_cost").default("0"),
+  additionalCosts: jsonb("additional_costs"), // Other specific costs
+  totalCost: numeric("total_cost").default("0"),
+  costPerUnit: numeric("cost_per_unit").default("0"),
+  currency: text("currency").default("USD"),
+  costingDate: timestamp("costing_date").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+  isActual: boolean("is_actual").default(false), // Whether costs are actual or estimated
+});
+
+// Manufacturing Formulas (for process manufacturing)
+export const manufacturingFormulas = pgTable("manufacturing_formulas", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  version: text("version").notNull(),
+  isActive: boolean("is_active").default(true),
+  description: text("description"),
+  batchSize: numeric("batch_size").notNull(),
+  unitOfMeasure: unitOfMeasureEnum("unit_of_measure").notNull(),
+  instructions: text("instructions"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by").references(() => users.id),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvalDate: date("approval_date"),
+  industryType: text("industry_type"), // 'pharmaceutical', 'chemical', etc.
+  yield: numeric("yield").default("100"), // Expected yield percentage
+  isDefault: boolean("is_default").default(false), // Default formula for the product
+});
+
+// Formula Ingredients
+export const formulaIngredients = pgTable("formula_ingredients", {
+  id: serial("id").primaryKey(),
+  formulaId: integer("formula_id").references(() => manufacturingFormulas.id).notNull(),
+  materialId: integer("material_id").references(() => products.id).notNull(),
+  quantity: numeric("quantity").notNull(),
+  unitOfMeasure: unitOfMeasureEnum("unit_of_measure").notNull(),
+  sequence: integer("sequence").default(0),
+  notes: text("notes"),
+  isOptional: boolean("is_optional").default(false),
+  substitutes: jsonb("substitutes"), // Possible substitutes
+  function: text("function"), // Function of this ingredient
+  criticalMaterial: boolean("critical_material").default(false), // Whether material is critical
+});
+
+// Insertion schemas for manufacturing module
+export const insertWarehouseSchema = createInsertSchema(warehouses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWarehouseZoneSchema = createInsertSchema(warehouseZones).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWorkCenterSchema = createInsertSchema(workCenters).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBillOfMaterialsSchema = createInsertSchema(billOfMaterials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  approvalDate: true,
+}).extend({
+  approvalDate: z.string().or(z.date()).nullable().optional(),
+});
+
+export const insertBomItemSchema = createInsertSchema(bomItems).omit({
+  id: true,
+});
+
+export const insertRoutingSchema = createInsertSchema(routings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  approvalDate: true,
+}).extend({
+  approvalDate: z.string().or(z.date()).nullable().optional(),
+});
+
+export const insertRoutingOperationSchema = createInsertSchema(routingOperations).omit({
+  id: true,
+});
+
+export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  actualStartDate: true,
+  actualEndDate: true,
+  plannedStartDate: true,
+  plannedEndDate: true,
+}).extend({
+  plannedStartDate: z.string().or(z.date()).nullable().optional(),
+  plannedEndDate: z.string().or(z.date()).nullable().optional(),
+  actualStartDate: z.string().or(z.date()).nullable().optional(),
+  actualEndDate: z.string().or(z.date()).nullable().optional(),
+});
+
+export const insertProductionOrderOperationSchema = createInsertSchema(productionOrderOperations).omit({
+  id: true,
+  actualStartDate: true,
+  actualEndDate: true,
+  plannedStartDate: true,
+  plannedEndDate: true,
+}).extend({
+  plannedStartDate: z.string().or(z.date()).nullable().optional(),
+  plannedEndDate: z.string().or(z.date()).nullable().optional(),
+  actualStartDate: z.string().or(z.date()).nullable().optional(),
+  actualEndDate: z.string().or(z.date()).nullable().optional(),
+});
+
+export const insertMaterialConsumptionSchema = createInsertSchema(materialConsumptions).omit({
+  id: true,
+  transactionDate: true,
+}).extend({
+  transactionDate: z.string().or(z.date()).nullable().optional(),
+});
+
+export const insertQualityInspectionSchema = createInsertSchema(qualityInspections).omit({
+  id: true,
+  inspectionDate: true,
+}).extend({
+  inspectionDate: z.string().or(z.date()).nullable().optional(),
+});
+
+export const insertQualityParameterSchema = createInsertSchema(qualityParameters).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertQualityInspectionResultSchema = createInsertSchema(qualityInspectionResults).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEquipmentSchema = createInsertSchema(equipment).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  purchaseDate: true,
+  warrantyExpiryDate: true,
+  lastMaintenanceDate: true,
+  nextMaintenanceDate: true,
+}).extend({
+  purchaseDate: z.string().or(z.date()).nullable().optional(),
+  warrantyExpiryDate: z.string().or(z.date()).nullable().optional(),
+  lastMaintenanceDate: z.string().or(z.date()).nullable().optional(),
+  nextMaintenanceDate: z.string().or(z.date()).nullable().optional(),
+});
+
+export const insertMaintenanceRequestSchema = createInsertSchema(maintenanceRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  requestDate: true,
+  scheduledDate: true,
+  completionDate: true,
+}).extend({
+  requestDate: z.string().or(z.date()).nullable().optional(),
+  scheduledDate: z.string().or(z.date()).nullable().optional(),
+  completionDate: z.string().or(z.date()).nullable().optional(),
+});
+
+export const insertManufacturingShiftSchema = createInsertSchema(manufacturingShifts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  startDate: z.string().or(z.date()),
+  endDate: z.string().or(z.date()).nullable().optional(),
+});
+
+// Types for Manufacturing Module
+export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
+export type Warehouse = typeof warehouses.$inferSelect;
+
+export type InsertWarehouseZone = z.infer<typeof insertWarehouseZoneSchema>;
+export type WarehouseZone = typeof warehouseZones.$inferSelect;
+
+export type InsertWorkCenter = z.infer<typeof insertWorkCenterSchema>;
+export type WorkCenter = typeof workCenters.$inferSelect;
+
+export type InsertBillOfMaterials = z.infer<typeof insertBillOfMaterialsSchema>;
+export type BillOfMaterials = typeof billOfMaterials.$inferSelect;
+
+export type InsertBomItem = z.infer<typeof insertBomItemSchema>;
+export type BomItem = typeof bomItems.$inferSelect;
+
+export type InsertRouting = z.infer<typeof insertRoutingSchema>;
+export type Routing = typeof routings.$inferSelect;
+
+export type InsertRoutingOperation = z.infer<typeof insertRoutingOperationSchema>;
+export type RoutingOperation = typeof routingOperations.$inferSelect;
+
+export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
+export type ProductionOrder = typeof productionOrders.$inferSelect;
+
+export type InsertProductionOrderOperation = z.infer<typeof insertProductionOrderOperationSchema>;
+export type ProductionOrderOperation = typeof productionOrderOperations.$inferSelect;
+
+export type InsertMaterialConsumption = z.infer<typeof insertMaterialConsumptionSchema>;
+export type MaterialConsumption = typeof materialConsumptions.$inferSelect;
+
+export type InsertQualityInspection = z.infer<typeof insertQualityInspectionSchema>;
+export type QualityInspection = typeof qualityInspections.$inferSelect;
+
+export type InsertQualityParameter = z.infer<typeof insertQualityParameterSchema>;
+export type QualityParameter = typeof qualityParameters.$inferSelect;
+
+export type InsertQualityInspectionResult = z.infer<typeof insertQualityInspectionResultSchema>;
+export type QualityInspectionResult = typeof qualityInspectionResults.$inferSelect;
+
+export type InsertEquipment = z.infer<typeof insertEquipmentSchema>;
+export type Equipment = typeof equipment.$inferSelect;
+
+export type InsertMaintenanceRequest = z.infer<typeof insertMaintenanceRequestSchema>;
+export type MaintenanceRequest = typeof maintenanceRequests.$inferSelect;
+
+export type InsertManufacturingShift = z.infer<typeof insertManufacturingShiftSchema>;
+export type ManufacturingShift = typeof manufacturingShifts.$inferSelect;
+
+export type InsertShiftAssignment = z.infer<typeof insertShiftAssignmentSchema>;
+export type ShiftAssignment = typeof shiftAssignments.$inferSelect;
 
 // Product and Inventory types
 export type InsertProductCategory = z.infer<typeof insertProductCategorySchema>;
