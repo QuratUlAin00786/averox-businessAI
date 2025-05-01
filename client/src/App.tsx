@@ -404,6 +404,12 @@ function Router() {
         </Layout>
       )} />
       
+      <ProtectedRoute path="/manufacturing/:parentPath/:childPath" component={({ params }: { params: { parentPath: string, childPath: string } }) => (
+        <Layout>
+          <Manufacturing subPath={`${params.parentPath}/${params.childPath}`} />
+        </Layout>
+      )} />
+      
       <Route component={NotFound} />
     </Switch>
   );
