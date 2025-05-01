@@ -3,7 +3,7 @@ import { db } from './db';
 import { eq, desc, and, like, or } from 'drizzle-orm';
 import { z } from 'zod';
 import { createInsertSchema } from 'drizzle-zod';
-import { 
+import {
   warehouses, 
   warehouse_zones as warehouseZones, 
   storage_bins as storageBins, 
@@ -20,9 +20,9 @@ import {
   shipment_compliance as shipmentCompliance,
   material_requirements as materialRequirements,
   material_forecasts as materialForecasts,
-  insertShipmentComplianceSchema,
-  inventoryTransactions
-} from '@shared/schema';
+  insertShipmentComplianceSchema
+} from '@shared/manufacturing-schema';
+import { inventoryTransactions } from '@shared/schema';
 
 const router = Router();
 
@@ -471,27 +471,21 @@ router.get('/trade-documents', async (req: Request, res: Response) => {
 // Get all shipment compliance records
 router.get('/shipment-compliance', async (req: Request, res: Response) => {
   try {
-    const { type, status, destination } = req.query;
+    const { shipmentType, documentStatus, documentType } = req.query;
     
     let query = db.select().from(shipmentCompliance);
     
     // Apply filters based on query parameters
-    if (type) {
-      query = query.where(eq(shipmentCompliance.type, type.toString() as any));
+    if (shipmentType) {
+      query = query.where(eq(shipmentCompliance.shipmentType, shipmentType.toString() as any));
     }
     
-    if (status) {
-      query = query.where(eq(shipmentCompliance.document_status, status.toString() as any));
+    if (documentStatus) {
+      query = query.where(eq(shipmentCompliance.documentStatus, documentStatus.toString() as any));
     }
     
-    if (destination) {
-      const searchTerm = destination.toString().toLowerCase();
-      query = query.where(
-        or(
-          like(shipmentCompliance.destination, `%${searchTerm}%`),
-          like(shipmentCompliance.country, `%${searchTerm}%`)
-        )
-      );
+    if (documentType) {
+      query = query.where(eq(shipmentCompliance.documentType, `%${documentType.toString()}%`));
     }
     
     const shipments = await query.orderBy(desc(shipmentCompliance.id));
@@ -500,53 +494,52 @@ router.get('/shipment-compliance', async (req: Request, res: Response) => {
     if (shipments.length === 0) {
       const initialShipments = [
         {
-          shipment_id: "SHP-001",
-          type: "Export" as const,
-          document_status: "Approved" as const,
-          country: "Germany",
-          destination: "Berlin",
-          document_count: 5,
-          compliance_level: "Full" as const,
-          last_updated: new Date(),
-          next_review_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          required_documents: JSON.stringify(["Export Declaration", "Certificate of Origin", "Commercial Invoice", "Packing List", "Dangerous Goods Declaration"]),
-          customs_value: 125000,
+          shipment_id: 1001,
+          document_type: "Export Declaration",
+          document_number: "EXP-2025-001",
+          issue_date: new Date(),
+          expiry_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+          issuing_authority: "Commerce Department",
+          compliance_level: "High",
+          document_status: "Verified",
+          shipment_type: "Export",
+          notes: "All export documentation complete and verified.",
+          digital_copy_url: "https://docs.averox.com/exports/EXP-2025-001.pdf",
           created_by: 1,
-          notes: "All documentation complete and approved."
+          created_at: new Date(),
+          updated_at: new Date()
         },
         {
-          shipment_id: "SHP-002",
-          type: "Import" as const,
-          document_status: "Pending" as const,
-          country: "China",
-          destination: "Shanghai",
-          document_count: 7,
-          compliance_level: "Partial" as const,
-          last_updated: new Date(),
-          next_review_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-          required_documents: JSON.stringify(["Import License", "Certificate of Origin", "Commercial Invoice", "Packing List", "Bill of Lading", "Import Declaration", "Inspection Certificate"]),
-          obtained_documents: JSON.stringify(["Commercial Invoice", "Packing List", "Bill of Lading"]),
-          missing_documents: JSON.stringify(["Import License", "Certificate of Origin", "Import Declaration", "Inspection Certificate"]),
-          customs_value: 85000,
+          shipment_id: 1002,
+          document_type: "Import License",
+          document_number: "IMP-2025-045",
+          issue_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+          expiry_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
+          issuing_authority: "Customs Authority",
+          compliance_level: "Medium",
+          document_status: "Pending",
+          shipment_type: "Import",
+          notes: "Pending final verification from customs authority.",
+          digital_copy_url: "https://docs.averox.com/imports/IMP-2025-045.pdf",
           created_by: 1,
-          notes: "Missing critical documentation."
+          created_at: new Date(),
+          updated_at: new Date()
         },
         {
-          shipment_id: "SHP-003",
-          type: "Export" as const,
-          document_status: "Rejected" as const,
-          country: "Brazil",
-          destination: "Sao Paulo",
-          document_count: 3,
-          compliance_level: "Non-Compliant" as const,
-          last_updated: new Date(),
-          next_review_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-          required_documents: JSON.stringify(["Export Declaration", "Certificate of Origin", "Commercial Invoice"]),
-          obtained_documents: JSON.stringify(["Commercial Invoice"]),
-          missing_documents: JSON.stringify(["Export Declaration", "Certificate of Origin"]),
-          customs_value: 45000,
+          shipment_id: 1003,
+          document_type: "Certificate of Origin",
+          document_number: "COO-2025-108",
+          issue_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+          expiry_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+          issuing_authority: "Chamber of Commerce",
+          compliance_level: "Low",
+          document_status: "Rejected",
+          shipment_type: "Export",
+          notes: "Document rejected due to incorrect country classification.",
+          digital_copy_url: "https://docs.averox.com/certificates/COO-2025-108.pdf",
           created_by: 1,
-          notes: "Export declaration rejected due to incorrect HS codes."
+          created_at: new Date(),
+          updated_at: new Date()
         }
       ];
       
