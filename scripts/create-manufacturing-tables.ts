@@ -1,5 +1,9 @@
-import { Pool } from '@neondatabase/serverless';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import ws from 'ws';
 import 'dotenv/config';
+
+// Configure the WebSocket constructor for NeonDB
+neonConfig.webSocketConstructor = ws;
 
 async function main() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -7,41 +11,134 @@ async function main() {
   try {
     console.log('Creating manufacturing module enums...');
     
-    // Create enums first
-    const createEnumsSQL = `
-      CREATE TYPE IF NOT EXISTS production_order_status AS ENUM ('Draft', 'Scheduled', 'InProgress', 'Completed', 'OnHold', 'Cancelled');
-      CREATE TYPE IF NOT EXISTS production_priority AS ENUM ('Critical', 'High', 'Medium', 'Low');
-      CREATE TYPE IF NOT EXISTS quality_inspection_result AS ENUM ('Pass', 'Fail', 'PendingReview', 'Acceptable', 'Rework');
-      CREATE TYPE IF NOT EXISTS maintenance_type AS ENUM ('Preventive', 'Corrective', 'Predictive', 'Condition-Based');
-      CREATE TYPE IF NOT EXISTS maintenance_status AS ENUM ('Scheduled', 'InProgress', 'Completed', 'Deferred', 'Cancelled');
-      CREATE TYPE IF NOT EXISTS equipment_status AS ENUM ('Operational', 'UnderMaintenance', 'Idle', 'Decommissioned', 'Faulty');
-      CREATE TYPE IF NOT EXISTS work_center_status AS ENUM ('Active', 'Inactive', 'AtCapacity', 'UnderMaintenance');
-      CREATE TYPE IF NOT EXISTS manufacturing_type AS ENUM ('Discrete', 'Process', 'Repetitive', 'Batch', 'Lean', 'Custom');
-      CREATE TYPE IF NOT EXISTS material_type AS ENUM ('RawMaterial', 'Intermediate', 'FinishedGood', 'Packaging', 'Consumable', 'Spare');
-      CREATE TYPE IF NOT EXISTS unit_of_measure AS ENUM ('Each', 'Kilogram', 'Gram', 'Liter', 'Milliliter', 'Meter', 'SquareMeter', 'CubicMeter', 'Hour', 'Minute', 'Ton', 'Dozen');
-    `;
-    
-    await pool.query(createEnumsSQL);
-    console.log('Enums created successfully');
-    
-    // Extend inventory_transaction_type enum
+    // Create enums one by one
     try {
-      await pool.query(`
-        ALTER TYPE inventory_transaction_type ADD VALUE IF NOT EXISTS 'Production';
-        ALTER TYPE inventory_transaction_type ADD VALUE IF NOT EXISTS 'Consumption';
-        ALTER TYPE inventory_transaction_type ADD VALUE IF NOT EXISTS 'QualityReject';
-        ALTER TYPE inventory_transaction_type ADD VALUE IF NOT EXISTS 'ScrapDisposal';
-        ALTER TYPE inventory_transaction_type ADD VALUE IF NOT EXISTS 'IntakeForProduction';
-        ALTER TYPE inventory_transaction_type ADD VALUE IF NOT EXISTS 'ProductionOutput';
-      `);
-      console.log('Extended inventory_transaction_type enum successfully');
+      console.log('Creating production_order_status enum...');
+      await pool.query(`CREATE TYPE production_order_status AS ENUM ('Draft', 'Scheduled', 'InProgress', 'Completed', 'OnHold', 'Cancelled');`);
     } catch (error) {
-      console.log('Could not extend inventory_transaction_type enum, may already include these values:', error.message);
+      console.log('production_order_status enum may already exist:', error.message);
     }
     
-    // Create warehouses table
-    const createWarehousesSQL = `
-      CREATE TABLE IF NOT EXISTS warehouses (
+    try {
+      console.log('Creating production_priority enum...');
+      await pool.query(`CREATE TYPE production_priority AS ENUM ('Critical', 'High', 'Medium', 'Low');`);
+    } catch (error) {
+      console.log('production_priority enum may already exist:', error.message);
+    }
+    
+    try {
+      console.log('Creating quality_inspection_result enum...');
+      await pool.query(`CREATE TYPE quality_inspection_result AS ENUM ('Pass', 'Fail', 'PendingReview', 'Acceptable', 'Rework');`);
+    } catch (error) {
+      console.log('quality_inspection_result enum may already exist:', error.message);
+    }
+    
+    try {
+      console.log('Creating maintenance_type enum...');
+      await pool.query(`CREATE TYPE maintenance_type AS ENUM ('Preventive', 'Corrective', 'Predictive', 'Condition-Based');`);
+    } catch (error) {
+      console.log('maintenance_type enum may already exist:', error.message);
+    }
+    
+    try {
+      console.log('Creating maintenance_status enum...');
+      await pool.query(`CREATE TYPE maintenance_status AS ENUM ('Scheduled', 'InProgress', 'Completed', 'Deferred', 'Cancelled');`);
+    } catch (error) {
+      console.log('maintenance_status enum may already exist:', error.message);
+    }
+    
+    try {
+      console.log('Creating equipment_status enum...');
+      await pool.query(`CREATE TYPE equipment_status AS ENUM ('Operational', 'UnderMaintenance', 'Idle', 'Decommissioned', 'Faulty');`);
+    } catch (error) {
+      console.log('equipment_status enum may already exist:', error.message);
+    }
+    
+    try {
+      console.log('Creating work_center_status enum...');
+      await pool.query(`CREATE TYPE work_center_status AS ENUM ('Active', 'Inactive', 'AtCapacity', 'UnderMaintenance');`);
+    } catch (error) {
+      console.log('work_center_status enum may already exist:', error.message);
+    }
+    
+    try {
+      console.log('Creating manufacturing_type enum...');
+      await pool.query(`CREATE TYPE manufacturing_type AS ENUM ('Discrete', 'Process', 'Repetitive', 'Batch', 'Lean', 'Custom');`);
+    } catch (error) {
+      console.log('manufacturing_type enum may already exist:', error.message);
+    }
+    
+    try {
+      console.log('Creating material_type enum...');
+      await pool.query(`CREATE TYPE material_type AS ENUM ('RawMaterial', 'Intermediate', 'FinishedGood', 'Packaging', 'Consumable', 'Spare');`);
+    } catch (error) {
+      console.log('material_type enum may already exist:', error.message);
+    }
+    
+    try {
+      console.log('Creating unit_of_measure enum...');
+      await pool.query(`CREATE TYPE unit_of_measure AS ENUM ('Each', 'Kilogram', 'Gram', 'Liter', 'Milliliter', 'Meter', 'SquareMeter', 'CubicMeter', 'Hour', 'Minute', 'Ton', 'Dozen');`);
+    } catch (error) {
+      console.log('unit_of_measure enum may already exist:', error.message);
+    }
+    console.log('Enums created successfully');
+    
+    // Extend inventory_transaction_type enum one by one
+    try {
+      await pool.query(`ALTER TYPE inventory_transaction_type ADD VALUE 'Production';`);
+      console.log('Added Production to inventory_transaction_type');
+    } catch (error) {
+      console.log('Production value may already exist in inventory_transaction_type');
+    }
+    
+    try {
+      await pool.query(`ALTER TYPE inventory_transaction_type ADD VALUE 'Consumption';`);
+      console.log('Added Consumption to inventory_transaction_type');
+    } catch (error) {
+      console.log('Consumption value may already exist in inventory_transaction_type');
+    }
+    
+    try {
+      await pool.query(`ALTER TYPE inventory_transaction_type ADD VALUE 'QualityReject';`);
+      console.log('Added QualityReject to inventory_transaction_type');
+    } catch (error) {
+      console.log('QualityReject value may already exist in inventory_transaction_type');
+    }
+    
+    try {
+      await pool.query(`ALTER TYPE inventory_transaction_type ADD VALUE 'ScrapDisposal';`);
+      console.log('Added ScrapDisposal to inventory_transaction_type');
+    } catch (error) {
+      console.log('ScrapDisposal value may already exist in inventory_transaction_type');
+    }
+    
+    try {
+      await pool.query(`ALTER TYPE inventory_transaction_type ADD VALUE 'IntakeForProduction';`);
+      console.log('Added IntakeForProduction to inventory_transaction_type');
+    } catch (error) {
+      console.log('IntakeForProduction value may already exist in inventory_transaction_type');
+    }
+    
+    try {
+      await pool.query(`ALTER TYPE inventory_transaction_type ADD VALUE 'ProductionOutput';`);
+      console.log('Added ProductionOutput to inventory_transaction_type');
+    } catch (error) {
+      console.log('ProductionOutput value may already exist in inventory_transaction_type');
+    }
+    
+    // Create warehouses table - check if it exists first
+    try {
+      const tableExists = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'warehouses'
+        );
+      `);
+      
+      if (!tableExists.rows[0].exists) {
+        const createWarehousesSQL = `
+          CREATE TABLE warehouses (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         code TEXT NOT NULL UNIQUE,
@@ -65,12 +162,28 @@ async function main() {
       );
     `;
     
-    await pool.query(createWarehousesSQL);
-    console.log('Warehouses table created successfully');
+        await pool.query(createWarehousesSQL);
+        console.log('Warehouses table created successfully');
+      } else {
+        console.log('Warehouses table already exists');
+      }
+    } catch (error) {
+      console.error('Error creating warehouses table:', error);
+    }
     
-    // Create warehouse_zones table
-    const createWarehouseZonesSQL = `
-      CREATE TABLE IF NOT EXISTS warehouse_zones (
+    // Create warehouse_zones table - check if it exists first
+    try {
+      const tableExists = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'warehouse_zones'
+        );
+      `);
+      
+      if (!tableExists.rows[0].exists) {
+        const createWarehouseZonesSQL = `
+          CREATE TABLE warehouse_zones (
         id SERIAL PRIMARY KEY,
         warehouse_id INTEGER REFERENCES warehouses(id) NOT NULL,
         name TEXT NOT NULL,
