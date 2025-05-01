@@ -4749,11 +4749,21 @@ export class DatabaseStorage implements IStorage {
 
       // Ensure quantity is a string as required by the database schema
       const transactionToInsert = {
-        ...transaction,
+        productId: transaction.productId,
         quantity: typeof transaction.quantity === 'number' 
           ? transaction.quantity.toString() 
           : transaction.quantity,
-        referenceId: processedReferenceId
+        type: transaction.type,
+        referenceType: transaction.referenceType,
+        referenceId: processedReferenceId,
+        notes: transaction.notes,
+        createdBy: transaction.createdBy,
+        unitCost: transaction.unitCost,
+        location: transaction.location,
+        batchId: transaction.batchId,
+        expiryDate: transaction.expiryDate,
+        serialNumber: transaction.serialNumber
+        // Removed workCenterId and qualityInspectionId as they might not be in the current DB schema
       };
       
       const [newTransaction] = await db.insert(inventoryTransactions).values(transactionToInsert).returning();
@@ -4912,7 +4922,7 @@ export class DatabaseStorage implements IStorage {
             productId: item.productId,
             quantity: item.quantity,
             type: 'Sale',
-            date: invoice.date || new Date(),
+            // issueDate instead of date which doesn't exist
             referenceId: item.invoiceId, // Just use the numeric ID
             referenceType: 'invoice', // Specify the type in the referenceType field
             notes: `Sold on invoice #${item.invoiceId}`
@@ -4956,7 +4966,6 @@ export class DatabaseStorage implements IStorage {
               productId: originalItem.productId,
               quantity: Math.abs(quantityDiff).toString(),
               type: quantityDiff < 0 ? 'Return' : 'Sale',
-              date: new Date(),
               referenceId: originalItem.invoiceId, // Use numeric ID
               referenceType: 'invoice-adjustment', // Specify the type in referenceType
               notes: `Adjusted quantity on invoice #${originalItem.invoiceId}`
@@ -4989,7 +4998,6 @@ export class DatabaseStorage implements IStorage {
             productId: item.productId,
             quantity: item.quantity, // quantity is already a string in the database
             type: 'Return',
-            date: new Date(),
             referenceId: item.invoiceId, // Use numeric ID
             referenceType: 'invoice-deletion', // Specify the type in referenceType
             notes: `Returned from deleted invoice item #${id}`
@@ -5164,7 +5172,6 @@ export class DatabaseStorage implements IStorage {
               productId: item.productId,
               quantity: received.quantity.toString(), // Ensure quantity is a string
               type: 'Purchase',
-              date: new Date(),
               referenceId: orderId, // Use numeric ID
               referenceType: 'purchase-order', // Specify the type in referenceType
               notes: `Received from purchase order #${orderId}`
