@@ -473,82 +473,105 @@ router.get('/shipment-compliance', async (req: Request, res: Response) => {
   try {
     const { shipmentType, documentStatus, documentType } = req.query;
     
-    let query = db.select().from(shipmentCompliance);
+    // Use raw SQL to bypass schema mismatches
+    let sql = `SELECT * FROM shipment_compliance`;
+    const whereConditions = [];
+    const params = [];
     
-    // Apply filters based on query parameters
     if (shipmentType) {
-      query = query.where(eq(shipmentCompliance.shipmentType, shipmentType.toString() as any));
+      whereConditions.push(`shipment_type = $${params.length + 1}`);
+      params.push(shipmentType.toString());
     }
     
     if (documentStatus) {
-      query = query.where(eq(shipmentCompliance.documentStatus, documentStatus.toString() as any));
+      whereConditions.push(`document_status = $${params.length + 1}`);
+      params.push(documentStatus.toString());
     }
     
     if (documentType) {
-      query = query.where(eq(shipmentCompliance.documentType, `%${documentType.toString()}%`));
+      whereConditions.push(`document_type LIKE $${params.length + 1}`);
+      params.push(`%${documentType.toString()}%`);
     }
     
-    const shipments = await query.orderBy(desc(shipmentCompliance.id));
+    if (whereConditions.length > 0) {
+      sql += ` WHERE ${whereConditions.join(' AND ')}`;
+    }
+    
+    sql += ` ORDER BY id DESC`;
+    
+    console.log('Executing SQL:', sql, 'with params:', params);
+    
+    const result = await db.execute(sql, params);
+    const shipments = result.rows;
     
     // If no records exist yet, create some initial data
     if (shipments.length === 0) {
-      const initialShipments = [
-        {
-          shipment_id: 1001,
-          document_type: "Export Declaration",
-          document_number: "EXP-2025-001",
-          issue_date: new Date(),
-          expiry_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-          issuing_authority: "Commerce Department",
-          compliance_level: "High",
-          document_status: "Verified",
-          shipment_type: "Export",
-          notes: "All export documentation complete and verified.",
-          digital_copy_url: "https://docs.averox.com/exports/EXP-2025-001.pdf",
-          created_by: 1,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          shipment_id: 1002,
-          document_type: "Import License",
-          document_number: "IMP-2025-045",
-          issue_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-          expiry_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
-          issuing_authority: "Customs Authority",
-          compliance_level: "Medium",
-          document_status: "Pending",
-          shipment_type: "Import",
-          notes: "Pending final verification from customs authority.",
-          digital_copy_url: "https://docs.averox.com/imports/IMP-2025-045.pdf",
-          created_by: 1,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          shipment_id: 1003,
-          document_type: "Certificate of Origin",
-          document_number: "COO-2025-108",
-          issue_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-          expiry_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
-          issuing_authority: "Chamber of Commerce",
-          compliance_level: "Low",
-          document_status: "Rejected",
-          shipment_type: "Export",
-          notes: "Document rejected due to incorrect country classification.",
-          digital_copy_url: "https://docs.averox.com/certificates/COO-2025-108.pdf",
-          created_by: 1,
-          created_at: new Date(),
-          updated_at: new Date()
-        }
-      ];
+      // Insert initial data using simpler direct SQL without parameters
+      const today = new Date().toISOString().split('T')[0];
+      const futureDate90 = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const pastDate15 = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const futureDate180 = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const pastDate5 = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const futureDate45 = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
-      for (const shipment of initialShipments) {
-        await db.insert(shipmentCompliance).values(shipment);
-      }
+      const nowTimestamp = new Date().toISOString();
+      
+      // Create the shipment compliance table if it doesn't exist
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS shipment_compliance (
+          id SERIAL PRIMARY KEY,
+          shipment_id INTEGER NOT NULL,
+          document_type VARCHAR(100) NOT NULL,
+          document_number VARCHAR(100),
+          issue_date DATE,
+          expiry_date DATE,
+          issuing_authority VARCHAR(100),
+          compliance_level compliance_level,
+          document_status shipment_document_status,
+          shipment_type shipment_type,
+          notes TEXT,
+          digital_copy_url VARCHAR(255),
+          created_by INTEGER,
+          created_at TIMESTAMP,
+          updated_at TIMESTAMP
+        )
+      `);
+      
+      // Insert using direct values without parameters
+      await db.execute(`
+        INSERT INTO shipment_compliance (
+          shipment_id, document_type, document_number, 
+          issue_date, expiry_date, issuing_authority, 
+          compliance_level, document_status, shipment_type, 
+          notes, digital_copy_url, created_by, 
+          created_at, updated_at
+        ) VALUES 
+        (
+          1001, 'Export Declaration', 'EXP-2025-001', 
+          '${today}', '${futureDate90}', 'Commerce Department', 
+          'High', 'Verified', 'Export', 
+          'All export documentation complete and verified.', 'https://docs.averox.com/exports/EXP-2025-001.pdf', 1, 
+          '${nowTimestamp}', '${nowTimestamp}'
+        ),
+        (
+          1002, 'Import License', 'IMP-2025-045', 
+          '${pastDate15}', '${futureDate180}', 'Customs Authority', 
+          'Medium', 'Pending', 'Import', 
+          'Pending final verification from customs authority.', 'https://docs.averox.com/imports/IMP-2025-045.pdf', 1, 
+          '${nowTimestamp}', '${nowTimestamp}'
+        ),
+        (
+          1003, 'Certificate of Origin', 'COO-2025-108', 
+          '${pastDate5}', '${futureDate45}', 'Chamber of Commerce', 
+          'Low', 'Rejected', 'Export', 
+          'Document rejected due to incorrect country classification.', 'https://docs.averox.com/certificates/COO-2025-108.pdf', 1, 
+          '${nowTimestamp}', '${nowTimestamp}'
+        )
+      `);
       
       // Fetch the newly inserted data
-      const newShipments = await db.select().from(shipmentCompliance).orderBy(desc(shipmentCompliance.id));
+      const result = await db.execute(`SELECT * FROM shipment_compliance ORDER BY id DESC`);
+      const newShipments = result.rows;
       res.json(newShipments);
     } else {
       res.json(shipments);
@@ -562,18 +585,61 @@ router.get('/shipment-compliance', async (req: Request, res: Response) => {
 // Add new shipment compliance record
 router.post('/shipment-compliance', async (req: Request, res: Response) => {
   try {
-    const shipmentData = insertShipmentComplianceSchema.parse(req.body);
+    // Create a schema based on our actual database columns
+    const shipmentComplianceSchema = z.object({
+      shipment_id: z.number(),
+      document_type: z.string(),
+      document_number: z.string().optional(),
+      issue_date: z.string().or(z.date()).optional(), // Accept string or date format
+      expiry_date: z.string().or(z.date()).optional(), // Accept string or date format
+      issuing_authority: z.string().optional(),
+      compliance_level: z.enum(['High', 'Medium', 'Low']),
+      document_status: z.enum(['Required', 'Submitted', 'Verified', 'Pending', 'Rejected']),
+      shipment_type: z.enum(['Import', 'Export', 'Domestic', 'Transit']),
+      notes: z.string().optional(),
+      digital_copy_url: z.string().optional()
+    });
     
-    const [newShipment] = await db.insert(shipmentCompliance)
-      .values({
-        ...shipmentData,
-        created_by: req.user?.id || 1,
-        last_updated: new Date(),
-        created_at: new Date()
-      })
-      .returning();
+    const validatedData = shipmentComplianceSchema.parse(req.body);
     
-    res.status(201).json(newShipment);
+    // Format dates in the expected format for the database
+    const formatDate = (date: string | Date | undefined) => {
+      if (!date) return null;
+      return date instanceof Date ? date.toISOString().split('T')[0] : date;
+    };
+    
+    const now = new Date().toISOString();
+    
+    // Build the SQL insert with properly formatted values
+    const result = await db.execute(`
+      INSERT INTO shipment_compliance (
+        shipment_id, document_type, document_number, 
+        issue_date, expiry_date, issuing_authority, 
+        compliance_level, document_status, shipment_type, 
+        notes, digital_copy_url, created_by, 
+        created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+      ) RETURNING *
+    `, [
+      validatedData.shipment_id,
+      validatedData.document_type,
+      validatedData.document_number || null,
+      formatDate(validatedData.issue_date),
+      formatDate(validatedData.expiry_date),
+      validatedData.issuing_authority || null,
+      validatedData.compliance_level,
+      validatedData.document_status,
+      validatedData.shipment_type,
+      validatedData.notes || null,
+      validatedData.digital_copy_url || null,
+      req.user?.id || 1,
+      now,
+      now
+    ]);
+    
+    // Return the newly created record
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating shipment compliance record:', error);
     if (error instanceof z.ZodError) {
@@ -589,15 +655,16 @@ router.get('/shipment-compliance/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const [shipment] = await db.select()
-      .from(shipmentCompliance)
-      .where(eq(shipmentCompliance.id, Number(id)));
+    // Use direct SQL to avoid schema mismatches
+    const result = await db.execute(`
+      SELECT * FROM shipment_compliance WHERE id = $1
+    `, [id]);
     
-    if (!shipment) {
+    if (!result.rows.length) {
       return res.status(404).json({ error: 'Shipment compliance record not found' });
     }
     
-    res.json(shipment);
+    res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching shipment compliance record:', error);
     res.status(500).json({ error: 'Failed to fetch shipment compliance record' });
@@ -608,26 +675,130 @@ router.get('/shipment-compliance/:id', async (req: Request, res: Response) => {
 router.put('/shipment-compliance/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const shipmentData = req.body;
     
-    const [updatedShipment] = await db.update(shipmentCompliance)
-      .set({
-        ...shipmentData,
-        updated_by: req.user?.id || 1,
-        updated_at: new Date(),
-        last_updated: new Date()
-      })
-      .where(eq(shipmentCompliance.id, Number(id)))
-      .returning();
+    // Create a schema for updates based on our actual database columns
+    const shipmentComplianceUpdateSchema = z.object({
+      shipment_id: z.number().optional(),
+      document_type: z.string().optional(),
+      document_number: z.string().optional(),
+      issue_date: z.string().or(z.date()).optional(), // Accept string or date format
+      expiry_date: z.string().or(z.date()).optional(), // Accept string or date format
+      issuing_authority: z.string().optional(),
+      compliance_level: z.enum(['High', 'Medium', 'Low']).optional(),
+      document_status: z.enum(['Required', 'Submitted', 'Verified', 'Pending', 'Rejected']).optional(),
+      shipment_type: z.enum(['Import', 'Export', 'Domestic', 'Transit']).optional(),
+      notes: z.string().optional(),
+      digital_copy_url: z.string().optional()
+    });
     
-    if (!updatedShipment) {
+    const validatedData = shipmentComplianceUpdateSchema.parse(req.body);
+    
+    // Format dates in the expected format for the database
+    const formatDate = (date: string | Date | undefined) => {
+      if (!date) return null;
+      return date instanceof Date ? date.toISOString().split('T')[0] : date;
+    };
+    
+    // First check if the record exists
+    const checkResult = await db.execute(`
+      SELECT id FROM shipment_compliance WHERE id = $1
+    `, [id]);
+    
+    if (checkResult.rows.length === 0) {
       return res.status(404).json({ error: 'Shipment compliance record not found' });
     }
     
-    res.json(updatedShipment);
+    // Build the update SQL query dynamically based on provided fields
+    let updateFields = [];
+    let params = [];
+    let paramIndex = 1;
+    
+    if (validatedData.shipment_id !== undefined) {
+      updateFields.push(`shipment_id = $${paramIndex++}`);
+      params.push(validatedData.shipment_id);
+    }
+    
+    if (validatedData.document_type !== undefined) {
+      updateFields.push(`document_type = $${paramIndex++}`);
+      params.push(validatedData.document_type);
+    }
+    
+    if (validatedData.document_number !== undefined) {
+      updateFields.push(`document_number = $${paramIndex++}`);
+      params.push(validatedData.document_number);
+    }
+    
+    if (validatedData.issue_date !== undefined) {
+      updateFields.push(`issue_date = $${paramIndex++}`);
+      params.push(formatDate(validatedData.issue_date));
+    }
+    
+    if (validatedData.expiry_date !== undefined) {
+      updateFields.push(`expiry_date = $${paramIndex++}`);
+      params.push(formatDate(validatedData.expiry_date));
+    }
+    
+    if (validatedData.issuing_authority !== undefined) {
+      updateFields.push(`issuing_authority = $${paramIndex++}`);
+      params.push(validatedData.issuing_authority);
+    }
+    
+    if (validatedData.compliance_level !== undefined) {
+      updateFields.push(`compliance_level = $${paramIndex++}`);
+      params.push(validatedData.compliance_level);
+    }
+    
+    if (validatedData.document_status !== undefined) {
+      updateFields.push(`document_status = $${paramIndex++}`);
+      params.push(validatedData.document_status);
+    }
+    
+    if (validatedData.shipment_type !== undefined) {
+      updateFields.push(`shipment_type = $${paramIndex++}`);
+      params.push(validatedData.shipment_type);
+    }
+    
+    if (validatedData.notes !== undefined) {
+      updateFields.push(`notes = $${paramIndex++}`);
+      params.push(validatedData.notes);
+    }
+    
+    if (validatedData.digital_copy_url !== undefined) {
+      updateFields.push(`digital_copy_url = $${paramIndex++}`);
+      params.push(validatedData.digital_copy_url);
+    }
+    
+    // Always update the updated_at timestamp
+    updateFields.push(`updated_at = $${paramIndex++}`);
+    params.push(new Date().toISOString());
+    
+    // Add ID as the last parameter
+    params.push(Number(id));
+    
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+    
+    // Execute the update query
+    const result = await db.execute(`
+      UPDATE shipment_compliance
+      SET ${updateFields.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `, params);
+    
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'Shipment compliance record not found' });
+    }
+    
+    res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating shipment compliance record:', error);
-    res.status(500).json({ error: 'Failed to update shipment compliance record' });
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: error.errors });
+    } else {
+      res.status(500).json({ error: 'Failed to update shipment compliance record' });
+    }
   }
 });
 
