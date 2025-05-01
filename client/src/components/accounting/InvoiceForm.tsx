@@ -57,7 +57,7 @@ const invoiceSchema = z.object({
   totalAmount: z.string().default("0"),
   items: z.array(invoiceItemSchema).min(1, { message: "At least one item is required" }),
   paymentTerms: z.string().optional(),
-  paymentMethod: z.string().optional(),
+  paymentMethod: z.enum(["Cash", "Credit Card", "Bank Transfer", "Check", "PayPal", "Other"]),
   paymentReference: z.string().optional(),
   ownerId: z.number().nullable().optional(),
 });
@@ -125,7 +125,7 @@ export default function InvoiceForm({ invoiceId, onSuccess }: InvoiceFormProps) 
         },
       ],
       paymentTerms: "30 days",
-      paymentMethod: "",
+      paymentMethod: "Cash",
       paymentReference: "",
       ownerId: null,
     },
