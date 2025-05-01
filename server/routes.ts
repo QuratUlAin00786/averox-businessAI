@@ -10,6 +10,8 @@ import { setupMarketingRoutes } from "./marketing-routes";
 import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
 import manufacturingRouter from "./manufacturing-routes";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -44,8 +46,6 @@ import {
   // Database schema tables
   systemSettings
 } from "@shared/schema";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { 
   isOpenAIQuotaError, 
