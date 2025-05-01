@@ -81,6 +81,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up company setup wizard routes
   setupRoutes(app);
   
+  // Set up manufacturing module routes
+  app.use('/api/manufacturing', manufacturingRouter);
+  
   // Add permission methods to storage
   if ('initializePermissions' in storage) {
     // Initialize default permissions

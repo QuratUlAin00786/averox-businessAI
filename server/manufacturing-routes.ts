@@ -17,15 +17,16 @@ import {
   equipment,
   maintenance_requests
 } from '../shared/manufacturing-schema';
-import { authenticateAPI, checkRolePermission } from './auth';
+import { isAuthenticated } from './middleware/auth';
+import { requirePermission } from './permissions-manager';
 
 // Create router
 const router = express.Router();
 
 // Middleware to authenticate and check permission
 const checkManufacturingPermission = (action: string) => [
-  authenticateAPI,
-  checkRolePermission('manufacturing', action)
+  isAuthenticated,
+  requirePermission('manufacturing', action)
 ];
 
 // Warehouses Routes
