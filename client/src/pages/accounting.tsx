@@ -623,8 +623,8 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
                     </CardFooter>
                   </Card>
                 ))
-              ) : invoices?.length > 0 ? (
-                invoices.map((invoice) => (
+              ) : getFilteredData()?.length > 0 ? (
+                getFilteredData().map((invoice) => (
                   <Link key={invoice.id} href={`/accounting/invoices/${invoice.id}`}>
                     <Card className="hover:shadow-md transition-shadow cursor-pointer">
                       <CardHeader className="pb-2">
@@ -663,15 +663,49 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
                 <div className="col-span-full flex flex-col items-center justify-center p-8 border rounded-lg bg-muted/10">
                   <FileText size={48} className="text-muted-foreground mb-4" />
                   <h3 className="text-xl font-medium mb-2">No Invoices Found</h3>
-                  <p className="text-muted-foreground text-center mb-4">
-                    You haven't created any invoices yet. Create your first invoice to get started.
-                  </p>
-                  <Button 
-                    onClick={() => setLocation("/accounting/invoices/new")}
-                    className="flex items-center gap-2"
-                  >
-                    <PlusCircle size={16} /> Create Invoice
-                  </Button>
+                  {(filters.status.length > 0 || filters.minAmount || filters.maxAmount || filters.account || 
+                    (dateRange.startDate && dateRange.endDate)) ? (
+                    <div className="space-y-4">
+                      <p className="text-muted-foreground text-center">
+                        No invoices match your current filter criteria.
+                      </p>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setFilters({
+                            status: [],
+                            minAmount: '',
+                            maxAmount: '',
+                            account: ''
+                          });
+                          setDateRange({
+                            startDate: undefined,
+                            endDate: undefined,
+                            field: 'createdAt'
+                          });
+                          setSortOption({
+                            field: 'createdAt',
+                            direction: 'desc'
+                          });
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <X size={16} /> Clear All Filters
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground text-center mb-4">
+                        You haven't created any invoices yet. Create your first invoice to get started.
+                      </p>
+                      <Button 
+                        onClick={() => setLocation("/accounting/invoices/new")}
+                        className="flex items-center gap-2"
+                      >
+                        <PlusCircle size={16} /> Create Invoice
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -700,8 +734,8 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
                     </CardFooter>
                   </Card>
                 ))
-              ) : purchaseOrders?.length > 0 ? (
-                purchaseOrders.map((po) => (
+              ) : getFilteredData()?.length > 0 ? (
+                getFilteredData().map((po) => (
                   <Link key={po.id} href={`/accounting/purchase-orders/${po.id}`}>
                     <Card className="hover:shadow-md transition-shadow cursor-pointer">
                       <CardHeader className="pb-2">
@@ -740,15 +774,49 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
                 <div className="col-span-full flex flex-col items-center justify-center p-8 border rounded-lg bg-muted/10">
                   <ShoppingBag size={48} className="text-muted-foreground mb-4" />
                   <h3 className="text-xl font-medium mb-2">No Purchase Orders Found</h3>
-                  <p className="text-muted-foreground text-center mb-4">
-                    You haven't created any purchase orders yet. Create your first purchase order to get started.
-                  </p>
-                  <Button 
-                    onClick={() => setLocation("/accounting/purchase-orders/new")}
-                    className="flex items-center gap-2"
-                  >
-                    <PlusCircle size={16} /> Create Purchase Order
-                  </Button>
+                  {(filters.status.length > 0 || filters.minAmount || filters.maxAmount || filters.account || 
+                    (dateRange.startDate && dateRange.endDate)) ? (
+                    <div className="space-y-4">
+                      <p className="text-muted-foreground text-center">
+                        No purchase orders match your current filter criteria.
+                      </p>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setFilters({
+                            status: [],
+                            minAmount: '',
+                            maxAmount: '',
+                            account: ''
+                          });
+                          setDateRange({
+                            startDate: undefined,
+                            endDate: undefined,
+                            field: 'createdAt'
+                          });
+                          setSortOption({
+                            field: 'createdAt',
+                            direction: 'desc'
+                          });
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <X size={16} /> Clear All Filters
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground text-center mb-4">
+                        You haven't created any purchase orders yet. Create your first purchase order to get started.
+                      </p>
+                      <Button 
+                        onClick={() => setLocation("/accounting/purchase-orders/new")}
+                        className="flex items-center gap-2"
+                      >
+                        <PlusCircle size={16} /> Create Purchase Order
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
