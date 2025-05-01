@@ -1,73 +1,121 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { useLocation, useRoute, Link, Route, Switch } from 'wouter';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Loader2, ArrowLeft } from 'lucide-react';
+
+// Import all manufacturing components
 import ManufacturingDashboard from './components/ManufacturingDashboard';
-import WarehousesList from './components/WarehousesList';
 import WorkCentersList from './components/WorkCentersList';
-import ProductionOrdersList from './components/ProductionOrdersList';
+import WarehousesList from './components/WarehousesList';
 import BillOfMaterialsList from './components/BillOfMaterialsList';
-import EquipmentList from './components/EquipmentList';
-import MaintenanceRequestsList from './components/MaintenanceRequestsList';
+import ProductionOrdersList from './components/ProductionOrdersList';
 import QualityInspectionsList from './components/QualityInspectionsList';
+import MaintenanceRequestsList from './components/MaintenanceRequestsList';
 
-type ManufacturingProps = {
-  subPath?: string;
-};
+export default function Manufacturing() {
+  const [location, setLocation] = useLocation();
+  const [match, params] = useRoute('/manufacturing/:subPath');
+  const subPath = match ? params.subPath : '';
 
-export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
-  const [, setLocation] = useLocation();
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  // Initialize selected tab based on URL
+  const [selectedTab, setSelectedTab] = useState<string>('dashboard');
 
-  // Update tab based on subPath
+  // Update selected tab when URL changes
   useEffect(() => {
-    // If subPath is provided, set the tab accordingly
     if (subPath) {
-      setCurrentTab(subPath);
+      setSelectedTab(subPath);
+    } else {
+      // Default to dashboard if no subPath
+      setSelectedTab('dashboard');
     }
   }, [subPath]);
 
-  // Handle tab change
+  // Navigate when tab changes
   const handleTabChange = (value: string) => {
-    setCurrentTab(value);
-    // Update URL to reflect the current tab
-    if (value === 'dashboard') {
-      setLocation('/manufacturing');
-    } else {
-      setLocation(`/manufacturing/${value}`);
-    }
+    setSelectedTab(value);
+    setLocation(`/manufacturing/${value}`);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Manufacturing</h2>
-        <p className="text-muted-foreground">
-          Manage your manufacturing operations, work centers, equipment, and production orders.
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Link href="/">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <h2 className="text-2xl font-bold">Manufacturing</h2>
+        </div>
       </div>
 
-      <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="warehouses">Warehouses</TabsTrigger>
-          <TabsTrigger value="work-centers">Work Centers</TabsTrigger>
-          <TabsTrigger value="production-orders">Production Orders</TabsTrigger>
-          <TabsTrigger value="bom">Bill of Materials</TabsTrigger>
-          <TabsTrigger value="equipment">Equipment</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-          <TabsTrigger value="quality">Quality</TabsTrigger>
+      <Tabs value={selectedTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="bg-background border-b grid grid-cols-7 rounded-none w-full justify-start">
+          <TabsTrigger value="dashboard" className="text-sm">Dashboard</TabsTrigger>
+          <TabsTrigger value="workcenters" className="text-sm">Work Centers</TabsTrigger>
+          <TabsTrigger value="warehouses" className="text-sm">Warehouses</TabsTrigger>
+          <TabsTrigger value="bom" className="text-sm">Bill of Materials</TabsTrigger>
+          <TabsTrigger value="production" className="text-sm">Production Orders</TabsTrigger>
+          <TabsTrigger value="quality" className="text-sm">Quality Control</TabsTrigger>
+          <TabsTrigger value="maintenance" className="text-sm">Maintenance</TabsTrigger>
         </TabsList>
 
-        {currentTab === 'dashboard' && <ManufacturingDashboard />}
-        {currentTab === 'warehouses' && <WarehousesList />}
-        {currentTab === 'work-centers' && <WorkCentersList />}
-        {currentTab === 'production-orders' && <ProductionOrdersList />}
-        {currentTab === 'bom' && <BillOfMaterialsList />}
-        {currentTab === 'equipment' && <EquipmentList />}
-        {currentTab === 'maintenance' && <MaintenanceRequestsList />}
-        {currentTab === 'quality' && <QualityInspectionsList />}
+        <TabsContent value="dashboard" className="mt-0">
+          <ManufacturingDashboard />
+        </TabsContent>
+        
+        <TabsContent value="workcenters" className="mt-0">
+          <WorkCentersList />
+        </TabsContent>
+        
+        <TabsContent value="warehouses" className="mt-0">
+          <WarehousesList />
+        </TabsContent>
+        
+        <TabsContent value="bom" className="mt-0">
+          <BillOfMaterialsList />
+        </TabsContent>
+        
+        <TabsContent value="production" className="mt-0">
+          <ProductionOrdersList />
+        </TabsContent>
+        
+        <TabsContent value="quality" className="mt-0">
+          <QualityInspectionsList />
+        </TabsContent>
+        
+        <TabsContent value="maintenance" className="mt-0">
+          <MaintenanceRequestsList />
+        </TabsContent>
       </Tabs>
+
+      {/* Alternative routing approach using wouter Switch/Route if needed */}
+      {/* 
+      <Switch>
+        <Route path="/manufacturing" exact>
+          <ManufacturingDashboard />
+        </Route>
+        <Route path="/manufacturing/workcenters">
+          <WorkCentersList />
+        </Route>
+        <Route path="/manufacturing/warehouses">
+          <WarehousesList />
+        </Route>
+        <Route path="/manufacturing/bom">
+          <BillOfMaterialsList />
+        </Route>
+        <Route path="/manufacturing/production">
+          <ProductionOrdersList />
+        </Route>
+        <Route path="/manufacturing/quality">
+          <QualityInspectionsList />
+        </Route>
+        <Route path="/manufacturing/maintenance">
+          <MaintenanceRequestsList />
+        </Route>
+      </Switch>
+      */}
     </div>
   );
 }
