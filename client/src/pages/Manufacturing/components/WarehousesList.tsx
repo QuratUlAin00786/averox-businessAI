@@ -20,14 +20,22 @@ import {
   Mail,
   Users,
   BarChart3,
-  ArrowUpDown
+  ArrowUpDown,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
+import WarehouseForm from './WarehouseForm';
 
 export default function WarehousesList() {
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
+  const { toast } = useToast();
+  
   // Fetch warehouses from the API
-  const { data: warehouses, isLoading, error } = useQuery({
+  const { data: warehouses, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/manufacturing/warehouses'],
     queryFn: async () => {
       const response = await fetch('/api/manufacturing/warehouses');
@@ -197,15 +205,61 @@ export default function WarehousesList() {
     );
   }
 
+  // Function to handle delete warehouse
+  const handleDeleteWarehouse = async (warehouseId: number) => {
+    if (window.confirm('Are you sure you want to delete this warehouse?')) {
+      try {
+        const response = await fetch(`/api/manufacturing/warehouses/${warehouseId}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete warehouse');
+        }
+        
+        // Refetch the warehouses after deletion
+        refetch();
+        
+        toast({
+          title: "Warehouse deleted",
+          description: "The warehouse has been successfully deleted.",
+        });
+      } catch (error) {
+        console.error('Error deleting warehouse:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to delete warehouse. Please try again.",
+        });
+      }
+    }
+  };
+
+  // Function to handle edit warehouse
+  const handleEditWarehouse = (warehouse: any) => {
+    setSelectedWarehouse(warehouse);
+    setFormOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-semibold">Warehouses</h3>
-        <Button>
+        <Button onClick={() => {
+          setSelectedWarehouse(null);
+          setFormOpen(true);
+        }}>
           <Plus className="h-4 w-4 mr-2" />
           New Warehouse
         </Button>
       </div>
+
+      {/* Warehouse Form Dialog */}
+      <WarehouseForm 
+        open={formOpen} 
+        onOpenChange={setFormOpen} 
+        initialData={selectedWarehouse} 
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {displayData.map((warehouse) => (
@@ -219,16 +273,18 @@ export default function WarehousesList() {
                   </CardTitle>
                   <CardDescription>{warehouse.code}</CardDescription>
                 </div>
-                {warehouse.isManufacturing && (
-                  <Badge className="bg-purple-100 text-purple-800">
-                    Manufacturing
-                  </Badge>
-                )}
-                {!warehouse.isActive && (
-                  <Badge variant="outline" className="border-red-200 text-red-800">
-                    Inactive
-                  </Badge>
-                )}
+                <div className="flex gap-1 items-start">
+                  {warehouse.isManufacturing && (
+                    <Badge className="bg-purple-100 text-purple-800">
+                      Manufacturing
+                    </Badge>
+                  )}
+                  {!warehouse.isActive && (
+                    <Badge variant="outline" className="border-red-200 text-red-800">
+                      Inactive
+                    </Badge>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -300,12 +356,23 @@ export default function WarehousesList() {
               </div>
             </CardContent>
             <CardFooter className="flex gap-2 pt-0">
-              <Button variant="outline" size="sm" className="flex-1">
-                View Details
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={() => handleEditWarehouse(warehouse)}
+              >
+                <Pencil className="h-4 w-4 mr-1" />
+                Edit
               </Button>
-              <Button variant="outline" size="sm" className="flex-1">
-                <BarChart3 className="h-4 w-4 mr-1" />
-                Inventory
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={() => handleDeleteWarehouse(warehouse.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
               </Button>
             </CardFooter>
           </Card>

@@ -71,16 +71,29 @@ router.get('/warehouses/:id', checkManufacturingPermission('view'), async (req, 
 router.post('/warehouses', checkManufacturingPermission('create'), async (req, res) => {
   try {
     const warehouseData = req.body;
+    
+    // Convert numeric values
+    if (warehouseData.capacity) {
+      warehouseData.capacity = Number(warehouseData.capacity);
+    }
+    
+    // Handle defaulting utilization rate to 0 for new warehouses
+    if (!warehouseData.utilization_rate) {
+      warehouseData.utilization_rate = 0;
+    } else {
+      warehouseData.utilization_rate = Number(warehouseData.utilization_rate);
+    }
+    
     const [newWarehouse] = await db.insert(warehouses).values({
       ...warehouseData,
       created_at: new Date(),
-      owner_id: req.user.id
+      owner_id: req.user?.id || null
     }).returning();
     
     res.status(201).json(newWarehouse);
   } catch (error) {
     console.error('Error creating warehouse:', error);
-    res.status(500).json({ error: 'Failed to create warehouse' });
+    res.status(500).json({ error: 'Failed to create warehouse', details: error.message });
   }
 });
 
