@@ -9,7 +9,7 @@ import { migrationRouter } from "./migrations/migration-routes";
 import { setupMarketingRoutes } from "./marketing-routes";
 import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
-import manufacturingRouter from "./manufacturing-routes";
+import manufacturingRouter from "./manufacturing-routes-fixed";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { 
@@ -85,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up company setup wizard routes
   setupRoutes(app);
   
-  // Set up manufacturing module routes
+  // Set up manufacturing module routes - using fixed routes that match the existing database schema
   app.use('/api/manufacturing', manufacturingRouter);
   
   // Add permission methods to storage
