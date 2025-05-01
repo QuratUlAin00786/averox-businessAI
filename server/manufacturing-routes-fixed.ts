@@ -10,95 +10,127 @@ const router = Router();
 router.get('/mrp/dashboard', async (req: Request, res: Response) => {
   try {
     // Get low stock items - using products table instead of materials
-    const lowStockItems = await db.execute(sql`
-      SELECT 
-        p.id as material_id,
-        p.name as material_name,
-        p.sku as material_code,
-        p.reorder_level as reorder_point,
-        COALESCE(
-          (SELECT SUM(bl.quantity) 
-           FROM batch_lots bl 
-           WHERE bl.product_id = p.id 
-           AND bl.status NOT IN ('Consumed', 'Expired', 'Rejected')),
-          0
-        ) as current_quantity
-      FROM products p
-      WHERE p.is_active = true
-      AND (
-        (p.reorder_level IS NOT NULL AND 
-         COALESCE(
-           (SELECT SUM(bl.quantity) 
-            FROM batch_lots bl 
-            WHERE bl.product_id = p.id 
-            AND bl.status NOT IN ('Consumed', 'Expired', 'Rejected')),
-           0
-         ) <= p.reorder_level)
-      )
-      ORDER BY current_quantity ASC
-      LIMIT 10
-    `);
-    
-    // Get upcoming material requirements - using material_requirements table that already exists
-    const upcomingRequirements = await db.execute(sql`
-      WITH material_needs AS (
+    let lowStockItems = [];
+    try {
+      lowStockItems = await db.execute(sql`
         SELECT 
           p.id as material_id,
           p.name as material_name,
           p.sku as material_code,
-          COALESCE(SUM(mr.required_quantity), 0) as required_quantity,
-          MIN(mr.required_date) as earliest_required_date,
+          p.reorder_level as reorder_point,
           COALESCE(
             (SELECT SUM(bl.quantity) 
              FROM batch_lots bl 
              WHERE bl.product_id = p.id 
              AND bl.status NOT IN ('Consumed', 'Expired', 'Rejected')),
             0
-          ) as available_quantity
+          ) as current_quantity
         FROM products p
-        JOIN material_requirements mr ON p.id = mr.product_id
-        WHERE mr.fulfilled = false
-        AND mr.required_date >= CURRENT_DATE
-        GROUP BY p.id, p.name, p.sku
-      )
-      SELECT 
-        material_id,
-        material_name,
-        material_code,
-        required_quantity,
-        available_quantity,
-        earliest_required_date,
-        CASE 
-          WHEN available_quantity >= required_quantity THEN 'Sufficient'
-          ELSE 'Shortage'
-        END as status,
-        CASE
-          WHEN available_quantity >= required_quantity THEN 100
-          WHEN required_quantity > 0 THEN ROUND((available_quantity / required_quantity) * 100)
-          ELSE 0
-        END as coverage_percentage
-      FROM material_needs
-      WHERE required_quantity > 0
-      ORDER BY earliest_required_date ASC
-      LIMIT 10
-    `);
+        WHERE p.is_active = true
+        AND (
+          (p.reorder_level IS NOT NULL AND 
+           COALESCE(
+             (SELECT SUM(bl.quantity) 
+              FROM batch_lots bl 
+              WHERE bl.product_id = p.id 
+              AND bl.status NOT IN ('Consumed', 'Expired', 'Rejected')),
+             0
+           ) <= p.reorder_level)
+        )
+        ORDER BY current_quantity ASC
+        LIMIT 10
+      `);
+    } catch (lowStockError) {
+      console.error('Error fetching low stock items:', lowStockError);
+      // Fallback to simpler query without batch_lots table
+      try {
+        lowStockItems = await db.execute(sql`
+          SELECT 
+            p.id as material_id,
+            p.name as material_name,
+            p.sku as material_code,
+            p.reorder_level as reorder_point,
+            p.stock_quantity as current_quantity
+          FROM products p
+          WHERE p.is_active = true
+          AND p.reorder_level IS NOT NULL
+          AND p.stock_quantity <= p.reorder_level
+          ORDER BY p.stock_quantity ASC
+          LIMIT 10
+        `);
+      } catch (fallbackLowStockError) {
+        console.error('Fallback low stock query also failed:', fallbackLowStockError);
+        // If even the simple fallback fails, just return an empty array
+        lowStockItems = [];
+      }
+    }
     
-    // Get active forecasts - using material_forecasts table
-    const forecasts = await db.execute(sql`
-      SELECT 
-        id,
-        name,
-        description,
-        start_date as "startDate",
-        end_date as "endDate",
-        status,
-        created_at as "createdAt",
-        created_by as "createdBy"
-      FROM material_forecasts
-      WHERE status = 'Active'
-      ORDER BY created_at DESC
-      LIMIT 5
-    `);
+    // Initialize empty arrays for the other data
+    let upcomingRequirements = [];
+    let forecasts = [];
+    
+    // Only try to fetch material requirements if we succeeded with low stock items
+    if (lowStockItems.length > 0) {
+      try {
+        // Check if required columns exist
+        const columnsCheck = await db.execute(sql`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'material_requirements' 
+          AND column_name IN ('due_date', 'required_quantity', 'available_quantity')
+        `);
+        
+        const columns = columnsCheck.map(col => col.column_name);
+        
+        if (columns.includes('due_date') && columns.includes('required_quantity')) {
+          upcomingRequirements = await db.execute(sql`
+            SELECT 
+              mr.id,
+              p.id as material_id,
+              p.name as material_name,
+              p.sku as material_code,
+              mr.required_quantity,
+              mr.due_date as earliest_required_date
+            FROM material_requirements mr
+            JOIN products p ON mr.product_id = p.id
+            ORDER BY mr.due_date ASC
+            LIMIT 10
+          `);
+        }
+      } catch (error) {
+        console.error('Error fetching material requirements:', error);
+      }
+      
+      // Try to fetch forecasts
+      try {
+        const forecastsCheck = await db.execute(sql`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_name = 'material_forecasts'
+          ) as exists
+        `);
+        
+        if (forecastsCheck[0].exists) {
+          forecasts = await db.execute(sql`
+            SELECT 
+              id,
+              name,
+              description,
+              start_date as "startDate",
+              end_date as "endDate",
+              status,
+              created_at as "createdAt",
+              created_by as "createdBy"
+            FROM material_forecasts
+            WHERE status = 'Active'
+            ORDER BY created_at DESC
+            LIMIT 5
+          `);
+        }
+      } catch (error) {
+        console.error('Error fetching forecasts:', error);
+      }
+    }
     
     return res.json({
       lowStockItems,
