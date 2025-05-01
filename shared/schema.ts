@@ -2,6 +2,9 @@ import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, date, numer
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Export manufacturing module components
+export * from './manufacturing-schema';
+
 // Enums
 export const leadStatusEnum = pgEnum('lead_status', ['New', 'Qualified', 'Contacted', 'Not Interested', 'Converted']);
 export const opportunityStageEnum = pgEnum('opportunity_stage', ['Lead Generation', 'Qualification', 'Proposal', 'Negotiation', 'Closing']);
