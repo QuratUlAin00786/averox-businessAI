@@ -37,6 +37,13 @@ export default function BatchLotManagement() {
     error: batchLotsError
   } = useQuery({
     queryKey: ['/api/manufacturing/batch-lots'],
+    queryFn: async () => {
+      const response = await fetch('/api/manufacturing/batch-lots');
+      if (!response.ok) {
+        throw new Error('Failed to fetch batch/lot data');
+      }
+      return response.json();
+    },
     enabled: activeTab === 'current'
   });
 
@@ -48,6 +55,13 @@ export default function BatchLotManagement() {
     error: expiringLotsError
   } = useQuery({
     queryKey: ['/api/manufacturing/batch-lots/expiring', { days: 90 }],
+    queryFn: async () => {
+      const response = await fetch('/api/manufacturing/batch-lots/expiring?days=90');
+      if (!response.ok) {
+        throw new Error('Failed to fetch expiring batch/lot data');
+      }
+      return response.json();
+    },
     enabled: activeTab === 'expiring'
   });
 

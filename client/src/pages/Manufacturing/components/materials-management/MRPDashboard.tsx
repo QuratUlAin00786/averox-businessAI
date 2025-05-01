@@ -34,6 +34,13 @@ export default function MRPDashboard() {
   
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['/api/manufacturing/mrp/dashboard'],
+    queryFn: async () => {
+      const response = await fetch('/api/manufacturing/mrp/dashboard');
+      if (!response.ok) {
+        throw new Error('Failed to fetch MRP dashboard data');
+      }
+      return response.json();
+    },
     enabled: true
   });
 

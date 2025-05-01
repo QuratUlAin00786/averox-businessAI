@@ -29,6 +29,13 @@ export default function StorageBinManagement() {
     error: storageBinsError
   } = useQuery({
     queryKey: ['/api/manufacturing/warehouse/bins'],
+    queryFn: async () => {
+      const response = await fetch('/api/manufacturing/warehouse/bins');
+      if (!response.ok) {
+        throw new Error('Failed to fetch storage bins data');
+      }
+      return response.json();
+    },
     enabled: activeTab === 'bins'
   });
 
@@ -40,6 +47,13 @@ export default function StorageBinManagement() {
     error: warehousesError 
   } = useQuery({
     queryKey: ['/api/manufacturing/storage/locations'],
+    queryFn: async () => {
+      const response = await fetch('/api/manufacturing/storage/locations');
+      if (!response.ok) {
+        throw new Error('Failed to fetch storage locations data');
+      }
+      return response.json();
+    },
     enabled: activeTab === 'warehouses'
   });
 
