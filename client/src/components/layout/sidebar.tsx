@@ -24,7 +24,10 @@ import {
   ShoppingCart,
   Store,
   Mail,
-  Megaphone
+  Megaphone,
+  Factory,
+  Warehouse,
+  FileText
 } from "lucide-react";
 import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
@@ -65,6 +68,11 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: "Audience Segments", path: '/marketing/segment-builder', icon: <Users className="w-5 h-5" />, key: null, isSubmenu: true },
     { name: t.navigation.communicationCenter, path: '/communication-center', icon: <MessageSquare className="w-5 h-5" />, key: 'communicationCenter' as keyof MenuVisibilitySettings },
     { name: t.navigation.accounting, path: '/accounting', icon: <Calculator className="w-5 h-5" />, key: 'accounting' as keyof MenuVisibilitySettings },
+    { name: "Manufacturing", path: '/manufacturing', icon: <Factory className="w-5 h-5" />, key: null }, // Always visible
+    { name: "Production Lines", path: '/manufacturing/production-lines', icon: <Workflow className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Warehouses", path: '/manufacturing/warehouses', icon: <Warehouse className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Quality Control", path: '/manufacturing/quality-control', icon: <CheckSquare className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Work Orders", path: '/manufacturing/work-orders', icon: <FileText className="w-5 h-5" />, key: null, isSubmenu: true },
     { name: t.navigation.inventory, path: '/inventory', icon: <PackageOpen className="w-5 h-5" />, key: 'inventory' as keyof MenuVisibilitySettings },
     { name: t.navigation.supportTickets, path: '/support-tickets', icon: <TicketCheck className="w-5 h-5" />, key: 'supportTickets' as keyof MenuVisibilitySettings },
     { name: t.navigation.ecommerce, path: '/ecommerce', icon: <ShoppingCart className="w-5 h-5" />, key: 'ecommerce' as keyof MenuVisibilitySettings },
@@ -134,7 +142,19 @@ export default function Sidebar({ className = "" }: SidebarProps) {
 
   const getBusinessItems = () => {
     return navItems.filter(item => 
-      ['/accounting', '/inventory', '/support-tickets', '/ecommerce', '/ecommerce-store'].includes(item.path)
+      ['/accounting', '/manufacturing', '/inventory', '/support-tickets', '/ecommerce', '/ecommerce-store'].includes(item.path)
+    );
+  };
+  
+  // Get Manufacturing submenu items
+  const getManufacturingItems = () => {
+    return navItems.filter(item => 
+      item.isSubmenu && [
+        '/manufacturing/production-lines', 
+        '/manufacturing/warehouses', 
+        '/manufacturing/quality-control',
+        '/manufacturing/work-orders'
+      ].includes(item.path)
     );
   };
 
@@ -190,6 +210,12 @@ export default function Sidebar({ className = "" }: SidebarProps) {
             </div>
             <div className="px-2 space-y-1">
               {renderNavItems(getBusinessItems())}
+              {/* Add Manufacturing submenu items after Manufacturing menu item */}
+              {isActive('/manufacturing') && getManufacturingItems().length > 0 && (
+                <div className="mt-1 border-l-2 border-primary pl-2">
+                  {renderNavItems(getManufacturingItems())}
+                </div>
+              )}
             </div>
           </>
         )}
