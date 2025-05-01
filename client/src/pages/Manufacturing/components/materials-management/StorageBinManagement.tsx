@@ -14,21 +14,74 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, AlertCircle, Plus } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export default function StorageBinManagement() {
   const [activeTab, setActiveTab] = useState('bins');
+  const [searchTerm, setSearchTerm] = useState('');
   
-  const { data: warehouseData, isLoading } = useQuery({
+  // Fetch storage bins with utilization data
+  const { 
+    data: storageData, 
+    isLoading: isLoadingStorageBins, 
+    isError: isStorageBinsError,
+    error: storageBinsError
+  } = useQuery({
     queryKey: ['/api/manufacturing/warehouse/bins'],
-    enabled: true
+    enabled: activeTab === 'bins'
   });
+
+  // Fetch warehouses (top-level storage locations)
+  const { 
+    data: warehousesData, 
+    isLoading: isLoadingWarehouses,
+    isError: isWarehousesError,
+    error: warehousesError 
+  } = useQuery({
+    queryKey: ['/api/manufacturing/storage/locations'],
+    enabled: activeTab === 'warehouses'
+  });
+
+  const isLoading = (activeTab === 'bins' && isLoadingStorageBins) || 
+                    (activeTab === 'warehouses' && isLoadingWarehouses);
+  
+  const isError = (activeTab === 'bins' && isStorageBinsError) || 
+                  (activeTab === 'warehouses' && isWarehousesError);
+  
+  const error = activeTab === 'bins' ? storageBinsError : warehousesError;
+
+  // Filter storage bins based on search term
+  const filteredStorageBins = storageData && searchTerm
+    ? storageData.filter(bin => 
+        bin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        bin.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (bin.parent_name && bin.parent_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : storageData;
+
+  // Filter warehouses to only show top-level locations
+  const warehouses = warehousesData?.filter(location => 
+    location.type === 'Warehouse' || !location.parentId
+  );
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-[400px] w-full" />
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Alert variant="destructive" className="my-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          {error instanceof Error ? error.message : 'Failed to load storage data'}
+        </AlertDescription>
+      </Alert>
     );
   }
 
@@ -52,7 +105,10 @@ export default function StorageBinManagement() {
                     Manage storage locations and bin arrangements
                   </CardDescription>
                 </div>
-                <Button>Add Storage Bin</Button>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Storage Bin
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -61,78 +117,69 @@ export default function StorageBinManagement() {
                 <Input 
                   className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0" 
                   placeholder="Search storage bins..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Bin ID</TableHead>
-                    <TableHead>Warehouse</TableHead>
-                    <TableHead>Zone</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Utilization</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">BIN-A1-001</TableCell>
-                    <TableCell>Central Warehouse</TableCell>
-                    <TableCell>Zone A1</TableCell>
-                    <TableCell>Large</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
-                          <div className="h-full bg-yellow-500 rounded-full" style={{ width: '65%' }}></div>
-                        </div>
-                        <span>65%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell><Badge className="bg-green-500">Active</Badge></TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">BIN-B2-042</TableCell>
-                    <TableCell>Central Warehouse</TableCell>
-                    <TableCell>Zone B2</TableCell>
-                    <TableCell>Medium</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
-                          <div className="h-full bg-red-500 rounded-full" style={{ width: '90%' }}></div>
-                        </div>
-                        <span>90%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell><Badge className="bg-green-500">Active</Badge></TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">BIN-C3-115</TableCell>
-                    <TableCell>East Distribution</TableCell>
-                    <TableCell>Zone C3</TableCell>
-                    <TableCell>Small</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
-                          <div className="h-full bg-green-500 rounded-full" style={{ width: '20%' }}></div>
-                        </div>
-                        <span>20%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell><Badge className="bg-green-500">Active</Badge></TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              {filteredStorageBins?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Bin ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Warehouse</TableHead>
+                      <TableHead>Size</TableHead>
+                      <TableHead>Utilization</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStorageBins.map((bin) => (
+                      <TableRow key={bin.id}>
+                        <TableCell className="font-medium">{bin.code}</TableCell>
+                        <TableCell>{bin.name}</TableCell>
+                        <TableCell>{bin.parent_name || '-'}</TableCell>
+                        <TableCell>{bin.capacityUom ? `${bin.capacity} ${bin.capacityUom}` : 'Unknown'}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
+                              <div 
+                                className={`h-full rounded-full ${
+                                  bin.utilization_percentage >= 90 ? 'bg-red-500' : 
+                                  bin.utilization_percentage >= 70 ? 'bg-yellow-500' : 
+                                  'bg-green-500'
+                                }`} 
+                                style={{ width: `${bin.utilization_percentage || 0}%` }}
+                              ></div>
+                            </div>
+                            <span>{bin.utilization_percentage || 0}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            className={bin.isActive ? 'bg-green-500' : 'bg-gray-400'}
+                          >
+                            {bin.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm">View</Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchTerm ? (
+                    <p>No storage bins match your search criteria.</p>
+                  ) : (
+                    <p>No storage bins found. Please add some bins to get started.</p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -147,61 +194,56 @@ export default function StorageBinManagement() {
                     Manage warehouse facilities and capacity
                   </CardDescription>
                 </div>
-                <Button>Add Warehouse</Button>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Warehouse
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Size (sqft)</TableHead>
-                    <TableHead>Zones</TableHead>
-                    <TableHead>Utilization</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">Central Warehouse</TableCell>
-                    <TableCell>Chicago, IL</TableCell>
-                    <TableCell>125,000</TableCell>
-                    <TableCell>8</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
-                          <div className="h-full bg-yellow-500 rounded-full" style={{ width: '72%' }}></div>
-                        </div>
-                        <span>72%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell><Badge className="bg-green-500">Operational</Badge></TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">East Distribution</TableCell>
-                    <TableCell>Atlanta, GA</TableCell>
-                    <TableCell>85,000</TableCell>
-                    <TableCell>6</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
-                          <div className="h-full bg-green-500 rounded-full" style={{ width: '45%' }}></div>
-                        </div>
-                        <span>45%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell><Badge className="bg-green-500">Operational</Badge></TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              {warehouses?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Capacity</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {warehouses.map((warehouse) => (
+                      <TableRow key={warehouse.id}>
+                        <TableCell className="font-medium">{warehouse.code}</TableCell>
+                        <TableCell>{warehouse.name}</TableCell>
+                        <TableCell>{warehouse.address || 'Not specified'}</TableCell>
+                        <TableCell>
+                          {warehouse.capacity 
+                            ? `${warehouse.capacity} ${warehouse.capacityUom || 'units'}` 
+                            : 'Not specified'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            className={warehouse.isActive ? 'bg-green-500' : 'bg-gray-400'}
+                          >
+                            {warehouse.isActive ? 'Operational' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm">View</Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No warehouses found. Please add a warehouse to get started.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
