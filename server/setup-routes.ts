@@ -121,6 +121,7 @@ export function setupRoutes(app: any) {
               communicationCenter: true,
               accounting: setupData.features.invoicing,
               inventory: true,
+              manufacturing: true,
               supportTickets: setupData.features.supportTickets,
               ecommerce: setupData.features.eCommerce,
               ecommerceStore: setupData.features.eCommerce,

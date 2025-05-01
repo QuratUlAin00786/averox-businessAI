@@ -57,6 +57,7 @@ import MarketingAutomations from "@/pages/marketing/automations";
 import WorkflowBuilder from "@/pages/marketing/workflow-builder";
 import SegmentBuilder from "@/pages/marketing/segment-builder";
 import EmailTemplateEditor from "@/pages/marketing/email-template-editor";
+import Manufacturing from "@/pages/Manufacturing";
 import SetupWizard from "@/pages/setup-wizard";
 
 function Router() {
@@ -381,6 +382,18 @@ function Router() {
       <ProtectedRoute path="/marketing/email-template-editor" component={() => (
         <Layout>
           <EmailTemplateEditor />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/manufacturing" component={() => (
+        <Layout>
+          <Manufacturing />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/manufacturing/:subPath" component={({ params }: { params: { subPath: string } }) => (
+        <Layout>
+          <Manufacturing subPath={params.subPath} />
         </Layout>
       )} />
       
