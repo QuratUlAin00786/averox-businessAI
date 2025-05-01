@@ -22,9 +22,37 @@ import {
   Package,
   ArrowUpDown,
   CalendarClock,
-  Filter
+  Filter,
+  Check,
+  X
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { format } from "date-fns";
 
 import { formatCurrency, formatDate } from "@/lib/utils";
 import InvoiceDetail from "./accounting/invoices/detail";
@@ -39,6 +67,37 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
   const [, setLocation] = useLocation();
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [entityId, setEntityId] = useState<number | null>(null);
+  
+  // Filter states
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    status: [] as string[],
+    minAmount: '',
+    maxAmount: '',
+    account: ''
+  });
+  
+  // Date range states
+  const [dateRangeOpen, setDateRangeOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{
+    startDate: Date | undefined;
+    endDate: Date | undefined;
+    field: 'createdAt' | 'dueDate' | 'issueDate';
+  }>({
+    startDate: undefined,
+    endDate: undefined,
+    field: 'createdAt'
+  });
+  
+  // Sort states
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sortOption, setSortOption] = useState<{
+    field: string;
+    direction: 'asc' | 'desc';
+  }>({
+    field: 'createdAt',
+    direction: 'desc'
+  });
   
   // Handle subPath for specific routes
   useEffect(() => {
@@ -107,6 +166,111 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
     }
   }, [invoicesError, purchaseOrdersError, toast]);
 
+  // Apply filters to invoice or purchase order data
+  const applyFilters = (data) => {
+    if (!data) return [];
+    
+    let filteredData = [...data];
+    
+    // Apply status filter if selected
+    if (filters.status.length > 0) {
+      filteredData = filteredData.filter(item => filters.status.includes(item.status));
+    }
+    
+    // Apply amount range filters if provided
+    if (filters.minAmount && !isNaN(parseFloat(filters.minAmount))) {
+      filteredData = filteredData.filter(item => 
+        parseFloat(item.totalAmount) >= parseFloat(filters.minAmount)
+      );
+    }
+    
+    if (filters.maxAmount && !isNaN(parseFloat(filters.maxAmount))) {
+      filteredData = filteredData.filter(item => 
+        parseFloat(item.totalAmount) <= parseFloat(filters.maxAmount)
+      );
+    }
+    
+    // Apply account filter if provided
+    if (filters.account && filters.account.trim() !== '') {
+      filteredData = filteredData.filter(item => 
+        item.accountName && item.accountName.toLowerCase().includes(filters.account.toLowerCase())
+      );
+    }
+    
+    // Apply date range filter if provided
+    if (dateRange.startDate && dateRange.endDate) {
+      const startDate = new Date(dateRange.startDate);
+      const endDate = new Date(dateRange.endDate);
+      
+      filteredData = filteredData.filter(item => {
+        const itemDate = new Date(item[dateRange.field]);
+        return itemDate >= startDate && itemDate <= endDate;
+      });
+    }
+    
+    // Apply sorting
+    filteredData.sort((a, b) => {
+      // Handle numeric fields
+      if (['totalAmount', 'subtotal', 'taxAmount'].includes(sortOption.field)) {
+        const aValue = parseFloat(a[sortOption.field] || '0');
+        const bValue = parseFloat(b[sortOption.field] || '0');
+        
+        return sortOption.direction === 'asc' 
+          ? aValue - bValue 
+          : bValue - aValue;
+      } 
+      // Handle date fields
+      else if (['createdAt', 'dueDate', 'issueDate', 'orderDate'].includes(sortOption.field)) {
+        const aDate = new Date(a[sortOption.field] || 0);
+        const bDate = new Date(b[sortOption.field] || 0);
+        
+        return sortOption.direction === 'asc' 
+          ? aDate.getTime() - bDate.getTime() 
+          : bDate.getTime() - aDate.getTime();
+      } 
+      // Handle string fields
+      else {
+        const aValue = String(a[sortOption.field] || '');
+        const bValue = String(b[sortOption.field] || '');
+        
+        return sortOption.direction === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+    });
+    
+    return filteredData;
+  };
+  
+  // Get filtered data for the current active tab
+  const getFilteredData = () => {
+    if (activeTab === 'invoices') {
+      return applyFilters(invoices);
+    } else if (activeTab === 'purchase-orders') {
+      return applyFilters(purchaseOrders);
+    }
+    return [];
+  };
+  
+  // Handle filter apply
+  const handleApplyFilter = () => {
+    setFilterDialogOpen(false);
+    // No need to fetch data again as we're filtering client-side
+  };
+  
+  // Handle date range apply
+  const handleApplyDateRange = () => {
+    setDateRangeOpen(false);
+    // No need to fetch data again as we're filtering client-side
+  };
+  
+  // Handle sort apply
+  const handleApplySort = () => {
+    setSortOpen(false);
+    // No need to fetch data again as we're sorting client-side
+  };
+  
+  // Get invoice or PO status badge color
   const getStatusColor = (status) => {
     switch (status) {
       case "Draft":
@@ -153,15 +317,273 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter size={16} /> Filter
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <CalendarClock size={16} /> Date Range
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <ArrowUpDown size={16} /> Sort
-            </Button>
+            {/* Filter Dialog */}
+            <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Filter size={16} /> Filter
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Filter Options</DialogTitle>
+                  <DialogDescription>
+                    Filter transactions by status, amount, or account
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="status">Status</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled', 'Refunded'].map((status) => (
+                        <div key={status} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`status-${status}`} 
+                            checked={filters.status.includes(status)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFilters({
+                                  ...filters,
+                                  status: [...filters.status, status]
+                                });
+                              } else {
+                                setFilters({
+                                  ...filters,
+                                  status: filters.status.filter(s => s !== status)
+                                });
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`status-${status}`}>{status}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="minAmount">Min Amount</Label>
+                      <Input
+                        id="minAmount"
+                        placeholder="0.00"
+                        value={filters.minAmount}
+                        onChange={(e) => setFilters({ ...filters, minAmount: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <Label htmlFor="maxAmount">Max Amount</Label>
+                      <Input
+                        id="maxAmount"
+                        placeholder="0.00"
+                        value={filters.maxAmount}
+                        onChange={(e) => setFilters({ ...filters, maxAmount: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="account">Account</Label>
+                    <Input
+                      id="account"
+                      placeholder="Account name"
+                      value={filters.account}
+                      onChange={(e) => setFilters({ ...filters, account: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setFilters({
+                        status: [],
+                        minAmount: '',
+                        maxAmount: '',
+                        account: ''
+                      });
+                      setFilterDialogOpen(false);
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button onClick={handleApplyFilter}>Apply Filter</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            {/* Date Range Dialog */}
+            <Dialog open={dateRangeOpen} onOpenChange={setDateRangeOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <CalendarClock size={16} /> Date Range
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Set Date Range</DialogTitle>
+                  <DialogDescription>
+                    Filter by date period
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="dateField">Date Field</Label>
+                    <Select
+                      value={dateRange.field}
+                      onValueChange={(value) => setDateRange({
+                        ...dateRange,
+                        field: value as 'createdAt' | 'dueDate' | 'issueDate'
+                      })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select date field" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="createdAt">Created Date</SelectItem>
+                        <SelectItem value="dueDate">Due Date</SelectItem>
+                        <SelectItem value="issueDate">Issue Date</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-2">
+                      <Label>Start Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="justify-start text-left font-normal"
+                          >
+                            {dateRange.startDate ? (
+                              format(dateRange.startDate, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.startDate}
+                            onSelect={(date) => setDateRange({...dateRange, startDate: date})}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <Label>End Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="justify-start text-left font-normal"
+                          >
+                            {dateRange.endDate ? (
+                              format(dateRange.endDate, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.endDate}
+                            onSelect={(date) => setDateRange({...dateRange, endDate: date})}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setDateRange({
+                        startDate: undefined,
+                        endDate: undefined,
+                        field: 'createdAt'
+                      });
+                      setDateRangeOpen(false);
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button onClick={handleApplyDateRange}>Apply</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            {/* Sort Dialog */}
+            <Dialog open={sortOpen} onOpenChange={setSortOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <ArrowUpDown size={16} /> Sort
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Sort Options</DialogTitle>
+                  <DialogDescription>
+                    Sort transactions by field and direction
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="sortField">Sort Field</Label>
+                    <Select
+                      value={sortOption.field}
+                      onValueChange={(value) => setSortOption({...sortOption, field: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select field" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="createdAt">Created Date</SelectItem>
+                        <SelectItem value="invoiceNumber">Invoice Number</SelectItem>
+                        <SelectItem value="dueDate">Due Date</SelectItem>
+                        <SelectItem value="totalAmount">Total Amount</SelectItem>
+                        <SelectItem value="status">Status</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="sortDirection">Sort Direction</Label>
+                    <Select
+                      value={sortOption.direction}
+                      onValueChange={(value) => setSortOption({
+                        ...sortOption,
+                        direction: value as 'asc' | 'desc'
+                      })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select direction" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="asc">Ascending</SelectItem>
+                        <SelectItem value="desc">Descending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setSortOption({
+                        field: 'createdAt',
+                        direction: 'desc'
+                      });
+                      setSortOpen(false);
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button onClick={handleApplySort}>Apply</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
