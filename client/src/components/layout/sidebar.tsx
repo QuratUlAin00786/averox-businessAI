@@ -3,7 +3,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import * as LucideIcons from "lucide-react";
-import { Settings } from "lucide-react"; // Add explicit Settings import for profile button
 import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
@@ -329,7 +328,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
             size="icon" 
             className="p-1 ml-auto text-primary hover:text-primary hover:bg-primary/10 hover:border-primary"
           >
-            <Settings className="w-5 h-5" />
+            <LucideIcons.Settings className="w-5 h-5" />
           </Button>
         </Link>
       </div>
