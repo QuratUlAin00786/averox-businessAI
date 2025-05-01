@@ -1,7 +1,8 @@
 import { Request, Response, Router } from 'express';
 import { db } from './db';
-import { eq, desc, or, like } from 'drizzle-orm';
+import { eq, desc, and, like, or } from 'drizzle-orm';
 import { z } from 'zod';
+import { createInsertSchema } from 'drizzle-zod';
 import { 
   warehouses, 
   warehouse_zones as warehouseZones, 
@@ -20,12 +21,8 @@ import {
   material_requirements as materialRequirements,
   material_forecasts as materialForecasts,
   insertShipmentComplianceSchema,
-  inventoryTransactions,
   inventoryTransactions
 } from '@shared/schema';
-import { eq, desc, and, like, or } from 'drizzle-orm';
-import { createInsertSchema } from 'drizzle-zod';
-import { z } from 'zod';
 
 const router = Router();
 
@@ -670,64 +667,235 @@ router.get('/inventory-transactions', async (req: Request, res: Response) => {
 // Get MRP forecasts
 router.get('/mrp-forecasts', async (req: Request, res: Response) => {
   try {
-    // This would be a complex calculation in a real system
-    // For now, we return sample data
-    const forecastData = [
-      { month: 'Jan', forecasted: 120, actual: 115 },
-      { month: 'Feb', forecasted: 140, actual: 132 },
-      { month: 'Mar', forecasted: 135, actual: 142 },
-      { month: 'Apr', forecasted: 150, actual: 145 },
-      { month: 'May', forecasted: 165, actual: 160 },
-      { month: 'Jun', forecasted: 180, actual: 175 },
-    ];
+    const { productId, period } = req.query;
     
-    res.json(forecastData);
+    // Get forecast data from the database
+    let query = db.select().from(materialForecasts);
+    
+    if (productId) {
+      query = query.where(eq(materialForecasts.productId, Number(productId)));
+    }
+    
+    // Default to last 6 months if not specified
+    const forecastPeriod = period ? Number(period) : 6;
+    
+    // Get the raw forecast data
+    const forecasts = await query.orderBy(materialForecasts.forecastDate);
+    
+    if (forecasts.length === 0) {
+      // If no forecasts exist in the database yet, create initial data
+      const today = new Date();
+      const baseQuantity = 100 + Math.floor(Math.random() * 50); // Random starting point
+      
+      const initialForecasts = [];
+      for (let i = 0; i < 6; i++) {
+        const forecastDate = new Date(today);
+        forecastDate.setMonth(today.getMonth() - 6 + i);
+        
+        // Create some variation in the data with slight increases
+        const forecastQuantity = baseQuantity + (i * 10) + Math.floor(Math.random() * 20 - 10);
+        const actualQuantity = forecastQuantity + Math.floor(Math.random() * 20 - 10); // Slight random variation from forecast
+        
+        const forecast = {
+          product_id: productId ? Number(productId) : 1,
+          forecast_date: forecastDate,
+          forecast_quantity: forecastQuantity,
+          actual_quantity: actualQuantity,
+          forecast_method: "TimeSeries",
+          confidence_level: 0.85 + (Math.random() * 0.1),
+          created_by: 1,
+          created_at: new Date()
+        };
+        
+        initialForecasts.push(forecast);
+        await db.insert(materialForecasts).values(forecast);
+      }
+      
+      // Also add future forecasts
+      for (let i = 0; i < 6; i++) {
+        const forecastDate = new Date(today);
+        forecastDate.setMonth(today.getMonth() + i);
+        
+        // Future forecasts have an upward trend with some variation
+        const forecastQuantity = baseQuantity + ((i + 6) * 10) + Math.floor(Math.random() * 20 - 10);
+        
+        const forecast = {
+          product_id: productId ? Number(productId) : 1,
+          forecast_date: forecastDate,
+          forecast_quantity: forecastQuantity,
+          actual_quantity: null, // Future forecasts don't have actuals yet
+          forecast_method: "TimeSeries",
+          confidence_level: 0.80 - (i * 0.05), // Confidence decreases the further into the future
+          created_by: 1,
+          created_at: new Date()
+        };
+        
+        initialForecasts.push(forecast);
+        await db.insert(materialForecasts).values(forecast);
+      }
+      
+      // Fetch the newly inserted data
+      const newForecasts = await db.select().from(materialForecasts)
+        .orderBy(materialForecasts.forecastDate);
+      
+      // Process the forecasts into the expected format
+      const formattedForecasts = formatForecasts(newForecasts);
+      res.json(formattedForecasts);
+    } else {
+      // Process the existing forecasts into the expected format
+      const formattedForecasts = formatForecasts(forecasts);
+      res.json(formattedForecasts);
+    }
   } catch (error) {
     console.error('Error calculating MRP forecasts:', error);
     res.status(500).json({ error: 'Failed to calculate MRP forecasts' });
   }
 });
 
+// Helper function to format forecasts into the expected response format
+function formatForecasts(forecasts) {
+  return forecasts.map(forecast => {
+    const date = new Date(forecast.forecastDate);
+    return {
+      month: date.toLocaleString('default', { month: 'short' }),
+      year: date.getFullYear(),
+      forecasted: forecast.forecastQuantity,
+      actual: forecast.actualQuantity,
+      method: forecast.forecastMethod,
+      confidence: Math.round(forecast.confidenceLevel * 100) / 100,
+      date: date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+    };
+  });
+}
+
 // Get material requirements
 router.get('/material-requirements', async (req: Request, res: Response) => {
   try {
-    // This would be a complex calculation in a real system
-    // For now, we return sample data
-    const materialRequirements = [
-      { 
-        id: 'MR-001', 
-        name: 'Raw Material A', 
-        currentStock: 250,
-        safetyStock: 100,
-        required: 400,
-        orderPoint: 150,
-        status: 'Sufficient'
-      },
-      { 
-        id: 'MR-002', 
-        name: 'Component B', 
-        currentStock: 120,
-        safetyStock: 75,
-        required: 300,
-        orderPoint: 100,
-        status: 'Low'
-      },
-      { 
-        id: 'MR-003', 
-        name: 'Semifinished C', 
-        currentStock: 30,
-        safetyStock: 50,
-        required: 150,
-        orderPoint: 60,
-        status: 'Critical'
-      }
-    ];
+    const { materialId, mrpRunId } = req.query;
     
-    res.json(materialRequirements);
+    // Get material requirements from the database
+    let query = db.select().from(materialRequirements);
+    
+    if (materialId) {
+      query = query.where(eq(materialRequirements.materialId, Number(materialId)));
+    }
+    
+    if (mrpRunId) {
+      query = query.where(eq(materialRequirements.mrpRunId, Number(mrpRunId)));
+    }
+    
+    const requirements = await query.orderBy(desc(materialRequirements.createdAt));
+    
+    if (requirements.length === 0) {
+      // If no requirements exist in the database yet, create initial data
+      const materials = [
+        {
+          material_id: 1,
+          mrp_run_id: 1,
+          material_name: "Raw Material A",
+          material_code: "RM-A",
+          current_stock: 250,
+          safety_stock: 100,
+          required_quantity: 400,
+          order_point: 150,
+          expected_delivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+          status: "Sufficient", 
+          created_by: 1,
+          created_at: new Date(),
+          notes: "Regular supplier with reliable delivery times"
+        },
+        {
+          material_id: 2,
+          mrp_run_id: 1,
+          material_name: "Component B",
+          material_code: "RM-B",
+          current_stock: 120,
+          safety_stock: 75,
+          required_quantity: 300,
+          order_point: 100,
+          expected_delivery: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+          status: "Low",
+          created_by: 1,
+          created_at: new Date(),
+          notes: "International supplier with longer lead times"
+        },
+        {
+          material_id: 3,
+          mrp_run_id: 1,
+          material_name: "Semifinished C",
+          material_code: "RM-C",
+          current_stock: 30,
+          safety_stock: 50,
+          required_quantity: 150,
+          order_point: 60,
+          expected_delivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+          status: "Critical",
+          created_by: 1,
+          created_at: new Date(),
+          notes: "Expedited shipping requested"
+        }
+      ];
+      
+      for (const material of materials) {
+        await db.insert(materialRequirements).values(material);
+      }
+      
+      // Fetch the newly inserted data
+      const newRequirements = await db.select().from(materialRequirements)
+        .orderBy(desc(materialRequirements.createdAt));
+      
+      // Process the requirements into the expected format
+      const formattedRequirements = formatRequirements(newRequirements);
+      res.json(formattedRequirements);
+    } else {
+      // Process the existing requirements into the expected format
+      const formattedRequirements = formatRequirements(requirements);
+      res.json(formattedRequirements);
+    }
   } catch (error) {
     console.error('Error calculating material requirements:', error);
     res.status(500).json({ error: 'Failed to calculate material requirements' });
   }
 });
+
+// Helper function to format material requirements into the expected response format
+function formatRequirements(requirements) {
+  return requirements.map(req => {
+    const currentStock = req.currentStock;
+    const safetyStock = req.safetyStock;
+    const required = req.requiredQuantity;
+    const orderPoint = req.orderPoint;
+    
+    // Calculate available for planning
+    const availableForPlanning = Math.max(0, currentStock - safetyStock);
+    
+    // Calculate net requirements
+    const netRequirements = Math.max(0, required - currentStock);
+    
+    // Calculate stock coverage (in days) based on daily usage
+    const dailyUsage = required / 30; // Assuming monthly requirements
+    const stockCoverage = dailyUsage > 0 ? Math.floor(currentStock / dailyUsage) : 999;
+    
+    // Calculate suggested order quantity
+    const suggestedOrderQty = netRequirements > 0 ? Math.max(netRequirements, orderPoint - currentStock) : 0;
+    
+    return {
+      id: req.materialCode || `MR-${req.materialId}`,
+      materialId: req.materialId,
+      name: req.materialName,
+      currentStock: currentStock,
+      safetyStock: safetyStock,
+      availableForPlanning: availableForPlanning,
+      required: required,
+      netRequirements: netRequirements,
+      orderPoint: orderPoint,
+      stockCoverage: stockCoverage,
+      suggestedOrderQty: suggestedOrderQty,
+      status: req.status,
+      expectedDelivery: req.expectedDelivery ? new Date(req.expectedDelivery).toISOString().split('T')[0] : null,
+      notes: req.notes
+    };
+  });
+}
 
 export default router;
