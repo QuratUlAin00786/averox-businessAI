@@ -40,8 +40,12 @@ import {
   insertProposalActivitySchema,
   // System types
   type MenuVisibilitySettings,
-  type SystemSettings
+  type SystemSettings,
+  // Database schema tables
+  systemSettings
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { 
   isOpenAIQuotaError, 
