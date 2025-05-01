@@ -808,6 +808,60 @@ export const tradeComplianceRelations = relations(trade_compliance, ({ one }) =>
   })
 }));
 
+// Define shipment compliance document status enum
+export const shipment_document_status = pgEnum('shipment_document_status', [
+  'Pending', 'Approved', 'Rejected', 'Expired', 'RequiresReview'
+]);
+
+// Define shipment compliance level enum
+export const compliance_level = pgEnum('compliance_level', [
+  'Full', 'Partial', 'Non-Compliant', 'Exempt', 'Pending'
+]);
+
+// Define shipment type enum
+export const shipment_type = pgEnum('shipment_type', [
+  'Import', 'Export', 'Domestic', 'Transit', 'ReExport', 'Temporary'
+]);
+
+// Define shipment compliance table
+export const shipment_compliance = pgTable('shipment_compliance', {
+  id: serial('id').primaryKey(),
+  shipment_id: text('shipment_id').notNull().unique(),
+  type: shipment_type('type').notNull(),
+  document_status: shipment_document_status('document_status').default('Pending'),
+  country: text('country').notNull(),
+  destination: text('destination').notNull(),
+  document_count: integer('document_count').default(0),
+  compliance_level: compliance_level('compliance_level').default('Pending'),
+  last_updated: timestamp('last_updated').defaultNow(),
+  next_review_date: timestamp('next_review_date'),
+  related_products: integer('related_products').array(),
+  required_documents: jsonb('required_documents'),
+  obtained_documents: jsonb('obtained_documents'),
+  missing_documents: jsonb('missing_documents'),
+  customs_value: numeric('customs_value'),
+  customs_currency: text('customs_currency').default('USD'),
+  incoterm: text('incoterm'),
+  carrier: text('carrier'),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at'),
+  created_by: integer('created_by').references(() => users.id),
+  updated_by: integer('updated_by').references(() => users.id),
+  notes: text('notes')
+});
+
+// Define shipment compliance relations
+export const shipmentComplianceRelations = relations(shipment_compliance, ({ one }) => ({
+  creator: one(users, {
+    fields: [shipment_compliance.created_by],
+    references: [users.id],
+  }),
+  updater: one(users, {
+    fields: [shipment_compliance.updated_by],
+    references: [users.id],
+  })
+}));
+
 // Material reservations
 export const material_reservations = pgTable('material_reservations', {
   id: serial('id').primaryKey(),
@@ -1540,3 +1594,15 @@ export type InsertBillOfMaterials = z.infer<typeof insertBomSchema>;
 
 export type ProductionOrder = typeof production_orders.$inferSelect;
 export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
+
+// Create Zod schema for shipment compliance
+export const insertShipmentComplianceSchema = createInsertSchema(shipment_compliance, {
+  shipment_id: z.string().min(3).max(50),
+  type: z.enum(['Import', 'Export', 'Domestic', 'Transit', 'ReExport', 'Temporary']),
+  country: z.string().min(2).max(100),
+  destination: z.string().min(2).max(255),
+});
+
+// Define shipment compliance types
+export type ShipmentCompliance = typeof shipment_compliance.$inferSelect;
+export type InsertShipmentCompliance = z.infer<typeof insertShipmentComplianceSchema>;

@@ -1,5 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { db } from './db';
+import { eq, desc, or, like } from 'drizzle-orm';
+import { z } from 'zod';
 import { 
   warehouses, 
   warehouse_zones as warehouseZones, 
@@ -14,6 +16,11 @@ import {
   return_authorizations as returnOrders,
   return_items as returnItems,
   trade_compliance as tradeCompliance,
+  shipment_compliance as shipmentCompliance,
+  material_requirements as materialRequirements,
+  material_forecasts as materialForecasts,
+  insertShipmentComplianceSchema,
+  inventoryTransactions,
   inventoryTransactions
 } from '@shared/schema';
 import { eq, desc, and, like, or } from 'drizzle-orm';
@@ -469,66 +476,168 @@ router.get('/shipment-compliance', async (req: Request, res: Response) => {
   try {
     const { type, status, destination } = req.query;
     
-    // Since shipmentCompliance doesn't exist, we provide sample data
-    // In a real application, this would be fetched from a database
-    const shipments = [
-      {
-        id: 1,
-        shipmentId: "SHP-001",
-        type: "Export",
-        documentStatus: "Approved",
-        country: "Germany",
-        destination: "Berlin",
-        documentCount: 5,
-        complianceLevel: "Full",
-        lastUpdated: new Date().toISOString(),
-        nextReviewDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 2,
-        shipmentId: "SHP-002",
-        type: "Import",
-        documentStatus: "Pending",
-        country: "China",
-        destination: "Shanghai",
-        documentCount: 7,
-        complianceLevel: "Partial",
-        lastUpdated: new Date().toISOString(),
-        nextReviewDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 3,
-        shipmentId: "SHP-003",
-        type: "Export",
-        documentStatus: "Rejected",
-        country: "Brazil",
-        destination: "Sao Paulo",
-        documentCount: 3,
-        complianceLevel: "Non-Compliant",
-        lastUpdated: new Date().toISOString(),
-        nextReviewDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
+    let query = db.select().from(shipmentCompliance);
     
-    // Filter the sample data based on query parameters
-    let filteredShipments = [...shipments];
-    
+    // Apply filters based on query parameters
     if (type) {
-      filteredShipments = filteredShipments.filter(s => s.type === type);
+      query = query.where(eq(shipmentCompliance.type, type.toString() as any));
     }
     
     if (status) {
-      filteredShipments = filteredShipments.filter(s => s.documentStatus === status);
+      query = query.where(eq(shipmentCompliance.document_status, status.toString() as any));
     }
     
     if (destination) {
-      filteredShipments = filteredShipments.filter(s => s.destination === destination || s.country === destination);
+      const searchTerm = destination.toString().toLowerCase();
+      query = query.where(
+        or(
+          like(shipmentCompliance.destination, `%${searchTerm}%`),
+          like(shipmentCompliance.country, `%${searchTerm}%`)
+        )
+      );
     }
     
-    res.json(filteredShipments);
+    const shipments = await query.orderBy(desc(shipmentCompliance.id));
+    
+    // If no records exist yet, create some initial data
+    if (shipments.length === 0) {
+      const initialShipments = [
+        {
+          shipment_id: "SHP-001",
+          type: "Export" as const,
+          document_status: "Approved" as const,
+          country: "Germany",
+          destination: "Berlin",
+          document_count: 5,
+          compliance_level: "Full" as const,
+          last_updated: new Date(),
+          next_review_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          required_documents: JSON.stringify(["Export Declaration", "Certificate of Origin", "Commercial Invoice", "Packing List", "Dangerous Goods Declaration"]),
+          customs_value: 125000,
+          created_by: 1,
+          notes: "All documentation complete and approved."
+        },
+        {
+          shipment_id: "SHP-002",
+          type: "Import" as const,
+          document_status: "Pending" as const,
+          country: "China",
+          destination: "Shanghai",
+          document_count: 7,
+          compliance_level: "Partial" as const,
+          last_updated: new Date(),
+          next_review_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+          required_documents: JSON.stringify(["Import License", "Certificate of Origin", "Commercial Invoice", "Packing List", "Bill of Lading", "Import Declaration", "Inspection Certificate"]),
+          obtained_documents: JSON.stringify(["Commercial Invoice", "Packing List", "Bill of Lading"]),
+          missing_documents: JSON.stringify(["Import License", "Certificate of Origin", "Import Declaration", "Inspection Certificate"]),
+          customs_value: 85000,
+          created_by: 1,
+          notes: "Missing critical documentation."
+        },
+        {
+          shipment_id: "SHP-003",
+          type: "Export" as const,
+          document_status: "Rejected" as const,
+          country: "Brazil",
+          destination: "Sao Paulo",
+          document_count: 3,
+          compliance_level: "Non-Compliant" as const,
+          last_updated: new Date(),
+          next_review_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+          required_documents: JSON.stringify(["Export Declaration", "Certificate of Origin", "Commercial Invoice"]),
+          obtained_documents: JSON.stringify(["Commercial Invoice"]),
+          missing_documents: JSON.stringify(["Export Declaration", "Certificate of Origin"]),
+          customs_value: 45000,
+          created_by: 1,
+          notes: "Export declaration rejected due to incorrect HS codes."
+        }
+      ];
+      
+      for (const shipment of initialShipments) {
+        await db.insert(shipmentCompliance).values(shipment);
+      }
+      
+      // Fetch the newly inserted data
+      const newShipments = await db.select().from(shipmentCompliance).orderBy(desc(shipmentCompliance.id));
+      res.json(newShipments);
+    } else {
+      res.json(shipments);
+    }
   } catch (error) {
     console.error('Error fetching shipment compliance records:', error);
     res.status(500).json({ error: 'Failed to fetch shipment compliance records' });
+  }
+});
+
+// Add new shipment compliance record
+router.post('/shipment-compliance', async (req: Request, res: Response) => {
+  try {
+    const shipmentData = insertShipmentComplianceSchema.parse(req.body);
+    
+    const [newShipment] = await db.insert(shipmentCompliance)
+      .values({
+        ...shipmentData,
+        created_by: req.user?.id || 1,
+        last_updated: new Date(),
+        created_at: new Date()
+      })
+      .returning();
+    
+    res.status(201).json(newShipment);
+  } catch (error) {
+    console.error('Error creating shipment compliance record:', error);
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: error.errors });
+    } else {
+      res.status(500).json({ error: 'Failed to create shipment compliance record' });
+    }
+  }
+});
+
+// Get shipment compliance by ID
+router.get('/shipment-compliance/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const [shipment] = await db.select()
+      .from(shipmentCompliance)
+      .where(eq(shipmentCompliance.id, Number(id)));
+    
+    if (!shipment) {
+      return res.status(404).json({ error: 'Shipment compliance record not found' });
+    }
+    
+    res.json(shipment);
+  } catch (error) {
+    console.error('Error fetching shipment compliance record:', error);
+    res.status(500).json({ error: 'Failed to fetch shipment compliance record' });
+  }
+});
+
+// Update shipment compliance record
+router.put('/shipment-compliance/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const shipmentData = req.body;
+    
+    const [updatedShipment] = await db.update(shipmentCompliance)
+      .set({
+        ...shipmentData,
+        updated_by: req.user?.id || 1,
+        updated_at: new Date(),
+        last_updated: new Date()
+      })
+      .where(eq(shipmentCompliance.id, Number(id)))
+      .returning();
+    
+    if (!updatedShipment) {
+      return res.status(404).json({ error: 'Shipment compliance record not found' });
+    }
+    
+    res.json(updatedShipment);
+  } catch (error) {
+    console.error('Error updating shipment compliance record:', error);
+    res.status(500).json({ error: 'Failed to update shipment compliance record' });
   }
 });
 
