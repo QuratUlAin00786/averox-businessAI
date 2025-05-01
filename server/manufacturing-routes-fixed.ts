@@ -326,7 +326,7 @@ router.get('/vendors', async (req: Request, res: Response) => {
       SELECT 
         v.id,
         v.name,
-        v.code,
+        v.vendor_code as "code",
         v.contact_person as "contactPerson",
         v.email,
         v.phone,
@@ -334,12 +334,12 @@ router.get('/vendors', async (req: Request, res: Response) => {
         v.tax_id as "taxId",
         v.status,
         v.payment_terms as "paymentTerms",
-        v.delivery_terms as "deliveryTerms",
+        v.incoterms as "deliveryTerms",
         v.website,
-        v.quality_rating as "qualityRating",
-        v.delivery_rating as "deliveryRating",
-        v.price_rating as "priceRating",
-        v.is_active as "isActive",
+        v.quality_rejection_rate as "qualityRating",
+        v.on_time_delivery_rate as "deliveryRating",
+        v.rating as "priceRating",
+        v.is_preferred as "isActive",
         v.created_at as "createdAt",
         v.updated_at as "updatedAt"
       FROM vendors v
@@ -362,7 +362,7 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
       SELECT 
         v.id,
         v.name,
-        v.code,
+        v.vendor_code as "code",
         v.contact_person as "contactPerson",
         v.email,
         v.phone,
@@ -370,12 +370,12 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
         v.tax_id as "taxId",
         v.status,
         v.payment_terms as "paymentTerms",
-        v.delivery_terms as "deliveryTerms",
+        v.incoterms as "deliveryTerms",
         v.website,
-        v.quality_rating as "qualityRating",
-        v.delivery_rating as "deliveryRating",
-        v.price_rating as "priceRating",
-        v.is_active as "isActive",
+        v.quality_rejection_rate as "qualityRating",
+        v.on_time_delivery_rate as "deliveryRating",
+        v.rating as "priceRating",
+        v.is_preferred as "isActive",
         v.created_at as "createdAt",
         v.updated_at as "updatedAt"
       FROM vendors v
@@ -386,47 +386,61 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Vendor not found' });
     }
     
-    const contracts = await db.execute(sql`
-      SELECT 
-        vc.id,
-        vc.vendor_id as "vendorId",
-        vc.contract_number as "contractNumber",
-        vc.type,
-        vc.start_date as "startDate",
-        vc.end_date as "endDate",
-        vc.terms,
-        vc.is_active as "isActive",
-        vc.auto_renew as "autoRenew",
-        vc.notification_days as "notificationDays",
-        vc.notes,
-        vc.created_at as "createdAt",
-        vc.updated_at as "updatedAt"
-      FROM vendor_contracts vc
-      WHERE vc.vendor_id = ${id}
-    `);
+    // Check if vendor_contracts table exists
+    let contracts = [];
+    try {
+      contracts = await db.execute(sql`
+        SELECT 
+          vc.id,
+          vc.vendor_id as "vendorId",
+          vc.contract_number as "contractNumber",
+          vc.type,
+          vc.start_date as "startDate",
+          vc.end_date as "endDate",
+          vc.terms,
+          vc.is_active as "isActive",
+          vc.auto_renew as "autoRenew",
+          vc.notification_days as "notificationDays",
+          vc.notes,
+          vc.created_at as "createdAt",
+          vc.updated_at as "updatedAt"
+        FROM vendor_contracts vc
+        WHERE vc.vendor_id = ${id}
+      `);
+    } catch (contractError) {
+      console.log('Vendor contracts table might not exist:', contractError);
+      // Silently ignore if table doesn't exist
+    }
     
-    const products = await db.execute(sql`
-      SELECT 
-        vp.id,
-        vp.vendor_id as "vendorId",
-        vp.product_id as "materialId",
-        p.name as "materialName",
-        vp.vendor_part_number as "vendorProductCode",
-        vp.vendor_part_name as "vendorProductName",
-        vp.price,
-        vp.currency,
-        vp.lead_time as "leadTime",
-        vp.min_order_qty as "minOrderQty",
-        vp.is_preferred as "isPreferred",
-        vp.notes,
-        vp.last_purchase_date as "lastPurchaseDate",
-        vp.is_active as "isActive",
-        vp.created_at as "createdAt",
-        vp.updated_at as "updatedAt"
-      FROM vendor_products vp
-      LEFT JOIN products p ON vp.product_id = p.id
-      WHERE vp.vendor_id = ${id}
-    `);
+    // Check if vendor_products table exists
+    let products = [];
+    try {
+      products = await db.execute(sql`
+        SELECT 
+          vp.id,
+          vp.vendor_id as "vendorId",
+          vp.product_id as "materialId",
+          p.name as "materialName",
+          vp.vendor_part_number as "vendorProductCode",
+          vp.vendor_part_name as "vendorProductName",
+          vp.price,
+          vp.currency,
+          vp.lead_time as "leadTime",
+          vp.min_order_qty as "minOrderQty",
+          vp.is_preferred as "isPreferred",
+          vp.notes,
+          vp.last_purchase_date as "lastPurchaseDate",
+          vp.is_active as "isActive",
+          vp.created_at as "createdAt",
+          vp.updated_at as "updatedAt"
+        FROM vendor_products vp
+        LEFT JOIN products p ON vp.product_id = p.id
+        WHERE vp.vendor_id = ${id}
+      `);
+    } catch (productError) {
+      console.log('Vendor products table might not exist:', productError);
+      // Silently ignore if table doesn't exist
+    }
     
     return res.json({
       ...vendor,
