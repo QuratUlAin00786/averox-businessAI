@@ -644,40 +644,49 @@ export default function InvoiceForm({ invoiceId, onSuccess }: InvoiceFormProps) 
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name={`items.${index}.productId`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product (Optional)</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(value ? parseInt(value) : null);
-                          handleProductSelection(parseInt(value), index);
-                        }}
-                        defaultValue={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a product" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="null">None</SelectItem>
-                          {products.map((product: any) => (
-                            <SelectItem key={product.id} value={product.id.toString()}>
-                              {product.name} (${product.price})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Selecting a product will auto-fill details
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {products.length > 0 ? (
+                  <FormField
+                    control={form.control}
+                    name={`items.${index}.productId`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Product (Optional)</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value ? parseInt(value) : null);
+                            handleProductSelection(parseInt(value), index);
+                          }}
+                          defaultValue={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a product" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="null">None</SelectItem>
+                            {products.map((product: any) => (
+                              <SelectItem key={product.id} value={product.id.toString()}>
+                                {product.name} (${product.price})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Selecting a product will auto-fill details
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <div>
+                    <FormLabel className="block mb-2">Product/Item (No products available)</FormLabel>
+                    <FormDescription className="mb-2">
+                      No products found in the system. You can manually enter the product details below.
+                    </FormDescription>
+                  </div>
+                )}
                 
                 <FormField
                   control={form.control}
