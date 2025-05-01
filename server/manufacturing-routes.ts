@@ -1,122 +1,81 @@
-import express from 'express';
+import { Request, Response, Router } from 'express';
 import { db } from './db';
-import { eq } from 'drizzle-orm';
-import {
-  warehouses,
-  warehouse_zones,
-  work_centers,
-  bill_of_materials,
-  bom_items,
-  routings,
-  routing_operations,
-  production_orders,
-  production_order_operations,
-  material_consumptions,
-  quality_inspections,
-  quality_parameters,
-  equipment,
-  maintenance_requests
-} from '../shared/manufacturing-schema';
-import { isAuthenticated } from './middleware/auth';
-import { requirePermission } from './permissions-manager';
+import { 
+  warehouses, 
+  warehouse_zones as warehouseZones, 
+  storage_bins as storageBins, 
+  vendors,
+  vendor_products as vendorProducts,
+  vendor_contracts as vendorContracts,
+  material_valuations as materialValuations,
+  material_valuation_method as valuationMethodEnum,
+  batch_lots as batchLots,
+  quality_inspections as qualityInspections,
+  return_authorizations as returnOrders,
+  return_items as returnItems,
+  trade_compliance as tradeCompliance,
+  inventoryTransactions
+} from '@shared/schema';
+import { eq, desc, and, like, or } from 'drizzle-orm';
+import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
-// Create router
-const router = express.Router();
+const router = Router();
 
-// Middleware to authenticate and check permission
-const checkManufacturingPermission = (action: string) => [
-  isAuthenticated,
-  requirePermission('manufacturing', action)
-];
-
-// Warehouses Routes
-router.get('/warehouses', checkManufacturingPermission('view'), async (req, res) => {
+// ============= WAREHOUSES API ==================
+// Get all warehouses
+router.get('/warehouses', async (req: Request, res: Response) => {
   try {
-    const warehousesData = await db.select().from(warehouses);
-    res.json(warehousesData);
+    const allWarehouses = await db.select().from(warehouses).orderBy(desc(warehouses.id));
+    res.json(allWarehouses);
   } catch (error) {
     console.error('Error fetching warehouses:', error);
     res.status(500).json({ error: 'Failed to fetch warehouses' });
   }
 });
 
-router.get('/warehouses/:id', checkManufacturingPermission('view'), async (req, res) => {
+// Get a single warehouse by ID
+router.get('/warehouses/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const [warehouseData] = await db.select().from(warehouses).where(eq(warehouses.id, parseInt(id)));
+    const [warehouse] = await db.select().from(warehouses).where(eq(warehouses.id, Number(id)));
     
-    if (!warehouseData) {
+    if (!warehouse) {
       return res.status(404).json({ error: 'Warehouse not found' });
     }
     
-    // Get zones for this warehouse
-    const zonesData = await db.select().from(warehouse_zones)
-      .where(eq(warehouse_zones.warehouse_id, parseInt(id)));
-    
-    // Get work centers for this warehouse
-    const workCentersData = await db.select().from(work_centers)
-      .where(eq(work_centers.warehouse_id, parseInt(id)));
-    
-    res.json({
-      ...warehouseData,
-      zones: zonesData,
-      workCenters: workCentersData
-    });
+    res.json(warehouse);
   } catch (error) {
-    console.error('Error fetching warehouse details:', error);
-    res.status(500).json({ error: 'Failed to fetch warehouse details' });
+    console.error('Error fetching warehouse:', error);
+    res.status(500).json({ error: 'Failed to fetch warehouse' });
   }
 });
 
-router.post('/warehouses', checkManufacturingPermission('create'), async (req, res) => {
+// Create a new warehouse
+router.post('/warehouses', async (req: Request, res: Response) => {
   try {
-    const warehouseData = req.body;
+    const warehouseSchema = createInsertSchema(warehouses);
+    const validatedData = warehouseSchema.parse(req.body);
     
-    // Convert numeric values
-    if (warehouseData.capacity) {
-      warehouseData.capacity = Number(warehouseData.capacity);
-    }
-    
-    // Handle defaulting utilization rate to 0 for new warehouses
-    if (!warehouseData.utilization_rate) {
-      warehouseData.utilization_rate = 0;
-    } else {
-      warehouseData.utilization_rate = Number(warehouseData.utilization_rate);
-    }
-    
-    const [newWarehouse] = await db.insert(warehouses).values({
-      ...warehouseData,
-      created_at: new Date(),
-      owner_id: req.user?.id || null
-    }).returning();
-    
+    const [newWarehouse] = await db.insert(warehouses).values(validatedData).returning();
     res.status(201).json(newWarehouse);
   } catch (error) {
     console.error('Error creating warehouse:', error);
-    res.status(500).json({ error: 'Failed to create warehouse', details: error.message });
+    res.status(500).json({ error: 'Failed to create warehouse' });
   }
 });
 
-router.put('/warehouses/:id', checkManufacturingPermission('update'), async (req, res) => {
+// Update a warehouse
+router.put('/warehouses/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const warehouseData = req.body;
+    const warehouseSchema = createInsertSchema(warehouses);
+    const validatedData = warehouseSchema.parse(req.body);
     
-    // Convert numeric values
-    if (warehouseData.capacity) {
-      warehouseData.capacity = Number(warehouseData.capacity);
-    }
-    
-    if (warehouseData.utilization_rate) {
-      warehouseData.utilization_rate = Number(warehouseData.utilization_rate);
-    }
-    
-    const [updatedWarehouse] = await db.update(warehouses)
-      .set({
-        ...warehouseData,
-        updated_at: new Date()
-      })
-      .where(eq(warehouses.id, parseInt(id)))
+    const [updatedWarehouse] = await db
+      .update(warehouses)
+      .set(validatedData)
+      .where(eq(warehouses.id, Number(id)))
       .returning();
     
     if (!updatedWarehouse) {
@@ -126,543 +85,471 @@ router.put('/warehouses/:id', checkManufacturingPermission('update'), async (req
     res.json(updatedWarehouse);
   } catch (error) {
     console.error('Error updating warehouse:', error);
-    res.status(500).json({ error: 'Failed to update warehouse', details: error.message });
+    res.status(500).json({ error: 'Failed to update warehouse' });
   }
 });
 
-router.delete('/warehouses/:id', checkManufacturingPermission('delete'), async (req, res) => {
+// Delete a warehouse
+router.delete('/warehouses/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await db.delete(warehouses).where(eq(warehouses.id, parseInt(id)));
-    res.status(204).send();
+    
+    await db.delete(warehouses).where(eq(warehouses.id, Number(id)));
+    
+    res.json({ success: true });
   } catch (error) {
     console.error('Error deleting warehouse:', error);
     res.status(500).json({ error: 'Failed to delete warehouse' });
   }
 });
 
-// Work Centers Routes
-router.get('/work-centers', checkManufacturingPermission('view'), async (req, res) => {
+// ============= WAREHOUSE ZONES API ==================
+// Get all zones for a warehouse
+router.get('/warehouse-zones', async (req: Request, res: Response) => {
   try {
-    const workCentersData = await db.select().from(work_centers);
-    res.json(workCentersData);
-  } catch (error) {
-    console.error('Error fetching work centers:', error);
-    res.status(500).json({ error: 'Failed to fetch work centers' });
-  }
-});
-
-router.get('/work-centers/:id', checkManufacturingPermission('view'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [workCenterData] = await db.select().from(work_centers)
-      .where(eq(work_centers.id, parseInt(id)));
+    const { warehouseId } = req.query;
     
-    if (!workCenterData) {
-      return res.status(404).json({ error: 'Work center not found' });
+    let query = db.select().from(warehouseZones);
+    
+    if (warehouseId) {
+      query = query.where(eq(warehouseZones.warehouseId, Number(warehouseId)));
     }
     
-    // Get equipment for this work center
-    const equipmentData = await db.select().from(equipment)
-      .where(eq(equipment.work_center_id, parseInt(id)));
-    
-    res.json({
-      ...workCenterData,
-      equipment: equipmentData
-    });
+    const zones = await query.orderBy(warehouseZones.name);
+    res.json(zones);
   } catch (error) {
-    console.error('Error fetching work center details:', error);
-    res.status(500).json({ error: 'Failed to fetch work center details' });
+    console.error('Error fetching warehouse zones:', error);
+    res.status(500).json({ error: 'Failed to fetch warehouse zones' });
   }
 });
 
-router.post('/work-centers', checkManufacturingPermission('create'), async (req, res) => {
+// Create a new warehouse zone
+router.post('/warehouse-zones', async (req: Request, res: Response) => {
   try {
-    const workCenterData = req.body;
-    const [newWorkCenter] = await db.insert(work_centers).values({
-      ...workCenterData,
-      created_at: new Date()
-    }).returning();
+    const zoneSchema = createInsertSchema(warehouseZones);
+    const validatedData = zoneSchema.parse(req.body);
     
-    res.status(201).json(newWorkCenter);
+    const [newZone] = await db.insert(warehouseZones).values(validatedData).returning();
+    res.status(201).json(newZone);
   } catch (error) {
-    console.error('Error creating work center:', error);
-    res.status(500).json({ error: 'Failed to create work center' });
+    console.error('Error creating warehouse zone:', error);
+    res.status(500).json({ error: 'Failed to create warehouse zone' });
   }
 });
 
-router.put('/work-centers/:id', checkManufacturingPermission('update'), async (req, res) => {
+// ============= STORAGE BINS API ==================
+// Get all storage bins
+router.get('/storage-bins', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const workCenterData = req.body;
+    const { warehouseId, zoneId } = req.query;
     
-    const [updatedWorkCenter] = await db.update(work_centers)
-      .set({
-        ...workCenterData,
-        updated_at: new Date()
-      })
-      .where(eq(work_centers.id, parseInt(id)))
-      .returning();
+    let query = db.select().from(storageBins);
     
-    if (!updatedWorkCenter) {
-      return res.status(404).json({ error: 'Work center not found' });
+    if (warehouseId) {
+      query = query.where(eq(storageBins.warehouseId, Number(warehouseId)));
     }
     
-    res.json(updatedWorkCenter);
-  } catch (error) {
-    console.error('Error updating work center:', error);
-    res.status(500).json({ error: 'Failed to update work center' });
-  }
-});
-
-router.delete('/work-centers/:id', checkManufacturingPermission('delete'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    await db.delete(work_centers).where(eq(work_centers.id, parseInt(id)));
-    res.status(204).send();
-  } catch (error) {
-    console.error('Error deleting work center:', error);
-    res.status(500).json({ error: 'Failed to delete work center' });
-  }
-});
-
-// Bill of Materials Routes
-router.get('/bom', checkManufacturingPermission('view'), async (req, res) => {
-  try {
-    const bomData = await db.select().from(bill_of_materials);
-    res.json(bomData);
-  } catch (error) {
-    console.error('Error fetching bill of materials:', error);
-    res.status(500).json({ error: 'Failed to fetch bill of materials' });
-  }
-});
-
-router.get('/bom/:id', checkManufacturingPermission('view'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [bomData] = await db.select().from(bill_of_materials)
-      .where(eq(bill_of_materials.id, parseInt(id)));
-    
-    if (!bomData) {
-      return res.status(404).json({ error: 'Bill of materials not found' });
+    if (zoneId) {
+      query = query.where(eq(storageBins.zoneId, Number(zoneId)));
     }
     
-    // Get items for this BOM
-    const bomItemsData = await db.select().from(bom_items)
-      .where(eq(bom_items.bom_id, parseInt(id)));
-    
-    // Get routings for this BOM
-    const routingsData = await db.select().from(routings)
-      .where(eq(routings.bom_id, parseInt(id)));
-    
-    res.json({
-      ...bomData,
-      items: bomItemsData,
-      routings: routingsData
-    });
+    const bins = await query.orderBy(storageBins.id);
+    res.json(bins);
   } catch (error) {
-    console.error('Error fetching BOM details:', error);
-    res.status(500).json({ error: 'Failed to fetch BOM details' });
+    console.error('Error fetching storage bins:', error);
+    res.status(500).json({ error: 'Failed to fetch storage bins' });
   }
 });
 
-router.post('/bom', checkManufacturingPermission('create'), async (req, res) => {
+// Create a new storage bin
+router.post('/storage-bins', async (req: Request, res: Response) => {
   try {
-    const bomData = req.body;
+    const binSchema = createInsertSchema(storageBins);
+    const validatedData = binSchema.parse(req.body);
     
-    // First, insert the BOM header
-    const [newBom] = await db.insert(bill_of_materials).values({
-      ...bomData,
-      created_at: new Date(),
-      created_by: req.user.id
-    }).returning();
+    const [newBin] = await db.insert(storageBins).values(validatedData).returning();
+    res.status(201).json(newBin);
+  } catch (error) {
+    console.error('Error creating storage bin:', error);
+    res.status(500).json({ error: 'Failed to create storage bin' });
+  }
+});
+
+// ============= VENDORS API ==================
+// Get all vendors
+router.get('/vendors', async (req: Request, res: Response) => {
+  try {
+    const { search, status } = req.query;
     
-    // If items are provided, insert them
-    if (bomData.items && Array.isArray(bomData.items)) {
-      for (const item of bomData.items) {
-        await db.insert(bom_items).values({
-          ...item,
-          bom_id: newBom.id
-        });
-      }
+    let query = db.select().from(vendors);
+    
+    if (search) {
+      query = query.where(
+        or(
+          like(vendors.name, `%${search}%`),
+          like(vendors.contactPerson, `%${search}%`),
+          like(vendors.email, `%${search}%`)
+        )
+      );
     }
     
-    res.status(201).json(newBom);
+    if (status) {
+      query = query.where(eq(vendors.status, String(status)));
+    }
+    
+    const allVendors = await query.orderBy(desc(vendors.id));
+    res.json(allVendors);
   } catch (error) {
-    console.error('Error creating BOM:', error);
-    res.status(500).json({ error: 'Failed to create BOM' });
+    console.error('Error fetching vendors:', error);
+    res.status(500).json({ error: 'Failed to fetch vendors' });
   }
 });
 
-router.put('/bom/:id', checkManufacturingPermission('update'), async (req, res) => {
+// Get a single vendor by ID
+router.get('/vendors/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const bomData = req.body;
+    const [vendor] = await db.select().from(vendors).where(eq(vendors.id, Number(id)));
     
-    // Update BOM header
-    const [updatedBom] = await db.update(bill_of_materials)
-      .set({
-        ...bomData,
-        updated_at: new Date()
-      })
-      .where(eq(bill_of_materials.id, parseInt(id)))
-      .returning();
-    
-    if (!updatedBom) {
-      return res.status(404).json({ error: 'Bill of materials not found' });
+    if (!vendor) {
+      return res.status(404).json({ error: 'Vendor not found' });
     }
     
-    res.json(updatedBom);
+    res.json(vendor);
   } catch (error) {
-    console.error('Error updating BOM:', error);
-    res.status(500).json({ error: 'Failed to update BOM' });
+    console.error('Error fetching vendor:', error);
+    res.status(500).json({ error: 'Failed to fetch vendor' });
   }
 });
 
-router.delete('/bom/:id', checkManufacturingPermission('delete'), async (req, res) => {
+// Create a new vendor
+router.post('/vendors', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const vendorSchema = createInsertSchema(vendors);
+    const validatedData = vendorSchema.parse(req.body);
     
-    // Delete related BOM items first
-    await db.delete(bom_items).where(eq(bom_items.bom_id, parseInt(id)));
-    
-    // Then delete the BOM header
-    await db.delete(bill_of_materials).where(eq(bill_of_materials.id, parseInt(id)));
-    
-    res.status(204).send();
+    const [newVendor] = await db.insert(vendors).values(validatedData).returning();
+    res.status(201).json(newVendor);
   } catch (error) {
-    console.error('Error deleting BOM:', error);
-    res.status(500).json({ error: 'Failed to delete BOM' });
+    console.error('Error creating vendor:', error);
+    res.status(500).json({ error: 'Failed to create vendor' });
   }
 });
 
-// Production Order Routes
-router.get('/production-orders', checkManufacturingPermission('view'), async (req, res) => {
+// ============= VENDOR PRODUCTS API ==================
+// Get all vendor products
+router.get('/vendor-products', async (req: Request, res: Response) => {
   try {
-    const productionOrdersData = await db.select().from(production_orders);
-    res.json(productionOrdersData);
-  } catch (error) {
-    console.error('Error fetching production orders:', error);
-    res.status(500).json({ error: 'Failed to fetch production orders' });
-  }
-});
-
-router.get('/production-orders/:id', checkManufacturingPermission('view'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [productionOrderData] = await db.select().from(production_orders)
-      .where(eq(production_orders.id, parseInt(id)));
+    const { vendorId } = req.query;
     
-    if (!productionOrderData) {
-      return res.status(404).json({ error: 'Production order not found' });
+    let query = db.select().from(vendorProducts);
+    
+    if (vendorId) {
+      query = query.where(eq(vendorProducts.vendorId, Number(vendorId)));
     }
     
-    // Get operations for this production order
-    const operationsData = await db.select().from(production_order_operations)
-      .where(eq(production_order_operations.production_order_id, parseInt(id)));
-    
-    // Get material consumptions for this production order
-    const materialConsumptionsData = await db.select().from(material_consumptions)
-      .where(eq(material_consumptions.production_order_id, parseInt(id)));
-    
-    // Get quality inspections for this production order
-    const qualityInspectionsData = await db.select().from(quality_inspections)
-      .where(eq(quality_inspections.reference_id, parseInt(id)))
-      .where(eq(quality_inspections.reference_type, 'production_order'));
-    
-    res.json({
-      ...productionOrderData,
-      operations: operationsData,
-      materialConsumptions: materialConsumptionsData,
-      qualityInspections: qualityInspectionsData
-    });
+    const products = await query.orderBy(vendorProducts.id);
+    res.json(products);
   } catch (error) {
-    console.error('Error fetching production order details:', error);
-    res.status(500).json({ error: 'Failed to fetch production order details' });
+    console.error('Error fetching vendor products:', error);
+    res.status(500).json({ error: 'Failed to fetch vendor products' });
   }
 });
 
-router.post('/production-orders', checkManufacturingPermission('create'), async (req, res) => {
+// ============= VENDOR CONTRACTS API ==================
+// Get all vendor contracts
+router.get('/vendor-contracts', async (req: Request, res: Response) => {
   try {
-    const productionOrderData = req.body;
+    const { vendorId, status } = req.query;
     
-    // Generate order number if not provided
-    if (!productionOrderData.order_number) {
-      const timestamp = Date.now().toString();
-      productionOrderData.order_number = `PO-${timestamp.substring(timestamp.length - 8)}`;
+    let query = db.select().from(vendorContracts);
+    
+    if (vendorId) {
+      query = query.where(eq(vendorContracts.vendorId, Number(vendorId)));
     }
     
-    // First, insert the production order header
-    const [newProductionOrder] = await db.insert(production_orders).values({
-      ...productionOrderData,
-      created_at: new Date(),
-      created_by: req.user.id
-    }).returning();
-    
-    // If operations are provided, insert them
-    if (productionOrderData.operations && Array.isArray(productionOrderData.operations)) {
-      for (const operation of productionOrderData.operations) {
-        await db.insert(production_order_operations).values({
-          ...operation,
-          production_order_id: newProductionOrder.id
-        });
-      }
+    if (status) {
+      query = query.where(eq(vendorContracts.status, String(status)));
     }
     
-    res.status(201).json(newProductionOrder);
+    const contracts = await query.orderBy(desc(vendorContracts.id));
+    res.json(contracts);
   } catch (error) {
-    console.error('Error creating production order:', error);
-    res.status(500).json({ error: 'Failed to create production order' });
+    console.error('Error fetching vendor contracts:', error);
+    res.status(500).json({ error: 'Failed to fetch vendor contracts' });
   }
 });
 
-router.put('/production-orders/:id', checkManufacturingPermission('update'), async (req, res) => {
+// ============= MATERIAL VALUATIONS API ==================
+// Get all material valuations
+router.get('/material-valuations', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const productionOrderData = req.body;
+    const { materialId, method } = req.query;
     
-    // Update production order header
-    const [updatedProductionOrder] = await db.update(production_orders)
-      .set({
-        ...productionOrderData,
-        updated_at: new Date()
-      })
-      .where(eq(production_orders.id, parseInt(id)))
-      .returning();
+    let query = db.select().from(materialValuations);
     
-    if (!updatedProductionOrder) {
-      return res.status(404).json({ error: 'Production order not found' });
+    if (materialId) {
+      query = query.where(eq(materialValuations.materialId, Number(materialId)));
     }
     
-    res.json(updatedProductionOrder);
+    if (method) {
+      query = query.where(eq(materialValuations.valuationMethod, String(method)));
+    }
+    
+    const valuations = await query.orderBy(desc(materialValuations.updatedAt));
+    res.json(valuations);
   } catch (error) {
-    console.error('Error updating production order:', error);
-    res.status(500).json({ error: 'Failed to update production order' });
+    console.error('Error fetching material valuations:', error);
+    res.status(500).json({ error: 'Failed to fetch material valuations' });
   }
 });
 
-router.delete('/production-orders/:id', checkManufacturingPermission('delete'), async (req, res) => {
+// Get valuation methods
+router.get('/valuation-methods', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    
-    // Delete related records first
-    await db.delete(production_order_operations)
-      .where(eq(production_order_operations.production_order_id, parseInt(id)));
-    
-    await db.delete(material_consumptions)
-      .where(eq(material_consumptions.production_order_id, parseInt(id)));
-    
-    // Then delete the production order header
-    await db.delete(production_orders)
-      .where(eq(production_orders.id, parseInt(id)));
-    
-    res.status(204).send();
+    const methods = await db.select().from(valuationMethods);
+    res.json(methods);
   } catch (error) {
-    console.error('Error deleting production order:', error);
-    res.status(500).json({ error: 'Failed to delete production order' });
+    console.error('Error fetching valuation methods:', error);
+    res.status(500).json({ error: 'Failed to fetch valuation methods' });
   }
 });
 
-// Quality Inspection Routes
-router.get('/quality-inspections', checkManufacturingPermission('view'), async (req, res) => {
+// ============= BATCH/LOT MANAGEMENT API ==================
+// Get all batches/lots
+router.get('/batch-lots', async (req: Request, res: Response) => {
   try {
-    const qualityInspectionsData = await db.select().from(quality_inspections);
-    res.json(qualityInspectionsData);
+    const { materialId, status, expiryBefore } = req.query;
+    
+    let query = db.select().from(batchLots);
+    
+    if (materialId) {
+      query = query.where(eq(batchLots.materialId, Number(materialId)));
+    }
+    
+    if (status) {
+      query = query.where(eq(batchLots.status, String(status)));
+    }
+    
+    if (expiryBefore) {
+      query = query.where(eq(batchLots.expiryDate, String(expiryBefore)));
+    }
+    
+    const batches = await query.orderBy(desc(batchLots.id));
+    res.json(batches);
+  } catch (error) {
+    console.error('Error fetching batch/lots:', error);
+    res.status(500).json({ error: 'Failed to fetch batch/lots' });
+  }
+});
+
+// Get QA inspections for batches
+router.get('/quality-inspections', async (req: Request, res: Response) => {
+  try {
+    const { batchId, status } = req.query;
+    
+    let query = db.select().from(qualityInspections);
+    
+    if (batchId) {
+      query = query.where(eq(qualityInspections.batchId, Number(batchId)));
+    }
+    
+    if (status) {
+      query = query.where(eq(qualityInspections.status, String(status)));
+    }
+    
+    const inspections = await query.orderBy(desc(qualityInspections.id));
+    res.json(inspections);
   } catch (error) {
     console.error('Error fetching quality inspections:', error);
     res.status(500).json({ error: 'Failed to fetch quality inspections' });
   }
 });
 
-router.post('/quality-inspections', checkManufacturingPermission('create'), async (req, res) => {
+// ============= RETURNS MANAGEMENT API ==================
+// Get all return orders
+router.get('/return-orders', async (req: Request, res: Response) => {
   try {
-    const inspectionData = req.body;
+    const { type, status } = req.query;
     
-    const [newInspection] = await db.insert(quality_inspections).values({
-      ...inspectionData,
-      inspection_date: new Date(),
-      inspected_by: req.user.id
-    }).returning();
+    let query = db.select().from(returnOrders);
     
-    res.status(201).json(newInspection);
-  } catch (error) {
-    console.error('Error creating quality inspection:', error);
-    res.status(500).json({ error: 'Failed to create quality inspection' });
-  }
-});
-
-// Equipment Routes
-router.get('/equipment', checkManufacturingPermission('view'), async (req, res) => {
-  try {
-    const equipmentData = await db.select().from(equipment);
-    res.json(equipmentData);
-  } catch (error) {
-    console.error('Error fetching equipment:', error);
-    res.status(500).json({ error: 'Failed to fetch equipment' });
-  }
-});
-
-router.get('/equipment/:id', checkManufacturingPermission('view'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [equipmentData] = await db.select().from(equipment)
-      .where(eq(equipment.id, parseInt(id)));
-    
-    if (!equipmentData) {
-      return res.status(404).json({ error: 'Equipment not found' });
+    if (type) {
+      query = query.where(eq(returnOrders.type, String(type)));
     }
     
-    // Get maintenance requests for this equipment
-    const maintenanceRequestsData = await db.select().from(maintenance_requests)
-      .where(eq(maintenance_requests.equipment_id, parseInt(id)));
-    
-    res.json({
-      ...equipmentData,
-      maintenanceRequests: maintenanceRequestsData
-    });
-  } catch (error) {
-    console.error('Error fetching equipment details:', error);
-    res.status(500).json({ error: 'Failed to fetch equipment details' });
-  }
-});
-
-router.post('/equipment', checkManufacturingPermission('create'), async (req, res) => {
-  try {
-    const equipmentData = req.body;
-    
-    const [newEquipment] = await db.insert(equipment).values({
-      ...equipmentData,
-      created_at: new Date(),
-      created_by: req.user.id
-    }).returning();
-    
-    res.status(201).json(newEquipment);
-  } catch (error) {
-    console.error('Error creating equipment:', error);
-    res.status(500).json({ error: 'Failed to create equipment' });
-  }
-});
-
-router.put('/equipment/:id', checkManufacturingPermission('update'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const equipmentData = req.body;
-    
-    const [updatedEquipment] = await db.update(equipment)
-      .set({
-        ...equipmentData,
-        updated_at: new Date()
-      })
-      .where(eq(equipment.id, parseInt(id)))
-      .returning();
-    
-    if (!updatedEquipment) {
-      return res.status(404).json({ error: 'Equipment not found' });
+    if (status) {
+      query = query.where(eq(returnOrders.status, String(status)));
     }
     
-    res.json(updatedEquipment);
+    const returns = await query.orderBy(desc(returnOrders.id));
+    res.json(returns);
   } catch (error) {
-    console.error('Error updating equipment:', error);
-    res.status(500).json({ error: 'Failed to update equipment' });
+    console.error('Error fetching return orders:', error);
+    res.status(500).json({ error: 'Failed to fetch return orders' });
   }
 });
 
-// Maintenance Request Routes
-router.get('/maintenance-requests', checkManufacturingPermission('view'), async (req, res) => {
+// Get return items by return order
+router.get('/return-items', async (req: Request, res: Response) => {
   try {
-    const maintenanceRequestsData = await db.select().from(maintenance_requests);
-    res.json(maintenanceRequestsData);
-  } catch (error) {
-    console.error('Error fetching maintenance requests:', error);
-    res.status(500).json({ error: 'Failed to fetch maintenance requests' });
-  }
-});
-
-router.post('/maintenance-requests', checkManufacturingPermission('create'), async (req, res) => {
-  try {
-    const requestData = req.body;
+    const { returnId } = req.query;
     
-    const [newRequest] = await db.insert(maintenance_requests).values({
-      ...requestData,
-      request_date: new Date(),
-      created_at: new Date(),
-      requested_by: req.user.id
-    }).returning();
+    let query = db.select().from(returnItems);
     
-    res.status(201).json(newRequest);
-  } catch (error) {
-    console.error('Error creating maintenance request:', error);
-    res.status(500).json({ error: 'Failed to create maintenance request' });
-  }
-});
-
-router.put('/maintenance-requests/:id', checkManufacturingPermission('update'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const requestData = req.body;
-    
-    const [updatedRequest] = await db.update(maintenance_requests)
-      .set({
-        ...requestData,
-        updated_at: new Date()
-      })
-      .where(eq(maintenance_requests.id, parseInt(id)))
-      .returning();
-    
-    if (!updatedRequest) {
-      return res.status(404).json({ error: 'Maintenance request not found' });
+    if (returnId) {
+      query = query.where(eq(returnItems.returnId, Number(returnId)));
     }
     
-    res.json(updatedRequest);
+    const items = await query.orderBy(returnItems.id);
+    res.json(items);
   } catch (error) {
-    console.error('Error updating maintenance request:', error);
-    res.status(500).json({ error: 'Failed to update maintenance request' });
+    console.error('Error fetching return items:', error);
+    res.status(500).json({ error: 'Failed to fetch return items' });
   }
 });
 
-// Dashboard and Reports
-router.get('/dashboard', checkManufacturingPermission('view'), async (req, res) => {
+// ============= GLOBAL TRADE COMPLIANCE API ==================
+// Get all trade documents
+router.get('/trade-documents', async (req: Request, res: Response) => {
   try {
-    // Get counts of various entities
-    const [warehouseCount] = await db.select({ count: db.fn.count() }).from(warehouses);
-    const [workCenterCount] = await db.select({ count: db.fn.count() }).from(work_centers);
-    const [equipmentCount] = await db.select({ count: db.fn.count() }).from(equipment);
+    const { type, materialId, status } = req.query;
     
-    // Get production orders by status
-    const productionOrdersByStatus = await db.select({
-      status: production_orders.status,
-      count: db.fn.count()
-    })
-    .from(production_orders)
-    .groupBy(production_orders.status);
+    let query = db.select().from(tradeDocuments);
     
-    // Get recent production orders
-    const recentProductionOrders = await db.select()
-      .from(production_orders)
-      .orderBy(db.sql`${production_orders.created_at} DESC`)
-      .limit(5);
+    if (type) {
+      query = query.where(eq(tradeDocuments.type, String(type)));
+    }
     
-    // Get maintenance requests by status
-    const maintenanceRequestsByStatus = await db.select({
-      status: maintenance_requests.status,
-      count: db.fn.count()
-    })
-    .from(maintenance_requests)
-    .groupBy(maintenance_requests.status);
+    if (materialId) {
+      query = query.where(eq(tradeDocuments.materialId, Number(materialId)));
+    }
     
-    res.json({
-      counts: {
-        warehouses: warehouseCount.count,
-        workCenters: workCenterCount.count,
-        equipment: equipmentCount.count
+    if (status) {
+      query = query.where(eq(tradeDocuments.status, String(status)));
+    }
+    
+    const documents = await query.orderBy(desc(tradeDocuments.id));
+    res.json(documents);
+  } catch (error) {
+    console.error('Error fetching trade documents:', error);
+    res.status(500).json({ error: 'Failed to fetch trade documents' });
+  }
+});
+
+// Get all shipment compliance records
+router.get('/shipment-compliance', async (req: Request, res: Response) => {
+  try {
+    const { type, status, destination } = req.query;
+    
+    let query = db.select().from(shipmentCompliance);
+    
+    if (type) {
+      query = query.where(eq(shipmentCompliance.type, String(type)));
+    }
+    
+    if (status) {
+      query = query.where(eq(shipmentCompliance.documentStatus, String(status)));
+    }
+    
+    if (destination) {
+      query = query.where(eq(shipmentCompliance.destination, String(destination)));
+    }
+    
+    const shipments = await query.orderBy(desc(shipmentCompliance.id));
+    res.json(shipments);
+  } catch (error) {
+    console.error('Error fetching shipment compliance records:', error);
+    res.status(500).json({ error: 'Failed to fetch shipment compliance records' });
+  }
+});
+
+// ============= MRP API ==================
+// Get all inventory transactions
+router.get('/inventory-transactions', async (req: Request, res: Response) => {
+  try {
+    const { materialId, type, fromDate, toDate } = req.query;
+    
+    let query = db.select().from(inventoryTransactions);
+    
+    if (materialId) {
+      query = query.where(eq(inventoryTransactions.materialId, Number(materialId)));
+    }
+    
+    if (type) {
+      query = query.where(eq(inventoryTransactions.type, String(type)));
+    }
+    
+    // Add date range filtering if needed
+    
+    const transactions = await query.orderBy(desc(inventoryTransactions.createdAt));
+    res.json(transactions);
+  } catch (error) {
+    console.error('Error fetching inventory transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch inventory transactions' });
+  }
+});
+
+// Get MRP forecasts
+router.get('/mrp-forecasts', async (req: Request, res: Response) => {
+  try {
+    // This would be a complex calculation in a real system
+    // For now, we return sample data
+    const forecastData = [
+      { month: 'Jan', forecasted: 120, actual: 115 },
+      { month: 'Feb', forecasted: 140, actual: 132 },
+      { month: 'Mar', forecasted: 135, actual: 142 },
+      { month: 'Apr', forecasted: 150, actual: 145 },
+      { month: 'May', forecasted: 165, actual: 160 },
+      { month: 'Jun', forecasted: 180, actual: 175 },
+    ];
+    
+    res.json(forecastData);
+  } catch (error) {
+    console.error('Error calculating MRP forecasts:', error);
+    res.status(500).json({ error: 'Failed to calculate MRP forecasts' });
+  }
+});
+
+// Get material requirements
+router.get('/material-requirements', async (req: Request, res: Response) => {
+  try {
+    // This would be a complex calculation in a real system
+    // For now, we return sample data
+    const materialRequirements = [
+      { 
+        id: 'MR-001', 
+        name: 'Raw Material A', 
+        currentStock: 250,
+        safetyStock: 100,
+        required: 400,
+        orderPoint: 150,
+        status: 'Sufficient'
       },
-      productionOrdersByStatus,
-      recentProductionOrders,
-      maintenanceRequestsByStatus
-    });
+      { 
+        id: 'MR-002', 
+        name: 'Component B', 
+        currentStock: 120,
+        safetyStock: 75,
+        required: 300,
+        orderPoint: 100,
+        status: 'Low'
+      },
+      { 
+        id: 'MR-003', 
+        name: 'Semifinished C', 
+        currentStock: 30,
+        safetyStock: 50,
+        required: 150,
+        orderPoint: 60,
+        status: 'Critical'
+      }
+    ];
+    
+    res.json(materialRequirements);
   } catch (error) {
-    console.error('Error fetching manufacturing dashboard data:', error);
-    res.status(500).json({ error: 'Failed to fetch manufacturing dashboard data' });
+    console.error('Error calculating material requirements:', error);
+    res.status(500).json({ error: 'Failed to calculate material requirements' });
   }
 });
 
