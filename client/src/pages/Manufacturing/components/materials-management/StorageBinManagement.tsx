@@ -23,7 +23,7 @@ export default function StorageBinManagement() {
   
   // Fetch storage bins with utilization data
   const { 
-    data: storageData, 
+    data: storageBinsResponse, 
     isLoading: isLoadingStorageBins, 
     isError: isStorageBinsError,
     error: storageBinsError
@@ -39,9 +39,12 @@ export default function StorageBinManagement() {
     enabled: activeTab === 'bins'
   });
 
+  // Extract storage data from PostgreSQL response
+  const storageData = storageBinsResponse?.rows || [];
+
   // Fetch warehouses (top-level storage locations)
   const { 
-    data: warehousesData, 
+    data: warehousesResponse, 
     isLoading: isLoadingWarehouses,
     isError: isWarehousesError,
     error: warehousesError 
@@ -56,6 +59,9 @@ export default function StorageBinManagement() {
     },
     enabled: activeTab === 'warehouses'
   });
+  
+  // Extract warehouses data from PostgreSQL response
+  const warehousesData = warehousesResponse?.rows || [];
 
   const isLoading = (activeTab === 'bins' && isLoadingStorageBins) || 
                     (activeTab === 'warehouses' && isLoadingWarehouses);

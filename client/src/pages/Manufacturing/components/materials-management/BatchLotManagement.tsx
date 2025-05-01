@@ -31,7 +31,7 @@ export default function BatchLotManagement() {
   
   // Fetch all batch lots
   const { 
-    data: batchLotsData, 
+    data: batchLotsResponse, 
     isLoading: isLoadingBatchLots, 
     isError: isBatchLotsError,
     error: batchLotsError
@@ -47,9 +47,12 @@ export default function BatchLotManagement() {
     enabled: activeTab === 'current'
   });
 
+  // Extract batch lots from the PostgreSQL response
+  const batchLotsData = batchLotsResponse?.rows || [];
+
   // Fetch expiring batch lots
   const { 
-    data: expiringLotsData, 
+    data: expiringLotsResponse, 
     isLoading: isLoadingExpiringLots,
     isError: isExpiringLotsError,
     error: expiringLotsError
@@ -64,6 +67,9 @@ export default function BatchLotManagement() {
     },
     enabled: activeTab === 'expiring'
   });
+  
+  // Extract expiring batch lots from the PostgreSQL response
+  const expiringLotsData = expiringLotsResponse?.rows || [];
 
   const isLoading = (activeTab === 'current' && isLoadingBatchLots) || 
                    (activeTab === 'expiring' && isLoadingExpiringLots);

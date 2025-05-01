@@ -45,42 +45,45 @@ export default function VendorManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Fetch vendors from API
-  const { data: vendors = [], isLoading, refetch } = useQuery({
+  const { data: rawVendorData, isLoading, refetch } = useQuery({
     queryKey: ['/api/manufacturing/vendors'],
     queryFn: async () => {
       try {
         const res = await apiRequest('GET', '/api/manufacturing/vendors');
-        return await res.json() as Vendor[];
+        return await res.json();
       } catch (error) {
         console.error('Failed to fetch vendors:', error);
-        return [];
+        return { rows: [] };
       }
     }
   });
 
+  // Extract vendors from the PostgreSQL response
+  const vendors: Vendor[] = rawVendorData?.rows || [];
+  
   // Filter vendors based on search term
   const filteredVendors = vendors.filter(vendor => 
     searchTerm === '' || 
-    vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
+    (vendor.name && vendor.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (vendor.code && vendor.code.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (vendor.contactPerson && vendor.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   
   // Summary stats
   const activeVendors = vendors.filter(v => v.isActive).length;
   const inactiveVendors = vendors.length - activeVendors;
   
-  // Calculate average ratings
+  // Calculate average ratings with safe type conversion
   const avgQualityRating = vendors.length > 0 
-    ? vendors.reduce((sum, v) => sum + v.qualityRating, 0) / vendors.length
+    ? vendors.reduce((sum, v) => sum + (parseFloat(v.qualityRating as any) || 0), 0) / vendors.length
     : 0;
     
   const avgDeliveryRating = vendors.length > 0 
-    ? vendors.reduce((sum, v) => sum + v.deliveryRating, 0) / vendors.length
+    ? vendors.reduce((sum, v) => sum + (parseFloat(v.deliveryRating as any) || 0), 0) / vendors.length
     : 0;
     
   const avgPriceRating = vendors.length > 0 
-    ? vendors.reduce((sum, v) => sum + v.priceRating, 0) / vendors.length
+    ? vendors.reduce((sum, v) => sum + (parseInt(v.priceRating as any) || 0), 0) / vendors.length
     : 0;
 
   return (
@@ -242,14 +245,14 @@ export default function VendorManagement() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <span className="font-medium mr-1">{vendor.qualityRating.toFixed(1)}</span>
-                        <Star className={`h-4 w-4 ${vendor.qualityRating >= 4 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300 fill-gray-300'}`} />
+                        <span className="font-medium mr-1">{parseFloat(vendor.qualityRating as any || 0).toFixed(1)}</span>
+                        <Star className={`h-4 w-4 ${parseFloat(vendor.qualityRating as any || 0) >= 4 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300 fill-gray-300'}`} />
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <span className="font-medium mr-1">{vendor.deliveryRating.toFixed(1)}</span>
-                        <Star className={`h-4 w-4 ${vendor.deliveryRating >= 4 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300 fill-gray-300'}`} />
+                        <span className="font-medium mr-1">{parseFloat(vendor.deliveryRating as any || 0).toFixed(1)}</span>
+                        <Star className={`h-4 w-4 ${parseFloat(vendor.deliveryRating as any || 0) >= 4 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300 fill-gray-300'}`} />
                       </div>
                     </TableCell>
                     <TableCell>
