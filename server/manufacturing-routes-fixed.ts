@@ -195,7 +195,7 @@ router.get('/warehouse/bins', async (req: Request, res: Response) => {
 // Get all storage locations with hierarchical structure
 router.get('/storage/locations', async (req: Request, res: Response) => {
   try {
-    // Using warehouses and warehouse_zones for storage locations
+    // Using warehouses table with corrected column names
     const warehouses = await db.execute(sql`
       SELECT 
         w.id,
@@ -206,12 +206,12 @@ router.get('/storage/locations', async (req: Request, res: Response) => {
         w.city,
         w.state,
         w.country,
-        w.zip_code,
+        w.zip as zip_code,
         w.capacity,
-        w.capacity_unit as "capacityUom",
+        'Unit' as "capacityUom",
         w.is_active as "isActive",
         w.description,
-        NULL as "parentId"
+        w.parent_warehouse_id as "parentId"
       FROM warehouses w
       ORDER BY w.name
     `);
@@ -229,75 +229,35 @@ router.get('/storage/locations', async (req: Request, res: Response) => {
 // Get all batch lots
 router.get('/batch-lots', async (req: Request, res: Response) => {
   try {
-    // First check if the warehouse_id column exists
-    const hasWarehouseId = await db.execute(sql`
-      SELECT EXISTS (
-        SELECT FROM information_schema.columns 
-        WHERE table_name = 'batch_lots' AND column_name = 'warehouse_id'
-      ) as has_column
+    // We've confirmed the warehouse_id column exists
+    const result = await db.execute(sql`
+      SELECT 
+        bl.id,
+        bl.lot_number,
+        bl.batch_number as "batchNumber",
+        p.name as "materialName",
+        p.sku as "materialCode",
+        bl.quantity,
+        bl.quantity as "remainingQuantity",
+        bl.unit_of_measure as uom,
+        bl.status,
+        w.name as "locationName",
+        v.name as "vendorName",
+        bl.manufacture_date as "manufacturingDate",
+        bl.expiration_date as "expirationDate",
+        bl.receipt_date as "receivedDate",
+        bl.cost,
+        bl.purchase_order_id as "purchaseOrderId",
+        bl.production_order_id as "productionOrderId",
+        bl.quality_status as "qualityStatus",
+        bl.created_at as "createdAt",
+        bl.updated_at as "updatedAt"
+      FROM batch_lots bl
+      LEFT JOIN products p ON bl.product_id = p.id
+      LEFT JOIN warehouses w ON bl.warehouse_id = w.id
+      LEFT JOIN vendors v ON bl.vendor_id = v.id
+      ORDER BY bl.created_at DESC
     `);
-    
-    // Handle query based on whether warehouse_id exists
-    let result;
-    if (hasWarehouseId[0].has_column) {
-      result = await db.execute(sql`
-        SELECT 
-          bl.id,
-          bl.lot_number,
-          bl.batch_number as "batchNumber",
-          p.name as "materialName",
-          p.sku as "materialCode",
-          bl.quantity,
-          bl.quantity as "remainingQuantity",
-          bl.unit_of_measure as uom,
-          bl.status,
-          w.name as "locationName",
-          v.name as "vendorName",
-          bl.manufacture_date as "manufacturingDate",
-          bl.expiration_date as "expirationDate",
-          bl.receipt_date as "receivedDate",
-          bl.cost,
-          bl.purchase_order_id as "purchaseOrderId",
-          bl.production_order_id as "productionOrderId",
-          bl.quality_status as "qualityStatus",
-          bl.created_at as "createdAt",
-          bl.updated_at as "updatedAt"
-        FROM batch_lots bl
-        LEFT JOIN products p ON bl.product_id = p.id
-        LEFT JOIN warehouses w ON bl.warehouse_id = w.id
-        LEFT JOIN vendors v ON bl.vendor_id = v.id
-        ORDER BY bl.created_at DESC
-      `);
-    } else {
-      // If warehouse_id doesn't exist, exclude it from the query
-      result = await db.execute(sql`
-        SELECT 
-          bl.id,
-          bl.lot_number,
-          bl.batch_number as "batchNumber",
-          p.name as "materialName",
-          p.sku as "materialCode",
-          bl.quantity,
-          bl.quantity as "remainingQuantity",
-          bl.unit_of_measure as uom,
-          bl.status,
-          'Unknown' as "locationName",
-          v.name as "vendorName",
-          bl.manufacture_date as "manufacturingDate",
-          bl.expiration_date as "expirationDate",
-          bl.receipt_date as "receivedDate",
-          bl.cost,
-          bl.purchase_order_id as "purchaseOrderId",
-          bl.production_order_id as "productionOrderId",
-          bl.quality_status as "qualityStatus",
-          bl.created_at as "createdAt",
-          bl.updated_at as "updatedAt"
-        FROM batch_lots bl
-        LEFT JOIN products p ON bl.product_id = p.id
-        LEFT JOIN vendors v ON bl.vendor_id = v.id
-        ORDER BY bl.created_at DESC
-      `);
-    }
     
     return res.json(result);
   } catch (error) {
@@ -315,83 +275,39 @@ router.get('/batch-lots/expiring', async (req: Request, res: Response) => {
     const futureDate = new Date();
     futureDate.setDate(today.getDate() + days);
     
-    // First check if the warehouse_id column exists
-    const hasWarehouseId = await db.execute(sql`
-      SELECT EXISTS (
-        SELECT FROM information_schema.columns 
-        WHERE table_name = 'batch_lots' AND column_name = 'warehouse_id'
-      ) as has_column
-    `);
-    
-    // Handle query based on whether warehouse_id exists
-    let result;
-    if (hasWarehouseId[0].has_column) {
-      result = await db.execute(sql`
-        SELECT 
-          bl.id,
-          bl.lot_number,
-          bl.batch_number as "batchNumber",
-          p.name as "materialName",
-          p.sku as "materialCode",
-          bl.quantity,
-          bl.quantity as "remainingQuantity",
-          bl.unit_of_measure as uom,
-          bl.status,
-          w.name as "locationName",
-          v.name as "vendorName",
-          bl.manufacture_date as "manufacturingDate",
-          bl.expiration_date as "expirationDate",
-          bl.receipt_date as "receivedDate",
-          bl.cost,
-          DATE_PART('day', bl.expiration_date::timestamp - CURRENT_DATE::timestamp)::integer as "daysRemaining",
-          bl.purchase_order_id as "purchaseOrderId",
-          bl.quality_status as "qualityStatus",
-          bl.created_at as "createdAt"
-        FROM batch_lots bl
-        LEFT JOIN products p ON bl.product_id = p.id
-        LEFT JOIN warehouses w ON bl.warehouse_id = w.id
-        LEFT JOIN vendors v ON bl.vendor_id = v.id
-        WHERE 
-          bl.expiration_date IS NOT NULL
-          AND bl.expiration_date >= CURRENT_DATE
-          AND bl.expiration_date <= $1::date
-          AND bl.status NOT IN ('Consumed', 'Expired', 'Rejected')
-        ORDER BY bl.expiration_date
-      `, [futureDate.toISOString()]);
-    } else {
-      // If warehouse_id doesn't exist, exclude it from the query
-      result = await db.execute(sql`
-        SELECT 
-          bl.id,
-          bl.lot_number,
-          bl.batch_number as "batchNumber",
-          p.name as "materialName",
-          p.sku as "materialCode",
-          bl.quantity,
-          bl.quantity as "remainingQuantity",
-          bl.unit_of_measure as uom,
-          bl.status,
-          'Unknown' as "locationName",
-          v.name as "vendorName",
-          bl.manufacture_date as "manufacturingDate",
-          bl.expiration_date as "expirationDate",
-          bl.receipt_date as "receivedDate",
-          bl.cost,
-          DATE_PART('day', bl.expiration_date::timestamp - CURRENT_DATE::timestamp)::integer as "daysRemaining",
-          bl.purchase_order_id as "purchaseOrderId",
-          bl.quality_status as "qualityStatus",
-          bl.created_at as "createdAt"
-        FROM batch_lots bl
-        LEFT JOIN products p ON bl.product_id = p.id
-        LEFT JOIN vendors v ON bl.vendor_id = v.id
-        WHERE 
-          bl.expiration_date IS NOT NULL
-          AND bl.expiration_date >= CURRENT_DATE
-          AND bl.expiration_date <= $1::date
-          AND bl.status NOT IN ('Consumed', 'Expired', 'Rejected')
-        ORDER BY bl.expiration_date
-      `, [futureDate.toISOString()]);
-    }
+    // We've confirmed the warehouse_id column exists
+    const result = await db.execute(sql`
+      SELECT 
+        bl.id,
+        bl.lot_number,
+        bl.batch_number as "batchNumber",
+        p.name as "materialName",
+        p.sku as "materialCode",
+        bl.quantity,
+        bl.quantity as "remainingQuantity",
+        bl.unit_of_measure as uom,
+        bl.status,
+        w.name as "locationName",
+        v.name as "vendorName",
+        bl.manufacture_date as "manufacturingDate",
+        bl.expiration_date as "expirationDate",
+        bl.receipt_date as "receivedDate",
+        bl.cost,
+        DATE_PART('day', bl.expiration_date::timestamp - CURRENT_DATE::timestamp)::integer as "daysRemaining",
+        bl.purchase_order_id as "purchaseOrderId",
+        bl.quality_status as "qualityStatus",
+        bl.created_at as "createdAt"
+      FROM batch_lots bl
+      LEFT JOIN products p ON bl.product_id = p.id
+      LEFT JOIN warehouses w ON bl.warehouse_id = w.id
+      LEFT JOIN vendors v ON bl.vendor_id = v.id
+      WHERE 
+        bl.expiration_date IS NOT NULL
+        AND bl.expiration_date >= CURRENT_DATE
+        AND bl.expiration_date <= $1::date
+        AND bl.status NOT IN ('Consumed', 'Expired', 'Rejected')
+      ORDER BY bl.expiration_date
+    `, [futureDate.toISOString()]);
     
     return res.json(result);
   } catch (error) {
