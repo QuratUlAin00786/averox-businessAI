@@ -13,6 +13,15 @@ import ProductionOrdersList from './components/ProductionOrdersList';
 import QualityInspectionsList from './components/QualityInspectionsList';
 import MaintenanceRequestsList from './components/MaintenanceRequestsList';
 
+// Import new SAP-level materials management components
+import MRPDashboard from './components/materials-management/MRPDashboard';
+import VendorManagement from './components/materials-management/VendorManagement';
+import StorageBinManagement from './components/materials-management/StorageBinManagement';
+import BatchLotManagement from './components/materials-management/BatchLotManagement';
+import MaterialValuationList from './components/materials-management/MaterialValuationList';
+import ReturnsManagement from './components/materials-management/ReturnsManagement';
+import TradeComplianceList from './components/materials-management/TradeComplianceList';
+
 export default function Manufacturing() {
   const [location, setLocation] = useLocation();
   const [match, params] = useRoute('/manufacturing/:subPath');
@@ -51,7 +60,7 @@ export default function Manufacturing() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="bg-background border-b grid grid-cols-7 rounded-none w-full justify-start">
+        <TabsList className="bg-background border-b flex flex-wrap rounded-none w-full justify-start overflow-x-auto">
           <TabsTrigger value="dashboard" className="text-sm">Dashboard</TabsTrigger>
           <TabsTrigger value="workcenters" className="text-sm">Work Centers</TabsTrigger>
           <TabsTrigger value="warehouses" className="text-sm">Warehouses</TabsTrigger>
@@ -59,8 +68,18 @@ export default function Manufacturing() {
           <TabsTrigger value="production" className="text-sm">Production Orders</TabsTrigger>
           <TabsTrigger value="quality" className="text-sm">Quality Control</TabsTrigger>
           <TabsTrigger value="maintenance" className="text-sm">Maintenance</TabsTrigger>
+          
+          {/* New SAP-level Materials Management Tabs */}
+          <TabsTrigger value="mrp" className="text-sm">MRP Planning</TabsTrigger>
+          <TabsTrigger value="vendors" className="text-sm">Vendor Management</TabsTrigger>
+          <TabsTrigger value="storage-bins" className="text-sm">Storage Bins</TabsTrigger>
+          <TabsTrigger value="batch-lots" className="text-sm">Batch/Lot Control</TabsTrigger>
+          <TabsTrigger value="valuations" className="text-sm">Material Valuations</TabsTrigger>
+          <TabsTrigger value="returns" className="text-sm">Returns Management</TabsTrigger>
+          <TabsTrigger value="trade" className="text-sm">Global Trade</TabsTrigger>
         </TabsList>
 
+        {/* Original Tabs Content */}
         <TabsContent value="dashboard" className="mt-0">
           <ManufacturingDashboard />
         </TabsContent>
@@ -87,6 +106,35 @@ export default function Manufacturing() {
         
         <TabsContent value="maintenance" className="mt-0">
           <MaintenanceRequestsList />
+        </TabsContent>
+        
+        {/* New SAP-level Materials Management Content */}
+        <TabsContent value="mrp" className="mt-0">
+          <MRPDashboard />
+        </TabsContent>
+        
+        <TabsContent value="vendors" className="mt-0">
+          <VendorManagement />
+        </TabsContent>
+        
+        <TabsContent value="storage-bins" className="mt-0">
+          <StorageBinManagement />
+        </TabsContent>
+        
+        <TabsContent value="batch-lots" className="mt-0">
+          <BatchLotManagement />
+        </TabsContent>
+        
+        <TabsContent value="valuations" className="mt-0">
+          <MaterialValuationList />
+        </TabsContent>
+        
+        <TabsContent value="returns" className="mt-0">
+          <ReturnsManagement />
+        </TabsContent>
+        
+        <TabsContent value="trade" className="mt-0">
+          <TradeComplianceList />
         </TabsContent>
       </Tabs>
 

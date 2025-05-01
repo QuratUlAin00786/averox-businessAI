@@ -73,6 +73,14 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: "Warehouses", path: '/manufacturing/warehouses', icon: <Warehouse className="w-5 h-5" />, key: null, isSubmenu: true },
     { name: "Quality Control", path: '/manufacturing/quality-control', icon: <CheckSquare className="w-5 h-5" />, key: null, isSubmenu: true },
     { name: "Work Orders", path: '/manufacturing/work-orders', icon: <FileText className="w-5 h-5" />, key: null, isSubmenu: true },
+    // New SAP-level Materials Management submenu items
+    { name: "MRP Planning", path: '/manufacturing/mrp', icon: <TrendingUp className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Vendor Management", path: '/manufacturing/vendors', icon: <Users className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Storage Bins", path: '/manufacturing/storage-bins', icon: <Warehouse className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Batch/Lot Control", path: '/manufacturing/batch-lots', icon: <BarChart2 className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Material Valuations", path: '/manufacturing/valuations', icon: <Calculator className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Returns Management", path: '/manufacturing/returns', icon: <PackageOpen className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Global Trade", path: '/manufacturing/trade', icon: <Briefcase className="w-5 h-5" />, key: null, isSubmenu: true },
     { name: t.navigation.inventory, path: '/inventory', icon: <PackageOpen className="w-5 h-5" />, key: 'inventory' as keyof MenuVisibilitySettings },
     { name: t.navigation.supportTickets, path: '/support-tickets', icon: <TicketCheck className="w-5 h-5" />, key: 'supportTickets' as keyof MenuVisibilitySettings },
     { name: t.navigation.ecommerce, path: '/ecommerce', icon: <ShoppingCart className="w-5 h-5" />, key: 'ecommerce' as keyof MenuVisibilitySettings },
@@ -150,10 +158,22 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const getManufacturingItems = () => {
     return navItems.filter(item => 
       item.isSubmenu && [
-        '/manufacturing/production-lines', 
-        '/manufacturing/warehouses', 
+        '/manufacturing/production-lines',
+        '/manufacturing/workcenters',
+        '/manufacturing/warehouses',
         '/manufacturing/quality-control',
-        '/manufacturing/work-orders'
+        '/manufacturing/quality',
+        '/manufacturing/bom',
+        '/manufacturing/production',
+        '/manufacturing/work-orders',
+        '/manufacturing/maintenance',
+        '/manufacturing/mrp',
+        '/manufacturing/vendors',
+        '/manufacturing/storage-bins',
+        '/manufacturing/batch-lots',
+        '/manufacturing/valuations',
+        '/manufacturing/returns',
+        '/manufacturing/trade'
       ].includes(item.path)
     );
   };
