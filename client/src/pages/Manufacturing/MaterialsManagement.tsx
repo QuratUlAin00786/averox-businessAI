@@ -2,16 +2,7 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Warehouse, TrendingUp, Users, BarChart2, Calculator, PackageOpen, Briefcase } from 'lucide-react';
-
-// Import individual material management components
-import MRPDashboard from './components/materials-management/MRPDashboard';
-import VendorManagement from './components/materials-management/VendorManagement';
-import StorageBinManagement from './components/materials-management/StorageBinManagement';
-import BatchLotManagement from './components/materials-management/BatchLotManagement';
-import MaterialValuationList from './components/materials-management/MaterialValuationList';
-import ReturnsManagement from './components/materials-management/ReturnsManagement';
-import TradeComplianceList from './components/materials-management/TradeComplianceList';
+import { ArrowLeft, BarChart3, Package, Users, Boxes, ClipboardList, Truck, FileText, Calculator, Undo } from 'lucide-react';
 
 type MaterialsFeature = {
   id: string;
@@ -26,51 +17,51 @@ export default function MaterialsManagement() {
     {
       id: 'mrp',
       name: 'MRP Planning',
-      description: 'Advanced planning for material requirements and production scheduling',
-      icon: <TrendingUp className="h-10 w-10 text-primary" />,
+      description: 'Materials Requirements Planning with advanced forecasting',
+      icon: <BarChart3 className="h-10 w-10 text-primary" />,
       path: '/manufacturing/materials/mrp'
+    },
+    {
+      id: 'warehouse',
+      name: 'Warehouse Management',
+      description: 'Manage storage locations, zones, and bins',
+      icon: <Boxes className="h-10 w-10 text-primary" />,
+      path: '/manufacturing/materials/storage-bins'
     },
     {
       id: 'vendors',
       name: 'Vendor Management',
-      description: 'Manage suppliers, contracts, and performance metrics',
+      description: 'Supplier management with contracts and performance tracking',
       icon: <Users className="h-10 w-10 text-primary" />,
       path: '/manufacturing/materials/vendors'
     },
     {
-      id: 'storage-bins',
-      name: 'Storage Bin Management',
-      description: 'Organize warehouse storage locations with precise bin control',
-      icon: <Warehouse className="h-10 w-10 text-primary" />,
-      path: '/manufacturing/materials/storage-bins'
-    },
-    {
-      id: 'batch-lots',
+      id: 'batch-lot',
       name: 'Batch/Lot Control',
-      description: 'Track material batches with full traceability and expiration monitoring',
-      icon: <BarChart2 className="h-10 w-10 text-primary" />,
-      path: '/manufacturing/materials/batch-lots'
+      description: 'Advanced lot tracking and expiration management',
+      icon: <ClipboardList className="h-10 w-10 text-primary" />,
+      path: '/manufacturing/materials/batch-lot'
     },
     {
       id: 'valuations',
-      name: 'Material Valuations',
-      description: 'Manage multiple valuation approaches (FIFO, LIFO, Moving Average)',
+      name: 'Material Valuation',
+      description: 'Multiple valuation methods (FIFO, LIFO, moving average)',
       icon: <Calculator className="h-10 w-10 text-primary" />,
       path: '/manufacturing/materials/valuations'
     },
     {
       id: 'returns',
       name: 'Returns Management',
-      description: 'Process material returns with quality assessment and disposition',
-      icon: <PackageOpen className="h-10 w-10 text-primary" />,
+      description: 'Process returns and manage return merchandise authorizations',
+      icon: <Undo className="h-10 w-10 text-primary" />,
       path: '/manufacturing/materials/returns'
     },
     {
-      id: 'trade',
+      id: 'compliance',
       name: 'Global Trade Compliance',
-      description: 'Manage import/export regulations, tariffs, and customs documentation',
-      icon: <Briefcase className="h-10 w-10 text-primary" />,
-      path: '/manufacturing/materials/trade'
+      description: 'International trade compliance and documentation',
+      icon: <FileText className="h-10 w-10 text-primary" />,
+      path: '/manufacturing/materials/compliance'
     }
   ];
 
@@ -88,8 +79,8 @@ export default function MaterialsManagement() {
       </div>
       
       <p className="text-muted-foreground">
-        Advanced SAP-level materials management capabilities with comprehensive control over inventory, 
-        procurement, and logistics processes.
+        Comprehensive materials management with advanced MRP, warehouse management, vendor tracking, 
+        and global trade compliance capabilities.
       </p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
