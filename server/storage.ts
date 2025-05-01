@@ -4559,7 +4559,29 @@ export class DatabaseStorage implements IStorage {
 
   async listProducts(filter?: Partial<Product>): Promise<Product[]> {
     try {
-      let query = db.select().from(products);
+      // Using a specific column selection to avoid querying columns that might not exist yet
+      // This is a temporary fix until the database schema is fully migrated
+      let query = db.select({
+        id: products.id,
+        name: products.name,
+        sku: products.sku,
+        description: products.description,
+        price: products.price,
+        cost: products.cost,
+        categoryId: products.categoryId,
+        isActive: products.isActive,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+        inStock: products.inStock,
+        stockQuantity: products.stockQuantity,
+        reorderLevel: products.reorderLevel,
+        attributes: products.attributes,
+        images: products.images,
+        taxable: products.taxable,
+        taxRate: products.taxRate,
+        ownerId: products.ownerId
+        // Manufacturing-specific fields not included to ensure compatibility
+      }).from(products);
       
       if (filter) {
         const whereConditions = [];
@@ -4583,21 +4605,71 @@ export class DatabaseStorage implements IStorage {
 
   async createProduct(product: InsertProduct): Promise<Product> {
     try {
-      const [newProduct] = await db.insert(products).values(product).returning();
+      // Extract only the fields that exist in the current database schema
+      // This is a temporary fix until the database schema is fully migrated
+      const productToInsert = {
+        name: product.name,
+        sku: product.sku,
+        description: product.description,
+        price: product.price,
+        cost: product.cost,
+        categoryId: product.categoryId,
+        isActive: product.isActive,
+        inStock: product.inStock,
+        stockQuantity: product.stockQuantity,
+        reorderLevel: product.reorderLevel,
+        attributes: product.attributes,
+        images: product.images,
+        taxable: product.taxable,
+        taxRate: product.taxRate,
+        ownerId: product.ownerId,
+        weight: product.weight,
+        dimensions: product.dimensions,
+        barcode: product.barcode,
+        tags: product.tags
+        // Manufacturing-specific fields not included to ensure compatibility
+      };
+      
+      const [newProduct] = await db.insert(products).values(productToInsert).returning();
       return newProduct;
     } catch (error) {
       console.error('Database error in createProduct:', error);
-      throw new Error(`Failed to create product: ${error.message}`);
+      throw new Error(`Failed to create product: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined> {
     try {
+      // Extract only the fields that exist in the current database schema
+      // This is a temporary fix until the database schema is fully migrated
+      const updateFields: any = {
+        updatedAt: new Date()
+      };
+      
+      // Only include fields that are present in the product object
+      if (product.name !== undefined) updateFields.name = product.name;
+      if (product.sku !== undefined) updateFields.sku = product.sku;
+      if (product.description !== undefined) updateFields.description = product.description;
+      if (product.price !== undefined) updateFields.price = product.price;
+      if (product.cost !== undefined) updateFields.cost = product.cost;
+      if (product.categoryId !== undefined) updateFields.categoryId = product.categoryId;
+      if (product.isActive !== undefined) updateFields.isActive = product.isActive;
+      if (product.inStock !== undefined) updateFields.inStock = product.inStock;
+      if (product.stockQuantity !== undefined) updateFields.stockQuantity = product.stockQuantity;
+      if (product.reorderLevel !== undefined) updateFields.reorderLevel = product.reorderLevel;
+      if (product.attributes !== undefined) updateFields.attributes = product.attributes;
+      if (product.images !== undefined) updateFields.images = product.images;
+      if (product.taxable !== undefined) updateFields.taxable = product.taxable;
+      if (product.taxRate !== undefined) updateFields.taxRate = product.taxRate;
+      if (product.ownerId !== undefined) updateFields.ownerId = product.ownerId;
+      if (product.weight !== undefined) updateFields.weight = product.weight;
+      if (product.dimensions !== undefined) updateFields.dimensions = product.dimensions;
+      if (product.barcode !== undefined) updateFields.barcode = product.barcode;
+      if (product.tags !== undefined) updateFields.tags = product.tags;
+      // Manufacturing-specific fields not included to ensure compatibility
+      
       const [updatedProduct] = await db.update(products)
-        .set({
-          ...product,
-          updatedAt: new Date()
-        })
+        .set(updateFields)
         .where(eq(products.id, id))
         .returning();
       
