@@ -102,6 +102,15 @@ router.put('/warehouses/:id', checkManufacturingPermission('update'), async (req
     const { id } = req.params;
     const warehouseData = req.body;
     
+    // Convert numeric values
+    if (warehouseData.capacity) {
+      warehouseData.capacity = Number(warehouseData.capacity);
+    }
+    
+    if (warehouseData.utilization_rate) {
+      warehouseData.utilization_rate = Number(warehouseData.utilization_rate);
+    }
+    
     const [updatedWarehouse] = await db.update(warehouses)
       .set({
         ...warehouseData,
@@ -117,7 +126,7 @@ router.put('/warehouses/:id', checkManufacturingPermission('update'), async (req
     res.json(updatedWarehouse);
   } catch (error) {
     console.error('Error updating warehouse:', error);
-    res.status(500).json({ error: 'Failed to update warehouse' });
+    res.status(500).json({ error: 'Failed to update warehouse', details: error.message });
   }
 });
 

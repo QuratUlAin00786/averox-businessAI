@@ -41,12 +41,13 @@ const warehouseSchema = z.object({
   state: z.string().optional(),
   zip: z.string().optional(),
   country: z.string().optional(),
-  contactPerson: z.string().optional(),
-  contactPhone: z.string().optional(),
-  contactEmail: z.string().email({ message: 'Invalid email' }).optional().or(z.literal('')),
-  isActive: z.boolean().default(true),
+  contact_person: z.string().optional(),
+  contact_phone: z.string().optional(),
+  contact_email: z.string().email({ message: 'Invalid email' }).optional().or(z.literal('')),
+  is_active: z.boolean().default(true),
   capacity: z.number().positive().optional(),
-  isManufacturing: z.boolean().default(false),
+  utilization_rate: z.number().min(0).max(100).default(0),
+  is_manufacturing: z.boolean().default(false),
 });
 
 type WarehouseFormProps = {
@@ -72,12 +73,13 @@ export default function WarehouseForm({ open, onOpenChange, initialData }: Wareh
       state: '',
       zip: '',
       country: '',
-      contactPerson: '',
-      contactPhone: '',
-      contactEmail: '',
-      isActive: true,
+      contact_person: '',
+      contact_phone: '',
+      contact_email: '',
+      is_active: true,
       capacity: undefined,
-      isManufacturing: false,
+      utilization_rate: 0,
+      is_manufacturing: false,
     },
   });
 
