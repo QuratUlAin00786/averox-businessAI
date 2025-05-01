@@ -4918,15 +4918,19 @@ export class DatabaseStorage implements IStorage {
       if (item.productId) {
         const invoice = await this.getInvoice(item.invoiceId);
         if (invoice) {
-          await this.createInventoryTransaction({
-            productId: item.productId,
-            quantity: item.quantity,
-            type: 'Sale',
-            // issueDate instead of date which doesn't exist
-            referenceId: item.invoiceId, // Just use the numeric ID
-            referenceType: 'invoice', // Specify the type in the referenceType field
-            notes: `Sold on invoice #${item.invoiceId}`
-          });
+          try {
+            await this.createInventoryTransaction({
+              productId: item.productId,
+              quantity: typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity,
+              type: 'Sale',
+              referenceId: item.invoiceId,
+              referenceType: 'invoice',
+              notes: `Sold on invoice #${item.invoiceId}`
+            });
+          } catch (transactionError) {
+            // Log the error but don't fail the invoice item creation
+            console.warn('Failed to create inventory transaction, but continuing with invoice item creation:', transactionError.message);
+          }
         }
       }
       
@@ -4962,14 +4966,19 @@ export class DatabaseStorage implements IStorage {
           
           // Create adjustment transaction if necessary
           if (quantityDiff !== 0) {
-            await this.createInventoryTransaction({
-              productId: originalItem.productId,
-              quantity: Math.abs(quantityDiff).toString(),
-              type: quantityDiff < 0 ? 'Return' : 'Sale',
-              referenceId: originalItem.invoiceId, // Use numeric ID
-              referenceType: 'invoice-adjustment', // Specify the type in referenceType
-              notes: `Adjusted quantity on invoice #${originalItem.invoiceId}`
-            });
+            try {
+              await this.createInventoryTransaction({
+                productId: originalItem.productId,
+                quantity: Math.abs(quantityDiff).toString(),
+                type: quantityDiff < 0 ? 'Return' : 'Sale',
+                referenceId: originalItem.invoiceId,
+                referenceType: 'invoice-adjustment',
+                notes: `Adjusted quantity on invoice #${originalItem.invoiceId}`
+              });
+            } catch (transactionError) {
+              // Log the error but don't fail the invoice item update
+              console.warn('Failed to create inventory transaction for adjustment, but continuing with invoice item update:', transactionError.message);
+            }
           }
         }
       }
@@ -4994,14 +5003,19 @@ export class DatabaseStorage implements IStorage {
       if (item.productId) {
         const invoice = await this.getInvoice(item.invoiceId);
         if (invoice) {
-          await this.createInventoryTransaction({
-            productId: item.productId,
-            quantity: item.quantity, // quantity is already a string in the database
-            type: 'Return',
-            referenceId: item.invoiceId, // Use numeric ID
-            referenceType: 'invoice-deletion', // Specify the type in referenceType
-            notes: `Returned from deleted invoice item #${id}`
-          });
+          try {
+            await this.createInventoryTransaction({
+              productId: item.productId,
+              quantity: item.quantity, // quantity is already a string in the database
+              type: 'Return',
+              referenceId: item.invoiceId,
+              referenceType: 'invoice-deletion',
+              notes: `Returned from deleted invoice item #${id}`
+            });
+          } catch (transactionError) {
+            // Log the error but don't fail the invoice item deletion
+            console.warn('Failed to create inventory transaction for deletion, but continuing with invoice item deletion:', transactionError.message);
+          }
         }
       }
       
@@ -5168,14 +5182,19 @@ export class DatabaseStorage implements IStorage {
           
           // Create inventory transaction
           if (item.productId) {
-            await this.createInventoryTransaction({
-              productId: item.productId,
-              quantity: received.quantity.toString(), // Ensure quantity is a string
-              type: 'Purchase',
-              referenceId: orderId, // Use numeric ID
-              referenceType: 'purchase-order', // Specify the type in referenceType
-              notes: `Received from purchase order #${orderId}`
-            });
+            try {
+              await this.createInventoryTransaction({
+                productId: item.productId,
+                quantity: received.quantity.toString(), // Ensure quantity is a string
+                type: 'Purchase',
+                referenceId: orderId,
+                referenceType: 'purchase-order',
+                notes: `Received from purchase order #${orderId}`
+              });
+            } catch (transactionError) {
+              // Log the error but don't fail the purchase order receipt
+              console.warn('Failed to create inventory transaction for purchase, but continuing with purchase order receipt:', transactionError.message);
+            }
           }
         }
       }
