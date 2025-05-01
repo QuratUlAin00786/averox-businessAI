@@ -9,6 +9,7 @@ import { migrationRouter } from "./migrations/migration-routes";
 import { setupMarketingRoutes } from "./marketing-routes";
 import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
+import manufacturingRouter from "./manufacturing-routes";
 import { 
   insertUserSchema,
   insertContactSchema,
