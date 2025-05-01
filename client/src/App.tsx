@@ -58,6 +58,7 @@ import WorkflowBuilder from "@/pages/marketing/workflow-builder";
 import SegmentBuilder from "@/pages/marketing/segment-builder";
 import EmailTemplateEditor from "@/pages/marketing/email-template-editor";
 import Manufacturing from "@/pages/Manufacturing";
+import InvoicePayment from "@/pages/InvoicePayment";
 import SetupWizard from "@/pages/setup-wizard";
 
 function Router() {
@@ -232,6 +233,12 @@ function Router() {
       <ProtectedRoute path="/accounting/invoices/:id" component={({ params }: { params: { id: string } }) => (
         <Layout>
           <Accounting subPath={`invoices/${params.id}`} />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounting/invoices/:id/pay" component={({ params }: { params: { id: string } }) => (
+        <Layout>
+          <InvoicePayment />
         </Layout>
       )} />
       

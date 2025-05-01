@@ -27,6 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 import { formatCurrency, formatDate } from "@/lib/utils";
+import InvoiceDetail from "./accounting/invoices/detail";
 
 type AccountingPageProps = {
   subPath?: string;
@@ -36,6 +37,8 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
   const [activeTab, setActiveTab] = useState("invoices");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
+  const [entityId, setEntityId] = useState<number | null>(null);
   
   // Handle subPath for specific routes
   useEffect(() => {
@@ -45,10 +48,27 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
         // Set the active tab based on the first part of the path
         if (pathParts[0] === 'invoices') {
           setActiveTab('invoices');
+          if (pathParts.length >= 2 && !isNaN(parseInt(pathParts[1]))) {
+            setViewMode('detail');
+            setEntityId(parseInt(pathParts[1]));
+          } else {
+            setViewMode('list');
+            setEntityId(null);
+          }
         } else if (pathParts[0] === 'purchase-orders') {
           setActiveTab('purchase-orders');
+          if (pathParts.length >= 2 && !isNaN(parseInt(pathParts[1]))) {
+            setViewMode('detail');
+            setEntityId(parseInt(pathParts[1]));
+          } else {
+            setViewMode('list');
+            setEntityId(null);
+          }
         }
       }
+    } else {
+      setViewMode('list');
+      setEntityId(null);
     }
   }, [subPath]);
 
@@ -110,6 +130,19 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
     }
   };
 
+  // If viewing detail mode, render the appropriate detail component
+  if (viewMode === 'detail' && entityId) {
+    if (activeTab === 'invoices') {
+      // Pass the invoiceId to the InvoiceDetail component
+      return <InvoiceDetail />;
+    }
+    // TODO: Add PurchaseOrderDetail component when implemented
+    // if (activeTab === 'purchase-orders') {
+    //  return <PurchaseOrderDetail />;
+    // }
+  }
+
+  // Otherwise, render the main accounting page with lists
   return (
       <div className="flex flex-col gap-6 p-4 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
