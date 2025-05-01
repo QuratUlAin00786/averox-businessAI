@@ -96,13 +96,13 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: "Quality Control", path: '/manufacturing/quality-control', icon: <LucideIcons.CheckSquare className="w-5 h-5" />, key: null, isSubmenu: true },
     { name: "Work Orders", path: '/manufacturing/work-orders', icon: <LucideIcons.FileText className="w-5 h-5" />, key: null, isSubmenu: true },
     // SAP-level Materials Management submenu items
-    { name: "MRP Planning", path: '/manufacturing/mrp', icon: <LucideIcons.TrendingUp className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Vendor Management", path: '/manufacturing/vendors', icon: <LucideIcons.Users className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Storage Bins", path: '/manufacturing/storage-bins', icon: <LucideIcons.Warehouse className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Batch/Lot Control", path: '/manufacturing/batch-lots', icon: <LucideIcons.BarChart2 className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Material Valuations", path: '/manufacturing/valuations', icon: <LucideIcons.Calculator className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Returns Management", path: '/manufacturing/returns', icon: <LucideIcons.PackageOpen className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Global Trade", path: '/manufacturing/trade', icon: <LucideIcons.Briefcase className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "MRP Planning", path: '/manufacturing/materials/mrp', icon: <LucideIcons.TrendingUp className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Vendor Management", path: '/manufacturing/materials/vendors', icon: <LucideIcons.Users className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Storage Bins", path: '/manufacturing/materials/storage-bins', icon: <LucideIcons.Warehouse className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Batch/Lot Control", path: '/manufacturing/materials/batch-lot', icon: <LucideIcons.BarChart2 className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Material Valuations", path: '/manufacturing/materials/valuations', icon: <LucideIcons.Calculator className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Returns Management", path: '/manufacturing/materials/returns', icon: <LucideIcons.PackageOpen className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Global Trade", path: '/manufacturing/materials/compliance', icon: <LucideIcons.Briefcase className="w-5 h-5" />, key: null, isSubmenu: true },
     { name: t.navigation.inventory, path: '/inventory', icon: <LucideIcons.PackageOpen className="w-5 h-5" />, key: 'inventory' as keyof MenuVisibilitySettings },
     { name: t.navigation.supportTickets, path: '/support-tickets', icon: <LucideIcons.TicketCheck className="w-5 h-5" />, key: 'supportTickets' as keyof MenuVisibilitySettings },
     { name: t.navigation.ecommerce, path: '/ecommerce', icon: <LucideIcons.ShoppingCart className="w-5 h-5" />, key: 'ecommerce' as keyof MenuVisibilitySettings },
@@ -189,13 +189,13 @@ export default function Sidebar({ className = "" }: SidebarProps) {
         '/manufacturing/production',
         '/manufacturing/work-orders',
         '/manufacturing/maintenance',
-        '/manufacturing/mrp',
-        '/manufacturing/vendors',
-        '/manufacturing/storage-bins',
-        '/manufacturing/batch-lots',
-        '/manufacturing/valuations',
-        '/manufacturing/returns',
-        '/manufacturing/trade'
+        '/manufacturing/materials/mrp',
+        '/manufacturing/materials/vendors',
+        '/manufacturing/materials/storage-bins',
+        '/manufacturing/materials/batch-lot',
+        '/manufacturing/materials/valuations',
+        '/manufacturing/materials/returns',
+        '/manufacturing/materials/compliance'
       ].includes(item.path)
     );
   };
