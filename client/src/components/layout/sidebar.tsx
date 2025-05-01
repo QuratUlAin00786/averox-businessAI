@@ -2,40 +2,26 @@ import { Link, useLocation } from "wouter";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Briefcase, 
-  UserPlus, 
-  TrendingUp, 
-  Calendar, 
-  CheckSquare, 
-  BarChart2, 
-  Settings,
-  BrainCircuit,
-  Workflow,
-  MoreVertical,
-  CreditCard,
-  MessageSquare,
-  Calculator,
-  PackageOpen,
-  HelpCircle,
-  TicketCheck,
-  ShoppingCart,
-  Store,
-  Mail,
-  Megaphone,
-  Factory,
-  Warehouse,
-  FileText
-} from "lucide-react";
+import * as LucideIcons from "lucide-react";
+import { Settings } from "lucide-react"; // Add explicit Settings import for profile button
 import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
 import { useSystemSettings, type MenuVisibilitySettings } from "@/hooks/use-system-settings";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface SidebarProps {
   className?: string;
+}
+
+interface MenuItem {
+  name: string;
+  path: string;
+  icon: string;
+  key: keyof MenuVisibilitySettings | null;
+  isVisible: boolean;
+  isSubmenu?: boolean;
 }
 
 interface NavItem {
@@ -46,61 +32,98 @@ interface NavItem {
   isSubmenu?: boolean;
 }
 
+// Dynamic icon renderer - renders a Lucide icon by its string name
+const DynamicIcon = ({ name, className = "w-5 h-5" }: { name: string; className?: string }) => {
+  const IconComponent = LucideIcons[name as keyof typeof LucideIcons] || LucideIcons.CircleDashed;
+  return <IconComponent className={className} />;
+};
+
 export default function Sidebar({ className = "" }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
   const { t } = useLanguage();
   const { settings } = useSystemSettings();
 
-  // Items with their menu visibility key
-  const navItemsWithKeys = [
-    { name: t.navigation.dashboard, path: '/', icon: <LayoutDashboard className="w-5 h-5" />, key: null }, // Dashboard is always visible
-    { name: t.navigation.contacts, path: '/contacts', icon: <Users className="w-5 h-5" />, key: 'contacts' as keyof MenuVisibilitySettings },
-    { name: t.navigation.accounts, path: '/accounts', icon: <Briefcase className="w-5 h-5" />, key: 'accounts' as keyof MenuVisibilitySettings },
-    { name: t.navigation.leads, path: '/leads', icon: <UserPlus className="w-5 h-5" />, key: 'leads' as keyof MenuVisibilitySettings },
-    { name: t.navigation.opportunities, path: '/opportunities', icon: <TrendingUp className="w-5 h-5" />, key: 'opportunities' as keyof MenuVisibilitySettings },
-    { name: t.navigation.calendar, path: '/calendar', icon: <Calendar className="w-5 h-5" />, key: 'calendar' as keyof MenuVisibilitySettings },
-    { name: t.navigation.tasks, path: '/tasks', icon: <CheckSquare className="w-5 h-5" />, key: 'tasks' as keyof MenuVisibilitySettings },
-    { name: "Marketing", path: '/marketing', icon: <Megaphone className="w-5 h-5" />, key: null }, // Always visible for now
-    { name: "Email Campaigns", path: '/marketing/create', icon: <Mail className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Automations", path: '/marketing/automations', icon: <Workflow className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Email Templates", path: '/marketing/email-template-editor', icon: <Mail className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Audience Segments", path: '/marketing/segment-builder', icon: <Users className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: t.navigation.communicationCenter, path: '/communication-center', icon: <MessageSquare className="w-5 h-5" />, key: 'communicationCenter' as keyof MenuVisibilitySettings },
-    { name: t.navigation.accounting, path: '/accounting', icon: <Calculator className="w-5 h-5" />, key: 'accounting' as keyof MenuVisibilitySettings },
-    { name: "Manufacturing", path: '/manufacturing', icon: <Factory className="w-5 h-5" />, key: null }, // Always visible
-    { name: "Production Lines", path: '/manufacturing/production-lines', icon: <Workflow className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Warehouses", path: '/manufacturing/warehouses', icon: <Warehouse className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Quality Control", path: '/manufacturing/quality-control', icon: <CheckSquare className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Work Orders", path: '/manufacturing/work-orders', icon: <FileText className="w-5 h-5" />, key: null, isSubmenu: true },
-    // New SAP-level Materials Management submenu items
-    { name: "MRP Planning", path: '/manufacturing/mrp', icon: <TrendingUp className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Vendor Management", path: '/manufacturing/vendors', icon: <Users className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Storage Bins", path: '/manufacturing/storage-bins', icon: <Warehouse className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Batch/Lot Control", path: '/manufacturing/batch-lots', icon: <BarChart2 className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Material Valuations", path: '/manufacturing/valuations', icon: <Calculator className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Returns Management", path: '/manufacturing/returns', icon: <PackageOpen className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: "Global Trade", path: '/manufacturing/trade', icon: <Briefcase className="w-5 h-5" />, key: null, isSubmenu: true },
-    { name: t.navigation.inventory, path: '/inventory', icon: <PackageOpen className="w-5 h-5" />, key: 'inventory' as keyof MenuVisibilitySettings },
-    { name: t.navigation.supportTickets, path: '/support-tickets', icon: <TicketCheck className="w-5 h-5" />, key: 'supportTickets' as keyof MenuVisibilitySettings },
-    { name: t.navigation.ecommerce, path: '/ecommerce', icon: <ShoppingCart className="w-5 h-5" />, key: 'ecommerce' as keyof MenuVisibilitySettings },
-    { name: t.navigation.ecommerceStore, path: '/ecommerce-store', icon: <Store className="w-5 h-5" />, key: 'ecommerceStore' as keyof MenuVisibilitySettings },
-    { name: t.navigation.reports, path: '/reports', icon: <BarChart2 className="w-5 h-5" />, key: 'reports' as keyof MenuVisibilitySettings },
-    { name: t.navigation.intelligence, path: '/intelligence', icon: <BrainCircuit className="w-5 h-5" />, key: 'intelligence' as keyof MenuVisibilitySettings },
-    { name: t.navigation.workflows, path: '/workflows', icon: <Workflow className="w-5 h-5" />, key: 'workflows' as keyof MenuVisibilitySettings },
-    { name: t.navigation.subscriptions, path: '/subscriptions', icon: <CreditCard className="w-5 h-5" />, key: 'subscriptions' as keyof MenuVisibilitySettings },
-    { name: t.navigation.training, path: '/training-help', icon: <HelpCircle className="w-5 h-5" />, key: 'training' as keyof MenuVisibilitySettings },
-    { name: t.navigation.settings, path: '/settings', icon: <Settings className="w-5 h-5" />, key: null } // Settings is always visible
-  ];
+  // Fetch menu items from the database
+  const { data: menuItems = [], isLoading: isMenuLoading } = useQuery({
+    queryKey: ["/api/menu-items"],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest("GET", "/api/menu-items");
+        return await res.json() as MenuItem[];
+      } catch (error) {
+        console.error("Failed to fetch menu items:", error);
+        return [] as MenuItem[];
+      }
+    },
+    enabled: !!user, // Only fetch if user is logged in
+  });
 
-  // Filter navItems based on menu visibility settings
-  const navItems = navItemsWithKeys.filter(item => {
+  // Convert menu items to nav items
+  const navItems: NavItem[] = menuItems.map(item => {
+    return {
+      name: item.name,
+      path: item.path,
+      icon: <DynamicIcon name={item.icon} />,
+      key: item.key as keyof MenuVisibilitySettings | null,
+      isSubmenu: item.isSubmenu,
+      // Use item's visibility from API result
+    };
+  }).filter(item => {
+    // Filter out items that are not visible
+    const menuItem = menuItems.find(mi => mi.path === item.path);
+    return menuItem ? menuItem.isVisible : true;
+  });
+
+  // Fallback to hardcoded items if menu items API fails or returns empty
+  const getHardcodedNavItems = (): NavItem[] => [
+    { name: t.navigation.dashboard, path: '/', icon: <LucideIcons.LayoutDashboard className="w-5 h-5" />, key: null },
+    { name: t.navigation.contacts, path: '/contacts', icon: <LucideIcons.Users className="w-5 h-5" />, key: 'contacts' as keyof MenuVisibilitySettings },
+    { name: t.navigation.accounts, path: '/accounts', icon: <LucideIcons.Briefcase className="w-5 h-5" />, key: 'accounts' as keyof MenuVisibilitySettings },
+    { name: t.navigation.leads, path: '/leads', icon: <LucideIcons.UserPlus className="w-5 h-5" />, key: 'leads' as keyof MenuVisibilitySettings },
+    { name: t.navigation.opportunities, path: '/opportunities', icon: <LucideIcons.TrendingUp className="w-5 h-5" />, key: 'opportunities' as keyof MenuVisibilitySettings },
+    { name: t.navigation.calendar, path: '/calendar', icon: <LucideIcons.Calendar className="w-5 h-5" />, key: 'calendar' as keyof MenuVisibilitySettings },
+    { name: t.navigation.tasks, path: '/tasks', icon: <LucideIcons.CheckSquare className="w-5 h-5" />, key: 'tasks' as keyof MenuVisibilitySettings },
+    { name: "Marketing", path: '/marketing', icon: <LucideIcons.Megaphone className="w-5 h-5" />, key: null },
+    { name: "Email Campaigns", path: '/marketing/create', icon: <LucideIcons.Mail className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Automations", path: '/marketing/automations', icon: <LucideIcons.Workflow className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Email Templates", path: '/marketing/email-template-editor', icon: <LucideIcons.Mail className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Audience Segments", path: '/marketing/segment-builder', icon: <LucideIcons.Users className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: t.navigation.communicationCenter, path: '/communication-center', icon: <LucideIcons.MessageSquare className="w-5 h-5" />, key: 'communicationCenter' as keyof MenuVisibilitySettings },
+    { name: t.navigation.accounting, path: '/accounting', icon: <LucideIcons.Calculator className="w-5 h-5" />, key: 'accounting' as keyof MenuVisibilitySettings },
+    { name: "Manufacturing", path: '/manufacturing', icon: <LucideIcons.Factory className="w-5 h-5" />, key: null },
+    { name: "Production Lines", path: '/manufacturing/production-lines', icon: <LucideIcons.Workflow className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Warehouses", path: '/manufacturing/warehouses', icon: <LucideIcons.Warehouse className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Quality Control", path: '/manufacturing/quality-control', icon: <LucideIcons.CheckSquare className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Work Orders", path: '/manufacturing/work-orders', icon: <LucideIcons.FileText className="w-5 h-5" />, key: null, isSubmenu: true },
+    // SAP-level Materials Management submenu items
+    { name: "MRP Planning", path: '/manufacturing/mrp', icon: <LucideIcons.TrendingUp className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Vendor Management", path: '/manufacturing/vendors', icon: <LucideIcons.Users className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Storage Bins", path: '/manufacturing/storage-bins', icon: <LucideIcons.Warehouse className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Batch/Lot Control", path: '/manufacturing/batch-lots', icon: <LucideIcons.BarChart2 className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Material Valuations", path: '/manufacturing/valuations', icon: <LucideIcons.Calculator className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Returns Management", path: '/manufacturing/returns', icon: <LucideIcons.PackageOpen className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: "Global Trade", path: '/manufacturing/trade', icon: <LucideIcons.Briefcase className="w-5 h-5" />, key: null, isSubmenu: true },
+    { name: t.navigation.inventory, path: '/inventory', icon: <LucideIcons.PackageOpen className="w-5 h-5" />, key: 'inventory' as keyof MenuVisibilitySettings },
+    { name: t.navigation.supportTickets, path: '/support-tickets', icon: <LucideIcons.TicketCheck className="w-5 h-5" />, key: 'supportTickets' as keyof MenuVisibilitySettings },
+    { name: t.navigation.ecommerce, path: '/ecommerce', icon: <LucideIcons.ShoppingCart className="w-5 h-5" />, key: 'ecommerce' as keyof MenuVisibilitySettings },
+    { name: t.navigation.ecommerceStore, path: '/ecommerce-store', icon: <LucideIcons.Store className="w-5 h-5" />, key: 'ecommerceStore' as keyof MenuVisibilitySettings },
+    { name: t.navigation.reports, path: '/reports', icon: <LucideIcons.BarChart2 className="w-5 h-5" />, key: 'reports' as keyof MenuVisibilitySettings },
+    { name: t.navigation.intelligence, path: '/intelligence', icon: <LucideIcons.BrainCircuit className="w-5 h-5" />, key: 'intelligence' as keyof MenuVisibilitySettings },
+    { name: t.navigation.workflows, path: '/workflows', icon: <LucideIcons.Workflow className="w-5 h-5" />, key: 'workflows' as keyof MenuVisibilitySettings },
+    { name: t.navigation.subscriptions, path: '/subscriptions', icon: <LucideIcons.CreditCard className="w-5 h-5" />, key: 'subscriptions' as keyof MenuVisibilitySettings },
+    { name: t.navigation.training, path: '/training-help', icon: <LucideIcons.HelpCircle className="w-5 h-5" />, key: 'training' as keyof MenuVisibilitySettings },
+    { name: t.navigation.settings, path: '/settings', icon: <LucideIcons.Settings className="w-5 h-5" />, key: null }
+  ].filter(item => {
     // If key is null (like Dashboard and Settings), always show it
     if (item.key === null) return true;
     
     // Otherwise check the settings
     return settings.menuVisibility[item.key];
   });
+
+  // If API request fails or returns no items, use hardcoded items
+  const finalNavItems = navItems.length > 0 ? navItems : getHardcodedNavItems();
 
   const isActive = (path: string) => {
     return location === path;
@@ -129,7 +152,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   // Get visible items for each section
   const getCoreItems = () => {
     // Include all main navigation items plus marketing submenu items (if Marketing is expanded)
-    return navItems.filter((item, index) => {
+    return finalNavItems.filter((item, index) => {
       // Include all the standard core items
       if (index >= 0 && index <= 7) {
         return true;
@@ -145,18 +168,18 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   };
 
   const getCommunicationItems = () => {
-    return navItems.filter(item => item.path === '/communication-center');
+    return finalNavItems.filter(item => item.path === '/communication-center');
   };
 
   const getBusinessItems = () => {
-    return navItems.filter(item => 
+    return finalNavItems.filter(item => 
       ['/accounting', '/manufacturing', '/inventory', '/support-tickets', '/ecommerce', '/ecommerce-store'].includes(item.path)
     );
   };
   
   // Get Manufacturing submenu items
   const getManufacturingItems = () => {
-    return navItems.filter(item => 
+    return finalNavItems.filter(item => 
       item.isSubmenu && [
         '/manufacturing/production-lines',
         '/manufacturing/workcenters',
@@ -179,17 +202,17 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   };
 
   const getAnalyticsItems = () => {
-    return navItems.filter(item => 
+    return finalNavItems.filter(item => 
       ['/reports', '/intelligence', '/workflows'].includes(item.path)
     );
   };
 
   const getSupportItems = () => {
-    return navItems.filter(item => item.path === '/subscriptions' || item.path === '/training-help');
+    return finalNavItems.filter(item => item.path === '/subscriptions' || item.path === '/training-help');
   };
 
   const getSystemItems = () => {
-    return navItems.filter(item => item.path === '/settings');
+    return finalNavItems.filter(item => item.path === '/settings');
   };
 
   const sidebarContent = (

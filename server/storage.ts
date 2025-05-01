@@ -6478,31 +6478,7 @@ export class DatabaseStorage implements IStorage {
   // System Settings Methods
   async getSystemSettings(userId: number): Promise<SystemSettings> {
     try {
-      // Check if settings are already in memory cache
-      const settingsKey = `user_${userId}`;
-      const cachedSettings = this.systemSettingsMap.get(settingsKey);
-      
-      if (cachedSettings) {
-        return cachedSettings;
-      }
-      
-      // Try to get settings from database
-      const settings = await db.select()
-        .from(systemSettings)
-        .where(eq(systemSettings.userId, userId))
-        .where(eq(systemSettings.settingKey, 'userSettings'));
-      
-      if (settings.length > 0 && settings[0].settingValue) {
-        // Parse the JSON value from the database
-        const userSettings = settings[0].settingValue as unknown as SystemSettings;
-        
-        // Cache the settings in memory
-        this.systemSettingsMap.set(settingsKey, userSettings);
-        
-        return userSettings;
-      }
-      
-      // Return default settings if user has no settings yet
+      // Define complete default settings with all properties
       const defaultSettings: SystemSettings = {
         menuVisibility: {
           contacts: true,
@@ -6522,17 +6498,59 @@ export class DatabaseStorage implements IStorage {
           workflows: true,
           subscriptions: true,
           training: true
+        },
+        dashboardPreferences: {
+          showSalesPipeline: true,
+          showRecentActivities: true,
+          showTasks: true,
+          showEvents: true,
+          showLeadsStats: true,
+          showConversionStats: true,
+          showRevenueStats: true,
+          showOpportunitiesStats: true,
+          pipelineChartType: 'pie',
+          revenueChartType: 'line',
+          leadsChartType: 'line',
+          defaultTimeRange: 'month',
+          showAIInsights: true,
+          aiInsightTypes: ['leads', 'opportunities', 'revenue'],
+          aiInsightsCount: 3
         }
       };
       
-      // Store default settings for this user in cache
-      this.systemSettingsMap.set(settingsKey, defaultSettings);
+      // Get all settings for this user from database
+      const userSettingsRecords = await db.select()
+        .from(systemSettings)
+        .where(eq(systemSettings.userId, userId));
       
-      return defaultSettings;
+      // If no settings exist, create and save default settings
+      if (userSettingsRecords.length === 0) {
+        console.log(`Creating default settings for user ${userId}`);
+        await this.saveSystemSettings(userId, defaultSettings);
+        return defaultSettings;
+      }
+      
+      // Process all settings into a map by key
+      const settingsMap = new Map<string, any>();
+      for (const record of userSettingsRecords) {
+        settingsMap.set(record.settingKey, record.settingValue);
+      }
+      
+      // Build the settings object from database values or defaults
+      const menuVisibilitySettings = settingsMap.get('menuVisibility') || defaultSettings.menuVisibility;
+      const dashboardPreferencesSettings = settingsMap.get('dashboardPreferences') || defaultSettings.dashboardPreferences;
+      
+      // Combine the settings
+      const combinedSettings: SystemSettings = {
+        menuVisibility: menuVisibilitySettings,
+        dashboardPreferences: dashboardPreferencesSettings
+      };
+      
+      return combinedSettings;
     } catch (error) {
       console.error('Database error in getSystemSettings:', error);
       // Return default settings on error
-      const defaultSettings: SystemSettings = {
+      return {
         menuVisibility: {
           contacts: true,
           accounts: true,
@@ -6551,48 +6569,90 @@ export class DatabaseStorage implements IStorage {
           workflows: true,
           subscriptions: true,
           training: true
+        },
+        dashboardPreferences: {
+          showSalesPipeline: true,
+          showRecentActivities: true,
+          showTasks: true,
+          showEvents: true,
+          showLeadsStats: true,
+          showConversionStats: true,
+          showRevenueStats: true,
+          showOpportunitiesStats: true,
+          pipelineChartType: 'pie',
+          revenueChartType: 'line',
+          leadsChartType: 'line',
+          defaultTimeRange: 'month',
+          showAIInsights: true,
+          aiInsightTypes: ['leads', 'opportunities', 'revenue'],
+          aiInsightsCount: 3
         }
       };
-      return defaultSettings;
     }
   }
   
   async saveSystemSettings(userId: number, settings: SystemSettings): Promise<SystemSettings> {
     try {
-      const settingsKey = `user_${userId}`;
-      
-      // Update in-memory cache
-      this.systemSettingsMap.set(settingsKey, settings);
-      
-      // Check if settings already exist for this user
-      const existing = await db.select()
+      // Handle menu visibility settings
+      const existingMenuSettings = await db.select()
         .from(systemSettings)
         .where(eq(systemSettings.userId, userId))
-        .where(eq(systemSettings.settingKey, 'userSettings'));
+        .where(eq(systemSettings.settingKey, 'menuVisibility'));
       
-      if (existing.length > 0) {
-        // Update existing settings
+      const now = new Date();
+      
+      if (existingMenuSettings.length > 0) {
+        // Update existing menu visibility settings
         await db.update(systemSettings)
           .set({
-            settingValue: settings as any,
-            updatedAt: new Date()
+            settingValue: settings.menuVisibility as any,
+            updatedAt: now
           })
-          .where(eq(systemSettings.id, existing[0].id));
+          .where(eq(systemSettings.id, existingMenuSettings[0].id));
       } else {
-        // Insert new settings
+        // Insert new menu visibility settings
         await db.insert(systemSettings)
           .values({
             userId: userId,
-            settingKey: 'userSettings',
-            settingValue: settings as any,
-            scope: 'user'
+            settingKey: 'menuVisibility',
+            settingValue: settings.menuVisibility as any,
+            scope: 'user',
+            createdAt: now,
+            updatedAt: now
+          });
+      }
+      
+      // Handle dashboard preferences settings
+      const existingDashboardSettings = await db.select()
+        .from(systemSettings)
+        .where(eq(systemSettings.userId, userId))
+        .where(eq(systemSettings.settingKey, 'dashboardPreferences'));
+      
+      if (existingDashboardSettings.length > 0) {
+        // Update existing dashboard preferences settings
+        await db.update(systemSettings)
+          .set({
+            settingValue: settings.dashboardPreferences as any,
+            updatedAt: now
+          })
+          .where(eq(systemSettings.id, existingDashboardSettings[0].id));
+      } else {
+        // Insert new dashboard preferences settings
+        await db.insert(systemSettings)
+          .values({
+            userId: userId,
+            settingKey: 'dashboardPreferences',
+            settingValue: settings.dashboardPreferences as any,
+            scope: 'user',
+            createdAt: now,
+            updatedAt: now
           });
       }
       
       return settings;
     } catch (error) {
       console.error('Database error in saveSystemSettings:', error);
-      return settings; // Return the settings even if save failed
+      throw new Error('Failed to save system settings');
     }
   }
 }

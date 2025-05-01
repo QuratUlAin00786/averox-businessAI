@@ -99,6 +99,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userId = req.user.id;
       const settings = await storage.getSystemSettings(userId);
+      
+      // Add default dashboard preferences if they don't exist
+      if (!settings.dashboardPreferences) {
+        settings.dashboardPreferences = {
+          showSalesPipeline: true,
+          showRecentActivities: true,
+          showTasks: true,
+          showEvents: true,
+          showLeadsStats: true,
+          showConversionStats: true,
+          showRevenueStats: true,
+          showOpportunitiesStats: true,
+          pipelineChartType: 'pie',
+          revenueChartType: 'line',
+          leadsChartType: 'line',
+          defaultTimeRange: 'month',
+          showAIInsights: true,
+          aiInsightTypes: ['leads', 'opportunities', 'revenue'],
+          aiInsightsCount: 3
+        };
+      }
+      
       res.json(settings);
     } catch (error) {
       handleError(res, error);
@@ -111,15 +133,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Not authenticated' });
       }
       
-      // Validate user has admin privileges
-      if (req.user.role !== 'Admin') {
-        return res.status(403).json({ error: 'Insufficient permissions' });
-      }
-      
+      // All users should be able to save their own settings
       const userId = req.user.id;
       const settings = req.body as SystemSettings;
       const updatedSettings = await storage.saveSystemSettings(userId, settings);
       res.json(updatedSettings);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  // Menu items API - Get all menu items (with visibility settings)
+  app.get('/api/menu-items', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      const userId = req.user.id;
+      
+      // Get user's visibility settings from system settings
+      const userSettings = await storage.getSystemSettings(userId);
+      
+      // Fetch global menu items from database
+      const menuItemsQuery = await db.select()
+        .from(systemSettings)
+        .where(eq(systemSettings.settingKey, 'menuItems'))
+        .where(eq(systemSettings.scope, 'global'));
+      
+      let menuItems = [];
+      
+      if (menuItemsQuery.length > 0) {
+        // If menu items are defined in the database, use them
+        menuItems = menuItemsQuery[0].settingValue as any[];
+        
+        // Apply user's visibility settings
+        menuItems = menuItems.map(item => ({
+          ...item,
+          isVisible: item.key ? 
+            (userSettings.menuVisibility[item.key] ?? true) : 
+            true // Items without a key are always visible
+        }));
+      } else {
+        // If no menu items defined yet, create default ones
+        const defaultMenuItems = [
+          { name: "Dashboard", path: '/', icon: "LayoutDashboard", key: null, isVisible: true },
+          { name: "Contacts", path: '/contacts', icon: "Users", key: "contacts", isVisible: userSettings.menuVisibility.contacts },
+          { name: "Accounts", path: '/accounts', icon: "Briefcase", key: "accounts", isVisible: userSettings.menuVisibility.accounts },
+          { name: "Leads", path: '/leads', icon: "UserPlus", key: "leads", isVisible: userSettings.menuVisibility.leads },
+          { name: "Opportunities", path: '/opportunities', icon: "TrendingUp", key: "opportunities", isVisible: userSettings.menuVisibility.opportunities },
+          { name: "Calendar", path: '/calendar', icon: "Calendar", key: "calendar", isVisible: userSettings.menuVisibility.calendar },
+          { name: "Tasks", path: '/tasks', icon: "CheckSquare", key: "tasks", isVisible: userSettings.menuVisibility.tasks },
+          { name: "Marketing", path: '/marketing', icon: "Megaphone", key: null, isVisible: true },
+          { name: "Communication Center", path: '/communication-center', icon: "MessageSquare", key: "communicationCenter", isVisible: userSettings.menuVisibility.communicationCenter },
+          { name: "Accounting", path: '/accounting', icon: "Calculator", key: "accounting", isVisible: userSettings.menuVisibility.accounting },
+          { name: "Manufacturing", path: '/manufacturing', icon: "Factory", key: null, isVisible: true },
+          { name: "Inventory", path: '/inventory', icon: "PackageOpen", key: "inventory", isVisible: userSettings.menuVisibility.inventory },
+          { name: "Support Tickets", path: '/support-tickets', icon: "TicketCheck", key: "supportTickets", isVisible: userSettings.menuVisibility.supportTickets },
+          { name: "E-commerce", path: '/ecommerce', icon: "ShoppingCart", key: "ecommerce", isVisible: userSettings.menuVisibility.ecommerce },
+          { name: "Store", path: '/ecommerce-store', icon: "Store", key: "ecommerceStore", isVisible: userSettings.menuVisibility.ecommerceStore },
+          { name: "Reports", path: '/reports', icon: "BarChart2", key: "reports", isVisible: userSettings.menuVisibility.reports },
+          { name: "Intelligence", path: '/intelligence', icon: "BrainCircuit", key: "intelligence", isVisible: userSettings.menuVisibility.intelligence },
+          { name: "Workflows", path: '/workflows', icon: "Workflow", key: "workflows", isVisible: userSettings.menuVisibility.workflows },
+          { name: "Subscriptions", path: '/subscriptions', icon: "CreditCard", key: "subscriptions", isVisible: userSettings.menuVisibility.subscriptions },
+          { name: "Training", path: '/training-help', icon: "HelpCircle", key: "training", isVisible: userSettings.menuVisibility.training },
+          { name: "Settings", path: '/settings', icon: "Settings", key: null, isVisible: true }
+        ];
+        
+        // Save default menu items to database
+        await db.insert(systemSettings).values({
+          userId: null, // Global setting
+          settingKey: 'menuItems',
+          settingValue: defaultMenuItems as any,
+          scope: 'global',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        
+        menuItems = defaultMenuItems;
+      }
+      
+      // Return menu items with visibility applied
+      res.json(menuItems);
     } catch (error) {
       handleError(res, error);
     }
