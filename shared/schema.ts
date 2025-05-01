@@ -18,7 +18,19 @@ export const communicationChannelEnum = pgEnum('communication_channel', ['Email'
 export const communicationDirectionEnum = pgEnum('communication_direction', ['Inbound', 'Outbound']);
 export const communicationStatusEnum = pgEnum('communication_status', ['Unread', 'Read', 'Replied', 'Archived']);
 export const invoiceStatusEnum = pgEnum('invoice_status', ['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled', 'Refunded']);
-export const inventoryTransactionTypeEnum = pgEnum('inventory_transaction_type', ['Purchase', 'Sale', 'Adjustment', 'Return', 'Transfer']);
+export const inventoryTransactionTypeEnum = pgEnum('inventory_transaction_type', ['Purchase', 'Sale', 'Adjustment', 'Return', 'Transfer', 'Production', 'Consumption', 'QualityReject', 'ScrapDisposal', 'IntakeForProduction', 'ProductionOutput']);
+
+// Manufacturing Module Enums
+export const productionOrderStatusEnum = pgEnum('production_order_status', ['Draft', 'Scheduled', 'InProgress', 'Completed', 'OnHold', 'Cancelled']);
+export const productionPriorityEnum = pgEnum('production_priority', ['Critical', 'High', 'Medium', 'Low']);
+export const qualityInspectionResultEnum = pgEnum('quality_inspection_result', ['Pass', 'Fail', 'PendingReview', 'Acceptable', 'Rework']);
+export const maintenanceTypeEnum = pgEnum('maintenance_type', ['Preventive', 'Corrective', 'Predictive', 'Condition-Based']);
+export const maintenanceStatusEnum = pgEnum('maintenance_status', ['Scheduled', 'InProgress', 'Completed', 'Deferred', 'Cancelled']);
+export const equipmentStatusEnum = pgEnum('equipment_status', ['Operational', 'UnderMaintenance', 'Idle', 'Decommissioned', 'Faulty']);
+export const workCenterStatusEnum = pgEnum('work_center_status', ['Active', 'Inactive', 'AtCapacity', 'UnderMaintenance']);
+export const manufacturingTypeEnum = pgEnum('manufacturing_type', ['Discrete', 'Process', 'Repetitive', 'Batch', 'Lean', 'Custom']);
+export const materialTypeEnum = pgEnum('material_type', ['RawMaterial', 'Intermediate', 'FinishedGood', 'Packaging', 'Consumable', 'Spare']);
+export const unitOfMeasureEnum = pgEnum('unit_of_measure', ['Each', 'Kilogram', 'Gram', 'Liter', 'Milliliter', 'Meter', 'SquareMeter', 'CubicMeter', 'Hour', 'Minute', 'Ton', 'Dozen']);
 export const paymentMethodEnum = pgEnum('payment_method', ['Cash', 'Credit Card', 'Bank Transfer', 'Check', 'PayPal', 'Other']);
 export const purchaseOrderStatusEnum = pgEnum('purchase_order_status', ['Draft', 'Sent', 'Received', 'Cancelled', 'Partially Received']);
 export const proposalStatusEnum = pgEnum('proposal_status', ['Draft', 'Sent', 'Accepted', 'Rejected', 'Expired', 'Revoked']);
@@ -59,6 +71,7 @@ export interface MenuVisibilitySettings {
   communicationCenter: boolean;
   accounting: boolean;
   inventory: boolean;
+  manufacturing: boolean;
   supportTickets: boolean;
   ecommerce: boolean;
   ecommerceStore: boolean;
