@@ -1,232 +1,269 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
-import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
+import { apiRequest } from '@/lib/queryClient';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { 
+  Building,
+  ChevronRight, 
+  ExternalLink,
+  Phone,
+  Plus,
+  RefreshCw, 
+  Search, 
+  Star, 
+  Mail
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { formatDate } from '@/lib/formatters';
+
+interface Vendor {
+  id: number;
+  name: string;
+  code: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  address: string;
+  taxId: string;
+  status: string;
+  paymentTerms: string;
+  deliveryTerms: string;
+  website: string;
+  qualityRating: number;
+  deliveryRating: number;
+  priceRating: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function VendorManagement() {
-  const [activeTab, setActiveTab] = useState('vendors');
+  const [searchTerm, setSearchTerm] = useState('');
   
-  const { data: vendorsData, isLoading } = useQuery({
+  // Fetch vendors from API
+  const { data: vendors = [], isLoading, refetch } = useQuery({
     queryKey: ['/api/manufacturing/vendors'],
-    enabled: true
+    queryFn: async () => {
+      try {
+        const res = await apiRequest('GET', '/api/manufacturing/vendors');
+        return await res.json() as Vendor[];
+      } catch (error) {
+        console.error('Failed to fetch vendors:', error);
+        return [];
+      }
+    }
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-[400px] w-full" />
-      </div>
-    );
-  }
+  // Filter vendors based on search term
+  const filteredVendors = vendors.filter(vendor => 
+    searchTerm === '' || 
+    vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vendor.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vendor.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  // Summary stats
+  const activeVendors = vendors.filter(v => v.isActive).length;
+  const inactiveVendors = vendors.length - activeVendors;
+  
+  // Calculate average ratings
+  const avgQualityRating = vendors.length > 0 
+    ? vendors.reduce((sum, v) => sum + v.qualityRating, 0) / vendors.length
+    : 0;
+    
+  const avgDeliveryRating = vendors.length > 0 
+    ? vendors.reduce((sum, v) => sum + v.deliveryRating, 0) / vendors.length
+    : 0;
+    
+  const avgPriceRating = vendors.length > 0 
+    ? vendors.reduce((sum, v) => sum + v.priceRating, 0) / vendors.length
+    : 0;
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="vendors" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4 w-full">
-          <TabsTrigger value="vendors">Vendors</TabsTrigger>
-          <TabsTrigger value="contracts">Contracts</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="vendors" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between">
-                <div>
-                  <CardTitle>Vendor Management</CardTitle>
-                  <CardDescription>
-                    Manage supplier information and relationships
-                  </CardDescription>
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Vendor Management</CardTitle>
+              <CardDescription>Manage suppliers and track vendor performance</CardDescription>
+            </div>
+            <div className="flex space-x-3">
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                New Vendor
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Active Vendors</h3>
+                    <p className="text-3xl font-bold">{activeVendors}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {inactiveVendors} inactive
+                    </p>
+                  </div>
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <Building className="h-6 w-6 text-blue-700" />
+                  </div>
                 </div>
-                <Button>Add Vendor</Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Vendor Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Performance</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">Acme Materials Inc.</TableCell>
-                    <TableCell>Raw Materials</TableCell>
-                    <TableCell>supplier@acmematerials.com</TableCell>
-                    <TableCell><Badge className="bg-green-500">Active</Badge></TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
-                          <div className="h-full bg-green-500 rounded-full" style={{ width: '90%' }}></div>
-                        </div>
-                        <span>90%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Global Supplies Ltd.</TableCell>
-                    <TableCell>Packaging</TableCell>
-                    <TableCell>orders@globalsupplies.com</TableCell>
-                    <TableCell><Badge className="bg-green-500">Active</Badge></TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
-                          <div className="h-full bg-yellow-500 rounded-full" style={{ width: '75%' }}></div>
-                        </div>
-                        <span>75%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Delta Components</TableCell>
-                    <TableCell>Parts</TableCell>
-                    <TableCell>sales@deltacomp.com</TableCell>
-                    <TableCell><Badge variant="outline">Inactive</Badge></TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
-                          <div className="h-full bg-red-500 rounded-full" style={{ width: '45%' }}></div>
-                        </div>
-                        <span>45%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="contracts" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between">
-                <div>
-                  <CardTitle>Vendor Contracts</CardTitle>
-                  <CardDescription>
-                    Manage contracts, terms, and agreements with suppliers
-                  </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Average Quality Rating</h3>
+                <div className="flex items-center mb-2">
+                  <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 mr-2" />
+                  <p className="text-2xl font-bold">{avgQualityRating.toFixed(1)}</p>
+                  <p className="text-sm text-muted-foreground ml-2">/ 5.0</p>
                 </div>
-                <Button>New Contract</Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Contract ID</TableHead>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Start Date</TableHead>
-                    <TableHead>End Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">CT-2025-001</TableCell>
-                    <TableCell>Acme Materials Inc.</TableCell>
-                    <TableCell>Supply</TableCell>
-                    <TableCell>01/01/2025</TableCell>
-                    <TableCell>12/31/2025</TableCell>
-                    <TableCell><Badge className="bg-green-500">Active</Badge></TableCell>
+                <Progress value={avgQualityRating * 20} className="h-2" />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Average Delivery Rating</h3>
+                <div className="flex items-center mb-2">
+                  <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 mr-2" />
+                  <p className="text-2xl font-bold">{avgDeliveryRating.toFixed(1)}</p>
+                  <p className="text-sm text-muted-foreground ml-2">/ 5.0</p>
+                </div>
+                <Progress value={avgDeliveryRating * 20} className="h-2" />
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="flex justify-between mb-6">
+            <div className="relative w-96">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search vendors by name, code or contact..." 
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm">Export</Button>
+              <Button variant="outline" size="sm">Import</Button>
+            </div>
+          </div>
+          
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead>Vendor Name</TableHead>
+                <TableHead>Contact Person</TableHead>
+                <TableHead>Contact Info</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Terms</TableHead>
+                <TableHead>Quality</TableHead>
+                <TableHead>Delivery</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center">
+                    Loading vendors...
+                  </TableCell>
+                </TableRow>
+              ) : filteredVendors.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center">
+                    No vendors found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredVendors.map((vendor) => (
+                  <TableRow key={vendor.id} className="cursor-pointer hover:bg-muted/50">
+                    <TableCell className="font-medium">{vendor.code}</TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
+                      {vendor.name}
+                      {vendor.website && (
+                        <a 
+                          href={vendor.website.startsWith('http') ? vendor.website : `https://${vendor.website}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center ml-2 text-xs text-blue-600 hover:text-blue-800"
+                        >
+                          <ExternalLink className="h-3 w-3 inline ml-1" />
+                        </a>
+                      )}
+                    </TableCell>
+                    <TableCell>{vendor.contactPerson}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col space-y-1">
+                        {vendor.email && (
+                          <div className="flex items-center text-xs">
+                            <Mail className="h-3 w-3 mr-1 text-muted-foreground" />
+                            <span className="truncate max-w-[150px]">{vendor.email}</span>
+                          </div>
+                        )}
+                        {vendor.phone && (
+                          <div className="flex items-center text-xs">
+                            <Phone className="h-3 w-3 mr-1 text-muted-foreground" />
+                            <span>{vendor.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={vendor.isActive ? "default" : "secondary"}
+                        className={vendor.isActive ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-gray-100 text-gray-800"}
+                      >
+                        {vendor.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-xs">
+                        <div>Payment: {vendor.paymentTerms}</div>
+                        <div>Delivery: {vendor.deliveryTerms}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <span className="font-medium mr-1">{vendor.qualityRating.toFixed(1)}</span>
+                        <Star className={`h-4 w-4 ${vendor.qualityRating >= 4 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300 fill-gray-300'}`} />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <span className="font-medium mr-1">{vendor.deliveryRating.toFixed(1)}</span>
+                        <Star className={`h-4 w-4 ${vendor.deliveryRating >= 4 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300 fill-gray-300'}`} />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon">
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">CT-2025-002</TableCell>
-                    <TableCell>Global Supplies Ltd.</TableCell>
-                    <TableCell>Service</TableCell>
-                    <TableCell>02/15/2025</TableCell>
-                    <TableCell>02/14/2026</TableCell>
-                    <TableCell><Badge className="bg-green-500">Active</Badge></TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">CT-2024-055</TableCell>
-                    <TableCell>Tech Solutions</TableCell>
-                    <TableCell>Maintenance</TableCell>
-                    <TableCell>10/01/2024</TableCell>
-                    <TableCell>09/30/2025</TableCell>
-                    <TableCell><Badge className="bg-green-500">Active</Badge></TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">View</Button>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="performance" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vendor Performance Metrics</CardTitle>
-              <CardDescription>
-                Track and analyze supplier performance and reliability
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">
-                  The vendor performance dashboard with KPI tracking and analysis is being loaded...
-                </p>
-                <Button>Generate Performance Report</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="compliance" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vendor Compliance</CardTitle>
-              <CardDescription>
-                Monitor vendor certifications and compliance requirements
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">
-                  The vendor compliance tracking module with regulatory requirement management is being loaded...
-                </p>
-                <Button>Compliance Report</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

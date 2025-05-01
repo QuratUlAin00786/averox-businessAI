@@ -1,12 +1,9 @@
-import { useEffect } from 'react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import VendorManagement from '../components/materials-management/VendorManagement';
+import ValuationsManagement from '../components/materials-management/ValuationsManagement';
 
-export default function VendorPage() {
+export default function ValuationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -16,11 +13,11 @@ export default function VendorPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h2 className="text-2xl font-bold">Vendor Management</h2>
+          <h2 className="text-2xl font-bold">Material Valuations</h2>
         </div>
       </div>
       
-      <VendorManagement />
+      <ValuationsManagement />
     </div>
   );
 }
