@@ -305,7 +305,7 @@ export default function BatchLotManagement() {
             <CardContent>
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
-                  Quality control dashboard with inspection schedules and compliance tracking is being loaded...
+                  No quality control data available. Please add data to the database.
                 </p>
                 <Button variant="outline">View Inspection History</Button>
               </div>

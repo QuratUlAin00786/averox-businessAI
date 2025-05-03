@@ -219,7 +219,7 @@ export default function MaterialValuationList() {
             <CardContent>
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
-                  Valuation reporting system with period comparison and variance analysis is being loaded...
+                  No valuation report data available. Please add data to the database.
                 </p>
                 <Button>View Report History</Button>
               </div>
@@ -243,7 +243,7 @@ export default function MaterialValuationList() {
             <CardContent>
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
-                  Price history tracking system with trend visualization and forecasting is being loaded...
+                  No price history data available. Please add data to the database.
                 </p>
                 <Button>View Analysis</Button>
               </div>

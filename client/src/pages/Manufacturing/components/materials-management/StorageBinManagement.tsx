@@ -284,7 +284,7 @@ export default function StorageBinManagement() {
             <CardContent>
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
-                  Storage zone configuration and monitoring system is being loaded...
+                  No storage zone data available. Please add data to the database.
                 </p>
                 <Button>View Zones</Button>
               </div>
@@ -308,7 +308,7 @@ export default function StorageBinManagement() {
             <CardContent>
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
-                  Material transfer system with barcode scanning and location tracking is being loaded...
+                  No material transfer data available. Please add data to the database.
                 </p>
                 <Button>View Transfer History</Button>
               </div>
