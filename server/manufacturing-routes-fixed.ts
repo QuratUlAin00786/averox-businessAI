@@ -42,27 +42,8 @@ router.get('/mrp/dashboard', async (req: Request, res: Response) => {
       `);
     } catch (lowStockError) {
       console.error('Error fetching low stock items:', lowStockError);
-      // Fallback to simpler query without batch_lots table
-      try {
-        lowStockItems = await db.execute(sql`
-          SELECT 
-            p.id as material_id,
-            p.name as material_name,
-            p.sku as material_code,
-            p.reorder_level as reorder_point,
-            p.stock_quantity as current_quantity
-          FROM products p
-          WHERE p.is_active = true
-          AND p.reorder_level IS NOT NULL
-          AND p.stock_quantity <= p.reorder_level
-          ORDER BY p.stock_quantity ASC
-          LIMIT 10
-        `);
-      } catch (fallbackLowStockError) {
-        console.error('Fallback low stock query also failed:', fallbackLowStockError);
-        // If even the simple fallback fails, just return an empty array
-        lowStockItems = [];
-      }
+      // Return empty array if the query fails
+      lowStockItems = [];
     }
     
     // Initialize empty arrays for the other data

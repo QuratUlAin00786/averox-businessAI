@@ -150,7 +150,7 @@ export default function BatchLotManagement() {
                     </DialogHeader>
                     <div className="py-4">
                       <p className="text-center text-muted-foreground">
-                        Batch/Lot creation form will be loaded from the database...
+                        No batch/lot data available. Please add data to the database.
                       </p>
                     </div>
                   </DialogContent>
