@@ -355,11 +355,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userId = req.user.id;
       
-      // Get notifications from the database for this user
-      const userNotifications = await db.query.notifications.findMany({
-        where: (notifications, { eq }) => eq(notifications.userId, userId),
-        orderBy: (notifications, { desc }) => [desc(notifications.createdAt)]
-      });
+      // Get notifications from the database for this user using raw SQL for consistent type handling
+      const result = await db.execute(sql`
+        SELECT 
+          id, 
+          user_id as "userId",
+          type,
+          title,
+          description,
+          link,
+          read::boolean as read,
+          created_at as "createdAt"
+        FROM notifications
+        WHERE user_id = ${userId}
+        ORDER BY created_at DESC
+      `);
+      
+      const userNotifications = result.rows.map(notification => ({
+        ...notification,
+        read: notification.read === true
+      }));
       
       res.json(userNotifications);
     } catch (error) {
@@ -416,30 +431,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userId = req.user.id;
       
-      // Get messages from the database for this user (as recipient) with sender info
-      const userMessages = await db
-        .select({
-          id: messages.id,
-          content: messages.content,
-          read: messages.read,
-          createdAt: messages.createdAt,
-          urgent: messages.urgent,
-          senderId: users.id,
-          senderFirstName: users.firstName,
-          senderLastName: users.lastName,
-          senderAvatar: users.avatar
-        })
-        .from(messages)
-        .innerJoin(users, eq(messages.senderId, users.id))
-        .where(eq(messages.recipientId, userId))
-        .orderBy(desc(messages.createdAt));
+      // Execute a raw SQL query to ensure we get the correct data types
+      const result = await db.execute(sql`
+        SELECT 
+          m.id, 
+          m.content, 
+          m.read::boolean as read, 
+          m.created_at as "createdAt", 
+          m.urgent::boolean as urgent,
+          u.id as "senderId", 
+          u.first_name as "senderFirstName", 
+          u.last_name as "senderLastName", 
+          u.avatar as "senderAvatar"
+        FROM messages m
+        INNER JOIN users u ON m.sender_id = u.id
+        WHERE m.recipient_id = ${userId}
+        ORDER BY m.created_at DESC
+      `);
+      
+      const userMessages = result.rows;
       
       // Log the raw message data to debug the read status issue
       console.log("Raw message data:", JSON.stringify(userMessages, null, 2));
       
       // Format the messages with sender info in the expected format
       const formattedMessages = userMessages.map(message => {
-        console.log(`Message ${message.id} read value type: ${typeof message.read}, value: ${message.read}`);
+        // Log the type and value
+        console.log(`Message ${message.id} read value type: ${typeof message.read}, value: ${message.read}, stringified: ${JSON.stringify(message.read)}`);
+        
         return {
           id: message.id,
           sender: {
@@ -448,9 +467,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             avatar: message.senderAvatar
           },
           content: message.content,
-          read: Boolean(message.read), // Explicitly convert to boolean
-          createdAt: message.createdAt ? message.createdAt.toISOString() : null,
-          urgent: message.urgent
+          read: message.read === true, // Strict boolean comparison
+          createdAt: message.createdAt ? new Date(String(message.createdAt)).toISOString() : null,
+          urgent: message.urgent === true
         };
       });
       
@@ -469,12 +488,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const userId = req.user.id;
       
-      // Update the message in the database
-      await db.update(messages)
-        .set({ read: true })
-        .where(
-          sql`${messages.id} = ${id} AND ${messages.recipientId} = ${userId}`
-        );
+      // Update the message in the database using raw SQL
+      await db.execute(sql`
+        UPDATE messages 
+        SET read = TRUE 
+        WHERE id = ${id} AND recipient_id = ${userId}
+      `);
       
       res.json({ success: true, message: `Message ${id} marked as read` });
     } catch (error) {
@@ -490,10 +509,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userId = req.user.id;
       
-      // Update all messages for this user in the database
-      await db.update(messages)
-        .set({ read: true })
-        .where(eq(messages.recipientId, userId));
+      // Update all messages for this user in the database using raw SQL
+      await db.execute(sql`
+        UPDATE messages 
+        SET read = TRUE 
+        WHERE recipient_id = ${userId}
+      `);
       
       res.json({ success: true, message: "All messages marked as read" });
     } catch (error) {
