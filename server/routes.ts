@@ -11,7 +11,7 @@ import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
 import manufacturingRouter from "./manufacturing-routes-fixed";
 import { db } from "./db";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, asc } from "drizzle-orm";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -46,10 +46,8 @@ import {
   // Database schema tables
   systemSettings,
   users,
-  // Notification and message tables
   notifications,
-  messages,
-  menuItems
+  messages
 } from "@shared/schema";
 import { z } from "zod";
 import { 
