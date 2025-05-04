@@ -391,12 +391,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const userId = req.user.id;
       
-      // Update the notification in the database
-      await db.update(notifications)
-        .set({ read: true })
-        .where(
-          sql`${notifications.id} = ${id} AND ${notifications.userId} = ${userId}`
-        );
+      // Update the notification in the database using raw SQL
+      await db.execute(sql`
+        UPDATE notifications 
+        SET read = TRUE 
+        WHERE id = ${id} AND user_id = ${userId}
+      `);
       
       res.json({ success: true, message: `Notification ${id} marked as read` });
     } catch (error) {
@@ -412,10 +412,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userId = req.user.id;
       
-      // Update all notifications for this user in the database
-      await db.update(notifications)
-        .set({ read: true })
-        .where(eq(notifications.userId, userId));
+      // Update all notifications for this user in the database using raw SQL
+      await db.execute(sql`
+        UPDATE notifications 
+        SET read = TRUE 
+        WHERE user_id = ${userId}
+      `);
       
       res.json({ success: true, message: "All notifications marked as read" });
     } catch (error) {
