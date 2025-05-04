@@ -307,6 +307,8 @@ export const notifications = pgTable("notifications", {
   relatedToId: integer("related_to_id"), // ID of the related entity
 });
 
+// Relations are handled at query time
+
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   createdAt: true,
@@ -325,6 +327,8 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow(),
   urgent: boolean("urgent").default(false),
 });
+
+// Relations are handled at query time
 
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
