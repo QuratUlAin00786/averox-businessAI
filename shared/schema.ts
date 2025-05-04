@@ -16,6 +16,7 @@ export const userRoleEnum = pgEnum('user_role', ['Admin', 'Manager', 'User', 'Re
 export const permissionActionEnum = pgEnum('permission_action', ['view', 'create', 'update', 'delete', 'export', 'import', 'assign']);
 export const socialPlatformEnum = pgEnum('social_platform', ['Facebook', 'LinkedIn', 'Twitter', 'Instagram', 'WhatsApp', 'Email', 'Messenger', 'Other']);
 export const messageStatusEnum = pgEnum('message_status', ['Unread', 'Read', 'Replied', 'Archived']);
+export const notificationTypeEnum = pgEnum('notification_type', ['task', 'meeting', 'opportunity', 'lead', 'system', 'message']);
 export const apiProviderEnum = pgEnum('api_provider', ['OpenAI', 'Stripe', 'Facebook', 'LinkedIn', 'Twitter', 'WhatsApp', 'Other']);
 export const communicationChannelEnum = pgEnum('communication_channel', ['Email', 'WhatsApp', 'SMS', 'Phone', 'Messenger', 'LinkedIn', 'Twitter', 'Facebook', 'Instagram', 'Other']);
 export const communicationDirectionEnum = pgEnum('communication_direction', ['Inbound', 'Outbound']);
@@ -291,6 +292,47 @@ export const subscriptionPackages = pgTable("subscription_packages", {
   displayOrder: integer("display_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Notifications table for system and user notifications
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: notificationTypeEnum("type").default("system"),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  link: text("link"),
+  relatedToType: text("related_to_type"), // Which entity this notification is related to
+  relatedToId: integer("related_to_id"), // ID of the related entity
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
+// Direct messages between users
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  recipientId: integer("recipient_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  urgent: boolean("urgent").default(false),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
 
 // User Subscriptions (stores current and historical subscription information)
 export const userSubscriptions = pgTable("user_subscriptions", {
