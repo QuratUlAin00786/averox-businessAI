@@ -11,7 +11,7 @@ import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
 import manufacturingRouter from "./manufacturing-routes-fixed";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -48,7 +48,8 @@ import {
   users,
   // Notification and message tables
   notifications,
-  messages
+  messages,
+  menuItems
 } from "@shared/schema";
 import { z } from "zod";
 import { 
@@ -417,33 +418,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userId = req.user.id;
       
-      // Get messages from the database for this user (as recipient)
-      const userMessages = await db.query.messages.findMany({
-        where: (messages, { eq }) => eq(messages.recipientId, userId),
-        orderBy: (messages, { desc }) => [desc(messages.createdAt)],
-        with: {
-          sender: {
-            columns: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              avatar: true,
-            },
-          },
-        },
-      });
+      // Get messages from the database for this user (as recipient) with sender info
+      const userMessages = await db
+        .select({
+          id: messages.id,
+          content: messages.content,
+          read: messages.read,
+          createdAt: messages.createdAt,
+          urgent: messages.urgent,
+          senderId: users.id,
+          senderFirstName: users.firstName,
+          senderLastName: users.lastName,
+          senderAvatar: users.avatar
+        })
+        .from(messages)
+        .innerJoin(users, eq(messages.senderId, users.id))
+        .where(eq(messages.recipientId, userId))
+        .orderBy(desc(messages.createdAt));
       
       // Format the messages with sender info in the expected format
       const formattedMessages = userMessages.map(message => ({
         id: message.id,
         sender: {
-          id: message.sender.id,
-          name: `${message.sender.firstName || ''} ${message.sender.lastName || ''}`.trim(),
-          avatar: message.sender.avatar
+          id: message.senderId,
+          name: `${message.senderFirstName || ''} ${message.senderLastName || ''}`.trim(),
+          avatar: message.senderAvatar
         },
         content: message.content,
         read: message.read,
-        createdAt: message.createdAt.toISOString(),
+        createdAt: message.createdAt ? message.createdAt.toISOString() : null,
         urgent: message.urgent
       }));
       
