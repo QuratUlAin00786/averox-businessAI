@@ -11,7 +11,7 @@ import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
 import manufacturingRouter from "./manufacturing-routes-fixed";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -44,7 +44,11 @@ import {
   type MenuVisibilitySettings,
   type SystemSettings,
   // Database schema tables
-  systemSettings
+  systemSettings,
+  users,
+  // Notification and message tables
+  notifications,
+  messages
 } from "@shared/schema";
 import { z } from "zod";
 import { 
@@ -350,60 +354,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       
-      // In a real implementation, these would be fetched from a database
-      // and filtered for the current user
       const userId = req.user.id;
       
-      // Sample data for demonstration
-      const notifications = [
-        {
-          id: 1,
-          type: 'task',
-          title: 'Task reminder',
-          description: 'You have a task "Client follow-up" due today',
-          read: false,
-          createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-          link: '/tasks'
-        },
-        {
-          id: 2,
-          type: 'meeting',
-          title: 'Meeting scheduled',
-          description: 'Product demo with Acme Corp at 2:00 PM',
-          read: false,
-          createdAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-          link: '/calendar'
-        },
-        {
-          id: 3,
-          type: 'opportunity',
-          title: 'Opportunity updated',
-          description: 'Deal "Enterprise solution" moved to Qualification stage',
-          read: true,
-          createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-          link: '/opportunities'
-        },
-        {
-          id: 4,
-          type: 'system',
-          title: 'System update',
-          description: 'New features available - Accounting module now live',
-          read: true,
-          createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-          link: '/accounting'
-        },
-        {
-          id: 5,
-          type: 'task',
-          title: 'Task assigned',
-          description: 'You have been assigned to "Prepare quarterly report"',
-          read: true,
-          createdAt: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-          link: '/tasks'
-        }
-      ];
+      // Get notifications from the database for this user
+      const userNotifications = await db.query.notifications.findMany({
+        where: (notifications, { eq }) => eq(notifications.userId, userId),
+        orderBy: (notifications, { desc }) => [desc(notifications.createdAt)]
+      });
       
-      res.json(notifications);
+      res.json(userNotifications);
     } catch (error) {
       handleError(res, error);
     }
@@ -416,9 +375,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const id = parseInt(req.params.id);
+      const userId = req.user.id;
       
-      // In a real implementation, this would update a record in the database
-      // For now, we just acknowledge the request
+      // Update the notification in the database
+      await db.update(notifications)
+        .set({ read: true })
+        .where(
+          sql`${notifications.id} = ${id} AND ${notifications.userId} = ${userId}`
+        );
       
       res.json({ success: true, message: `Notification ${id} marked as read` });
     } catch (error) {
@@ -432,8 +396,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       
-      // In a real implementation, this would update all records for the user in the database
-      // For now, we just acknowledge the request
+      const userId = req.user.id;
+      
+      // Update all notifications for this user in the database
+      await db.update(notifications)
+        .set({ read: true })
+        .where(eq(notifications.userId, userId));
       
       res.json({ success: true, message: "All notifications marked as read" });
     } catch (error) {
@@ -447,60 +415,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       
-      // In a real implementation, these would be fetched from a database
-      // and filtered for the current user
       const userId = req.user.id;
       
-      // Sample data for demonstration
-      const messages = [
-        {
-          id: 1,
+      // Get messages from the database for this user (as recipient)
+      const userMessages = await db.query.messages.findMany({
+        where: (messages, { eq }) => eq(messages.recipientId, userId),
+        orderBy: (messages, { desc }) => [desc(messages.createdAt)],
+        with: {
           sender: {
-            id: 2,
-            name: "John Smith",
-            avatar: null
+            columns: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
           },
-          content: "Hi there, can we discuss the proposal for XYZ Corp?",
-          read: false,
-          createdAt: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
-          urgent: true
         },
-        {
-          id: 2,
-          sender: {
-            id: 3,
-            name: "Sarah Johnson",
-            avatar: null
-          },
-          content: "The client meeting went well. They're interested in our premium package.",
-          read: false,
-          createdAt: new Date(Date.now() - 5400000).toISOString(), // 1.5 hours ago
-        },
-        {
-          id: 3,
-          sender: {
-            id: 4,
-            name: "Michael Wong",
-            avatar: null
-          },
-          content: "Please review the latest design mockups when you get a chance.",
-          read: true,
-          createdAt: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
-        },
-        {
-          id: 4,
-          sender: {
-            id: 5,
-            name: "Emily Davis",
-            avatar: null
-          },
-          content: "Just following up on our conversation from yesterday about the marketing strategy.",
-          read: true,
-          createdAt: new Date(Date.now() - 129600000).toISOString(), // 1.5 days ago
-        }
-      ];
+      });
       
-      res.json(messages);
+      // Format the messages with sender info in the expected format
+      const formattedMessages = userMessages.map(message => ({
+        id: message.id,
+        sender: {
+          id: message.sender.id,
+          name: `${message.sender.firstName || ''} ${message.sender.lastName || ''}`.trim(),
+          avatar: message.sender.avatar
+        },
+        content: message.content,
+        read: message.read,
+        createdAt: message.createdAt.toISOString(),
+        urgent: message.urgent
+      }));
+      
+      res.json(formattedMessages);
     } catch (error) {
       handleError(res, error);
     }
@@ -513,9 +460,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const id = parseInt(req.params.id);
+      const userId = req.user.id;
       
-      // In a real implementation, this would update a record in the database
-      // For now, we just acknowledge the request
+      // Update the message in the database
+      await db.update(messages)
+        .set({ read: true })
+        .where(
+          sql`${messages.id} = ${id} AND ${messages.recipientId} = ${userId}`
+        );
       
       res.json({ success: true, message: `Message ${id} marked as read` });
     } catch (error) {
@@ -529,10 +481,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       
-      // In a real implementation, this would update all records for the user in the database
-      // For now, we just acknowledge the request
+      const userId = req.user.id;
+      
+      // Update all messages for this user in the database
+      await db.update(messages)
+        .set({ read: true })
+        .where(eq(messages.recipientId, userId));
       
       res.json({ success: true, message: "All messages marked as read" });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  // Send a new message
+  app.post('/api/messages', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const userId = req.user.id;
+      const { recipientId, content, urgent = false } = req.body;
+      
+      if (!recipientId || !content) {
+        return res.status(400).json({ error: "Recipient and content are required" });
+      }
+      
+      // Make sure the recipient exists
+      const recipient = await db.query.users.findFirst({
+        where: eq(users.id, recipientId)
+      });
+      
+      if (!recipient) {
+        return res.status(404).json({ error: "Recipient not found" });
+      }
+      
+      // Insert the new message into the database
+      const [newMessage] = await db.insert(messages)
+        .values({
+          senderId: userId,
+          recipientId,
+          content,
+          urgent: urgent || false,
+          read: false
+        })
+        .returning();
+      
+      // Create a notification for the recipient
+      await db.insert(notifications)
+        .values({
+          userId: recipientId,
+          type: 'message',
+          title: 'New Message',
+          description: `You have a new message from ${req.user.firstName || ''} ${req.user.lastName || ''}`.trim(),
+          read: false,
+          link: '/communication-center'
+        });
+      
+      res.status(201).json(newMessage);
     } catch (error) {
       handleError(res, error);
     }
