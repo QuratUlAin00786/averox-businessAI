@@ -434,19 +434,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(messages.recipientId, userId))
         .orderBy(desc(messages.createdAt));
       
+      // Log the raw message data to debug the read status issue
+      console.log("Raw message data:", JSON.stringify(userMessages, null, 2));
+      
       // Format the messages with sender info in the expected format
-      const formattedMessages = userMessages.map(message => ({
-        id: message.id,
-        sender: {
-          id: message.senderId,
-          name: `${message.senderFirstName || ''} ${message.senderLastName || ''}`.trim(),
-          avatar: message.senderAvatar
-        },
-        content: message.content,
-        read: message.read,
-        createdAt: message.createdAt ? message.createdAt.toISOString() : null,
-        urgent: message.urgent
-      }));
+      const formattedMessages = userMessages.map(message => {
+        console.log(`Message ${message.id} read value type: ${typeof message.read}, value: ${message.read}`);
+        return {
+          id: message.id,
+          sender: {
+            id: message.senderId,
+            name: `${message.senderFirstName || ''} ${message.senderLastName || ''}`.trim(),
+            avatar: message.senderAvatar
+          },
+          content: message.content,
+          read: Boolean(message.read), // Explicitly convert to boolean
+          createdAt: message.createdAt ? message.createdAt.toISOString() : null,
+          urgent: message.urgent
+        };
+      });
       
       res.json(formattedMessages);
     } catch (error) {
