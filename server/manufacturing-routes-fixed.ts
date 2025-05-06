@@ -584,7 +584,7 @@ router.get('/production-orders', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
-    const productionOrders = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT 
         po.id,
         po.order_number as production_number,
@@ -625,6 +625,9 @@ router.get('/production-orders', async (req: Request, res: Response) => {
       po.created_at DESC
     `);
     
+    // Extract rows from PostgreSQL result
+    const productionOrders = result.rows || [];
+    
     return res.json(productionOrders);
   } catch (error) {
     console.error('Error fetching production orders:', error);
@@ -649,7 +652,7 @@ router.get('/work-centers', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
-    const workCenters = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT 
         wc.id,
         wc.name,
@@ -672,12 +675,15 @@ router.get('/work-centers', async (req: Request, res: Response) => {
       ORDER BY wc.name
     `);
     
+    // Extract rows from PostgreSQL result
+    const workCenters = result.rows || [];
+    
     // For each work center, get equipment and current jobs
     const workCentersWithDetails = await Promise.all(workCenters.map(async (workCenter) => {
       // Get equipment for this work center
       let equipment = [];
       try {
-        equipment = await db.execute(sql`
+        const equipmentResult = await db.execute(sql`
           SELECT 
             id, 
             name, 
@@ -686,6 +692,9 @@ router.get('/work-centers', async (req: Request, res: Response) => {
           WHERE work_center_id = ${workCenter.id}
           LIMIT 5
         `);
+        
+        // Extract rows from PostgreSQL result
+        equipment = equipmentResult.rows || [];
       } catch (error) {
         console.error(`Error fetching equipment for work center ${workCenter.id}:`, error);
       }
@@ -693,7 +702,7 @@ router.get('/work-centers', async (req: Request, res: Response) => {
       // Get current jobs for this work center
       let currentJobs = [];
       try {
-        currentJobs = await db.execute(sql`
+        const jobsResult = await db.execute(sql`
           SELECT 
             po.id,
             po.order_number as name,
@@ -708,6 +717,9 @@ router.get('/work-centers', async (req: Request, res: Response) => {
           ORDER BY po.planned_end_date ASC
           LIMIT 5
         `);
+        
+        // Extract rows from PostgreSQL result
+        currentJobs = jobsResult.rows || [];
       } catch (error) {
         console.error(`Error fetching jobs for work center ${workCenter.id}:`, error);
       }
@@ -743,7 +755,7 @@ router.get('/bom', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
-    const boms = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT 
         bom.id,
         bom.name,
@@ -762,6 +774,9 @@ router.get('/bom', async (req: Request, res: Response) => {
       ORDER BY bom.created_at DESC
     `);
     
+    // Extract rows from PostgreSQL result
+    const boms = result.rows || [];
+    
     return res.json(boms);
   } catch (error) {
     console.error('Error fetching bill of materials:', error);
@@ -775,7 +790,7 @@ router.get('/bom/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     
     // Get BOM header
-    const [bomHeader] = await db.execute(sql`
+    const headerResult = await db.execute(sql`
       SELECT 
         bom.id,
         bom.name,
@@ -796,12 +811,17 @@ router.get('/bom/:id', async (req: Request, res: Response) => {
       WHERE bom.id = ${id}
     `);
     
-    if (!bomHeader) {
+    // Extract rows from PostgreSQL result
+    const headerRows = headerResult.rows || [];
+    
+    if (headerRows.length === 0) {
       return res.status(404).json({ error: 'Bill of Materials not found' });
     }
     
+    const bomHeader = headerRows[0];
+    
     // Get BOM items
-    const bomItems = await db.execute(sql`
+    const itemsResult = await db.execute(sql`
       SELECT 
         bi.id,
         bi.bom_id,
@@ -821,6 +841,9 @@ router.get('/bom/:id', async (req: Request, res: Response) => {
       WHERE bi.bom_id = ${id}
       ORDER BY bi.position ASC
     `);
+    
+    // Extract rows from PostgreSQL result
+    const bomItems = itemsResult.rows || [];
     
     return res.json({
       ...bomHeader,
@@ -849,7 +872,7 @@ router.get('/quality-inspections', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
-    const qualityInspections = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT 
         qc.id,
         qc.inspection_number,
@@ -877,6 +900,9 @@ router.get('/quality-inspections', async (req: Request, res: Response) => {
       ORDER BY qc.inspection_date DESC
     `);
     
+    // Extract rows from PostgreSQL result
+    const qualityInspections = result.rows || [];
+    
     return res.json(qualityInspections);
   } catch (error) {
     console.error('Error fetching quality inspections:', error);
@@ -901,7 +927,7 @@ router.get('/maintenance-requests', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
-    const maintenanceRequests = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT 
         mr.id,
         mr.request_number,
@@ -938,6 +964,9 @@ router.get('/maintenance-requests', async (req: Request, res: Response) => {
         END,
         mr.reported_date DESC
     `);
+    
+    // Extract rows from PostgreSQL result
+    const maintenanceRequests = result.rows || [];
     
     return res.json(maintenanceRequests);
   } catch (error) {
@@ -1128,7 +1157,7 @@ router.get('/trade-compliance', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
-    const tradeComplianceRecords = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT 
         tc.id,
         tc.product_id,
@@ -1156,6 +1185,9 @@ router.get('/trade-compliance', async (req: Request, res: Response) => {
       ORDER BY tc.updated_at DESC
     `);
     
+    // Extract rows from PostgreSQL result
+    const tradeComplianceRecords = result.rows || [];
+    
     return res.json(tradeComplianceRecords);
   } catch (error) {
     console.error('Error fetching trade compliance records:', error);
@@ -1180,7 +1212,7 @@ router.get('/returns', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
-    const returns = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT 
         ra.id,
         ra.rma_number,
@@ -1207,9 +1239,12 @@ router.get('/returns', async (req: Request, res: Response) => {
       ORDER BY ra.created_at DESC
     `);
     
+    // Extract rows from PostgreSQL result
+    const returns = result.rows || [];
+    
     // Get return items for each return
     const returnsWithItems = await Promise.all(returns.map(async (returnAuth) => {
-      const returnItems = await db.execute(sql`
+      const itemsResult = await db.execute(sql`
         SELECT 
           ri.id,
           ri.return_authorization_id,
@@ -1229,6 +1264,9 @@ router.get('/returns', async (req: Request, res: Response) => {
         LEFT JOIN products p ON ri.product_id = p.id
         WHERE ri.return_authorization_id = ${returnAuth.id}
       `);
+      
+      // Extract rows from PostgreSQL result
+      const returnItems = itemsResult.rows || [];
       
       return {
         ...returnAuth,
