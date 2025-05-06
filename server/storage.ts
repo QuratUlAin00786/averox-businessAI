@@ -3533,13 +3533,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [updatedContact] = await db.update(contacts)
+        .set({
+          ...contact,
+          updatedAt: new Date()
+        })
+        .where(eq(contacts.id, id))
+        .returning();
+      return updatedContact;
+    } catch (error) {
+      console.error('Database error in updateContact:', error);
+      return undefined;
+    }
   }
 
   async deleteContact(id: number): Promise<boolean> {
-    // Implement with database queries
-    return false;
+    try {
+      const result = await db.delete(contacts)
+        .where(eq(contacts.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Database error in deleteContact:', error);
+      return false;
+    }
   }
 
   // Account Methods
@@ -3578,13 +3596,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [updatedAccount] = await db.update(accounts)
+        .set({
+          ...account,
+          updatedAt: new Date()
+        })
+        .where(eq(accounts.id, id))
+        .returning();
+      return updatedAccount;
+    } catch (error) {
+      console.error('Database error in updateAccount:', error);
+      return undefined;
+    }
   }
 
   async deleteAccount(id: number): Promise<boolean> {
-    // Implement with database queries
-    return false;
+    try {
+      const result = await db.delete(accounts)
+        .where(eq(accounts.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Database error in deleteAccount:', error);
+      return false;
+    }
   }
 
   // Lead Methods
@@ -3640,13 +3676,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateLead(id: number, lead: Partial<InsertLead>): Promise<Lead | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [updatedLead] = await db.update(leads)
+        .set({
+          ...lead,
+          updatedAt: new Date()
+        })
+        .where(eq(leads.id, id))
+        .returning();
+      return updatedLead;
+    } catch (error) {
+      console.error('Database error in updateLead:', error);
+      return undefined;
+    }
   }
 
   async deleteLead(id: number): Promise<boolean> {
-    // Implement with database queries
-    return false;
+    try {
+      const result = await db.delete(leads)
+        .where(eq(leads.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Database error in deleteLead:', error);
+      return false;
+    }
   }
 
   async convertLead(id: number, convertTo: { contact?: InsertContact, account?: InsertAccount, opportunity?: InsertOpportunity }): Promise<{ contact?: Contact, account?: Account, opportunity?: Opportunity, lead: Lead }> {
@@ -3676,18 +3730,45 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOpportunity(opportunity: InsertOpportunity): Promise<Opportunity> {
-    // Implement with database queries
-    throw new Error('Method not implemented');
+    try {
+      const [newOpportunity] = await db.insert(opportunities).values({
+        ...opportunity,
+        createdAt: new Date()
+      }).returning();
+      
+      return newOpportunity;
+    } catch (error) {
+      console.error('Database error in createOpportunity:', error);
+      throw new Error('Failed to create opportunity');
+    }
   }
 
   async updateOpportunity(id: number, opportunity: Partial<InsertOpportunity>): Promise<Opportunity | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [updatedOpportunity] = await db.update(opportunities)
+        .set({
+          ...opportunity,
+          updatedAt: new Date()
+        })
+        .where(eq(opportunities.id, id))
+        .returning();
+      return updatedOpportunity;
+    } catch (error) {
+      console.error('Database error in updateOpportunity:', error);
+      return undefined;
+    }
   }
 
   async deleteOpportunity(id: number): Promise<boolean> {
-    // Implement with database queries
-    return false;
+    try {
+      const result = await db.delete(opportunities)
+        .where(eq(opportunities.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Database error in deleteOpportunity:', error);
+      return false;
+    }
   }
 
   // Task Methods
