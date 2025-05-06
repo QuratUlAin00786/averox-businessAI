@@ -3773,13 +3773,41 @@ export class DatabaseStorage implements IStorage {
 
   // Task Methods
   async getTask(id: number): Promise<Task | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+      return task;
+    } catch (error) {
+      console.error("Error retrieving task:", error);
+      return undefined;
+    }
   }
 
   async listTasks(filter?: Partial<Task>): Promise<Task[]> {
     try {
-      const allTasks = await db.select().from(tasks);
+      let query = db.select().from(tasks);
+      
+      // Apply filters if provided
+      if (filter) {
+        if (filter.assignedTo !== undefined) {
+          query = query.where(eq(tasks.assignedTo, filter.assignedTo));
+        }
+        if (filter.relatedToId !== undefined && filter.relatedToType !== undefined) {
+          query = query.where(
+            and(
+              eq(tasks.relatedToId, filter.relatedToId),
+              eq(tasks.relatedToType, filter.relatedToType)
+            )
+          );
+        }
+        if (filter.status !== undefined) {
+          query = query.where(eq(tasks.status, filter.status));
+        }
+        if (filter.priority !== undefined) {
+          query = query.where(eq(tasks.priority, filter.priority));
+        }
+      }
+      
+      const allTasks = await query;
       return allTasks;
     } catch (error) {
       console.error("Error retrieving tasks:", error);
@@ -3788,29 +3816,89 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTask(task: InsertTask): Promise<Task> {
-    // Implement with database queries
-    throw new Error('Method not implemented');
+    try {
+      const [newTask] = await db.insert(tasks).values({
+        ...task,
+        createdAt: new Date(),
+        isCompleted: task.isCompleted || false
+      }).returning();
+      
+      return newTask;
+    } catch (error) {
+      console.error('Database error in createTask:', error);
+      throw new Error('Failed to create task');
+    }
   }
 
   async updateTask(id: number, task: Partial<InsertTask>): Promise<Task | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [updatedTask] = await db.update(tasks)
+        .set({
+          ...task,
+          updatedAt: new Date()
+        })
+        .where(eq(tasks.id, id))
+        .returning();
+      return updatedTask;
+    } catch (error) {
+      console.error('Database error in updateTask:', error);
+      return undefined;
+    }
   }
 
   async deleteTask(id: number): Promise<boolean> {
-    // Implement with database queries
-    return false;
+    try {
+      const result = await db.delete(tasks)
+        .where(eq(tasks.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Database error in deleteTask:', error);
+      return false;
+    }
   }
 
   // Event Methods
   async getEvent(id: number): Promise<Event | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [event] = await db.select().from(events).where(eq(events.id, id));
+      return event;
+    } catch (error) {
+      console.error("Error retrieving event:", error);
+      return undefined;
+    }
   }
 
   async listEvents(filter?: Partial<Event>): Promise<Event[]> {
     try {
-      const allEvents = await db.select().from(events);
+      let query = db.select().from(events);
+      
+      // Apply filters if provided
+      if (filter) {
+        if (filter.createdBy !== undefined) {
+          query = query.where(eq(events.createdBy, filter.createdBy));
+        }
+        if (filter.relatedToId !== undefined && filter.relatedToType !== undefined) {
+          query = query.where(
+            and(
+              eq(events.relatedToId, filter.relatedToId),
+              eq(events.relatedToType, filter.relatedToType)
+            )
+          );
+        }
+        if (filter.status !== undefined) {
+          query = query.where(eq(events.status, filter.status));
+        }
+        // Filter by date range
+        if (filter.startDate !== undefined) {
+          query = query.where(gte(events.startDate, filter.startDate));
+        }
+        if (filter.endDate !== undefined) {
+          query = query.where(lte(events.endDate, filter.endDate));
+        }
+      }
+      
+      const allEvents = await query;
       return allEvents;
     } catch (error) {
       console.error("Error retrieving events:", error);
@@ -3819,29 +3907,84 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEvent(event: InsertEvent): Promise<Event> {
-    // Implement with database queries
-    throw new Error('Method not implemented');
+    try {
+      const [newEvent] = await db.insert(events).values({
+        ...event,
+        createdAt: new Date()
+      }).returning();
+      
+      return newEvent;
+    } catch (error) {
+      console.error('Database error in createEvent:', error);
+      throw new Error('Failed to create event');
+    }
   }
 
   async updateEvent(id: number, event: Partial<InsertEvent>): Promise<Event | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [updatedEvent] = await db.update(events)
+        .set({
+          ...event,
+          updatedAt: new Date()
+        })
+        .where(eq(events.id, id))
+        .returning();
+      return updatedEvent;
+    } catch (error) {
+      console.error('Database error in updateEvent:', error);
+      return undefined;
+    }
   }
 
   async deleteEvent(id: number): Promise<boolean> {
-    // Implement with database queries
-    return false;
+    try {
+      const result = await db.delete(events)
+        .where(eq(events.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Database error in deleteEvent:', error);
+      return false;
+    }
   }
 
   // Activity Methods
   async getActivity(id: number): Promise<Activity | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [activity] = await db.select().from(activities).where(eq(activities.id, id));
+      return activity;
+    } catch (error) {
+      console.error("Error retrieving activity:", error);
+      return undefined;
+    }
   }
 
   async listActivities(filter?: Partial<Activity>): Promise<Activity[]> {
     try {
-      const allActivities = await db.select().from(activities);
+      let query = db.select().from(activities);
+      
+      // Apply filters if provided
+      if (filter) {
+        if (filter.userId !== undefined) {
+          query = query.where(eq(activities.userId, filter.userId));
+        }
+        if (filter.relatedToId !== undefined && filter.relatedToType !== undefined) {
+          query = query.where(
+            and(
+              eq(activities.relatedToId, filter.relatedToId),
+              eq(activities.relatedToType, filter.relatedToType)
+            )
+          );
+        }
+        if (filter.action !== undefined) {
+          query = query.where(eq(activities.action, filter.action));
+        }
+      }
+      
+      // Always sort by most recent first
+      query = query.orderBy(desc(activities.createdAt));
+      
+      const allActivities = await query;
       return allActivities;
     } catch (error) {
       console.error("Error retrieving activities:", error);
@@ -3850,8 +3993,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createActivity(activity: InsertActivity): Promise<Activity> {
-    // Implement with database queries
-    throw new Error('Method not implemented');
+    try {
+      const [newActivity] = await db.insert(activities).values({
+        ...activity,
+        createdAt: new Date()
+      }).returning();
+      
+      return newActivity;
+    } catch (error) {
+      console.error('Database error in createActivity:', error);
+      throw new Error('Failed to create activity');
+    }
   }
 
   // Dashboard Methods
@@ -4115,18 +4267,63 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createSubscriptionPackage(pkg: InsertSubscriptionPackage): Promise<SubscriptionPackage> {
-    // Implement with database queries
-    throw new Error('Method not implemented');
+    try {
+      const [newPackage] = await db.insert(subscriptionPackages).values({
+        ...pkg,
+        createdAt: new Date(),
+        isActive: pkg.isActive ?? true
+      }).returning();
+      
+      return newPackage;
+    } catch (error) {
+      console.error('Database error in createSubscriptionPackage:', error);
+      throw new Error('Failed to create subscription package');
+    }
   }
 
   async updateSubscriptionPackage(id: number, pkg: Partial<InsertSubscriptionPackage>): Promise<SubscriptionPackage | undefined> {
-    // Implement with database queries
-    return undefined;
+    try {
+      const [updatedPackage] = await db.update(subscriptionPackages)
+        .set({
+          ...pkg,
+          updatedAt: new Date()
+        })
+        .where(eq(subscriptionPackages.id, id))
+        .returning();
+      return updatedPackage;
+    } catch (error) {
+      console.error('Database error in updateSubscriptionPackage:', error);
+      return undefined;
+    }
   }
 
   async deleteSubscriptionPackage(id: number): Promise<boolean> {
-    // Implement with database queries
-    return false;
+    try {
+      // First check if there are active subscriptions using this package
+      const activeSubscriptions = await db.select({ count: sql`count(*)` })
+        .from(userSubscriptions)
+        .where(
+          and(
+            eq(userSubscriptions.packageId, id),
+            eq(userSubscriptions.status, 'active')
+          )
+        );
+      
+      const activeCount = Number(activeSubscriptions[0]?.count || 0);
+      
+      // Don't delete packages with active subscriptions
+      if (activeCount > 0) {
+        return false;
+      }
+      
+      const result = await db.delete(subscriptionPackages)
+        .where(eq(subscriptionPackages.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Database error in deleteSubscriptionPackage:', error);
+      return false;
+    }
   }
 
   // User Subscription Methods

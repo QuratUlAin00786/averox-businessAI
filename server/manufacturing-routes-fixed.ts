@@ -363,7 +363,7 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const [vendor] = await db.execute(sql`
+    const vendorResult = await db.execute(sql`
       SELECT 
         v.id,
         v.name,
@@ -387,14 +387,17 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
       WHERE v.id = ${id}
     `);
     
-    if (!vendor) {
+    // Check if we have any vendor data
+    if (!vendorResult.rows || vendorResult.rows.length === 0) {
       return res.status(404).json({ error: 'Vendor not found' });
     }
+
+    const vendor = vendorResult.rows[0];
     
     // Check if vendor_contracts table exists
     let contracts = [];
     try {
-      contracts = await db.execute(sql`
+      const contractsResult = await db.execute(sql`
         SELECT 
           vc.id,
           vc.vendor_id as "vendorId",
@@ -412,6 +415,7 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
         FROM vendor_contracts vc
         WHERE vc.vendor_id = ${id}
       `);
+      contracts = contractsResult.rows || [];
     } catch (contractError) {
       console.log('Vendor contracts table might not exist:', contractError);
       // Silently ignore if table doesn't exist
@@ -420,7 +424,7 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
     // Check if vendor_products table exists
     let products = [];
     try {
-      products = await db.execute(sql`
+      const productsResult = await db.execute(sql`
         SELECT 
           vp.id,
           vp.vendor_id as "vendorId",
@@ -442,6 +446,7 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
         LEFT JOIN products p ON vp.product_id = p.id
         WHERE vp.vendor_id = ${id}
       `);
+      products = productsResult.rows || [];
     } catch (productError) {
       console.log('Vendor products table might not exist:', productError);
       // Silently ignore if table doesn't exist
