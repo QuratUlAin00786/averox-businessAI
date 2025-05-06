@@ -189,7 +189,7 @@ router.get('/warehouse/bins', async (req: Request, res: Response) => {
 router.get('/storage/locations', async (req: Request, res: Response) => {
   try {
     // Using warehouses table with corrected column names
-    const warehouses = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT 
         w.id,
         w.code,
@@ -208,6 +208,9 @@ router.get('/storage/locations', async (req: Request, res: Response) => {
       FROM warehouses w
       ORDER BY w.name
     `);
+    
+    // Extract rows from PostgreSQL result
+    const warehouses = result.rows || [];
     
     return res.json(warehouses);
   } catch (error) {
@@ -252,7 +255,10 @@ router.get('/batch-lots', async (req: Request, res: Response) => {
       ORDER BY bl.created_at DESC
     `);
     
-    return res.json(result);
+    // Extract rows from PostgreSQL result
+    const batchLots = result.rows || [];
+    
+    return res.json(batchLots);
   } catch (error) {
     console.error('Error fetching batch lots:', error);
     return res.status(500).json({ error: 'Failed to fetch batch lots' });
@@ -302,7 +308,10 @@ router.get('/batch-lots/expiring', async (req: Request, res: Response) => {
       ORDER BY bl.expiration_date
     `);
     
-    return res.json(result);
+    // Extract rows from PostgreSQL result
+    const expiringBatchLots = result.rows || [];
+    
+    return res.json(expiringBatchLots);
   } catch (error) {
     console.error('Error fetching expiring batch lots:', error);
     return res.status(500).json({ error: 'Failed to fetch expiring batch lots' });
@@ -339,7 +348,10 @@ router.get('/vendors', async (req: Request, res: Response) => {
       ORDER BY v.name
     `);
     
-    return res.json(result);
+    // Extract rows from PostgreSQL result
+    const vendors = result.rows || [];
+    
+    return res.json(vendors);
   } catch (error) {
     console.error('Error fetching vendors:', error);
     return res.status(500).json({ error: 'Failed to fetch vendors' });
@@ -468,7 +480,10 @@ router.get('/valuation-methods', async (req: Request, res: Response) => {
       WHERE is_active = true
     `);
     
-    return res.json(result);
+    // Extract rows from PostgreSQL result
+    const valuationMethods = result.rows || [];
+    
+    return res.json(valuationMethods);
   } catch (error) {
     console.error('Error fetching valuation methods:', error);
     return res.status(500).json({ error: 'Failed to fetch valuation methods' });
@@ -516,7 +531,10 @@ router.get('/valuations', async (req: Request, res: Response) => {
     
     const result = await db.execute(query);
     
-    return res.json(result);
+    // Extract rows from PostgreSQL result
+    const valuations = result.rows || [];
+    
+    return res.json(valuations);
   } catch (error) {
     console.error('Error fetching material valuations:', error);
     return res.status(500).json({ error: 'Failed to fetch material valuations' });
@@ -528,7 +546,7 @@ router.get('/mrp/requirements', async (req: Request, res: Response) => {
   try {
     // Get all MRP requirements with a simpler query that won't fail
     // if specific columns don't exist
-    const requirements = await db.execute(sql`
+    const result = await db.execute(sql`
       SELECT 
         mr.*,
         p.name as "materialName",
@@ -538,6 +556,9 @@ router.get('/mrp/requirements', async (req: Request, res: Response) => {
       LEFT JOIN products p ON mr.product_id = p.id
       ORDER BY mr.due_date ASC
     `);
+    
+    // Extract rows from PostgreSQL result
+    const requirements = result.rows || [];
     
     return res.json(requirements);
   } catch (error) {
