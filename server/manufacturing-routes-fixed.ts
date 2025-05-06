@@ -514,43 +514,7 @@ router.get('/valuations', async (req: Request, res: Response) => {
 // Get MRP requirements
 router.get('/mrp/requirements', async (req: Request, res: Response) => {
   try {
-    // Check if material_requirements table exists
-    const tableCheck = await db.execute(sql`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_name = 'material_requirements'
-      ) as exists
-    `);
-    
-    if (!tableCheck.rows[0].exists) {
-      // If the table doesn't exist, create it
-      await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS material_requirements (
-          id SERIAL PRIMARY KEY,
-          product_id INTEGER REFERENCES products(id),
-          source_type TEXT NOT NULL,
-          source_id INTEGER,
-          required_quantity NUMERIC NOT NULL,
-          due_date TIMESTAMP NOT NULL,
-          priority TEXT,
-          status TEXT DEFAULT 'Open',
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP
-        )
-      `);
-      
-      // Insert some sample data for demo purposes
-      await db.execute(sql`
-        INSERT INTO material_requirements 
-        (product_id, source_type, source_id, required_quantity, due_date, priority, status) 
-        VALUES 
-        (1, 'ProductionOrder', 1001, 25, CURRENT_TIMESTAMP + INTERVAL '7 day', 'High', 'Open'),
-        (2, 'ProductionOrder', 1002, 15, CURRENT_TIMESTAMP + INTERVAL '14 day', 'Medium', 'Open'),
-        (1, 'SalesOrder', 5001, 10, CURRENT_TIMESTAMP + INTERVAL '3 day', 'High', 'Open')
-      `);
-    }
-    
-    // Get the latest requirements
+    // Query the material requirements with proper column mapping
     const requirements = await db.execute(sql`
       SELECT 
         mr.id,
@@ -560,9 +524,21 @@ router.get('/mrp/requirements', async (req: Request, res: Response) => {
         mr.source_type as "sourceType",
         mr.source_id as "sourceId",
         mr.required_quantity as "requiredQuantity",
+        mr.available_quantity as "availableQuantity",
+        mr.net_requirement as "netRequirement",
+        mr.planned_order_quantity as "plannedOrderQuantity",
         mr.due_date as "dueDate",
-        mr.priority as "priority",
-        mr.status,
+        mr.planned_start_date as "plannedStartDate",
+        mr.planned_release_date as "plannedReleaseDate",
+        mr.action_type as "actionType",
+        mr.action_status as "actionStatus",
+        mr.action_message as "actionMessage",
+        mr.priority,
+        mr.warehouse_id as "warehouseId",
+        mr.lot_size as "lotSize",
+        mr.lead_time_days as "leadTimeDays",
+        mr.safety_stock_level as "safetyStockLevel",
+        mr.economic_order_quantity as "economicOrderQuantity",
         CASE 
           WHEN p.stock_quantity >= mr.required_quantity THEN true
           ELSE false
@@ -571,16 +547,12 @@ router.get('/mrp/requirements', async (req: Request, res: Response) => {
         CASE 
           WHEN p.stock_quantity >= mr.required_quantity THEN 0
           ELSE mr.required_quantity - p.stock_quantity
-        END as "shortageQuantity",
-        (SELECT MIN(bl.receipt_date) 
-         FROM batch_lots bl 
-         WHERE bl.product_id = mr.product_id AND bl.status = 'Available'
-        ) as "earliestAvailabilityDate",
-        mr.created_at as "createdAt",
-        mr.updated_at as "updatedAt"
+        END as "shortageQuantity"
       FROM material_requirements mr
       JOIN products p ON mr.product_id = p.id
-      ORDER BY mr.due_date ASC
+      ORDER BY 
+        CASE WHEN mr.priority IS NULL THEN 999 ELSE mr.priority END ASC,
+        mr.due_date ASC
     `);
     
     return res.json(requirements);
