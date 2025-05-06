@@ -534,4 +534,680 @@ router.get('/mrp/requirements', async (req: Request, res: Response) => {
   }
 });
 
+// ---------------------------------------------------------------
+// PRODUCTION ORDERS
+// ---------------------------------------------------------------
+router.get('/production-orders', async (req: Request, res: Response) => {
+  try {
+    // First verify if production_orders table exists
+    const tableExistsResult = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'production_orders'
+      ) as exists
+    `);
+    
+    if (!tableExistsResult[0].exists) {
+      return res.json([]);
+    }
+    
+    const productionOrders = await db.execute(sql`
+      SELECT 
+        po.id,
+        po.order_number as production_number,
+        p.id as product_id,
+        p.name as product_name,
+        po.quantity,
+        COALESCE(
+          (SELECT SUM(completed_quantity) FROM production_order_operations WHERE production_order_id = po.id),
+          0
+        ) as completed_quantity,
+        po.planned_start_date as start_date,
+        po.planned_end_date as end_date,
+        po.status,
+        po.priority,
+        wc.id as work_center_id,
+        wc.name as work_center_name,
+        po.bom_id,
+        bom.name as bom_name,
+        po.created_by,
+        u.username as created_by_name,
+        po.created_at,
+        po.notes,
+        (SELECT COUNT(*) > 0 FROM quality_checks WHERE production_order_id = po.id) as quality_check_required,
+        (SELECT COUNT(*) FROM quality_checks WHERE production_order_id = po.id AND result = 'Pass') as quality_checks_passed,
+        (SELECT COUNT(*) FROM quality_checks WHERE production_order_id = po.id AND result = 'Fail') as quality_checks_failed
+      FROM production_orders po
+      LEFT JOIN products p ON po.product_id = p.id
+      LEFT JOIN work_centers wc ON po.routing_id = wc.id
+      LEFT JOIN bill_of_materials bom ON po.bom_id = bom.id
+      LEFT JOIN users u ON po.created_by = u.id
+      ORDER BY CASE 
+        WHEN po.status = 'InProgress' THEN 1
+        WHEN po.status = 'Scheduled' THEN 2
+        WHEN po.status = 'OnHold' THEN 3
+        WHEN po.status = 'Completed' THEN 4
+        ELSE 5
+      END, 
+      po.created_at DESC
+    `);
+    
+    return res.json(productionOrders);
+  } catch (error) {
+    console.error('Error fetching production orders:', error);
+    return res.status(500).json({ error: 'Failed to fetch production orders' });
+  }
+});
+
+// ---------------------------------------------------------------
+// WORK CENTERS
+// ---------------------------------------------------------------
+router.get('/work-centers', async (req: Request, res: Response) => {
+  try {
+    // First verify if work_centers table exists
+    const tableExistsResult = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'work_centers'
+      ) as exists
+    `);
+    
+    if (!tableExistsResult[0].exists) {
+      return res.json([]);
+    }
+    
+    const workCenters = await db.execute(sql`
+      SELECT 
+        wc.id,
+        wc.name,
+        wc.type,
+        wc.location,
+        wc.status,
+        wc.capacity,
+        COALESCE(
+          (SELECT SUM(po.quantity) FROM production_orders po WHERE po.routing_id = wc.id AND po.status IN ('Scheduled', 'InProgress')),
+          0
+        ) as current_load,
+        wc.manager_id,
+        u.username as manager_name,
+        wc.operating_hours,
+        (SELECT COUNT(*) FROM work_center_workers WHERE work_center_id = wc.id) as workers_assigned,
+        (SELECT COUNT(*) FROM equipment WHERE work_center_id = wc.id) as equipment_count,
+        wc.created_at
+      FROM work_centers wc
+      LEFT JOIN users u ON wc.manager_id = u.id
+      ORDER BY wc.name
+    `);
+    
+    // For each work center, get equipment and current jobs
+    const workCentersWithDetails = await Promise.all(workCenters.map(async (workCenter) => {
+      // Get equipment for this work center
+      let equipment = [];
+      try {
+        equipment = await db.execute(sql`
+          SELECT 
+            id, 
+            name, 
+            status
+          FROM equipment 
+          WHERE work_center_id = ${workCenter.id}
+          LIMIT 5
+        `);
+      } catch (error) {
+        console.error(`Error fetching equipment for work center ${workCenter.id}:`, error);
+      }
+      
+      // Get current jobs for this work center
+      let currentJobs = [];
+      try {
+        currentJobs = await db.execute(sql`
+          SELECT 
+            po.id,
+            po.order_number as name,
+            COALESCE(
+              (SELECT SUM(completed_quantity) FROM production_order_operations WHERE production_order_id = po.id) / po.quantity * 100,
+              0
+            ) as completion,
+            po.planned_end_date as due_date
+          FROM production_orders po
+          WHERE po.routing_id = ${workCenter.id}
+          AND po.status IN ('Scheduled', 'InProgress')
+          ORDER BY po.planned_end_date ASC
+          LIMIT 5
+        `);
+      } catch (error) {
+        console.error(`Error fetching jobs for work center ${workCenter.id}:`, error);
+      }
+      
+      return {
+        ...workCenter,
+        equipment,
+        current_jobs: currentJobs
+      };
+    }));
+    
+    return res.json(workCentersWithDetails);
+  } catch (error) {
+    console.error('Error fetching work centers:', error);
+    return res.status(500).json({ error: 'Failed to fetch work centers' });
+  }
+});
+
+// ---------------------------------------------------------------
+// BILL OF MATERIALS (BOM)
+// ---------------------------------------------------------------
+router.get('/bom', async (req: Request, res: Response) => {
+  try {
+    // First verify if bill_of_materials table exists
+    const tableExistsResult = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'bill_of_materials'
+      ) as exists
+    `);
+    
+    if (!tableExistsResult[0].exists) {
+      return res.json([]);
+    }
+    
+    const boms = await db.execute(sql`
+      SELECT 
+        bom.id,
+        bom.name,
+        bom.revision,
+        bom.status,
+        p.id as product_id,
+        p.name as product_name,
+        bom.is_active,
+        bom.notes,
+        bom.created_at,
+        u.username as created_by,
+        (SELECT COUNT(*) FROM bom_items WHERE bom_id = bom.id) as item_count
+      FROM bill_of_materials bom
+      LEFT JOIN products p ON bom.product_id = p.id
+      LEFT JOIN users u ON bom.created_by = u.id
+      ORDER BY bom.created_at DESC
+    `);
+    
+    return res.json(boms);
+  } catch (error) {
+    console.error('Error fetching bill of materials:', error);
+    return res.status(500).json({ error: 'Failed to fetch bill of materials' });
+  }
+});
+
+// BOM details with items
+router.get('/bom/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Get BOM header
+    const [bomHeader] = await db.execute(sql`
+      SELECT 
+        bom.id,
+        bom.name,
+        bom.revision,
+        bom.status,
+        p.id as product_id,
+        p.name as product_name,
+        p.sku as product_sku,
+        bom.quantity as base_quantity,
+        bom.unit_of_measure,
+        bom.is_active,
+        bom.notes,
+        bom.created_at,
+        u.username as created_by
+      FROM bill_of_materials bom
+      LEFT JOIN products p ON bom.product_id = p.id
+      LEFT JOIN users u ON bom.created_by = u.id
+      WHERE bom.id = ${id}
+    `);
+    
+    if (!bomHeader) {
+      return res.status(404).json({ error: 'Bill of Materials not found' });
+    }
+    
+    // Get BOM items
+    const bomItems = await db.execute(sql`
+      SELECT 
+        bi.id,
+        bi.bom_id,
+        bi.component_id,
+        p.name as component_name,
+        p.sku as component_sku,
+        bi.quantity,
+        bi.unit_of_measure,
+        bi.position,
+        bi.notes,
+        bi.is_critical,
+        bi.procurement_type,
+        bi.lead_time,
+        bi.is_active
+      FROM bom_items bi
+      LEFT JOIN products p ON bi.component_id = p.id
+      WHERE bi.bom_id = ${id}
+      ORDER BY bi.position ASC
+    `);
+    
+    return res.json({
+      ...bomHeader,
+      items: bomItems
+    });
+  } catch (error) {
+    console.error(`Error fetching BOM details for ID ${req.params.id}:`, error);
+    return res.status(500).json({ error: 'Failed to fetch BOM details' });
+  }
+});
+
+// ---------------------------------------------------------------
+// QUALITY INSPECTIONS
+// ---------------------------------------------------------------
+router.get('/quality-inspections', async (req: Request, res: Response) => {
+  try {
+    // First verify if quality_checks table exists
+    const tableExistsResult = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'quality_checks'
+      ) as exists
+    `);
+    
+    if (!tableExistsResult[0].exists) {
+      return res.json([]);
+    }
+    
+    const qualityInspections = await db.execute(sql`
+      SELECT 
+        qc.id,
+        qc.inspection_number,
+        qc.type,
+        qc.status,
+        qc.result,
+        qc.production_order_id,
+        po.order_number as production_order_number,
+        p.id as product_id,
+        p.name as product_name,
+        qc.batch_lot_id,
+        bl.lot_number as batch_lot_number,
+        qc.inspector_id,
+        u.username as inspector_name,
+        qc.inspection_date,
+        qc.notes,
+        (SELECT COUNT(*) FROM quality_check_parameters WHERE quality_check_id = qc.id) as parameter_count,
+        (SELECT COUNT(*) FROM quality_check_parameters WHERE quality_check_id = qc.id AND result = 'Pass') as parameters_passed,
+        (SELECT COUNT(*) FROM quality_check_parameters WHERE quality_check_id = qc.id AND result = 'Fail') as parameters_failed
+      FROM quality_checks qc
+      LEFT JOIN production_orders po ON qc.production_order_id = po.id
+      LEFT JOIN products p ON po.product_id = p.id
+      LEFT JOIN batch_lots bl ON qc.batch_lot_id = bl.id
+      LEFT JOIN users u ON qc.inspector_id = u.id
+      ORDER BY qc.inspection_date DESC
+    `);
+    
+    return res.json(qualityInspections);
+  } catch (error) {
+    console.error('Error fetching quality inspections:', error);
+    return res.status(500).json({ error: 'Failed to fetch quality inspections' });
+  }
+});
+
+// ---------------------------------------------------------------
+// MAINTENANCE REQUESTS
+// ---------------------------------------------------------------
+router.get('/maintenance-requests', async (req: Request, res: Response) => {
+  try {
+    // First verify if maintenance_requests table exists
+    const tableExistsResult = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'maintenance_requests'
+      ) as exists
+    `);
+    
+    if (!tableExistsResult[0].exists) {
+      return res.json([]);
+    }
+    
+    const maintenanceRequests = await db.execute(sql`
+      SELECT 
+        mr.id,
+        mr.request_number,
+        mr.type,
+        mr.priority,
+        mr.status,
+        mr.equipment_id,
+        e.name as equipment_name,
+        mr.work_center_id,
+        wc.name as work_center_name,
+        mr.description,
+        mr.requested_by,
+        u.username as requested_by_name,
+        mr.assigned_to,
+        u2.username as assigned_to_name,
+        mr.reported_date,
+        mr.scheduled_date,
+        mr.completed_date,
+        mr.estimated_hours,
+        mr.actual_hours,
+        mr.notes
+      FROM maintenance_requests mr
+      LEFT JOIN equipment e ON mr.equipment_id = e.id
+      LEFT JOIN work_centers wc ON mr.work_center_id = wc.id
+      LEFT JOIN users u ON mr.requested_by = u.id
+      LEFT JOIN users u2 ON mr.assigned_to = u2.id
+      ORDER BY 
+        CASE 
+          WHEN mr.priority = 'Critical' THEN 1
+          WHEN mr.priority = 'High' THEN 2
+          WHEN mr.priority = 'Medium' THEN 3
+          WHEN mr.priority = 'Low' THEN 4
+          ELSE 5
+        END,
+        mr.reported_date DESC
+    `);
+    
+    return res.json(maintenanceRequests);
+  } catch (error) {
+    console.error('Error fetching maintenance requests:', error);
+    return res.status(500).json({ error: 'Failed to fetch maintenance requests' });
+  }
+});
+
+// ---------------------------------------------------------------
+// MANUFACTURING DASHBOARD
+// ---------------------------------------------------------------
+router.get('/dashboard', async (req: Request, res: Response) => {
+  try {
+    // Production stats
+    let productionStats = {
+      total: 0,
+      inProgress: 0,
+      completed: 0,
+      delayed: 0,
+      onHold: 0
+    };
+    
+    try {
+      const productionStatsQuery = await db.execute(sql`
+        SELECT
+          COUNT(*) as total,
+          COUNT(CASE WHEN status = 'InProgress' THEN 1 END) as in_progress,
+          COUNT(CASE WHEN status = 'Completed' THEN 1 END) as completed,
+          COUNT(CASE WHEN status = 'OnHold' THEN 1 END) as on_hold,
+          COUNT(CASE WHEN planned_end_date < CURRENT_DATE AND status NOT IN ('Completed', 'Cancelled') THEN 1 END) as delayed
+        FROM production_orders
+      `);
+      
+      if (productionStatsQuery.length > 0) {
+        productionStats = {
+          total: parseInt(productionStatsQuery[0].total) || 0,
+          inProgress: parseInt(productionStatsQuery[0].in_progress) || 0,
+          completed: parseInt(productionStatsQuery[0].completed) || 0,
+          delayed: parseInt(productionStatsQuery[0].delayed) || 0,
+          onHold: parseInt(productionStatsQuery[0].on_hold) || 0
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching production statistics:', error);
+    }
+    
+    // Quality stats
+    let qualityStats = {
+      inspections: 0,
+      passed: 0,
+      failed: 0,
+      pending: 0
+    };
+    
+    try {
+      const qualityStatsQuery = await db.execute(sql`
+        SELECT
+          COUNT(*) as total,
+          COUNT(CASE WHEN result = 'Pass' THEN 1 END) as passed,
+          COUNT(CASE WHEN result = 'Fail' THEN 1 END) as failed,
+          COUNT(CASE WHEN status = 'Pending' OR result IS NULL THEN 1 END) as pending
+        FROM quality_checks
+      `);
+      
+      if (qualityStatsQuery.length > 0) {
+        qualityStats = {
+          inspections: parseInt(qualityStatsQuery[0].total) || 0,
+          passed: parseInt(qualityStatsQuery[0].passed) || 0,
+          failed: parseInt(qualityStatsQuery[0].failed) || 0,
+          pending: parseInt(qualityStatsQuery[0].pending) || 0
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching quality statistics:', error);
+    }
+    
+    // Maintenance stats
+    let maintenanceStats = {
+      total: 0,
+      pending: 0,
+      inProgress: 0,
+      completed: 0,
+      critical: 0
+    };
+    
+    try {
+      const maintenanceStatsQuery = await db.execute(sql`
+        SELECT
+          COUNT(*) as total,
+          COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending,
+          COUNT(CASE WHEN status = 'InProgress' THEN 1 END) as in_progress,
+          COUNT(CASE WHEN status = 'Completed' THEN 1 END) as completed,
+          COUNT(CASE WHEN priority = 'Critical' AND status != 'Completed' THEN 1 END) as critical
+        FROM maintenance_requests
+      `);
+      
+      if (maintenanceStatsQuery.length > 0) {
+        maintenanceStats = {
+          total: parseInt(maintenanceStatsQuery[0].total) || 0,
+          pending: parseInt(maintenanceStatsQuery[0].pending) || 0,
+          inProgress: parseInt(maintenanceStatsQuery[0].in_progress) || 0,
+          completed: parseInt(maintenanceStatsQuery[0].completed) || 0,
+          critical: parseInt(maintenanceStatsQuery[0].critical) || 0
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching maintenance statistics:', error);
+    }
+    
+    // Recent production orders
+    let recentOrders = [];
+    try {
+      recentOrders = await db.execute(sql`
+        SELECT 
+          po.id,
+          po.order_number,
+          p.name as product_name,
+          po.quantity,
+          po.status,
+          po.planned_start_date,
+          po.planned_end_date,
+          wc.name as work_center_name
+        FROM production_orders po
+        LEFT JOIN products p ON po.product_id = p.id
+        LEFT JOIN work_centers wc ON po.routing_id = wc.id
+        ORDER BY po.created_at DESC
+        LIMIT 5
+      `);
+    } catch (error) {
+      console.error('Error fetching recent production orders:', error);
+    }
+    
+    // Work center utilization
+    let workCenterUtilization = [];
+    try {
+      workCenterUtilization = await db.execute(sql`
+        SELECT 
+          wc.id,
+          wc.name,
+          wc.capacity,
+          COALESCE(
+            (SELECT SUM(po.quantity) FROM production_orders po WHERE po.routing_id = wc.id AND po.status IN ('Scheduled', 'InProgress')),
+            0
+          ) as current_load
+        FROM work_centers wc
+        ORDER BY wc.name
+        LIMIT 5
+      `);
+      
+      // Calculate utilization percentage
+      workCenterUtilization = workCenterUtilization.map(wc => ({
+        ...wc,
+        utilization: parseFloat(wc.capacity) > 0 
+          ? Math.round((parseFloat(wc.current_load) / parseFloat(wc.capacity)) * 100) 
+          : 0
+      }));
+    } catch (error) {
+      console.error('Error fetching work center utilization:', error);
+    }
+    
+    return res.json({
+      productionStats,
+      qualityStats,
+      maintenanceStats,
+      recentOrders,
+      workCenterUtilization
+    });
+  } catch (error) {
+    console.error('Error fetching manufacturing dashboard data:', error);
+    return res.status(500).json({ error: 'Failed to fetch manufacturing dashboard data' });
+  }
+});
+
+// ---------------------------------------------------------------
+// TRADE COMPLIANCE
+// ---------------------------------------------------------------
+router.get('/trade-compliance', async (req: Request, res: Response) => {
+  try {
+    // First verify if trade_compliance table exists
+    const tableExistsResult = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'trade_compliance'
+      ) as exists
+    `);
+    
+    if (!tableExistsResult[0].exists) {
+      return res.json([]);
+    }
+    
+    const tradeComplianceRecords = await db.execute(sql`
+      SELECT 
+        tc.id,
+        tc.product_id,
+        p.name as product_name,
+        p.sku as product_code,
+        tc.country_of_origin,
+        tc.harmonized_code,
+        tc.export_control_classification,
+        tc.preferential_origin_status,
+        tc.documentation_status,
+        tc.license_requirements,
+        tc.restricted_parties_status,
+        tc.compliance_status,
+        tc.valid_from,
+        tc.valid_to,
+        tc.last_reviewed_date,
+        tc.reviewed_by,
+        u.username as reviewed_by_name,
+        tc.notes,
+        tc.created_at,
+        tc.updated_at
+      FROM trade_compliance tc
+      LEFT JOIN products p ON tc.product_id = p.id
+      LEFT JOIN users u ON tc.reviewed_by = u.id
+      ORDER BY tc.updated_at DESC
+    `);
+    
+    return res.json(tradeComplianceRecords);
+  } catch (error) {
+    console.error('Error fetching trade compliance records:', error);
+    return res.status(500).json({ error: 'Failed to fetch trade compliance records' });
+  }
+});
+
+// ---------------------------------------------------------------
+// RETURNS MANAGEMENT
+// ---------------------------------------------------------------
+router.get('/returns', async (req: Request, res: Response) => {
+  try {
+    // First verify if return_authorizations table exists
+    const tableExistsResult = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'return_authorizations'
+      ) as exists
+    `);
+    
+    if (!tableExistsResult[0].exists) {
+      return res.json([]);
+    }
+    
+    const returns = await db.execute(sql`
+      SELECT 
+        ra.id,
+        ra.rma_number,
+        ra.status,
+        ra.customer_id,
+        c.name as customer_name,
+        ra.return_reason,
+        ra.return_type,
+        ra.disposition,
+        ra.requested_date,
+        ra.authorized_date,
+        ra.received_date,
+        ra.processed_date,
+        ra.authorized_by,
+        u.username as authorized_by_name,
+        ra.notes,
+        (SELECT COUNT(*) FROM return_items WHERE return_authorization_id = ra.id) as item_count,
+        (SELECT SUM(quantity) FROM return_items WHERE return_authorization_id = ra.id) as total_quantity,
+        ra.created_at,
+        ra.updated_at
+      FROM return_authorizations ra
+      LEFT JOIN accounts c ON ra.customer_id = c.id
+      LEFT JOIN users u ON ra.authorized_by = u.id
+      ORDER BY ra.created_at DESC
+    `);
+    
+    // Get return items for each return
+    const returnsWithItems = await Promise.all(returns.map(async (returnAuth) => {
+      const returnItems = await db.execute(sql`
+        SELECT 
+          ri.id,
+          ri.return_authorization_id,
+          ri.product_id,
+          p.name as product_name,
+          p.sku as product_code,
+          ri.quantity,
+          ri.unit_of_measure,
+          ri.return_reason,
+          ri.lot_number,
+          ri.serial_number,
+          ri.condition,
+          ri.disposition,
+          ri.status,
+          ri.notes
+        FROM return_items ri
+        LEFT JOIN products p ON ri.product_id = p.id
+        WHERE ri.return_authorization_id = ${returnAuth.id}
+      `);
+      
+      return {
+        ...returnAuth,
+        items: returnItems
+      };
+    }));
+    
+    return res.json(returnsWithItems);
+  } catch (error) {
+    console.error('Error fetching returns:', error);
+    return res.status(500).json({ error: 'Failed to fetch returns' });
+  }
+});
+
 export default router;
