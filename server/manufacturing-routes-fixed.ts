@@ -585,7 +585,8 @@ router.get('/production-orders', async (req: Request, res: Response) => {
       ) as exists
     `);
     
-    if (!tableExistsResult[0].exists) {
+    // Check if rows exist and if the table exists
+    if (!tableExistsResult.rows || !tableExistsResult.rows[0] || !tableExistsResult.rows[0].exists) {
       return res.json([]);
     }
     
@@ -653,7 +654,8 @@ router.get('/work-centers', async (req: Request, res: Response) => {
       ) as exists
     `);
     
-    if (!tableExistsResult[0].exists) {
+    // Check if rows exist and if the table exists
+    if (!tableExistsResult.rows || !tableExistsResult.rows[0] || !tableExistsResult.rows[0].exists) {
       return res.json([]);
     }
     
@@ -756,7 +758,8 @@ router.get('/bom', async (req: Request, res: Response) => {
       ) as exists
     `);
     
-    if (!tableExistsResult[0].exists) {
+    // Check if rows exist and if the table exists
+    if (!tableExistsResult.rows || !tableExistsResult.rows[0] || !tableExistsResult.rows[0].exists) {
       return res.json([]);
     }
     
@@ -873,7 +876,8 @@ router.get('/quality-inspections', async (req: Request, res: Response) => {
       ) as exists
     `);
     
-    if (!tableExistsResult[0].exists) {
+    // Check if rows exist and if the table exists
+    if (!tableExistsResult.rows || !tableExistsResult.rows[0] || !tableExistsResult.rows[0].exists) {
       return res.json([]);
     }
     
@@ -928,7 +932,8 @@ router.get('/maintenance-requests', async (req: Request, res: Response) => {
       ) as exists
     `);
     
-    if (!tableExistsResult[0].exists) {
+    // Check if rows exist and if the table exists
+    if (!tableExistsResult.rows || !tableExistsResult.rows[0] || !tableExistsResult.rows[0].exists) {
       return res.json([]);
     }
     
@@ -1005,13 +1010,13 @@ router.get('/dashboard', async (req: Request, res: Response) => {
         FROM production_orders
       `);
       
-      if (productionStatsQuery.length > 0) {
+      if (productionStatsQuery.rows && productionStatsQuery.rows.length > 0) {
         productionStats = {
-          total: parseInt(productionStatsQuery[0].total) || 0,
-          inProgress: parseInt(productionStatsQuery[0].in_progress) || 0,
-          completed: parseInt(productionStatsQuery[0].completed) || 0,
-          delayed: parseInt(productionStatsQuery[0].delayed) || 0,
-          onHold: parseInt(productionStatsQuery[0].on_hold) || 0
+          total: parseInt(productionStatsQuery.rows[0].total) || 0,
+          inProgress: parseInt(productionStatsQuery.rows[0].in_progress) || 0,
+          completed: parseInt(productionStatsQuery.rows[0].completed) || 0,
+          delayed: parseInt(productionStatsQuery.rows[0].delayed) || 0,
+          onHold: parseInt(productionStatsQuery.rows[0].on_hold) || 0
         };
       }
     } catch (error) {
@@ -1036,12 +1041,12 @@ router.get('/dashboard', async (req: Request, res: Response) => {
         FROM quality_checks
       `);
       
-      if (qualityStatsQuery.length > 0) {
+      if (qualityStatsQuery.rows && qualityStatsQuery.rows.length > 0) {
         qualityStats = {
-          inspections: parseInt(qualityStatsQuery[0].total) || 0,
-          passed: parseInt(qualityStatsQuery[0].passed) || 0,
-          failed: parseInt(qualityStatsQuery[0].failed) || 0,
-          pending: parseInt(qualityStatsQuery[0].pending) || 0
+          inspections: parseInt(qualityStatsQuery.rows[0].total) || 0,
+          passed: parseInt(qualityStatsQuery.rows[0].passed) || 0,
+          failed: parseInt(qualityStatsQuery.rows[0].failed) || 0,
+          pending: parseInt(qualityStatsQuery.rows[0].pending) || 0
         };
       }
     } catch (error) {
@@ -1158,7 +1163,8 @@ router.get('/trade-compliance', async (req: Request, res: Response) => {
       ) as exists
     `);
     
-    if (!tableExistsResult[0].exists) {
+    // Check if rows exist and if the table exists
+    if (!tableExistsResult.rows || !tableExistsResult.rows[0] || !tableExistsResult.rows[0].exists) {
       return res.json([]);
     }
     
@@ -1213,7 +1219,8 @@ router.get('/returns', async (req: Request, res: Response) => {
       ) as exists
     `);
     
-    if (!tableExistsResult[0].exists) {
+    // Check if rows exist and if the table exists
+    if (!tableExistsResult.rows || !tableExistsResult.rows[0] || !tableExistsResult.rows[0].exists) {
       return res.json([]);
     }
     
