@@ -12,7 +12,7 @@ router.get('/mrp/dashboard', async (req: Request, res: Response) => {
     // Get low stock items - using products table instead of materials
     let lowStockItems = [];
     try {
-      lowStockItems = await db.execute(sql`
+      const result = await db.execute(sql`
         SELECT 
           p.id as material_id,
           p.name as material_name,
@@ -40,6 +40,8 @@ router.get('/mrp/dashboard', async (req: Request, res: Response) => {
         ORDER BY current_quantity ASC
         LIMIT 10
       `);
+      // Convert PostgreSQL result into a proper array for the client
+      lowStockItems = result.rows || [];
     } catch (lowStockError) {
       console.error('Error fetching low stock items:', lowStockError);
       // Return empty array if the query fails
@@ -54,17 +56,19 @@ router.get('/mrp/dashboard', async (req: Request, res: Response) => {
     if (lowStockItems.length > 0) {
       try {
         // Check if required columns exist
-        const columnsCheck = await db.execute(sql`
+        const columnsCheckResult = await db.execute(sql`
           SELECT column_name 
           FROM information_schema.columns 
           WHERE table_name = 'material_requirements' 
           AND column_name IN ('due_date', 'required_quantity', 'available_quantity')
         `);
         
+        // Convert PostgreSQL result into a proper array
+        const columnsCheck = columnsCheckResult.rows || [];
         const columns = columnsCheck.map(col => col.column_name);
         
         if (columns.includes('due_date') && columns.includes('required_quantity')) {
-          upcomingRequirements = await db.execute(sql`
+          const result = await db.execute(sql`
             SELECT 
               mr.id,
               p.id as material_id,
@@ -77,6 +81,7 @@ router.get('/mrp/dashboard', async (req: Request, res: Response) => {
             ORDER BY mr.due_date ASC
             LIMIT 10
           `);
+          upcomingRequirements = result.rows || [];
         }
       } catch (error) {
         console.error('Error fetching material requirements:', error);
@@ -84,15 +89,18 @@ router.get('/mrp/dashboard', async (req: Request, res: Response) => {
       
       // Try to fetch forecasts
       try {
-        const forecastsCheck = await db.execute(sql`
+        const forecastsCheckResult = await db.execute(sql`
           SELECT EXISTS (
             SELECT FROM information_schema.tables 
             WHERE table_name = 'material_forecasts'
           ) as exists
         `);
         
-        if (forecastsCheck[0].exists) {
-          forecasts = await db.execute(sql`
+        // Extract exists value properly from PostgreSQL result
+        const forecastsCheck = forecastsCheckResult.rows || [];
+        
+        if (forecastsCheck.length > 0 && forecastsCheck[0].exists) {
+          const result = await db.execute(sql`
             SELECT 
               id,
               name,
@@ -107,6 +115,7 @@ router.get('/mrp/dashboard', async (req: Request, res: Response) => {
             ORDER BY created_at DESC
             LIMIT 5
           `);
+          forecasts = result.rows || [];
         }
       } catch (error) {
         console.error('Error fetching forecasts:', error);
@@ -130,7 +139,7 @@ router.get('/mrp/dashboard', async (req: Request, res: Response) => {
 router.get('/warehouse/bins', async (req: Request, res: Response) => {
   try {
     // Get storage bins with utilization data - using storage_bins and storage_bin_contents
-    const bins = await db.execute(sql`
+    const result = await db.execute(sql`
       WITH bin_utilization AS (
         SELECT 
           sb.id, 
@@ -165,6 +174,9 @@ router.get('/warehouse/bins', async (req: Request, res: Response) => {
       LEFT JOIN warehouses w ON sb.warehouse_id = w.id
       ORDER BY sb.bin_code
     `);
+    
+    // Extract rows from PostgreSQL result
+    const bins = result.rows || [];
     
     return res.json(bins);
   } catch (error) {

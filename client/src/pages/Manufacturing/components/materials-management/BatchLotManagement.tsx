@@ -68,8 +68,8 @@ export default function BatchLotManagement() {
     enabled: activeTab === 'expiring'
   });
   
-  // Extract expiring batch lots from the PostgreSQL response
-  const expiringLotsData = expiringLotsResponse?.rows || [];
+  // Use the data directly - our API endpoints now format the data correctly
+  const expiringLotsData = expiringLotsResponse || [];
 
   const isLoading = (activeTab === 'current' && isLoadingBatchLots) || 
                    (activeTab === 'expiring' && isLoadingExpiringLots);
