@@ -47,8 +47,8 @@ export default function BatchLotManagement() {
     enabled: activeTab === 'current'
   });
 
-  // Extract batch lots from the PostgreSQL response
-  const batchLotsData = batchLotsResponse?.rows || [];
+  // Use the data directly - our API endpoints now format the data correctly
+  const batchLotsData = batchLotsResponse || [];
 
   // Fetch expiring batch lots
   const { 
