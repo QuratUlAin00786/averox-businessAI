@@ -15,17 +15,19 @@ import { Loader2, Plus, Factory, Calendar, ClipboardList } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function ProductionOrdersList() {
-  // In a real implementation, this would fetch production orders from the API
+  // Fetch production orders from the API
   const { data: productionOrders, isLoading, error } = useQuery({
     queryKey: ['/api/manufacturing/production-orders'],
-    // This queryFn would be enabled when the API is ready
     queryFn: async () => {
-      return []; // Placeholder for actual API call
-    },
-    enabled: false, // Disable this query until the API is ready
+      const response = await fetch('/api/manufacturing/production-orders');
+      if (!response.ok) {
+        throw new Error('Failed to fetch production orders');
+      }
+      return response.json();
+    }
   });
 
-  // Sample data for demonstration
+  // Keep sample data for now but it will be removed when database is fully populated
   const sampleProductionOrders = [
     {
       id: 1,
@@ -167,7 +169,8 @@ export default function ProductionOrdersList() {
     }
   ];
 
-  const displayData = productionOrders || sampleProductionOrders;
+  // Use real database data with fallback to empty array (not sample data)
+  const displayData = productionOrders || [];
 
   const getStatusColor = (status) => {
     switch (status) {

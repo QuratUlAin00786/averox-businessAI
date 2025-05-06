@@ -6,83 +6,31 @@ import { Loader2, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function BillOfMaterialsList() {
-  // In a real implementation, this would fetch BoM data from the API
+  // Fetch BOM data from the API
   const { data: bomList, isLoading, error } = useQuery({
     queryKey: ['/api/manufacturing/bom'],
-    // This queryFn would be enabled when the API is ready
     queryFn: async () => {
-      return []; // Placeholder for actual API call
-    },
-    enabled: false, // Disable this query until the API is ready
+      const response = await fetch('/api/manufacturing/bom');
+      if (!response.ok) {
+        throw new Error('Failed to fetch bill of materials data');
+      }
+      return response.json();
+    }
   });
 
-  // Sample data for demonstration
-  const sampleBomList = [
-    {
-      id: 1,
-      name: 'Standard Office Chair',
-      description: 'Standard office chair with armrests and adjustable height',
-      version: '1.2',
-      status: 'Active',
-      product_id: 101,
-      product_name: 'Office Chair - Standard',
-      created_at: '2025-01-15T09:30:00Z',
-      updated_at: '2025-03-02T14:45:00Z',
-      components: [
-        { id: 201, name: 'Chair Base', quantity: 1, unit: 'Each', required: true },
-        { id: 202, name: 'Chair Wheels', quantity: 5, unit: 'Each', required: true },
-        { id: 203, name: 'Chair Seat Cushion', quantity: 1, unit: 'Each', required: true },
-        { id: 204, name: 'Chair Back Support', quantity: 1, unit: 'Each', required: true },
-        { id: 205, name: 'Arm Rests', quantity: 2, unit: 'Each', required: true },
-        { id: 206, name: 'Hydraulic Lift Mechanism', quantity: 1, unit: 'Each', required: true },
-        { id: 207, name: 'Screws M5x10', quantity: 12, unit: 'Each', required: true },
-        { id: 208, name: 'Assembly Manual', quantity: 1, unit: 'Each', required: false },
-      ]
-    },
-    {
-      id: 2,
-      name: 'Executive Office Chair',
-      description: 'Premium executive office chair with leather upholstery',
-      version: '2.0',
-      status: 'Active',
-      product_id: 102,
-      product_name: 'Office Chair - Executive',
-      created_at: '2025-01-20T11:15:00Z',
-      updated_at: '2025-03-05T16:30:00Z',
-      components: [
-        { id: 301, name: 'Premium Chair Base', quantity: 1, unit: 'Each', required: true },
-        { id: 302, name: 'Premium Chair Wheels', quantity: 5, unit: 'Each', required: true },
-        { id: 303, name: 'Leather Seat Cushion', quantity: 1, unit: 'Each', required: true },
-        { id: 304, name: 'Leather Back Support', quantity: 1, unit: 'Each', required: true },
-        { id: 305, name: 'Premium Arm Rests', quantity: 2, unit: 'Each', required: true },
-        { id: 306, name: 'Enhanced Hydraulic Lift', quantity: 1, unit: 'Each', required: true },
-        { id: 307, name: 'Screws M5x12', quantity: 16, unit: 'Each', required: true },
-        { id: 308, name: 'Assembly Manual', quantity: 1, unit: 'Each', required: false },
-        { id: 309, name: 'Warranty Card', quantity: 1, unit: 'Each', required: true },
-      ]
-    },
-    {
-      id: 3,
-      name: 'Basic Office Desk',
-      description: 'Standard office desk with drawer',
-      version: '1.0',
-      status: 'Active',
-      product_id: 103,
-      product_name: 'Office Desk - Standard',
-      created_at: '2025-02-05T10:00:00Z',
-      updated_at: '2025-03-10T09:20:00Z',
-      components: [
-        { id: 401, name: 'Desk Top Surface', quantity: 1, unit: 'Each', required: true },
-        { id: 402, name: 'Desk Legs', quantity: 4, unit: 'Each', required: true },
-        { id: 403, name: 'Desk Drawer', quantity: 1, unit: 'Each', required: true },
-        { id: 404, name: 'Drawer Handles', quantity: 2, unit: 'Each', required: true },
-        { id: 405, name: 'Screws M6x20', quantity: 18, unit: 'Each', required: true },
-        { id: 406, name: 'Assembly Manual', quantity: 1, unit: 'Each', required: false },
-      ]
-    }
-  ];
+  // Process the data to add default components array if needed
+  const processedBomList = bomList?.map(bom => ({
+    ...bom,
+    // Use the item_count field from the server or set components as empty array
+    components: [],
+    // Ensure we have version, description fields for UI compatibility
+    version: bom.revision || '1.0',
+    description: bom.notes || `Bill of Materials for ${bom.product_name}`,
+    // Ensure we have updated_at
+    updated_at: bom.updated_at || bom.created_at
+  })) || [];
 
-  const displayData = bomList || sampleBomList;
+  const displayData = processedBomList;
 
   if (isLoading) {
     return (

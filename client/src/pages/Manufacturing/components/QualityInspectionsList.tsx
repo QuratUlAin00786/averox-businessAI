@@ -14,17 +14,19 @@ import { Loader2, Plus, Search, AlertTriangle, CheckCircle, XCircle } from 'luci
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function QualityInspectionsList() {
-  // In a real implementation, this would fetch quality inspections from the API
+  // Fetch quality inspections from the API
   const { data: qualityInspections, isLoading, error } = useQuery({
     queryKey: ['/api/manufacturing/quality-inspections'],
-    // This queryFn would be enabled when the API is ready
     queryFn: async () => {
-      return []; // Placeholder for actual API call
-    },
-    enabled: false, // Disable this query until the API is ready
+      const response = await fetch('/api/manufacturing/quality-inspections');
+      if (!response.ok) {
+        throw new Error('Failed to fetch quality inspections');
+      }
+      return response.json();
+    }
   });
 
-  // Sample data for demonstration
+  // We'll use an empty array if no data is available
   const sampleQualityInspections = [
     {
       id: 1,
@@ -170,7 +172,8 @@ export default function QualityInspectionsList() {
     }
   ];
 
-  const displayData = qualityInspections || sampleQualityInspections;
+  // Use real database data with fallback to empty array (not sample data)
+  const displayData = qualityInspections || [];
 
   const getResultBadge = (result) => {
     switch (result) {
