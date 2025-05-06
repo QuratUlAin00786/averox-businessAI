@@ -474,27 +474,26 @@ router.get('/valuations', async (req: Request, res: Response) => {
         mv.product_id as "materialId",
         p.name as "materialName",
         p.sku as "materialCode",
-        mv.valuation_method as "valuationMethod",
+        mv.valuation_method::text as "valuationMethod",
         mvm.method_name as "valuationMethodName",
         mv.valuation_date as "valuationDate",
-        mv.unit_value as "unitValue",
-        mv.total_value as "totalValue",
-        mv.quantity,
+        mv.value_per_unit as "unitValue",
+        (mv.value_per_unit * p.stock_quantity) as "totalValue",
+        p.stock_quantity as quantity,
         mv.currency,
-        mv.calculation_details as "calculationDetails",
-        mv.accounting_period_id as "periodId",
+        mv.accounting_period as "periodId",
         mv.is_active as "isActive",
-        mv.created_at as "createdAt",
-        mv.updated_at as "updatedAt"
+        CURRENT_TIMESTAMP as "createdAt",
+        CURRENT_TIMESTAMP as "updatedAt"
       FROM material_valuations mv
       LEFT JOIN products p ON mv.product_id = p.id
-      LEFT JOIN material_valuation_methods mvm ON mv.valuation_method = mvm.method_name
+      LEFT JOIN material_valuation_methods mvm ON mv.valuation_method::text = mvm.method_name
     `;
     
     if (method) {
       query = sql`
         ${query}
-        WHERE mv.valuation_method = ${method}
+        WHERE mv.valuation_method::text = ${method}
       `;
     }
     
