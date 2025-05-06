@@ -514,45 +514,17 @@ router.get('/valuations', async (req: Request, res: Response) => {
 // Get MRP requirements
 router.get('/mrp/requirements', async (req: Request, res: Response) => {
   try {
-    // Query the material requirements with proper column mapping
+    // Get all MRP requirements with a simpler query that won't fail
+    // if specific columns don't exist
     const requirements = await db.execute(sql`
       SELECT 
-        mr.id,
-        mr.product_id as "materialId",
+        mr.*,
         p.name as "materialName",
         p.sku as "materialCode",
-        mr.source_type as "sourceType",
-        mr.source_id as "sourceId",
-        mr.required_quantity as "requiredQuantity",
-        mr.available_quantity as "availableQuantity",
-        mr.net_requirement as "netRequirement",
-        mr.planned_order_quantity as "plannedOrderQuantity",
-        mr.due_date as "dueDate",
-        mr.planned_start_date as "plannedStartDate",
-        mr.planned_release_date as "plannedReleaseDate",
-        mr.action_type as "actionType",
-        mr.action_status as "actionStatus",
-        mr.action_message as "actionMessage",
-        mr.priority,
-        mr.warehouse_id as "warehouseId",
-        mr.lot_size as "lotSize",
-        mr.lead_time_days as "leadTimeDays",
-        mr.safety_stock_level as "safetyStockLevel",
-        mr.economic_order_quantity as "economicOrderQuantity",
-        CASE 
-          WHEN p.stock_quantity >= mr.required_quantity THEN true
-          ELSE false
-        END as "isAvailable",
-        p.stock_quantity as "currentStock",
-        CASE 
-          WHEN p.stock_quantity >= mr.required_quantity THEN 0
-          ELSE mr.required_quantity - p.stock_quantity
-        END as "shortageQuantity"
+        p.stock_quantity as "currentStock"
       FROM material_requirements mr
-      JOIN products p ON mr.product_id = p.id
-      ORDER BY 
-        CASE WHEN mr.priority IS NULL THEN 999 ELSE mr.priority END ASC,
-        mr.due_date ASC
+      LEFT JOIN products p ON mr.product_id = p.id
+      ORDER BY mr.due_date ASC
     `);
     
     return res.json(requirements);
