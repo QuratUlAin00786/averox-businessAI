@@ -285,10 +285,10 @@ router.get('/batch-lots/expiring', async (req: Request, res: Response) => {
       WHERE 
         bl.expiration_date IS NOT NULL
         AND bl.expiration_date >= CURRENT_DATE
-        AND bl.expiration_date <= $1::date
+        AND bl.expiration_date <= ${futureDate}::date
         AND bl.status NOT IN ('Consumed', 'Expired', 'Rejected')
       ORDER BY bl.expiration_date
-    `, [futureDate.toISOString()]);
+    `);
     
     return res.json(result);
   } catch (error) {
