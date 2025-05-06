@@ -1073,13 +1073,13 @@ router.get('/dashboard', async (req: Request, res: Response) => {
         FROM maintenance_requests
       `);
       
-      if (maintenanceStatsQuery.length > 0) {
+      if (maintenanceStatsQuery.rows && maintenanceStatsQuery.rows.length > 0) {
         maintenanceStats = {
-          total: parseInt(maintenanceStatsQuery[0].total) || 0,
-          pending: parseInt(maintenanceStatsQuery[0].pending) || 0,
-          inProgress: parseInt(maintenanceStatsQuery[0].in_progress) || 0,
-          completed: parseInt(maintenanceStatsQuery[0].completed) || 0,
-          critical: parseInt(maintenanceStatsQuery[0].critical) || 0
+          total: parseInt(maintenanceStatsQuery.rows[0].total) || 0,
+          pending: parseInt(maintenanceStatsQuery.rows[0].pending) || 0,
+          inProgress: parseInt(maintenanceStatsQuery.rows[0].in_progress) || 0,
+          completed: parseInt(maintenanceStatsQuery.rows[0].completed) || 0,
+          critical: parseInt(maintenanceStatsQuery.rows[0].critical) || 0
         };
       }
     } catch (error) {
@@ -1089,7 +1089,7 @@ router.get('/dashboard', async (req: Request, res: Response) => {
     // Recent production orders
     let recentOrders = [];
     try {
-      recentOrders = await db.execute(sql`
+      const recentOrdersResult = await db.execute(sql`
         SELECT 
           po.id,
           po.order_number,
@@ -1105,6 +1105,9 @@ router.get('/dashboard', async (req: Request, res: Response) => {
         ORDER BY po.created_at DESC
         LIMIT 5
       `);
+      
+      // Extract rows from PostgreSQL result
+      recentOrders = recentOrdersResult.rows || [];
     } catch (error) {
       console.error('Error fetching recent production orders:', error);
     }
@@ -1112,7 +1115,7 @@ router.get('/dashboard', async (req: Request, res: Response) => {
     // Work center utilization
     let workCenterUtilization = [];
     try {
-      workCenterUtilization = await db.execute(sql`
+      const workCenterResult = await db.execute(sql`
         SELECT 
           wc.id,
           wc.name,
@@ -1126,8 +1129,11 @@ router.get('/dashboard', async (req: Request, res: Response) => {
         LIMIT 5
       `);
       
+      // Extract rows from PostgreSQL result
+      const wcRows = workCenterResult.rows || [];
+      
       // Calculate utilization percentage
-      workCenterUtilization = workCenterUtilization.map(wc => ({
+      workCenterUtilization = wcRows.map(wc => ({
         ...wc,
         utilization: parseFloat(wc.capacity) > 0 
           ? Math.round((parseFloat(wc.current_load) / parseFloat(wc.capacity)) * 100) 
