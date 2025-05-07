@@ -630,6 +630,7 @@ export const communications = pgTable("communications", {
 });
 
 // Note: Insert schema for communications is defined later in the file
+// First definition of Communication type
 export type Communication = typeof communications.$inferSelect;
 
 // Proposal Templates
@@ -1219,7 +1220,7 @@ export type InsertWorkflow = z.infer<typeof insertWorkflowSchema>;
 export type Workflow = typeof workflows.$inferSelect;
 
 export type InsertCommunication = z.infer<typeof insertCommunicationSchema>;
-export type Communication = typeof communications.$inferSelect;
+// Communication type already defined above
 
 // Proposal types
 export type InsertProposalTemplate = z.infer<typeof insertProposalTemplateSchema>;

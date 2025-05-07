@@ -78,10 +78,41 @@ async function createEnumTypes() {
 
 async function createTables(client: postgres.Sql) {
   try {
+    // First check if batch_lots table exists - we need it for the foreign key reference
+    const batchLotsExists = await client`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'batch_lots'
+      );
+    `;
+    
+    if (!batchLotsExists[0].exists) {
+      // Create batch_lots table if it doesn't exist
+      await client`
+        CREATE TABLE IF NOT EXISTS batch_lots (
+          id SERIAL PRIMARY KEY,
+          batch_number TEXT NOT NULL UNIQUE,
+          product_id INTEGER NOT NULL REFERENCES products(id),
+          production_order_id INTEGER REFERENCES production_orders(id),
+          manufactured_date DATE,
+          expiry_date DATE,
+          quantity NUMERIC NOT NULL,
+          status TEXT DEFAULT 'Active',
+          notes TEXT,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP,
+          created_by INTEGER REFERENCES users(id)
+        );
+      `;
+      console.log('batch_lots table created successfully');
+    }
+
     // Create maintenance_requests table if it doesn't exist
     await client`
       CREATE TABLE IF NOT EXISTS maintenance_requests (
         id SERIAL PRIMARY KEY,
+        request_number TEXT NOT NULL UNIQUE,
         equipment_id INTEGER NOT NULL,
         request_type maintenance_type DEFAULT 'Corrective',
         status maintenance_status DEFAULT 'Scheduled',
@@ -98,7 +129,6 @@ async function createTables(client: postgres.Sql) {
         downtime NUMERIC,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP,
-        request_number TEXT UNIQUE NOT NULL,
         work_center_id INTEGER,
         FOREIGN KEY (equipment_id) REFERENCES equipment(id),
         FOREIGN KEY (requested_by) REFERENCES users(id),
