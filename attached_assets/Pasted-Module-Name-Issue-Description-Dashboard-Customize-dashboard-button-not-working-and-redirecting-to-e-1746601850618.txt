@@ -1,0 +1,44 @@
+Module Name	Issue Description
+Dashboard	Customize dashboard button not working and redirecting to empty page
+	View all redirecting to settings, is that okay?
+Accounts	When edit, its not updating data
+	Button not showing inactive accounts
+Opportunities	Failed to create opportunity
+	Failed to edit opportunity as well.
+	Failed to delete opportunity as well
+Lead	On hover its showing white color which is merging with the background.
+	Failed to convert lead.
+Calender	Failed to create event 
+	Failed to update event
+	Failed to delete event 
+Task	Failed to update task
+	Failed to delete task, task not found.
+Marketing	View performance report showing 404 
+	Engagement Analytics button showing 404 error 
+	Below tgable of compaigns, automations, templates; edit and view report button not working
+Automations	In lists and card table, edit button giving 404 error
+	View report button not clickable
+	View all workflow templaes button not working
+	Use template button redirecting to 404 page
+Email Templates	Text not editing in templates
+	Use templates button not working
+	Elements settings not making changes to the UI accordingly
+Audience Segment	Save segment button navigating to 404 error 
+	In table, next and previous button not working.
+	Analysis button not working
+Communication Center	Reply mode not implemented 
+Accounting	View invoice button not working
+	Filter not working
+	Date range not showing calender
+	Sorting is not working 
+	When creating invoice, its not calculating total amount on selecting products 
+Inventory Management	In Categories, view product button is not functional
+	In Transactions, view button is redirecting to 404 
+	In creating new inventory, select product dropdown is not working
+	Due to not selecting product, create transaction button not moving forward.
+Support Tickets	All three buttons of support tickets redirecting to averox.com
+	Documentation modules not working
+E-commerce	Sort by date filter not working
+	View documentation and sync history not working
+	Create activity button not creating data
+	Filter button not working nor the dropdown
