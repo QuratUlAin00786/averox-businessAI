@@ -116,14 +116,25 @@ export function SystemSettingsProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/system-settings"],
     queryFn: async () => {
       try {
+        console.log("Attempting to fetch system settings with auth status:", !!user);
+        // Additional check to ensure we don't make the request if not authenticated
+        if (!user) {
+          console.log("User not authenticated, returning default settings");
+          return DEFAULT_SYSTEM_SETTINGS;
+        }
+        
         const res = await apiRequest("GET", "/api/system-settings");
-        return await res.json();
+        const responseData = await res.json();
+        console.log("System settings loaded successfully:", responseData);
+        return responseData;
       } catch (error) {
         console.error("Failed to fetch system settings:", error);
+        // Return default settings on error
         return DEFAULT_SYSTEM_SETTINGS;
       }
     },
     enabled: !!user, // Only fetch if user is logged in
+    retry: false, // Don't retry if request fails
   });
   
   // Update local settings when data is fetched

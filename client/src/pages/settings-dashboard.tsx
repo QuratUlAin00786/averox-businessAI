@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
 
 export default function DashboardSettingsPage() {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const { settings, updateDashboardWidgets, updateDashboardChartType, updateDashboardTimeRange, saveSettings, isUpdating, isLoading } = useSystemSettings();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -22,13 +22,13 @@ export default function DashboardSettingsPage() {
     try {
       await saveSettings();
       toast({
-        title: t('settings.saveSuccess'),
-        description: t('settings.dashboardPreferencesSaved'),
+        title: "Settings saved successfully",
+        description: "Your dashboard preferences have been updated",
       });
     } catch (error) {
       toast({
-        title: t('settings.saveError'),
-        description: t('settings.errorSavingPreferences'),
+        title: "Failed to save settings",
+        description: "There was an error saving your preferences",
         variant: "destructive",
       });
     } finally {
@@ -69,18 +69,18 @@ export default function DashboardSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-8" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="container mx-auto py-6 space-y-8" dir={language === "ar" ? 'rtl' : 'ltr'}>
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">{t('settings.dashboardPreferences')}</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Dashboard Preferences</h2>
           <p className="text-muted-foreground">
-            {t('settings.customizeDashboardExperience')}
+            Customize your dashboard experience
           </p>
         </div>
         <Button onClick={handleSave} disabled={isSaving || isUpdating}>
           {(isSaving || isUpdating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           <Save className="mr-2 h-4 w-4" />
-          {t('common.save')}
+          Save
         </Button>
       </div>
 
@@ -90,14 +90,14 @@ export default function DashboardSettingsPage() {
         {/* Widget Visibility */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('dashboard.widgetVisibility')}</CardTitle>
-            <CardDescription>{t('dashboard.chooseWidgetsToDisplay')}</CardDescription>
+            <CardTitle>Widget Visibility</CardTitle>
+            <CardDescription>Choose which widgets to display on your dashboard</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex flex-col space-y-1">
-                <Label htmlFor="show-sales-pipeline">{t('dashboard.salesPipeline')}</Label>
-                <p className="text-sm text-muted-foreground">{t('dashboard.showSalesPipelineDesc')}</p>
+                <Label htmlFor="show-sales-pipeline">Sales Pipeline</Label>
+                <p className="text-sm text-muted-foreground">Display the sales pipeline chart on your dashboard</p>
               </div>
               <Switch 
                 id="show-sales-pipeline" 
@@ -108,8 +108,8 @@ export default function DashboardSettingsPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex flex-col space-y-1">
-                <Label htmlFor="show-recent-activities">{t('dashboard.recentActivities')}</Label>
-                <p className="text-sm text-muted-foreground">{t('dashboard.showRecentActivitiesDesc')}</p>
+                <Label htmlFor="show-recent-activities">Recent Activities</Label>
+                <p className="text-sm text-muted-foreground">Display recent activities feed on your dashboard</p>
               </div>
               <Switch 
                 id="show-recent-activities" 
@@ -120,8 +120,8 @@ export default function DashboardSettingsPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex flex-col space-y-1">
-                <Label htmlFor="show-tasks">{t('dashboard.tasks')}</Label>
-                <p className="text-sm text-muted-foreground">{t('dashboard.showTasksDesc')}</p>
+                <Label htmlFor="show-tasks">Tasks</Label>
+                <p className="text-sm text-muted-foreground">Display upcoming tasks on your dashboard</p>
               </div>
               <Switch 
                 id="show-tasks" 
@@ -132,8 +132,8 @@ export default function DashboardSettingsPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex flex-col space-y-1">
-                <Label htmlFor="show-events">{t('dashboard.events')}</Label>
-                <p className="text-sm text-muted-foreground">{t('dashboard.showEventsDesc')}</p>
+                <Label htmlFor="show-events">Events</Label>
+                <p className="text-sm text-muted-foreground">Display upcoming events and meetings on your dashboard</p>
               </div>
               <Switch 
                 id="show-events" 
@@ -170,7 +170,7 @@ export default function DashboardSettingsPage() {
               </div>
               <Select
                 value={settings.dashboardPreferences.aiInsightsCount.toString()}
-                onValueChange={(value) => updateDashboardWidgets('aiInsightsCount', parseInt(value))}
+                onValueChange={(value) => updateDashboardWidgets('aiInsightsCount', value)}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select count" />
@@ -308,14 +308,14 @@ export default function DashboardSettingsPage() {
         {/* Statistics Options */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('dashboard.statisticsOptions')}</CardTitle>
-            <CardDescription>{t('dashboard.chooseStatsToDisplay')}</CardDescription>
+            <CardTitle>Statistics Options</CardTitle>
+            <CardDescription>Choose which statistics to display on your dashboard</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex flex-col space-y-1">
-                <Label htmlFor="show-leads-stats">{t('dashboard.leadsStatistics')}</Label>
-                <p className="text-sm text-muted-foreground">{t('dashboard.showLeadsStatsDesc')}</p>
+                <Label htmlFor="show-leads-stats">Leads Statistics</Label>
+                <p className="text-sm text-muted-foreground">Display leads generation and conversion statistics</p>
               </div>
               <Switch 
                 id="show-leads-stats" 
@@ -326,8 +326,8 @@ export default function DashboardSettingsPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex flex-col space-y-1">
-                <Label htmlFor="show-conversion-stats">{t('dashboard.conversionStatistics')}</Label>
-                <p className="text-sm text-muted-foreground">{t('dashboard.showConversionStatsDesc')}</p>
+                <Label htmlFor="show-conversion-stats">Conversion Statistics</Label>
+                <p className="text-sm text-muted-foreground">Display lead to customer conversion rates</p>
               </div>
               <Switch 
                 id="show-conversion-stats" 
@@ -338,8 +338,8 @@ export default function DashboardSettingsPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex flex-col space-y-1">
-                <Label htmlFor="show-revenue-stats">{t('dashboard.revenueStatistics')}</Label>
-                <p className="text-sm text-muted-foreground">{t('dashboard.showRevenueStatsDesc')}</p>
+                <Label htmlFor="show-revenue-stats">Revenue Statistics</Label>
+                <p className="text-sm text-muted-foreground">Display revenue and sales performance metrics</p>
               </div>
               <Switch 
                 id="show-revenue-stats" 
@@ -350,8 +350,8 @@ export default function DashboardSettingsPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex flex-col space-y-1">
-                <Label htmlFor="show-opportunities-stats">{t('dashboard.opportunitiesStatistics')}</Label>
-                <p className="text-sm text-muted-foreground">{t('dashboard.showOpportunitiesStatsDesc')}</p>
+                <Label htmlFor="show-opportunities-stats">Opportunities Statistics</Label>
+                <p className="text-sm text-muted-foreground">Display sales pipeline opportunities statistics</p>
               </div>
               <Switch 
                 id="show-opportunities-stats" 
@@ -365,36 +365,36 @@ export default function DashboardSettingsPage() {
         {/* Chart Type Options */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('dashboard.chartTypeOptions')}</CardTitle>
-            <CardDescription>{t('dashboard.selectVisualizationTypes')}</CardDescription>
+            <CardTitle>Chart Type Options</CardTitle>
+            <CardDescription>Select your preferred visualization types</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="pipeline-chart-type">{t('dashboard.salesPipelineChartType')}</Label>
+              <Label htmlFor="pipeline-chart-type">Sales Pipeline Chart Type</Label>
               <Select 
                 value={settings.dashboardPreferences.pipelineChartType} 
                 onValueChange={(value) => updateDashboardChartType('pipelineChartType', value as 'pie' | 'bar' | 'funnel')}
               >
                 <SelectTrigger id="pipeline-chart-type" className="w-full">
-                  <SelectValue placeholder={t('dashboard.selectChartType')} />
+                  <SelectValue placeholder="Select chart type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pie">
                     <div className="flex items-center">
                       <PieChart className="mr-2 h-4 w-4" />
-                      {t('dashboard.pieChart')}
+                      Pie Chart
                     </div>
                   </SelectItem>
                   <SelectItem value="bar">
                     <div className="flex items-center">
                       <BarChart className="mr-2 h-4 w-4" />
-                      {t('dashboard.barChart')}
+                      Bar Chart
                     </div>
                   </SelectItem>
                   <SelectItem value="funnel">
                     <div className="flex items-center">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
-                      {t('dashboard.funnelChart')}
+                      Funnel Chart
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -402,31 +402,31 @@ export default function DashboardSettingsPage() {
             </div>
 
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="revenue-chart-type">{t('dashboard.revenueChartType')}</Label>
+              <Label htmlFor="revenue-chart-type">Revenue Chart Type</Label>
               <Select 
                 value={settings.dashboardPreferences.revenueChartType} 
                 onValueChange={(value) => updateDashboardChartType('revenueChartType', value as 'line' | 'bar' | 'area')}
               >
                 <SelectTrigger id="revenue-chart-type" className="w-full">
-                  <SelectValue placeholder={t('dashboard.selectChartType')} />
+                  <SelectValue placeholder="Select chart type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="line">
                     <div className="flex items-center">
                       <LineChart className="mr-2 h-4 w-4" />
-                      {t('dashboard.lineChart')}
+                      Line Chart
                     </div>
                   </SelectItem>
                   <SelectItem value="bar">
                     <div className="flex items-center">
                       <BarChart className="mr-2 h-4 w-4" />
-                      {t('dashboard.barChart')}
+                      Bar Chart
                     </div>
                   </SelectItem>
                   <SelectItem value="area">
                     <div className="flex items-center">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
-                      {t('dashboard.areaChart')}
+                      Area Chart
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -434,31 +434,31 @@ export default function DashboardSettingsPage() {
             </div>
 
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="leads-chart-type">{t('dashboard.leadsChartType')}</Label>
+              <Label htmlFor="leads-chart-type">Leads Chart Type</Label>
               <Select 
                 value={settings.dashboardPreferences.leadsChartType} 
                 onValueChange={(value) => updateDashboardChartType('leadsChartType', value as 'line' | 'bar' | 'area')}
               >
                 <SelectTrigger id="leads-chart-type" className="w-full">
-                  <SelectValue placeholder={t('dashboard.selectChartType')} />
+                  <SelectValue placeholder="Select chart type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="line">
                     <div className="flex items-center">
                       <LineChart className="mr-2 h-4 w-4" />
-                      {t('dashboard.lineChart')}
+                      Line Chart
                     </div>
                   </SelectItem>
                   <SelectItem value="bar">
                     <div className="flex items-center">
                       <BarChart className="mr-2 h-4 w-4" />
-                      {t('dashboard.barChart')}
+                      Bar Chart
                     </div>
                   </SelectItem>
                   <SelectItem value="area">
                     <div className="flex items-center">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
-                      {t('dashboard.areaChart')}
+                      Area Chart
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -470,48 +470,48 @@ export default function DashboardSettingsPage() {
         {/* Time Range Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('dashboard.timeRangeSettings')}</CardTitle>
-            <CardDescription>{t('dashboard.defaultTimeRangeDescription')}</CardDescription>
+            <CardTitle>Time Range Settings</CardTitle>
+            <CardDescription>Configure default time periods for your dashboard charts</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="default-time-range">{t('dashboard.defaultTimeRange')}</Label>
+              <Label htmlFor="default-time-range">Default Time Range</Label>
               <Select 
                 value={settings.dashboardPreferences.defaultTimeRange} 
                 onValueChange={(value) => updateDashboardTimeRange(value as 'week' | 'month' | 'quarter' | 'year')}
               >
                 <SelectTrigger id="default-time-range" className="w-full">
-                  <SelectValue placeholder={t('dashboard.selectTimeRange')} />
+                  <SelectValue placeholder="Select time range" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="week">
                     <div className="flex items-center">
                       <Calendar className="mr-2 h-4 w-4" />
-                      {t('dashboard.week')}
+                      Week
                     </div>
                   </SelectItem>
                   <SelectItem value="month">
                     <div className="flex items-center">
                       <Calendar className="mr-2 h-4 w-4" />
-                      {t('dashboard.month')}
+                      Month
                     </div>
                   </SelectItem>
                   <SelectItem value="quarter">
                     <div className="flex items-center">
                       <Calendar className="mr-2 h-4 w-4" />
-                      {t('dashboard.quarter')}
+                      Quarter
                     </div>
                   </SelectItem>
                   <SelectItem value="year">
                     <div className="flex items-center">
                       <Calendar className="mr-2 h-4 w-4" />
-                      {t('dashboard.year')}
+                      Year
                     </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground mt-2">
-                {t('dashboard.timeRangeHelp')}
+                This setting affects the default time period shown in all dashboard charts and statistics
               </p>
             </div>
           </CardContent>
@@ -522,7 +522,7 @@ export default function DashboardSettingsPage() {
         <Button onClick={handleSave} disabled={isSaving || isUpdating}>
           {(isSaving || isUpdating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           <RefreshCw className="mr-2 h-4 w-4" />
-          {t('dashboard.applyChanges')}
+          Apply Changes
         </Button>
       </div>
     </div>
