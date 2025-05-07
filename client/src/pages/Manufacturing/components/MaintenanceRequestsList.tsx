@@ -21,7 +21,7 @@ import {
   WrenchIcon,
   CheckCircle,
   TimerIcon,
-  Tool
+  Settings
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -41,7 +41,7 @@ export default function MaintenanceRequestsList() {
   // Use real database data with fallback to empty array
   const displayData = maintenanceRequests || [];
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Completed':
         return (
@@ -86,7 +86,7 @@ export default function MaintenanceRequestsList() {
     }
   };
 
-  const getMaintenanceTypeIcon = (type) => {
+  const getMaintenanceTypeIcon = (type: string) => {
     switch (type) {
       case 'Preventive':
         return <Calendar className="h-4 w-4 text-blue-500" />;
@@ -97,7 +97,7 @@ export default function MaintenanceRequestsList() {
       case 'Condition-Based':
         return <AlertTriangle className="h-4 w-4 text-amber-500" />;
       default:
-        return <Tool className="h-4 w-4 text-gray-500" />;
+        return <Settings className="h-4 w-4 text-gray-500" />;
     }
   };
 
