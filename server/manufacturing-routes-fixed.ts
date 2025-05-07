@@ -590,6 +590,25 @@ router.get('/production-orders', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
+    // Check if operations and other related tables exist
+    const operationsTableExists = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'production_order_operations'
+      ) as exists
+    `);
+    
+    const qualityChecksTableExists = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'quality_checks'
+      ) as exists
+    `);
+    
+    const hasOperationsTable = operationsTableExists.rows && operationsTableExists.rows[0] && operationsTableExists.rows[0].exists;
+    const hasQualityChecksTable = qualityChecksTableExists.rows && qualityChecksTableExists.rows[0] && qualityChecksTableExists.rows[0].exists;
+    
+    // Execute SQL query
     const result = await db.execute(sql`
       SELECT 
         po.id,
@@ -597,25 +616,19 @@ router.get('/production-orders', async (req: Request, res: Response) => {
         p.id as product_id,
         p.name as product_name,
         po.quantity,
-        COALESCE(
-          (SELECT SUM(completed_quantity) FROM production_order_operations WHERE production_order_id = po.id),
-          0
-        ) as completed_quantity,
+        po.completed_quantity,
         po.planned_start_date as start_date,
         po.planned_end_date as end_date,
         po.status,
         po.priority,
-        wc.id as work_center_id,
+        po.routing_id as work_center_id,
         wc.name as work_center_name,
         po.bom_id,
         bom.name as bom_name,
         po.created_by,
         u.username as created_by_name,
         po.created_at,
-        po.notes,
-        (SELECT COUNT(*) > 0 FROM quality_checks WHERE production_order_id = po.id) as quality_check_required,
-        (SELECT COUNT(*) FROM quality_checks WHERE production_order_id = po.id AND result = 'Pass') as quality_checks_passed,
-        (SELECT COUNT(*) FROM quality_checks WHERE production_order_id = po.id AND result = 'Fail') as quality_checks_failed
+        po.notes
       FROM production_orders po
       LEFT JOIN products p ON po.product_id = p.id
       LEFT JOIN work_centers wc ON po.routing_id = wc.id
