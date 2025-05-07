@@ -4950,6 +4950,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // - GET /api/messages
   // - POST /api/messages/:id/read
   // - POST /api/messages/read-all
+  
+  // Test endpoint to verify authentication and notifications
+  app.get('/api/test-notifications', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated", isLoggedIn: false });
+      }
+      
+      const userId = req.user.id;
+      
+      // Check if notifications table exists
+      const tableExistsResult = await db.execute(sql`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'notifications'
+        ) as exists
+      `);
+      
+      const notificationTableExists = tableExistsResult.rows?.[0]?.exists === true;
+      
+      // Get notification count
+      let notificationCount = 0;
+      if (notificationTableExists) {
+        const countResult = await db.execute(sql`
+          SELECT COUNT(*) AS count FROM notifications WHERE user_id = ${userId}
+        `);
+        notificationCount = parseInt(countResult.rows?.[0]?.count || '0');
+      }
+      
+      // Return status info
+      res.json({
+        isLoggedIn: true,
+        userId,
+        username: req.user.username,
+        notificationTableExists,
+        notificationCount,
+        success: true
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
 
   // Create HTTP server
   const server = createServer(app);
