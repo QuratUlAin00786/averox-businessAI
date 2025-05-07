@@ -192,7 +192,7 @@ export default function MRPDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.upcomingRequirements.slice(0, 5).map((item) => (
+                    {data.upcomingRequirements.slice(0, 5).map((item: UpcomingRequirement) => (
                       <TableRow key={item.material_id}>
                         <TableCell className="font-medium">{item.material_name}</TableCell>
                         <TableCell>{parseFloat(item.required_quantity).toFixed(2)}</TableCell>
@@ -239,9 +239,9 @@ export default function MRPDashboard() {
                       <XAxis type="number" />
                       <YAxis dataKey="name" type="category" width={150} />
                       <Tooltip 
-                        formatter={(value, name) => {
+                        formatter={(value: any, name: string) => {
                           return [
-                            parseFloat(value).toFixed(2), 
+                            typeof value === 'number' ? value.toFixed(2) : value, 
                             name === 'required' ? 'Required Quantity' : 'Available Quantity'
                           ];
                         }}
@@ -289,15 +289,15 @@ export default function MRPDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {data.forecasts.map((forecast) => (
+                        {data.forecasts.map((forecast: Forecast) => (
                           <TableRow key={forecast.id}>
                             <TableCell className="font-medium">{forecast.name}</TableCell>
                             <TableCell>
-                              {new Date(forecast.startDate).toLocaleDateString()} - {new Date(forecast.endDate).toLocaleDateString()}
+                              {new Date(forecast.created_date).toLocaleDateString()} - {forecast.period}
                             </TableCell>
                             <TableCell>
-                              <Badge variant={forecast.status === 'Active' ? 'default' : 'secondary'}>
-                                {forecast.status}
+                              <Badge variant="default">
+                                {forecast.confidence > 0.8 ? 'High' : forecast.confidence > 0.5 ? 'Medium' : 'Low'} Confidence
                               </Badge>
                             </TableCell>
                             <TableCell>
@@ -320,7 +320,7 @@ export default function MRPDashboard() {
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip />
-                        {data.forecasts.map((forecast, index) => (
+                        {data.forecasts.map((forecast: Forecast, index: number) => (
                           <Line 
                             key={forecast.id}
                             type="monotone"

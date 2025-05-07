@@ -5,6 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+interface BillOfMaterials {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_code?: string;
+  revision?: string;
+  notes?: string;
+  item_count: string | number;
+  created_at: string;
+  updated_at?: string;
+  active: boolean;
+  components?: any[];
+}
+
 export default function BillOfMaterialsList() {
   // Fetch BOM data from the API
   const { data: bomList, isLoading, error } = useQuery({
@@ -19,17 +33,17 @@ export default function BillOfMaterialsList() {
   });
 
   // Process the data to correctly format for display
-  const processedBomList = bomList?.map(bom => ({
+  const processedBomList = bomList?.map((bom: BillOfMaterials) => ({
     ...bom,
     // Use the item_count field from the server to show component count
-    item_count: parseInt(bom.item_count || '0'),
+    item_count: typeof bom.item_count === 'string' ? parseInt(bom.item_count || '0') : bom.item_count,
     // Ensure we have version, description fields for UI compatibility
     version: bom.revision || '1.0',
     description: bom.notes || `Bill of Materials for ${bom.product_name}`,
     // Ensure we have updated_at
     updated_at: bom.updated_at || bom.created_at,
     // Set status with correct formatting
-    status: bom.is_active ? 'Active' : 'Inactive'
+    status: bom.active ? 'Active' : 'Inactive'
   })) || [];
 
   const displayData = processedBomList;
@@ -65,10 +79,10 @@ export default function BillOfMaterialsList() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {displayData.map((bom) => (
+        {displayData.map((bom: any) => (
           <Card key={bom.id} className="hover:bg-accent/50 cursor-pointer transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">{bom.name}</CardTitle>
+              <CardTitle className="text-lg">{bom.product_name}</CardTitle>
               <CardDescription className="line-clamp-2">
                 {bom.description}
               </CardDescription>
