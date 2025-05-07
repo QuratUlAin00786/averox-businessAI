@@ -91,7 +91,7 @@ router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResp
             ORDER BY mr.due_date ASC
             LIMIT 10
           `);
-          upcomingRequirements = result.rows || [];
+          upcomingRequirements = (result.rows || []) as UpcomingRequirement[];
         }
       } catch (error) {
         console.error('Error fetching material requirements:', error);
@@ -125,7 +125,7 @@ router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResp
             ORDER BY created_at DESC
             LIMIT 5
           `);
-          forecasts = result.rows || [];
+          forecasts = (result.rows || []) as Forecast[];
         }
       } catch (error) {
         console.error('Error fetching forecasts:', error);
@@ -139,7 +139,12 @@ router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResp
     });
   } catch (error) {
     console.error('Error fetching MRP dashboard data:', error);
-    return res.status(500).json({ error: 'Failed to fetch MRP dashboard data' });
+    // Return empty data in case of error to match the defined response type
+    return res.status(500).json({
+      lowStockItems: [],
+      upcomingRequirements: [],
+      forecasts: []
+    });
   }
 });
 
@@ -405,7 +410,7 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
     const vendor = vendorResult.rows[0];
     
     // Check if vendor_contracts table exists
-    let contracts = [];
+    let contracts: Contract[] = [];
     try {
       const contractsResult = await db.execute(sql`
         SELECT 
@@ -425,14 +430,14 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
         FROM vendor_contracts vc
         WHERE vc.vendor_id = ${id}
       `);
-      contracts = contractsResult.rows || [];
+      contracts = (contractsResult.rows || []) as Contract[];
     } catch (contractError) {
       console.log('Vendor contracts table might not exist:', contractError);
       // Silently ignore if table doesn't exist
     }
     
     // Check if vendor_products table exists
-    let products = [];
+    let products: Product[] = [];
     try {
       const productsResult = await db.execute(sql`
         SELECT 
@@ -456,7 +461,7 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
         LEFT JOIN products p ON vp.product_id = p.id
         WHERE vp.vendor_id = ${id}
       `);
-      products = productsResult.rows || [];
+      products = (productsResult.rows || []) as Product[];
     } catch (productError) {
       console.log('Vendor products table might not exist:', productError);
       // Silently ignore if table doesn't exist
@@ -711,7 +716,7 @@ router.get('/work-centers', async (req: Request, res: Response) => {
     // For each work center, get equipment and current jobs
     const workCentersWithDetails = await Promise.all(workCenters.map(async (workCenter) => {
       // Get equipment for this work center
-      let equipment = [];
+      let equipment: Equipment[] = [];
       try {
         const equipmentResult = await db.execute(sql`
           SELECT 
@@ -724,13 +729,13 @@ router.get('/work-centers', async (req: Request, res: Response) => {
         `);
         
         // Extract rows from PostgreSQL result
-        equipment = equipmentResult.rows || [];
+        equipment = (equipmentResult.rows || []) as Equipment[];
       } catch (error) {
         console.error(`Error fetching equipment for work center ${workCenter.id}:`, error);
       }
       
       // Get current jobs for this work center
-      let currentJobs = [];
+      let currentJobs: ProductionJob[] = [];
       try {
         const jobsResult = await db.execute(sql`
           SELECT 
