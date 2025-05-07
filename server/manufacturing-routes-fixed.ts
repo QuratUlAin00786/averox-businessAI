@@ -9,6 +9,7 @@ import {
   Product, 
   Equipment, 
   ProductionJob,
+  WorkCenterUtilization,
   MrpDashboardResponse
 } from './types/manufacturing';
 
@@ -51,7 +52,16 @@ router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResp
         LIMIT 10
       `);
       // Convert PostgreSQL result into a proper array for the client
-      lowStockItems = (result.rows || []) as LowStockItem[];
+      lowStockItems = (result.rows || []).map(row => ({
+        material_id: Number(row.material_id),
+        material_name: String(row.material_name || ''),
+        material_code: row.material_code ? String(row.material_code) : undefined,
+        current_quantity: Number(row.current_quantity),
+        reorder_point: Number(row.reorder_point),
+        unit_of_measure: row.unit_of_measure ? String(row.unit_of_measure) : undefined,
+        category: row.category ? String(row.category) : undefined,
+        supplier_name: row.supplier_name ? String(row.supplier_name) : undefined
+      }));
     } catch (lowStockError) {
       console.error('Error fetching low stock items:', lowStockError);
       // Return empty array if the query fails
@@ -91,7 +101,15 @@ router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResp
             ORDER BY mr.due_date ASC
             LIMIT 10
           `);
-          upcomingRequirements = (result.rows || []) as UpcomingRequirement[];
+          upcomingRequirements = (result.rows || []).map(row => ({
+            material_id: Number(row.material_id),
+            material_name: String(row.material_name || ''),
+            required_quantity: String(row.required_quantity || '0'),
+            available_quantity: String(row.available_quantity || '0'),
+            coverage_percentage: Number(row.coverage_percentage || 0),
+            unit_of_measure: String(row.unit_of_measure || 'EA'),
+            earliest_requirement_date: String(row.earliest_required_date || new Date().toISOString())
+          }));
         }
       } catch (error) {
         console.error('Error fetching material requirements:', error);
@@ -125,7 +143,17 @@ router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResp
             ORDER BY created_at DESC
             LIMIT 5
           `);
-          forecasts = (result.rows || []) as Forecast[];
+          forecasts = (result.rows || []).map(row => ({
+            id: Number(row.id),
+            name: String(row.name || ''),
+            period: String(row.period || 'Monthly'),
+            created_date: String(row.createdAt || new Date().toISOString()),
+            confidence: Number(row.confidence || 0),
+            values: Array.isArray(row.values) ? row.values : [],
+            status: String(row.status || 'Active'),
+            createdAt: String(row.createdAt || new Date().toISOString()),
+            createdBy: Number(row.createdBy || 1)
+          }));
         }
       } catch (error) {
         console.error('Error fetching forecasts:', error);
@@ -1071,10 +1099,10 @@ router.get('/dashboard', async (req: Request, res: Response) => {
       
       if (qualityStatsQuery.rows && qualityStatsQuery.rows.length > 0) {
         qualityStats = {
-          inspections: parseInt(qualityStatsQuery.rows[0].total) || 0,
-          passed: parseInt(qualityStatsQuery.rows[0].passed) || 0,
-          failed: parseInt(qualityStatsQuery.rows[0].failed) || 0,
-          pending: parseInt(qualityStatsQuery.rows[0].pending) || 0
+          inspections: Number(qualityStatsQuery.rows[0].total) || 0,
+          passed: Number(qualityStatsQuery.rows[0].passed) || 0,
+          failed: Number(qualityStatsQuery.rows[0].failed) || 0,
+          pending: Number(qualityStatsQuery.rows[0].pending) || 0
         };
       }
     } catch (error) {
@@ -1103,11 +1131,11 @@ router.get('/dashboard', async (req: Request, res: Response) => {
       
       if (maintenanceStatsQuery.rows && maintenanceStatsQuery.rows.length > 0) {
         maintenanceStats = {
-          total: parseInt(maintenanceStatsQuery.rows[0].total) || 0,
-          pending: parseInt(maintenanceStatsQuery.rows[0].pending) || 0,
-          inProgress: parseInt(maintenanceStatsQuery.rows[0].in_progress) || 0,
-          completed: parseInt(maintenanceStatsQuery.rows[0].completed) || 0,
-          critical: parseInt(maintenanceStatsQuery.rows[0].critical) || 0
+          total: Number(maintenanceStatsQuery.rows[0].total) || 0,
+          pending: Number(maintenanceStatsQuery.rows[0].pending) || 0,
+          inProgress: Number(maintenanceStatsQuery.rows[0].in_progress) || 0,
+          completed: Number(maintenanceStatsQuery.rows[0].completed) || 0,
+          critical: Number(maintenanceStatsQuery.rows[0].critical) || 0
         };
       }
     } catch (error) {
@@ -1161,12 +1189,18 @@ router.get('/dashboard', async (req: Request, res: Response) => {
       const wcRows = workCenterResult.rows || [];
       
       // Calculate utilization percentage
-      workCenterUtilization = wcRows.map(wc => ({
-        ...wc,
-        utilization: parseFloat(wc.capacity) > 0 
-          ? Math.round((parseFloat(wc.current_load) / parseFloat(wc.capacity)) * 100) 
-          : 0
-      }));
+      workCenterUtilization = wcRows.map(wc => {
+        const capacity = Number(wc.capacity) || 0;
+        const currentLoad = Number(wc.current_load) || 0;
+        
+        return {
+          id: Number(wc.id),
+          name: String(wc.name),
+          capacity: capacity,
+          current_load: currentLoad,
+          utilization: capacity > 0 ? Math.round((currentLoad / capacity) * 100) : 0
+        } as WorkCenterUtilization;
+      });
     } catch (error) {
       console.error('Error fetching work center utilization:', error);
     }
