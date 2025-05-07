@@ -79,6 +79,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
   
+  // Test authentication endpoint 
+  app.get('/api/auth-test', (req, res) => {
+    if (req.isAuthenticated()) {
+      return res.json({ 
+        authenticated: true, 
+        user: req.user,
+        sessionID: req.sessionID
+      });
+    } else {
+      return res.status(401).json({ 
+        authenticated: false, 
+        sessionID: req.sessionID
+      });
+    }
+  });
+  
   // Set up permission system and register routes
   registerPermissionRoutes(app);
   

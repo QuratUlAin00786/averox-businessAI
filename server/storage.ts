@@ -7158,7 +7158,7 @@ DatabaseStorage.prototype.removeTeamMember = async function(id: number): Promise
 
 // Create the appropriate storage implementation
 // For development, you can switch between MemStorage and DatabaseStorage
-const useDatabase = true; // Set to false to use in-memory storage
+const useDatabase = true; // Set to true to use PostgreSQL database storage
 
 export let storage: IStorage;
 
