@@ -458,7 +458,16 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
         FROM vendor_contracts vc
         WHERE vc.vendor_id = ${id}
       `);
-      contracts = (contractsResult.rows || []) as Contract[];
+      contracts = (contractsResult.rows || []).map(row => ({
+        id: Number(row.id),
+        title: String(row.contractNumber || ''),
+        customer_name: String(row.vendorName || vendor.name || ''),
+        start_date: String(row.startDate || ''),
+        end_date: String(row.endDate || ''),
+        status: String(row.isActive ? 'Active' : 'Inactive'),
+        value: Number(row.value || 0),
+        type: String(row.type || '')
+      }));
     } catch (contractError) {
       console.log('Vendor contracts table might not exist:', contractError);
       // Silently ignore if table doesn't exist
@@ -489,7 +498,15 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
         LEFT JOIN products p ON vp.product_id = p.id
         WHERE vp.vendor_id = ${id}
       `);
-      products = (productsResult.rows || []) as Product[];
+      products = (productsResult.rows || []).map(row => ({
+        id: Number(row.id || 0),
+        name: String(row.materialName || row.vendorProductName || ''),
+        code: String(row.vendorProductCode || ''),
+        category: String(row.category || ''),
+        price: Number(row.price || 0),
+        inventory: Number(row.inventory || 0),
+        status: String(row.isActive ? 'Active' : 'Inactive')
+      }));
     } catch (productError) {
       console.log('Vendor products table might not exist:', productError);
       // Silently ignore if table doesn't exist
@@ -756,8 +773,16 @@ router.get('/work-centers', async (req: Request, res: Response) => {
           LIMIT 5
         `);
         
-        // Extract rows from PostgreSQL result
-        equipment = (equipmentResult.rows || []) as Equipment[];
+        // Extract rows from PostgreSQL result and properly map data types
+        equipment = (equipmentResult.rows || []).map(row => ({
+          id: Number(row.id || 0),
+          name: String(row.name || ''),
+          type: String(row.type || 'Machine'),
+          status: String(row.status || 'Operational'),
+          location: String(row.location || ''),
+          last_maintenance: String(row.last_maintenance || ''),
+          next_maintenance: String(row.next_maintenance || '')
+        }));
       } catch (error) {
         console.error(`Error fetching equipment for work center ${workCenter.id}:`, error);
       }
@@ -782,7 +807,16 @@ router.get('/work-centers', async (req: Request, res: Response) => {
         `);
         
         // Extract rows from PostgreSQL result
-        currentJobs = (jobsResult.rows || []) as ProductionJob[];
+        currentJobs = (jobsResult.rows || []).map(row => ({
+          id: Number(row.id || 0),
+          order_id: Number(row.id || 0),
+          equipment_id: Number(row.equipment_id || 0),
+          status: String(row.status || 'InProgress'),
+          start_time: String(row.start_time || new Date().toISOString()),
+          end_time: row.end_time ? String(row.end_time) : undefined,
+          product_name: String(row.name || ''),
+          quantity: Number(row.quantity || 0)
+        }));
       } catch (error) {
         console.error(`Error fetching jobs for work center ${workCenter.id}:`, error);
       }
