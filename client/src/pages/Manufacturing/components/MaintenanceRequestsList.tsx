@@ -101,7 +101,7 @@ export default function MaintenanceRequestsList() {
     }
   };
 
-  const getPriorityColor = (priority) => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'Critical':
         return 'text-red-600 font-medium';
@@ -116,7 +116,7 @@ export default function MaintenanceRequestsList() {
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not scheduled';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -159,7 +159,7 @@ export default function MaintenanceRequestsList() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {displayData.map((request) => {
+        {displayData.map((request: any) => {
           return (
             <Card key={request.id} className="shadow-sm hover:shadow-md transition-shadow duration-200">
               <CardHeader className="pb-2">
@@ -233,7 +233,7 @@ export default function MaintenanceRequestsList() {
                   <div className="space-y-1">
                     <p className="text-muted-foreground text-sm font-medium">Parts used:</p>
                     <div className="space-y-1 max-h-24 overflow-y-auto pr-1 bg-slate-50 p-2 rounded-md">
-                      {request.parts_used.map((part, index) => (
+                      {request.parts_used.map((part: any, index: number) => (
                         <div key={part.id} className="text-xs flex justify-between items-center">
                           <span>{part.name}</span>
                           <div className="flex items-center">

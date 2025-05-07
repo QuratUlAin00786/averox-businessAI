@@ -1129,7 +1129,7 @@ router.get('/dashboard', async (req: Request, res: Response) => {
           COUNT(*) as total,
           COUNT(CASE WHEN result = 'Pass' THEN 1 END) as passed,
           COUNT(CASE WHEN result = 'Fail' THEN 1 END) as failed,
-          COUNT(CASE WHEN status = 'Pending' OR result IS NULL THEN 1 END) as pending
+          COUNT(CASE WHEN status = 'Planned' OR status = 'In Progress' OR result IS NULL THEN 1 END) as pending
         FROM quality_checks
       `);
       
@@ -1158,7 +1158,7 @@ router.get('/dashboard', async (req: Request, res: Response) => {
       const maintenanceStatsQuery = await db.execute(sql`
         SELECT
           COUNT(*) as total,
-          COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending,
+          COUNT(CASE WHEN status = 'Scheduled' THEN 1 END) as pending,
           COUNT(CASE WHEN status = 'InProgress' THEN 1 END) as in_progress,
           COUNT(CASE WHEN status = 'Completed' THEN 1 END) as completed,
           COUNT(CASE WHEN priority = 'Critical' AND status != 'Completed' THEN 1 END) as critical

@@ -175,7 +175,7 @@ export default function QualityInspectionsList() {
   // Use real database data with fallback to empty array
   const displayData = qualityInspections || [];
 
-  const getResultBadge = (result) => {
+  const getResultBadge = (result: string | null) => {
     switch (result) {
       case 'Pass':
         return (
