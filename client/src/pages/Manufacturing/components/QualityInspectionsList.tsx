@@ -172,7 +172,7 @@ export default function QualityInspectionsList() {
     }
   ];
 
-  // Use real database data with fallback to empty array (not sample data)
+  // Use real database data with fallback to empty array
   const displayData = qualityInspections || [];
 
   const getResultBadge = (result) => {

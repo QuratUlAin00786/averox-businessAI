@@ -20,169 +20,26 @@ import {
   AlertTriangle, 
   WrenchIcon,
   CheckCircle,
-  TimerIcon
+  TimerIcon,
+  Tool
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function MaintenanceRequestsList() {
-  // In a real implementation, this would fetch maintenance requests from the API
+  // Fetch maintenance requests from the API
   const { data: maintenanceRequests, isLoading, error } = useQuery({
     queryKey: ['/api/manufacturing/maintenance-requests'],
-    // This queryFn would be enabled when the API is ready
     queryFn: async () => {
-      return []; // Placeholder for actual API call
-    },
-    enabled: false, // Disable this query until the API is ready
+      const response = await fetch('/api/manufacturing/maintenance-requests');
+      if (!response.ok) {
+        throw new Error('Failed to fetch maintenance requests');
+      }
+      return response.json();
+    }
   });
 
-  // Sample data for demonstration
-  const sampleMaintenanceRequests = [
-    {
-      id: 1,
-      request_number: 'MR-2025-0001',
-      equipment_id: 1,
-      equipment_name: 'Conveyor Belt System - Assembly Line A',
-      request_date: '2025-04-10T08:30:00Z',
-      type: 'Preventive',
-      status: 'Completed',
-      description: 'Regular 3-month maintenance check for conveyor system',
-      requested_by: 5,
-      requested_by_name: 'Sarah Johnson',
-      assigned_to: 8,
-      assigned_to_name: 'Robert Chen',
-      scheduled_date: '2025-04-15T09:00:00Z',
-      completion_date: '2025-04-15T11:30:00Z',
-      notes: 'Replaced worn belt sections and lubricated moving parts. System operating at optimal performance.',
-      created_at: '2025-04-10T08:30:00Z',
-      priority: 'Medium',
-      estimated_hours: 3,
-      actual_hours: 2.5,
-      parts_used: [
-        { id: 1, name: 'Conveyor Belt Section (2m)', quantity: 2 },
-        { id: 2, name: 'Lubricant (500ml)', quantity: 1 }
-      ]
-    },
-    {
-      id: 2,
-      request_number: 'MR-2025-0002',
-      equipment_id: 3,
-      equipment_name: 'Robotic Arm A2 - Assembly Line A',
-      request_date: '2025-04-20T14:15:00Z',
-      type: 'Corrective',
-      status: 'InProgress',
-      description: 'Robotic arm showing reduced range of movement in axis 3',
-      requested_by: 5,
-      requested_by_name: 'Sarah Johnson',
-      assigned_to: 10,
-      assigned_to_name: 'Lisa Wong',
-      scheduled_date: '2025-04-25T10:00:00Z',
-      completion_date: null,
-      notes: 'Initial inspection suggests worn servo motor. Replacement part ordered.',
-      created_at: '2025-04-20T14:15:00Z',
-      priority: 'High',
-      estimated_hours: 6,
-      actual_hours: 3,
-      parts_used: [
-        { id: 3, name: 'Servo Motor MX-5000', quantity: 1, status: 'Ordered' }
-      ]
-    },
-    {
-      id: 3,
-      request_number: 'MR-2025-0003',
-      equipment_id: 9,
-      equipment_name: 'Paint Booth C1 - Finishing Department',
-      request_date: '2025-04-22T09:45:00Z',
-      type: 'Condition-Based',
-      status: 'Scheduled',
-      description: 'Ventilation system showing reduced efficiency based on sensors',
-      requested_by: 6,
-      requested_by_name: 'Michael Brown',
-      assigned_to: 9,
-      assigned_to_name: 'David Martinez',
-      scheduled_date: '2025-05-05T08:00:00Z',
-      completion_date: null,
-      notes: 'Scheduled full inspection and filter replacement',
-      created_at: '2025-04-22T09:45:00Z',
-      priority: 'Medium',
-      estimated_hours: 4,
-      actual_hours: 0,
-      parts_used: [
-        { id: 4, name: 'HEPA Filter Set', quantity: 1, status: 'In Stock' },
-        { id: 5, name: 'Carbon Filter', quantity: 2, status: 'In Stock' }
-      ]
-    },
-    {
-      id: 4,
-      request_number: 'MR-2025-0004',
-      equipment_id: 5,
-      equipment_name: 'CNC Machine B1 - Machining Center',
-      request_date: '2025-04-25T11:30:00Z',
-      type: 'Predictive',
-      status: 'Scheduled',
-      description: 'Predictive maintenance based on operation hours (2000 hours)',
-      requested_by: 7,
-      requested_by_name: 'James Wilson',
-      assigned_to: 8,
-      assigned_to_name: 'Robert Chen',
-      scheduled_date: '2025-05-10T08:00:00Z',
-      completion_date: null,
-      notes: 'Full system check and calibration scheduled',
-      created_at: '2025-04-25T11:30:00Z',
-      priority: 'Low',
-      estimated_hours: 8,
-      actual_hours: 0,
-      parts_used: []
-    },
-    {
-      id: 5,
-      request_number: 'MR-2025-0005',
-      equipment_id: 13,
-      equipment_name: 'Packaging Machine D1 - Packaging Line',
-      request_date: '2025-04-28T15:00:00Z',
-      type: 'Corrective',
-      status: 'Completed',
-      description: 'Inconsistent sealing on packages',
-      requested_by: 6,
-      requested_by_name: 'Michael Brown',
-      assigned_to: 10,
-      assigned_to_name: 'Lisa Wong',
-      scheduled_date: '2025-04-29T09:00:00Z',
-      completion_date: '2025-04-29T12:30:00Z',
-      notes: 'Replaced heating element and recalibrated pressure settings',
-      created_at: '2025-04-28T15:00:00Z',
-      priority: 'Critical',
-      estimated_hours: 4,
-      actual_hours: 3.5,
-      parts_used: [
-        { id: 6, name: 'Heating Element', quantity: 1 },
-        { id: 7, name: 'Thermal Sensor', quantity: 1 }
-      ]
-    },
-    {
-      id: 6,
-      request_number: 'MR-2025-0006',
-      equipment_id: 16,
-      equipment_name: 'Shrink Wrap Machine - Packaging Line',
-      request_date: '2025-05-01T08:45:00Z',
-      type: 'Preventive',
-      status: 'Deferred',
-      description: 'Regular 6-month maintenance check',
-      requested_by: 7,
-      requested_by_name: 'James Wilson',
-      assigned_to: null,
-      assigned_to_name: null,
-      scheduled_date: '2025-05-15T10:00:00Z',
-      completion_date: null,
-      notes: 'Deferred due to production priorities. Rescheduled for June',
-      created_at: '2025-05-01T08:45:00Z',
-      priority: 'Low',
-      estimated_hours: 2,
-      actual_hours: 0,
-      parts_used: []
-    }
-  ];
-
-  const displayData = maintenanceRequests || sampleMaintenanceRequests;
+  // Use real database data with fallback to empty array
+  const displayData = maintenanceRequests || [];
 
   const getStatusBadge = (status) => {
     switch (status) {
