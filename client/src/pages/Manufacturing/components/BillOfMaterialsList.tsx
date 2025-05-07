@@ -18,16 +18,18 @@ export default function BillOfMaterialsList() {
     }
   });
 
-  // Process the data to add default components array if needed
+  // Process the data to correctly format for display
   const processedBomList = bomList?.map(bom => ({
     ...bom,
-    // Use the item_count field from the server or set components as empty array
-    components: [],
+    // Use the item_count field from the server to show component count
+    item_count: parseInt(bom.item_count || '0'),
     // Ensure we have version, description fields for UI compatibility
     version: bom.revision || '1.0',
     description: bom.notes || `Bill of Materials for ${bom.product_name}`,
     // Ensure we have updated_at
-    updated_at: bom.updated_at || bom.created_at
+    updated_at: bom.updated_at || bom.created_at,
+    // Set status with correct formatting
+    status: bom.is_active ? 'Active' : 'Inactive'
   })) || [];
 
   const displayData = processedBomList;
@@ -89,7 +91,7 @@ export default function BillOfMaterialsList() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Components:</span>
-                  <span className="font-medium">{bom.components.length}</span>
+                  <span className="font-medium">{bom.item_count || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Last Updated:</span>

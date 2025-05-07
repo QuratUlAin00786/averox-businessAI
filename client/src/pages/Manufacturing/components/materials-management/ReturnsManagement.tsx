@@ -22,36 +22,42 @@ import { formatCurrency, formatDate } from '@/lib/formatters';
 
 interface ReturnAuthorization {
   id: number;
-  returnNumber: string;
-  customerId: number;
-  customerName: string;
+  rma_number: string;
+  customer_id: number;
+  customer_name: string;
   status: string;
-  createdAt: string;
-  receiptDate: string;
-  totalValue: number;
-  currency: string;
-  reason: string;
+  created_at: string;
+  received_date: string;
+  processed_date: string;
+  authorized_date: string;
+  return_reason: string;
   notes: string;
   items: ReturnItem[];
+  item_count: number;
+  total_quantity: number;
 }
 
 interface ReturnItem {
   id: number;
-  returnId: number;
-  productId: number;
-  productName: string;
+  return_authorization_id: number;
+  product_id: number;
+  product_name: string;
+  product_code: string;
   quantity: number;
-  unitPrice: number;
+  return_reason: string;
   condition: string;
-  dispositionStatus: string;
-  notes: string;
+  disposition: string;
+  lot_number?: string;
+  serial_number?: string;
+  notes?: string;
+  status: string;
 }
 
 export default function ReturnsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
   
-  // Simulate fetching returns data from API
+  // Fetch returns data from API
   const { data: returns = [], isLoading, refetch } = useQuery({
     queryKey: ['/api/manufacturing/returns'],
     queryFn: async () => {
@@ -75,8 +81,8 @@ export default function ReturnsManagement() {
       
     const matchesSearch = 
       searchTerm === '' || 
-      returnAuth.returnNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      returnAuth.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      returnAuth.rma_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      returnAuth.customer_name.toLowerCase().includes(searchTerm.toLowerCase());
       
     return matchesStatus && matchesSearch;
   });
