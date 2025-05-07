@@ -1,16 +1,26 @@
 import { Request, Response, Router } from 'express';
 import { db } from './db';
 import { sql } from 'drizzle-orm';
+import { 
+  LowStockItem, 
+  UpcomingRequirement, 
+  Forecast, 
+  Contract, 
+  Product, 
+  Equipment, 
+  ProductionJob,
+  MrpDashboardResponse
+} from './types/manufacturing';
 
 const router = Router();
 
 // ---------------------------------------------------------------
 // MRP DASHBOARD
 // ---------------------------------------------------------------
-router.get('/mrp/dashboard', async (req: Request, res: Response) => {
+router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResponse>) => {
   try {
     // Get low stock items - using products table instead of materials
-    let lowStockItems = [];
+    let lowStockItems: LowStockItem[] = [];
     try {
       const result = await db.execute(sql`
         SELECT 
@@ -41,7 +51,7 @@ router.get('/mrp/dashboard', async (req: Request, res: Response) => {
         LIMIT 10
       `);
       // Convert PostgreSQL result into a proper array for the client
-      lowStockItems = result.rows || [];
+      lowStockItems = (result.rows || []) as LowStockItem[];
     } catch (lowStockError) {
       console.error('Error fetching low stock items:', lowStockError);
       // Return empty array if the query fails
@@ -49,8 +59,8 @@ router.get('/mrp/dashboard', async (req: Request, res: Response) => {
     }
     
     // Initialize empty arrays for the other data
-    let upcomingRequirements = [];
-    let forecasts = [];
+    let upcomingRequirements: UpcomingRequirement[] = [];
+    let forecasts: Forecast[] = [];
     
     // Only try to fetch material requirements if we succeeded with low stock items
     if (lowStockItems.length > 0) {
