@@ -754,7 +754,7 @@ router.get('/work-centers', async (req: Request, res: Response) => {
         `);
         
         // Extract rows from PostgreSQL result
-        currentJobs = jobsResult.rows || [];
+        currentJobs = (jobsResult.rows || []) as ProductionJob[];
       } catch (error) {
         console.error(`Error fetching jobs for work center ${workCenter.id}:`, error);
       }
@@ -1040,11 +1040,11 @@ router.get('/dashboard', async (req: Request, res: Response) => {
       
       if (productionStatsQuery.rows && productionStatsQuery.rows.length > 0) {
         productionStats = {
-          total: parseInt(productionStatsQuery.rows[0].total) || 0,
-          inProgress: parseInt(productionStatsQuery.rows[0].in_progress) || 0,
-          completed: parseInt(productionStatsQuery.rows[0].completed) || 0,
-          delayed: parseInt(productionStatsQuery.rows[0].delayed) || 0,
-          onHold: parseInt(productionStatsQuery.rows[0].on_hold) || 0
+          total: Number(productionStatsQuery.rows[0].total) || 0,
+          inProgress: Number(productionStatsQuery.rows[0].in_progress) || 0,
+          completed: Number(productionStatsQuery.rows[0].completed) || 0,
+          delayed: Number(productionStatsQuery.rows[0].delayed) || 0,
+          onHold: Number(productionStatsQuery.rows[0].on_hold) || 0
         };
       }
     } catch (error) {
@@ -1115,7 +1115,7 @@ router.get('/dashboard', async (req: Request, res: Response) => {
     }
     
     // Recent production orders
-    let recentOrders = [];
+    let recentOrders: any[] = [];
     try {
       const recentOrdersResult = await db.execute(sql`
         SELECT 
@@ -1141,7 +1141,7 @@ router.get('/dashboard', async (req: Request, res: Response) => {
     }
     
     // Work center utilization
-    let workCenterUtilization = [];
+    let workCenterUtilization: WorkCenterUtilization[] = [];
     try {
       const workCenterResult = await db.execute(sql`
         SELECT 
