@@ -214,7 +214,7 @@ export default function QualityInspectionsList() {
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'Completed':
         return 'bg-green-100 text-green-800';
@@ -229,7 +229,7 @@ export default function QualityInspectionsList() {
     }
   };
 
-  const getCriterionResultColor = (result) => {
+  const getCriterionResultColor = (result: string | null) => {
     switch (result) {
       case 'Pass':
         return 'text-green-600';
@@ -244,7 +244,7 @@ export default function QualityInspectionsList() {
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not scheduled';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -287,7 +287,7 @@ export default function QualityInspectionsList() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {displayData.map((inspection) => {
+        {displayData.map((inspection: any) => {
           return (
             <Card key={inspection.id} className="shadow-sm hover:shadow-md transition-shadow duration-200">
               <CardHeader className="pb-2">
@@ -346,7 +346,7 @@ export default function QualityInspectionsList() {
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold">Inspection Criteria:</h4>
                     <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
-                      {inspection.criteria.slice(0, 3).map((criterion) => (
+                      {inspection.criteria.slice(0, 3).map((criterion: any) => (
                         <div key={criterion.id} className="text-xs flex justify-between items-center py-1 border-b border-gray-100">
                           <span>{criterion.name}</span>
                           <span className={`font-medium ${getCriterionResultColor(criterion.result)}`}>
