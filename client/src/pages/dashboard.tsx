@@ -110,7 +110,10 @@ export default function Dashboard() {
             <Button 
               className="w-full sm:w-auto"
               type="button"
-              onClick={() => setLocation("/settings/dashboard")}
+              onClick={() => {
+                console.log("Navigating to dashboard settings...");
+                setLocation("/settings/dashboard");
+              }}
             >
               <Plus className="mr-2 h-4 w-4" />
               <span>Customize Dashboard</span>
