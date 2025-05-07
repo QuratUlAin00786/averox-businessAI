@@ -174,6 +174,11 @@ export default function ManufacturingDashboard() {
       ordersOnHold: dashboardData.productionStats?.onHold || 0,
     },
     workCenterUtilization: dashboardData.workCenterUtilization || [],
+    warehouseCapacity: [
+      { name: 'Warehouse A', used: 7500, total: 10000 },
+      { name: 'Warehouse B', used: 4200, total: 5000 },
+      { name: 'Warehouse C', used: 1800, total: 2500 }
+    ],
     equipmentStatus: {
       operational: 0, // We'll add equipment stats later
       underMaintenance: 0,
@@ -222,6 +227,7 @@ export default function ManufacturingDashboard() {
       ordersOnHold: 0,
     },
     workCenterUtilization: [],
+    warehouseCapacity: [],
     equipmentStatus: {
       operational: 0,
       underMaintenance: 0,

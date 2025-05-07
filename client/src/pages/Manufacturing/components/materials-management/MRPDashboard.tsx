@@ -15,6 +15,40 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+
+interface LowStockItem {
+  id: number;
+  material_id: number;
+  material_name: string;
+  current_stock: number;
+  minimum_stock: number;
+  unit_of_measure: string;
+  category: string;
+  reorder_level: number;
+  supplier_name: string;
+}
+
+interface UpcomingRequirement {
+  material_id: number;
+  material_name: string;
+  required_quantity: string;
+  available_quantity: string;
+  coverage_percentage: number;
+  unit_of_measure: string;
+  earliest_requirement_date: string;
+}
+
+interface Forecast {
+  id: number;
+  name: string;
+  period: string;
+  created_date: string;
+  confidence: number;
+  values: {
+    period: string;
+    value: number;
+  }[];
+}
 import { 
   LineChart, 
   Line, 
@@ -65,7 +99,7 @@ export default function MRPDashboard() {
   }
 
   // Create chart data for upcoming requirements
-  const requirementsChartData = data?.upcomingRequirements?.map(item => ({
+  const requirementsChartData = data?.upcomingRequirements?.map((item: UpcomingRequirement) => ({
     name: item.material_name,
     required: parseFloat(item.required_quantity),
     available: parseFloat(item.available_quantity),
@@ -111,16 +145,16 @@ export default function MRPDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.lowStockItems.map((item) => (
+                    {data.lowStockItems.map((item: LowStockItem) => (
                       <TableRow key={item.material_id}>
                         <TableCell className="font-medium">{item.material_name}</TableCell>
-                        <TableCell>{parseFloat(item.current_quantity).toFixed(2)}</TableCell>
-                        <TableCell>{parseFloat(item.reorder_point || 0).toFixed(2)}</TableCell>
+                        <TableCell>{parseFloat(String(item.current_stock)).toFixed(2)}</TableCell>
+                        <TableCell>{parseFloat(String(item.reorder_level)).toFixed(2)}</TableCell>
                         <TableCell>
-                          {parseFloat(item.current_quantity) === 0 ? (
+                          {item.current_stock === 0 ? (
                             <Badge variant="destructive">Out of Stock</Badge>
                           ) : (
-                            <Badge variant="warning">Low Stock</Badge>
+                            <Badge variant="outline">Low Stock</Badge>
                           )}
                         </TableCell>
                       </TableRow>
