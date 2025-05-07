@@ -73,23 +73,10 @@ export default function MRPDashboard() {
   })) || [];
 
   // Create chart data for forecasts
-  const forecastsChartData = data?.forecasts?.map(forecast => {
-    // This is a simplified example - in a real app, you would
-    // calculate forecast data points from the database
-    const startDate = new Date(forecast.startDate);
-    const endDate = new Date(forecast.endDate);
-    const monthDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + endDate.getMonth() - startDate.getMonth();
-    
-    // Generate some random data points for the forecast period
-    return Array.from({ length: monthDiff + 1 }, (_, i) => {
-      const date = new Date(startDate);
-      date.setMonth(startDate.getMonth() + i);
-      return {
-        name: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        [forecast.name]: Math.floor(Math.random() * 1000) + 500 // Random value between 500-1500
-      };
-    });
-  }).flat() || [];
+  const forecastsChartData = data?.forecastData || [];
+  
+  // If no forecast data is available from the API, create empty array
+  // This will handle UI gracefully with "No active forecasts found" message
 
   return (
     <div className="space-y-6">
