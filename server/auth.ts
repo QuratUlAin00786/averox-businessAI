@@ -18,25 +18,40 @@ const scryptAsync = promisify(scrypt);
 export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  const hash = `${buf.toString("hex")}.${salt}`;
+  console.log('Generated password hash:', hash.substring(0, 20) + '...' + hash.substring(hash.length - 10));
+  return hash;
 }
 
 export async function comparePasswords(supplied: string, stored: string) {
   try {
+    console.log('Comparing passwords:');
+    console.log('Supplied (masked):', supplied.charAt(0) + '*'.repeat(supplied.length - 2) + supplied.charAt(supplied.length - 1));
+    console.log('Stored format:', stored.substring(0, 20) + '...' + stored.substring(stored.length - 10));
+    
     const [hashed, salt] = stored.split(".");
     // If stored password format is incorrect, return false
-    if (!hashed || !salt) return false;
+    if (!hashed || !salt) {
+      console.error("Invalid stored password format - missing hash or salt");
+      return false;
+    }
+    
+    console.log('Hash length:', hashed.length, 'Salt length:', salt.length);
     
     const hashedBuf = Buffer.from(hashed, "hex");
+    console.log('Creating supplied hash using salt...');
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
     
     // Check if buffers have the same length - required for timingSafeEqual
     if (hashedBuf.length !== suppliedBuf.length) {
       console.error("Buffer length mismatch in password comparison");
+      console.log('Hashed buffer length:', hashedBuf.length, 'Supplied buffer length:', suppliedBuf.length);
       return false;
     }
     
-    return timingSafeEqual(hashedBuf, suppliedBuf);
+    const result = timingSafeEqual(hashedBuf, suppliedBuf);
+    console.log('Password comparison result:', result);
+    return result;
   } catch (error) {
     console.error("Error comparing passwords:", error);
     return false;
