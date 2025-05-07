@@ -37,7 +37,13 @@ export default function ManufacturingDashboard() {
   // Fetch real dashboard data from the API
   const { data: dashboardData, isLoading, error } = useQuery({
     queryKey: ['/api/manufacturing/dashboard'],
-    enabled: true, // Enable the query to fetch real data
+    queryFn: async () => {
+      const response = await fetch('/api/manufacturing/dashboard');
+      if (!response.ok) {
+        throw new Error('Failed to fetch manufacturing dashboard data');
+      }
+      return response.json();
+    }
   });
 
   // Define a proper interface for the dashboard data
@@ -152,7 +158,7 @@ export default function ManufacturingDashboard() {
   };
 
   // For backwards compatibility with existing component structure
-  const transformedData: DashboardDisplay = dashboardData ? {
+  const transformedData: DashboardDisplay = dashboardData && typeof dashboardData === 'object' ? {
     productionSummary: {
       totalOrders: dashboardData.productionStats?.total || 0,
       ordersInProgress: dashboardData.productionStats?.inProgress || 0,

@@ -35,6 +35,7 @@ interface ReturnAuthorization {
   items: ReturnItem[];
   item_count: number;
   total_quantity: number;
+  total_value?: number;
 }
 
 interface ReturnItem {
@@ -236,17 +237,17 @@ export default function ReturnsManagement() {
               ) : (
                 filteredReturns.map((returnAuth) => (
                   <TableRow key={returnAuth.id} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell className="font-medium">{returnAuth.returnNumber}</TableCell>
-                    <TableCell>{returnAuth.customerName}</TableCell>
+                    <TableCell className="font-medium">{returnAuth.rma_number}</TableCell>
+                    <TableCell>{returnAuth.customer_name}</TableCell>
                     <TableCell>
                       <Badge variant="secondary" className={getStatusColor(returnAuth.status)}>
                         {returnAuth.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{formatDate(returnAuth.createdAt)}</TableCell>
-                    <TableCell>{returnAuth.receiptDate ? formatDate(returnAuth.receiptDate) : 'Pending'}</TableCell>
+                    <TableCell>{formatDate(returnAuth.created_at)}</TableCell>
+                    <TableCell>{returnAuth.received_date ? formatDate(returnAuth.received_date) : 'Pending'}</TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(returnAuth.totalValue, returnAuth.currency)}
+                      {formatCurrency(returnAuth.total_value || 0, 'USD')}
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon">
