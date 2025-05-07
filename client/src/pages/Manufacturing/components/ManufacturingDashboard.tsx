@@ -86,6 +86,12 @@ export default function ManufacturingDashboard() {
     workCenterUtilization: WorkCenterUtilization[];
   }
 
+  interface WarehouseCapacity {
+    name: string;
+    used: number;
+    total: number;
+  }
+
   interface DashboardDisplay {
     productionSummary: {
       totalOrders: number;
@@ -95,6 +101,7 @@ export default function ManufacturingDashboard() {
       ordersOnHold: number;
     };
     workCenterUtilization: any[];
+    warehouseCapacity: WarehouseCapacity[];
     equipmentStatus: {
       operational: number;
       underMaintenance: number;
