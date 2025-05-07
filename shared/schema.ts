@@ -1,9 +1,65 @@
 import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, date, numeric, jsonb, uuid } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Export manufacturing module components
 export * from './manufacturing-schema';
+
+// Quality checking system - moved after import to avoid reference errors
+export const qualityCheckStatusEnum = pgEnum('quality_check_status', ['Planned', 'In Progress', 'Completed', 'Cancelled']);
+export const qualityCheckResultEnum = pgEnum('quality_check_result', ['Pass', 'Fail', 'Conditional Pass', 'Not Applicable']);
+export const qualityParameterResultEnum = pgEnum('quality_parameter_result', ['Pass', 'Fail', 'Not Tested']);
+
+export const qualityChecks = pgTable("quality_checks", {
+  id: serial("id").primaryKey(),
+  inspection_number: text("inspection_number").notNull(),
+  type: text("type").notNull(), // Incoming, In-Process, Final, etc.
+  status: qualityCheckStatusEnum("status").default("Planned"),
+  result: qualityCheckResultEnum("result"),
+  production_order_id: integer("production_order_id"), // References added in relations
+  batch_lot_id: integer("batch_lot_id"), // References added in relations
+  product_id: integer("product_id").references(() => products.id),
+  inspector_id: integer("inspector_id").references(() => users.id),
+  inspection_date: timestamp("inspection_date"),
+  notes: text("notes"),
+  sample_size: integer("sample_size"),
+  acceptance_criteria: text("acceptance_criteria"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at"),
+  created_by: integer("created_by"),
+});
+
+export const qualityCheckParameters = pgTable("quality_check_parameters", {
+  id: serial("id").primaryKey(),
+  quality_check_id: integer("quality_check_id").references(() => qualityChecks.id).notNull(),
+  parameter_name: text("parameter_name").notNull(),
+  specification: text("specification"),
+  result: qualityParameterResultEnum("result"),
+  measured_value: text("measured_value"),
+  notes: text("notes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at"),
+});
+
+// Insert schema definitions
+export const insertQualityCheckSchema = createInsertSchema(qualityChecks).omit({
+  id: true,
+  created_at: true,
+  updated_at: true
+});
+
+export type InsertQualityCheck = z.infer<typeof insertQualityCheckSchema>;
+export type QualityCheck = typeof qualityChecks.$inferSelect;
+
+export const insertQualityCheckParameterSchema = createInsertSchema(qualityCheckParameters).omit({
+  id: true,
+  created_at: true,
+  updated_at: true
+});
+
+export type InsertQualityCheckParameter = z.infer<typeof insertQualityCheckParameterSchema>;
+export type QualityCheckParameter = typeof qualityCheckParameters.$inferSelect;
 
 // Enums
 export const leadStatusEnum = pgEnum('lead_status', ['New', 'Qualified', 'Contacted', 'Not Interested', 'Converted']);
