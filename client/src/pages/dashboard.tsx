@@ -482,13 +482,16 @@ export default function Dashboard() {
                           </div>
                           
                           {campaign.stats && (
-                            <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                              {Object.entries(campaign.stats).map(([key, value]) => (
-                                <div key={key} className="bg-slate-50 p-2 rounded">
-                                  <div className="font-medium">{value}</div>
-                                  <div className="text-muted-foreground">{key}</div>
-                                </div>
-                              ))}
+                            <div className="space-y-3">
+                              <div className="text-xs font-medium text-primary">Real Metrics from Database:</div>
+                              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                                {Object.entries(campaign.stats).map(([key, value]) => (
+                                  <div key={key} className="bg-slate-50 p-2 rounded">
+                                    <div className="font-medium">{value}</div>
+                                    <div className="text-muted-foreground">{key}</div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
 
@@ -551,6 +554,9 @@ export default function Dashboard() {
                     </div>
                   ) : data?.migrations && data.migrations.length > 0 ? (
                     <div className="space-y-4">
+                      <div className="text-xs font-medium text-primary border-l-2 border-primary pl-2">
+                        Data from Database: Migration statuses based on system_settings table
+                      </div>
                       {data.migrations.map((migration, index) => (
                         <div key={migration.id || index} className="space-y-2">
                           <div className="flex justify-between items-center">
@@ -754,6 +760,9 @@ export default function Dashboard() {
                     </div>
                   ) : data?.performanceMetrics ? (
                     <div className="space-y-4">
+                      <div className="text-xs font-medium text-primary border-l-2 border-primary pl-2">
+                        Data from Database: Metrics calculated from real leads, opportunities, and proposals
+                      </div>
                       {data.performanceMetrics.map((metric) => (
                         <div key={metric.name} className="space-y-2">
                           <div className="flex justify-between text-sm">
