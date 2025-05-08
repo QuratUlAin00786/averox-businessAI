@@ -120,7 +120,7 @@ export default function Dashboard() {
                   // Check if user is authenticated first using the auth hook
                   if (!user) {
                     console.log("User not authenticated, redirecting to login page first");
-                    setLocation("/auth-page");
+                    setLocation("/auth");
                     return;
                   }
                   
