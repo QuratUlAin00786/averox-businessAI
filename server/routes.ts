@@ -18,11 +18,6 @@ import {
   insertAccountSchema,
   insertLeadSchema,
   insertOpportunitySchema,
-  leads,
-  opportunities,
-  users,
-  activities,
-  invoices,
   insertTaskSchema,
   insertEventSchema,
   insertActivitySchema,
@@ -103,23 +98,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard Data API endpoints
   app.get('/api/dashboard/stats', async (req, res) => {
     try {
+      // Import required schema tables
+      const { leads: leadsTable, opportunities: opportunitiesTable, invoices: invoicesTable } = await import('@shared/schema');
+
       // Get leads created in the last 30 days
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const leadsData = await db.select().from(leads);
-      const newLeads = leadsData.filter(lead => new Date(lead.createdAt) >= thirtyDaysAgo).length;
+      const leadsData = await db.select().from(leadsTable);
+      const newLeads = leadsData.filter(lead => {
+        if (!lead.createdAt) return false;
+        return new Date(lead.createdAt) >= thirtyDaysAgo;
+      }).length;
       
       // Calculate conversion rate from actual data
-      const opportunitiesData = await db.select().from(opportunities);
+      const opportunitiesData = await db.select().from(opportunitiesTable);
       const totalLeads = leadsData.length;
       const convertedLeads = leadsData.filter(lead => lead.isConverted).length;
       const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) + "%" : "0%";
       
       // Calculate total revenue from invoices
-      const invoicesData = await db.select().from(invoices);
+      const invoicesData = await db.select().from(invoicesTable);
       const paidInvoices = invoicesData.filter(invoice => invoice.status === 'Paid');
-      const totalRevenue = paidInvoices.reduce((sum, invoice) => sum + Number(invoice.totalAmount || 0), 0);
+      const totalRevenue = paidInvoices.reduce((sum, invoice) => {
+        const amount = Number(invoice.totalAmount || 0);
+        return sum + amount;
+      }, 0);
       const formattedRevenue = "$" + totalRevenue.toLocaleString();
       
       // Count open deals
@@ -139,15 +143,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get('/api/dashboard/pipeline', async (req, res) => {
     try {
-      const opportunitiesData = await db.select().from(opportunities);
+      // Import required schema table
+      const { opportunities: opportunitiesTable } = await import('@shared/schema');
+      
+      const opportunitiesData = await db.select().from(opportunitiesTable);
       
       // Get all stages and their corresponding opportunities
       const stageMap = new Map();
       
       opportunitiesData.forEach(opp => {
         if (!opp.isClosed) {
-          const stage = opp.stage;
-          const amount = Number(opp.amount) || 0;
+          const stage = opp.stage || 'Unknown';
+          const amount = Number(opp.amount || 0);
           
           if (!stageMap.has(stage)) {
             stageMap.set(stage, { count: 0, value: 0 });
@@ -184,8 +191,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get('/api/dashboard/activities', async (req, res) => {
     try {
-      const activitiesData = await db.select().from(activities).orderBy(desc(activities.createdAt)).limit(5);
-      const usersData = await db.select().from(users);
+      // Import required schema tables
+      const { activities: activitiesTable, users: usersTable } = await import('@shared/schema');
+      
+      const activitiesData = await db.select().from(activitiesTable).orderBy(desc(activitiesTable.createdAt)).limit(5);
+      const usersData = await db.select().from(usersTable);
       
       const formattedActivities = activitiesData.map(activity => {
         const user = usersData.find(u => u.id === activity.userId) || { 
@@ -194,7 +204,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           avatar: '' 
         };
         
-        const createdAt = new Date(activity.createdAt);
+        // Safely handle potentially null createdAt dates
+        const createdAt = activity.createdAt ? new Date(activity.createdAt) : new Date();
         let timeAgo = '';
         
         const now = new Date();
