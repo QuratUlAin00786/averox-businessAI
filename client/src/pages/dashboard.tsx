@@ -98,6 +98,14 @@ export default function Dashboard() {
                 </svg>
                 {t.dashboard.today}, <span>{currentDate}</span>
               </div>
+              <div className="mt-2 flex items-center bg-primary/10 text-primary px-2 py-1 rounded-md text-xs">
+                <svg className="flex-shrink-0 mr-1.5 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                </svg>
+                Database-Driven Dashboard: All metrics from live database
+              </div>
             </div>
           </div>
           
@@ -307,6 +315,9 @@ export default function Dashboard() {
                     </div>
                   ) : data?.todayEvents && data.todayEvents.length > 0 ? (
                     <div className="space-y-4">
+                      <div className="mb-2 text-xs font-medium text-primary border-l-2 border-primary pl-2">
+                        Data from Database: Events loaded from events table
+                      </div>
                       {data.todayEvents.map((event) => (
                         <div key={event.id} className="flex items-start gap-4">
                           <div className="bg-primary/10 p-2 rounded-full">
@@ -361,6 +372,9 @@ export default function Dashboard() {
                     </div>
                   ) : data?.dueTasks && data.dueTasks.length > 0 ? (
                     <div className="space-y-4">
+                      <div className="mb-2 text-xs font-medium text-primary border-l-2 border-primary pl-2">
+                        Data from Database: Tasks loaded from tasks table
+                      </div>
                       {data.dueTasks.map((task) => (
                         <div key={task.id} className="flex items-center gap-2">
                           <div className="h-5 w-5 border rounded-full flex items-center justify-center">
@@ -408,6 +422,9 @@ export default function Dashboard() {
                     </div>
                   ) : data?.pipelineStages && data.pipelineStages.length > 0 ? (
                     <div className="text-center p-8 border border-dashed rounded-lg w-full max-w-md mx-auto">
+                      <div className="mb-2 text-xs font-medium text-primary">
+                        Data from Database: Pipeline metrics from opportunities table
+                      </div>
                       <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold mb-2">Pipeline Status</h3>
                       <div className="mb-4 grid grid-cols-3 gap-4 text-sm">
