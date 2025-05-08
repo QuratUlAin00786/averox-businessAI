@@ -115,8 +115,12 @@ export default function Dashboard() {
               className="w-full sm:w-auto"
               type="button"
               onClick={() => {
-                console.log("Navigating to dashboard settings...");
-                setLocation("/settings/dashboard");
+                console.log("Navigating to dashboard settings at /settings/dashboard");
+                try {
+                  setLocation("/settings/dashboard");
+                } catch (error) {
+                  console.error("Navigation error:", error);
+                }
               }}
             >
               <Plus className="mr-2 h-4 w-4" />

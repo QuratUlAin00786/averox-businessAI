@@ -56,6 +56,46 @@ export interface MyTask {
   priority: "High" | "Medium" | "Normal" | "Low" | "عالية" | "متوسطة" | "عادية" | "منخفضة";
 }
 
+export interface MarketingCampaign {
+  id: number;
+  name: string;
+  status: string;
+  platform: string;
+  reach: number;
+  conversion: number;
+  budget: string;
+}
+
+export interface MigrationItem {
+  id: number;
+  name: string;
+  status: string;
+  progress: number;
+}
+
+export interface PerformanceMetric {
+  id: number;
+  name: string;
+  value: string | number;
+  change: number;
+  trend: 'up' | 'down' | 'neutral';
+}
+
+export interface TodayEvent {
+  id: number;
+  title: string;
+  time: string;
+  description: string;
+  attendees?: string;
+}
+
+export interface TaskDueToday {
+  id: number;
+  title: string;
+  priority: string;
+  status: string;
+}
+
 export interface DashboardData {
   stats: {
     id: number;
@@ -72,6 +112,13 @@ export interface DashboardData {
   recentActivities: DashboardActivity[];
   upcomingEvents: UpcomingEvent[];
   myTasks: MyTask[];
+  
+  // Additional fields used in the dashboard.tsx
+  todayEvents?: TodayEvent[];
+  dueTasks?: TaskDueToday[];
+  marketingCampaigns?: MarketingCampaign[];
+  migrations?: MigrationItem[];
+  performanceMetrics?: PerformanceMetric[];
 }
 
 // Stage colors for pipeline visualization
