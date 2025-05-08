@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
 import { 
-  Download, 
+  Download,
   Plus,
   HelpCircle,
   ArrowRight,
@@ -19,7 +19,9 @@ import {
   MessageSquare,
   BarChart,
   LineChart,
-  Zap
+  Zap,
+  CheckCircle,
+  Calendar
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -275,35 +277,49 @@ export default function Dashboard() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-4">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <Clock className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium">Client Kickoff Meeting</div>
-                          <div className="text-xs text-muted-foreground">10:00 AM</div>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2].map((i) => (
+                        <div key={i} className="flex items-start gap-4">
+                          <Skeleton className="h-8 w-8 rounded-full" />
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center justify-between">
+                              <Skeleton className="h-4 w-32" />
+                              <Skeleton className="h-3 w-16" />
+                            </div>
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-3 w-24" />
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">Meeting with Acme Corp. to discuss new project requirements</div>
-                        <div className="text-xs text-blue-600">3 people attending</div>
-                      </div>
+                      ))}
                     </div>
-                    
-                    <div className="flex items-start gap-4">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <Clock className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium">Sales Team Sync</div>
-                          <div className="text-xs text-muted-foreground">2:30 PM</div>
+                  ) : data?.todayEvents && data.todayEvents.length > 0 ? (
+                    <div className="space-y-4">
+                      {data.todayEvents.map((event) => (
+                        <div key={event.id} className="flex items-start gap-4">
+                          <div className="bg-primary/10 p-2 rounded-full">
+                            <Clock className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium">{event.title}</div>
+                              <div className="text-xs text-muted-foreground">{event.time}</div>
+                            </div>
+                            <div className="text-sm text-muted-foreground">{event.description}</div>
+                            {event.attendees && (
+                              <div className="text-xs text-blue-600">{event.attendees} attending</div>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">Weekly sales team meeting to review pipeline and targets</div>
-                        <div className="text-xs text-blue-600">5 people attending</div>
-                      </div>
+                      ))}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <Calendar className="h-10 w-10 text-muted-foreground mb-3" />
+                      <h3 className="text-lg font-medium mb-1">No Events Today</h3>
+                      <p className="text-sm text-muted-foreground">Schedule meetings and events to see them here</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
@@ -316,33 +332,48 @@ export default function Dashboard() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-5 w-5 border rounded-full flex items-center justify-center">
-                        <div className="h-2.5 w-2.5 bg-blue-500 rounded-full"></div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium">Prepare sales presentation</div>
-                          <Badge variant="outline" className="text-xs">High</Badge>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2].map((i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <Skeleton className="h-5 w-5 rounded-full" />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <Skeleton className="h-4 w-40 mb-2" />
+                              <Skeleton className="h-4 w-12" />
+                            </div>
+                            <Skeleton className="h-3 w-full" />
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">For Enterprise Software Implementation project</div>
-                      </div>
+                      ))}
                     </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <div className="h-5 w-5 border rounded-full flex items-center justify-center">
-                        <div className="h-2.5 w-2.5 bg-amber-500 rounded-full"></div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium">Follow up with Global Tech</div>
-                          <Badge variant="outline" className="text-xs">Medium</Badge>
+                  ) : data?.dueTasks && data.dueTasks.length > 0 ? (
+                    <div className="space-y-4">
+                      {data.dueTasks.map((task) => (
+                        <div key={task.id} className="flex items-center gap-2">
+                          <div className="h-5 w-5 border rounded-full flex items-center justify-center">
+                            <div className={`h-2.5 w-2.5 ${
+                              task.priority === 'High' ? 'bg-red-500' : 
+                              task.priority === 'Medium' ? 'bg-amber-500' : 
+                              'bg-blue-500'} rounded-full`}></div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium">{task.title}</div>
+                              <Badge variant="outline" className="text-xs">{task.priority}</Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground">{task.description}</div>
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">Regarding proposal feedback and next steps</div>
-                      </div>
+                      ))}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <CheckCircle className="h-10 w-10 text-muted-foreground mb-3" />
+                      <h3 className="text-lg font-medium mb-1">No Tasks Due Today</h3>
+                      <p className="text-sm text-muted-foreground">All caught up!</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
@@ -401,50 +432,78 @@ export default function Dashboard() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-sm">Active Email Campaign</h3>
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Running</Badge>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <Skeleton className="h-5 w-40" />
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Skeleton className="h-16 w-full" />
+                          <Skeleton className="h-16 w-full" />
+                          <Skeleton className="h-16 w-full" />
                         </div>
                       </div>
-                      
-                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                        <div className="bg-slate-50 p-2 rounded">
-                          <div className="font-medium">1,245</div>
-                          <div className="text-muted-foreground">Delivered</div>
-                        </div>
-                        <div className="bg-slate-50 p-2 rounded">
-                          <div className="font-medium">38%</div>
-                          <div className="text-muted-foreground">Open Rate</div>
-                        </div>
-                        <div className="bg-slate-50 p-2 rounded">
-                          <div className="font-medium">12%</div>
-                          <div className="text-muted-foreground">Click Rate</div>
-                        </div>
+                      <div className="space-y-2">
+                        <Skeleton className="h-5 w-40" />
+                        <Skeleton className="h-16 w-full" />
                       </div>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-sm">Lead Nurturing Workflow</h3>
-                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Active</Badge>
+                  ) : data?.marketingCampaigns && data.marketingCampaigns.length > 0 ? (
+                    <div className="space-y-4">
+                      {data.marketingCampaigns.map((campaign, index) => (
+                        <div key={campaign.id || index} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-sm">{campaign.name}</h3>
+                              <Badge 
+                                variant="outline" 
+                                className={`${
+                                  campaign.status === 'Active' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                                  campaign.status === 'Draft' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                  'bg-gray-50 text-gray-700 border-gray-200'
+                                }`}
+                              >
+                                {campaign.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          {campaign.stats && (
+                            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                              {Object.entries(campaign.stats).map(([key, value]) => (
+                                <div key={key} className="bg-slate-50 p-2 rounded">
+                                  <div className="font-medium">{value}</div>
+                                  <div className="text-muted-foreground">{key}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {campaign.workflow && (
+                            <div className="flex items-center gap-2 bg-slate-50 p-3 rounded">
+                              <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                <Zap className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <div className="font-medium text-sm">{campaign.workflow.count} leads in pipeline</div>
+                                <div className="text-xs text-muted-foreground">{campaign.workflow.nextAction}</div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 bg-slate-50 p-3 rounded">
-                        <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <Zap className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm">142 leads in pipeline</div>
-                          <div className="text-xs text-muted-foreground">Next action: Follow-up email (Tomorrow)</div>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <Mail className="h-10 w-10 text-muted-foreground mb-3" />
+                      <h3 className="text-lg font-medium mb-1">No Active Campaigns</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Create marketing campaigns to engage with your audience</p>
+                      <Button variant="outline" size="sm" onClick={() => setLocation("/marketing/campaigns/new")}>
+                        Create Campaign
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
@@ -457,45 +516,78 @@ export default function Dashboard() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-sm">Oracle CRM Migration</h3>
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">In Progress</Badge>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <Skeleton className="h-5 w-40" />
+                        </div>
+                        <div className="space-y-1">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-2 w-full" />
                         </div>
                       </div>
-                      
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span>Progress: 3,450 / 5,200 records</span>
-                          <span>66%</span>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <Skeleton className="h-5 w-40" />
                         </div>
-                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: '66%' }}></div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-sm">Odoo CRM Migration</h3>
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Complete</Badge>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span>Records Migrated: 1,245</span>
-                          <span>100%</span>
-                        </div>
-                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-green-500 rounded-full" style={{ width: '100%' }}></div>
+                        <div className="space-y-1">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-2 w-full" />
                         </div>
                       </div>
                     </div>
-                  </div>
+                  ) : data?.migrations && data.migrations.length > 0 ? (
+                    <div className="space-y-4">
+                      {data.migrations.map((migration, index) => (
+                        <div key={migration.id || index} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-sm">{migration.name}</h3>
+                              <Badge 
+                                variant="outline" 
+                                className={`${
+                                  migration.status === 'Complete' ? 'bg-green-50 text-green-700 border-green-200' : 
+                                  migration.status === 'In Progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                  migration.status === 'Failed' ? 'bg-red-50 text-red-700 border-red-200' :
+                                  'bg-gray-50 text-gray-700 border-gray-200'
+                                }`}
+                              >
+                                {migration.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span>{migration.progressText}</span>
+                              <span>{migration.percentage}%</span>
+                            </div>
+                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full ${
+                                  migration.status === 'Complete' ? 'bg-green-500' : 
+                                  migration.status === 'In Progress' ? 'bg-blue-500' :
+                                  migration.status === 'Failed' ? 'bg-red-500' :
+                                  'bg-gray-500'
+                                }`} 
+                                style={{ width: `${migration.percentage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <BarChart3 className="h-10 w-10 text-muted-foreground mb-3" />
+                      <h3 className="text-lg font-medium mb-1">No Active Migrations</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Data migration jobs will appear here</p>
+                      <Button variant="outline" size="sm" onClick={() => setLocation("/settings/migrations")}>
+                        Start Migration
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
