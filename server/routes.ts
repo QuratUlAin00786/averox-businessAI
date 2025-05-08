@@ -18,6 +18,11 @@ import {
   insertAccountSchema,
   insertLeadSchema,
   insertOpportunitySchema,
+  leads,
+  opportunities,
+  users,
+  activities,
+  invoices,
   insertTaskSchema,
   insertEventSchema,
   insertActivitySchema,
@@ -92,6 +97,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
         authenticated: false, 
         sessionID: req.sessionID
       });
+    }
+  });
+  
+  // Dashboard Data API endpoints
+  app.get('/api/dashboard/stats', async (req, res) => {
+    try {
+      // Get leads created in the last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const leadsData = await db.select().from(leads);
+      const newLeads = leadsData.filter(lead => new Date(lead.createdAt) >= thirtyDaysAgo).length;
+      
+      // Calculate conversion rate from actual data
+      const opportunitiesData = await db.select().from(opportunities);
+      const totalLeads = leadsData.length;
+      const convertedLeads = leadsData.filter(lead => lead.isConverted).length;
+      const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) + "%" : "0%";
+      
+      // Calculate total revenue from invoices
+      const invoicesData = await db.select().from(invoices);
+      const paidInvoices = invoicesData.filter(invoice => invoice.status === 'Paid');
+      const totalRevenue = paidInvoices.reduce((sum, invoice) => sum + Number(invoice.totalAmount || 0), 0);
+      const formattedRevenue = "$" + totalRevenue.toLocaleString();
+      
+      // Count open deals
+      const openDeals = opportunitiesData.filter(opp => !opp.isClosed).length;
+      
+      res.json({
+        newLeads,
+        conversionRate,
+        revenue: formattedRevenue,
+        openDeals
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
+    }
+  });
+  
+  app.get('/api/dashboard/pipeline', async (req, res) => {
+    try {
+      const opportunitiesData = await db.select().from(opportunities);
+      
+      // Get all stages and their corresponding opportunities
+      const stageMap = new Map();
+      
+      opportunitiesData.forEach(opp => {
+        if (!opp.isClosed) {
+          const stage = opp.stage;
+          const amount = Number(opp.amount) || 0;
+          
+          if (!stageMap.has(stage)) {
+            stageMap.set(stage, { count: 0, value: 0 });
+          }
+          
+          const data = stageMap.get(stage);
+          data.count += 1;
+          data.value += amount;
+          stageMap.set(stage, data);
+        }
+      });
+      
+      // Calculate total value of all opportunities
+      const totalValue = Array.from(stageMap.values()).reduce((sum, data) => sum + data.value, 0);
+      
+      // Create stages data
+      const stages = Array.from(stageMap.entries()).map(([name, data]) => {
+        const percentage = totalValue > 0 ? Math.round((data.value / totalValue) * 100) : 0;
+        const formattedValue = "$" + data.value.toLocaleString();
+        
+        return {
+          name,
+          value: formattedValue,
+          percentage
+        };
+      });
+      
+      res.json({ stages });
+    } catch (error) {
+      console.error('Error fetching pipeline data:', error);
+      res.status(500).json({ error: 'Failed to fetch pipeline data' });
+    }
+  });
+  
+  app.get('/api/dashboard/activities', async (req, res) => {
+    try {
+      const activitiesData = await db.select().from(activities).orderBy(desc(activities.createdAt)).limit(5);
+      const usersData = await db.select().from(users);
+      
+      const formattedActivities = activitiesData.map(activity => {
+        const user = usersData.find(u => u.id === activity.userId) || { 
+          firstName: 'Unknown', 
+          lastName: 'User', 
+          avatar: '' 
+        };
+        
+        const createdAt = new Date(activity.createdAt);
+        let timeAgo = '';
+        
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - createdAt.getTime()) / 1000);
+        
+        if (diffInSeconds < 60) {
+          timeAgo = `${diffInSeconds} sec ago`;
+        } else if (diffInSeconds < 3600) {
+          timeAgo = `${Math.floor(diffInSeconds / 60)} min ago`;
+        } else if (diffInSeconds < 86400) {
+          timeAgo = `${Math.floor(diffInSeconds / 3600)} hour${Math.floor(diffInSeconds / 3600) !== 1 ? 's' : ''} ago`;
+        } else if (diffInSeconds < 172800) {
+          timeAgo = 'Yesterday';
+        } else {
+          timeAgo = `${Math.floor(diffInSeconds / 86400)} days ago`;
+        }
+        
+        const firstName = user.firstName || '';
+        const lastName = user.lastName || '';
+        const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'System User';
+        const initials = [firstName?.[0], lastName?.[0]].filter(Boolean).join('').toUpperCase() || 'SU';
+        
+        return {
+          id: activity.id,
+          action: activity.action,
+          detail: activity.detail,
+          relatedToType: activity.relatedToType,
+          relatedToId: activity.relatedToId,
+          createdAt: activity.createdAt,
+          icon: activity.icon,
+          time: timeAgo,
+          user: {
+            name: fullName,
+            avatar: user.avatar || '',
+            initials
+          }
+        };
+      });
+      
+      res.json(formattedActivities);
+    } catch (error) {
+      console.error('Error fetching dashboard activities:', error);
+      res.status(500).json({ error: 'Failed to fetch activities' });
     }
   });
   
