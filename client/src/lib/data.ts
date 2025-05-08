@@ -64,6 +64,13 @@ export interface MarketingCampaign {
   reach: number;
   conversion: number;
   budget: string;
+  stats?: Record<string, string>;
+  workflow?: {
+    id: number;
+    name: string;
+    count: number;
+    nextAction: string;
+  } | null;
 }
 
 export interface MigrationItem {
@@ -71,14 +78,17 @@ export interface MigrationItem {
   name: string;
   status: string;
   progress: number;
+  progressText: string;
 }
 
 export interface PerformanceMetric {
   id: number;
   name: string;
   value: string | number;
+  percentage: number;
   change: number;
   trend: 'up' | 'down' | 'neutral';
+  color: string;
 }
 
 export interface TodayEvent {
@@ -388,6 +398,33 @@ export async function getMyTasks(): Promise<MyTask[]> {
   return myIncompleteTasks;
 }
 
+export async function getMarketingCampaigns(): Promise<MarketingCampaign[]> {
+  try {
+    return await apiRequestJson<MarketingCampaign[]>('GET', '/api/dashboard/marketing-campaigns');
+  } catch (error) {
+    console.warn('Failed to fetch marketing campaigns:', error);
+    return [];
+  }
+}
+
+export async function getPerformanceMetrics(): Promise<PerformanceMetric[]> {
+  try {
+    return await apiRequestJson<PerformanceMetric[]>('GET', '/api/dashboard/performance-metrics');
+  } catch (error) {
+    console.warn('Failed to fetch performance metrics:', error);
+    return [];
+  }
+}
+
+export async function getMigrationStatus(): Promise<MigrationItem[]> {
+  try {
+    return await apiRequestJson<MigrationItem[]>('GET', '/api/dashboard/migrations');
+  } catch (error) {
+    console.warn('Failed to fetch migration status:', error);
+    return [];
+  }
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
   try {
     // First fetch stats and pipeline data - these are essential
@@ -398,6 +435,9 @@ export async function getDashboardData(): Promise<DashboardData> {
     let activitiesData: DashboardActivity[] = [];
     let upcomingEventsData: UpcomingEvent[] = [];
     let tasksData: MyTask[] = [];
+    let marketingCampaignsData: MarketingCampaign[] = [];
+    let performanceMetricsData: PerformanceMetric[] = [];
+    let migrationsData: MigrationItem[] = [];
     
     try {
       activitiesData = await getRecentActivities();
@@ -415,6 +455,24 @@ export async function getDashboardData(): Promise<DashboardData> {
       tasksData = await getMyTasks();
     } catch (e) {
       console.warn('Failed to fetch tasks data:', e);
+    }
+    
+    try {
+      marketingCampaignsData = await getMarketingCampaigns();
+    } catch (e) {
+      console.warn('Failed to fetch marketing campaigns data:', e);
+    }
+    
+    try {
+      performanceMetricsData = await getPerformanceMetrics();
+    } catch (e) {
+      console.warn('Failed to fetch performance metrics data:', e);
+    }
+    
+    try {
+      migrationsData = await getMigrationStatus();
+    } catch (e) {
+      console.warn('Failed to fetch migration status data:', e);
     }
     
     // Transform stats data for the UI
@@ -567,6 +625,10 @@ export async function getDashboardData(): Promise<DashboardData> {
           priority: "Normal"
         }
       ],
+      // Include the new real data fetched from APIs
+      marketingCampaigns: marketingCampaignsData,
+      performanceMetrics: performanceMetricsData,
+      migrations: migrationsData,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
@@ -714,6 +776,9 @@ export async function getDashboardData(): Promise<DashboardData> {
           priority: "Normal"
         }
       ],
+      marketingCampaigns: [],
+      performanceMetrics: [],
+      migrations: [],
     };
   }
 }
