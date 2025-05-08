@@ -117,6 +117,14 @@ export default function Dashboard() {
               onClick={() => {
                 console.log("Navigating to dashboard settings at /settings/dashboard");
                 try {
+                  // Check if user is authenticated first using the auth hook
+                  if (!user) {
+                    console.log("User not authenticated, redirecting to login page first");
+                    setLocation("/auth-page");
+                    return;
+                  }
+                  
+                  // User is authenticated, navigate to dashboard settings
                   setLocation("/settings/dashboard");
                 } catch (error) {
                   console.error("Navigation error:", error);
