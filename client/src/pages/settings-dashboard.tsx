@@ -69,7 +69,7 @@ export default function DashboardSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-8" dir={language === "ar" ? 'rtl' : 'ltr'}>
+    <div className="container mx-auto py-6 space-y-8" dir={language === "arabic" ? 'rtl' : 'ltr'}>
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Dashboard Preferences</h2>
