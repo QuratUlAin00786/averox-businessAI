@@ -573,7 +573,7 @@ export default function Dashboard() {
                           <div className="space-y-1">
                             <div className="flex justify-between text-xs">
                               <span>{migration.progressText}</span>
-                              <span>{migration.percentage}%</span>
+                              <span>{migration.progress}%</span>
                             </div>
                             <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                               <div 
@@ -583,7 +583,7 @@ export default function Dashboard() {
                                   migration.status === 'Failed' ? 'bg-red-500' :
                                   'bg-gray-500'
                                 }`} 
-                                style={{ width: `${migration.percentage}%` }}
+                                style={{ width: `${migration.progress}%` }}
                               ></div>
                             </div>
                           </div>
