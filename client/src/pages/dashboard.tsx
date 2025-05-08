@@ -57,10 +57,12 @@ export default function Dashboard() {
     setCurrentDate(format(new Date(), "MMMM d, yyyy"));
   }, [language]);
 
+  // Fetch dashboard data from API endpoints
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/dashboard'],
     queryFn: getDashboardData,
     staleTime: 60000, // 1 minute
+    retry: 3,
   });
 
   return (
@@ -127,82 +129,137 @@ export default function Dashboard() {
         <div className="space-y-6">
           {/* Business Metrics Overview */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Revenue Card */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
-                <CardDescription>Today's Revenue</CardDescription>
+                <CardDescription>Revenue</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-2xl font-bold">$48,700</div>
-                    <div className="text-sm flex items-center text-green-600">
-                      <ArrowUp className="w-4 h-4 mr-1" />
-                      12% from yesterday
+                {isLoading ? (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <Skeleton className="h-8 w-24 mb-2" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <CreditCard className="w-5 h-5 text-primary" />
                     </div>
                   </div>
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <CreditCard className="w-5 h-5 text-primary" />
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-2xl font-bold">{data?.stats?.find(s => s.title === "Revenue")?.value || '$0'}</div>
+                      <div className="text-sm flex items-center text-green-600">
+                        <ArrowUp className="w-4 h-4 mr-1" />
+                        {data?.stats?.find(s => s.title === "Revenue")?.change.value || '0%'} {data?.stats?.find(s => s.title === "Revenue")?.change.text || ''}
+                      </div>
+                    </div>
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <CreditCard className="w-5 h-5 text-primary" />
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
             
+            {/* New Leads Card */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardDescription>New Leads</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-2xl font-bold">38</div>
-                    <div className="text-sm flex items-center text-green-600">
-                      <ArrowUp className="w-4 h-4 mr-1" />
-                      4% from last week
+                {isLoading ? (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <Skeleton className="h-8 w-14 mb-2" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <Users className="w-5 h-5 text-primary" />
                     </div>
                   </div>
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Users className="w-5 h-5 text-primary" />
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-2xl font-bold">{data?.stats?.find(s => s.title === "New Leads")?.value || '0'}</div>
+                      <div className="text-sm flex items-center text-green-600">
+                        <ArrowUp className="w-4 h-4 mr-1" />
+                        {data?.stats?.find(s => s.title === "New Leads")?.change.value || '0%'} {data?.stats?.find(s => s.title === "New Leads")?.change.text || ''}
+                      </div>
+                    </div>
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <Users className="w-5 h-5 text-primary" />
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
+            {/* Conversion Rate Card */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardDescription>Conversion Rate</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-2xl font-bold">28%</div>
-                    <div className="text-sm flex items-center text-red-600">
-                      <ArrowDown className="w-4 h-4 mr-1" />
-                      1.5% from last month
+                {isLoading ? (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <Skeleton className="h-8 w-14 mb-2" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <Activity className="w-5 h-5 text-primary" />
                     </div>
                   </div>
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Activity className="w-5 h-5 text-primary" />
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-2xl font-bold">{data?.stats?.find(s => s.title === "Conversion Rate")?.value || '0%'}</div>
+                      <div className="text-sm flex items-center text-red-600">
+                        <ArrowDown className="w-4 h-4 mr-1" />
+                        {data?.stats?.find(s => s.title === "Conversion Rate")?.change.value || '0%'} {data?.stats?.find(s => s.title === "Conversion Rate")?.change.text || ''}
+                      </div>
+                    </div>
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <Activity className="w-5 h-5 text-primary" />
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
+            {/* Open Deals Card */}
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardDescription>Active Deals</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-2xl font-bold">17</div>
-                    <div className="text-sm text-muted-foreground">
-                      Value: $246,300
+                {isLoading ? (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <Skeleton className="h-8 w-14 mb-2" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <Layers className="w-5 h-5 text-primary" />
                     </div>
                   </div>
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Layers className="w-5 h-5 text-primary" />
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-2xl font-bold">{data?.stats?.find(s => s.title === "Open Deals")?.value || '0'}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {data?.pipelineStages ? 
+                          `Value: ${data.pipelineStages.reduce((total, stage) => total + parseInt(stage.value.replace(/[$,]/g, '') || '0'), 0).toLocaleString('en-US', {style: 'currency', currency: 'USD', maximumFractionDigits: 0})}` : 
+                          'No active deals'
+                        }
+                      </div>
+                    </div>
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <Layers className="w-5 h-5 text-primary" />
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -295,27 +352,43 @@ export default function Dashboard() {
                   <CardTitle>Sales Pipeline</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[250px] flex items-center justify-center">
-                  <div className="text-center p-8 border border-dashed rounded-lg w-full max-w-md mx-auto">
-                    <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Pipeline Status</h3>
-                    <div className="mb-4 grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <div className="text-lg font-semibold">5</div>
-                        <div className="text-xs text-muted-foreground">Lead Generation</div>
+                  {isLoading ? (
+                    <div className="w-full">
+                      <Skeleton className="h-12 w-12 mx-auto mb-4 rounded-full" />
+                      <Skeleton className="h-6 w-32 mx-auto mb-4" />
+                      <div className="mb-4 grid grid-cols-3 gap-4">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
                       </div>
-                      <div>
-                        <div className="text-lg font-semibold">8</div>
-                        <div className="text-xs text-muted-foreground">Qualification</div>
-                      </div>
-                      <div>
-                        <div className="text-lg font-semibold">4</div>
-                        <div className="text-xs text-muted-foreground">Proposal</div>
-                      </div>
+                      <Skeleton className="h-9 w-40 mx-auto" />
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => setLocation("/opportunities")}>
-                      View All Opportunities
-                    </Button>
-                  </div>
+                  ) : data?.pipelineStages && data.pipelineStages.length > 0 ? (
+                    <div className="text-center p-8 border border-dashed rounded-lg w-full max-w-md mx-auto">
+                      <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Pipeline Status</h3>
+                      <div className="mb-4 grid grid-cols-3 gap-4 text-sm">
+                        {data.pipelineStages.slice(0, 3).map((stage, index) => (
+                          <div key={index}>
+                            <div className="text-lg font-semibold">{stage.percentage}%</div>
+                            <div className="text-xs text-muted-foreground">{stage.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => setLocation("/opportunities")}>
+                        View All Opportunities
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center p-8 border border-dashed rounded-lg w-full max-w-md mx-auto">
+                      <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Pipeline Data</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Add opportunities to see your sales pipeline</p>
+                      <Button variant="outline" size="sm" onClick={() => setLocation("/opportunities/new")}>
+                        Add Opportunity
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
@@ -503,53 +576,57 @@ export default function Dashboard() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src="https://randomuser.me/api/portraits/women/11.jpg" alt="Jane Cooper" />
-                        <AvatarFallback>JC</AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium text-sm">
-                            Jane Cooper
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            25 min ago
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2].map((i) => (
+                        <div key={i} className="flex items-start gap-3">
+                          <Skeleton className="h-8 w-8 rounded-full" />
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <Skeleton className="h-4 w-24" />
+                              <Skeleton className="h-3 w-16" />
+                            </div>
+                            <Skeleton className="h-4 w-full" />
                           </div>
                         </div>
-                        
-                        <div className="text-sm">
-                          Created new opportunity
-                          <span className="text-muted-foreground"> - Enterprise SaaS Solution</span>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src="https://randomuser.me/api/portraits/men/32.jpg" alt="Alex Rodriguez" />
-                        <AvatarFallback>AR</AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium text-sm">
-                            Alex Rodriguez
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            2 hours ago
+                  ) : data?.recentActivities && data.recentActivities.length > 0 ? (
+                    <div className="space-y-4">
+                      {data.recentActivities.slice(0, 3).map((activity) => (
+                        <div key={activity.id} className="flex items-start gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={activity.user.avatar} alt={activity.user.name} />
+                            <AvatarFallback>{activity.user.initials}</AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium text-sm">
+                                {activity.user.name}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {activity.time}
+                              </div>
+                            </div>
+                            
+                            <div className="text-sm">
+                              {activity.action}
+                              {activity.detail && (
+                                <span className="text-muted-foreground"> - {activity.detail}</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        
-                        <div className="text-sm">
-                          Converted lead
-                          <span className="text-muted-foreground"> - ACME Corp</span>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <Activity className="h-10 w-10 text-muted-foreground mb-3" />
+                      <h3 className="text-lg font-medium mb-1">No Recent Activity</h3>
+                      <p className="text-sm text-muted-foreground">Activity will appear here as you use the system</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
@@ -559,37 +636,68 @@ export default function Dashboard() {
                   <CardTitle className="text-sm">Weekly Performance</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Win Rate</span>
-                        <span className="font-semibold">68%</span>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-4 w-12" />
+                          </div>
+                          <Skeleton className="h-2 w-full rounded-full" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : data?.performanceMetrics ? (
+                    <div className="space-y-4">
+                      {data.performanceMetrics.map((metric) => (
+                        <div key={metric.name} className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>{metric.name}</span>
+                            <span className="font-semibold">{metric.value}</span>
+                          </div>
+                          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${metric.color || 'bg-primary'} rounded-full`} 
+                              style={{ width: `${metric.percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Win Rate</span>
+                          <span className="font-semibold">0%</span>
+                        </div>
+                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-green-500 rounded-full" style={{ width: '0%' }}></div>
+                        </div>
                       </div>
-                      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-500 rounded-full" style={{ width: '68%' }}></div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Lead Response Time</span>
+                          <span className="font-semibold">N/A</span>
+                        </div>
+                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: '0%' }}></div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Proposal Acceptance</span>
+                          <span className="font-semibold">0%</span>
+                        </div>
+                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-amber-500 rounded-full" style={{ width: '0%' }}></div>
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Lead Response Time</span>
-                        <span className="font-semibold">1.3 hrs</span>
-                      </div>
-                      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 rounded-full" style={{ width: '78%' }}></div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Proposal Acceptance</span>
-                        <span className="font-semibold">42%</span>
-                      </div>
-                      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: '42%' }}></div>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
