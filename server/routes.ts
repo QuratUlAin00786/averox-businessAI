@@ -252,6 +252,232 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Add endpoint for marketing campaigns
+  app.get('/api/dashboard/marketing-campaigns', async (req, res) => {
+    try {
+      // Import required schema tables
+      const { socialCampaigns: campaignsTable, workflows: workflowsTable } = await import('@shared/schema');
+      
+      // Get active campaigns
+      const campaignsData = await db.select().from(campaignsTable).limit(3);
+      
+      // Get workflows for lead counts
+      const workflowsData = await db.select().from(workflowsTable)
+        .where(eq(workflowsTable.entityType, 'lead'))
+        .where(eq(workflowsTable.isActive, true));
+      
+      const formattedCampaigns = campaignsData.map(campaign => {
+        // Get associated workflow if it exists
+        const workflow = workflowsData.find(w => {
+          try {
+            // Try to parse the entityFilter to see if it's related to this campaign
+            if (w.entityFilter) {
+              const filter = typeof w.entityFilter === 'string' 
+                ? JSON.parse(w.entityFilter) 
+                : w.entityFilter;
+              
+              return filter?.campaignId === campaign.id;
+            }
+            return false;
+          } catch (e) {
+            return false;
+          }
+        });
+        
+        // Extract campaign metrics
+        let metricsData = {};
+        if (campaign.metrics) {
+          try {
+            metricsData = typeof campaign.metrics === 'string' 
+              ? JSON.parse(campaign.metrics) 
+              : campaign.metrics;
+          } catch (e) {
+            console.warn('Error parsing campaign metrics:', e);
+            metricsData = {};
+          }
+        }
+        
+        // Calculate statistics based on metrics - using real data when available
+        const reach = metricsData.reach || 0;
+        const conversions = metricsData.conversions || 0;
+        const conversionRate = reach > 0 ? Math.round((conversions / reach) * 100) : 0;
+        
+        // Create stats object based on metrics data
+        const stats = {
+          Reach: reach.toString(),
+          Clicks: (metricsData.clicks || 0).toString(),
+          Conversions: conversions.toString()
+        };
+        
+        return {
+          id: campaign.id,
+          name: campaign.name,
+          platform: campaign.platform,
+          status: campaign.status || 'Draft',
+          stats: stats,
+          reach: reach,
+          conversion: conversionRate,
+          budget: metricsData.budget ? `$${metricsData.budget}` : '$0',
+          workflow: workflow ? {
+            id: workflow.id,
+            name: workflow.name,
+            count: metricsData.leadCount || 0,
+            nextAction: workflow.actions ? 'Follow-up emails' : 'No actions configured'
+          } : null
+        };
+      });
+      
+      res.json(formattedCampaigns);
+    } catch (error) {
+      console.error('Error fetching marketing campaigns:', error);
+      res.status(500).json({ error: 'Failed to fetch marketing campaigns' });
+    }
+  });
+
+  // Add endpoint for performance metrics
+  app.get('/api/dashboard/performance-metrics', async (req, res) => {
+    try {
+      // Import required schema tables
+      const { 
+        opportunities: opportunitiesTable, 
+        leads: leadsTable,
+        proposals: proposalsTable 
+      } = await import('@shared/schema');
+      
+      // Get data for calculating metrics
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const opportunitiesData = await db.select().from(opportunitiesTable);
+      const leadsData = await db.select().from(leadsTable);
+      const recentLeads = leadsData.filter(lead => {
+        return lead.createdAt && new Date(lead.createdAt) >= thirtyDaysAgo;
+      });
+      
+      const proposalsData = await db.select().from(proposalsTable);
+      
+      // Calculate win rate
+      const closedOpportunities = opportunitiesData.filter(opp => opp.isClosed);
+      const wonOpportunities = closedOpportunities.filter(opp => opp.isWon);
+      const winRate = closedOpportunities.length > 0 
+        ? Math.round((wonOpportunities.length / closedOpportunities.length) * 100) 
+        : 0;
+      
+      // Calculate lead response time (average time between lead creation and first activity)
+      let avgResponseTime = "N/A";
+      let responsePercentage = 0;
+      if (recentLeads.length > 0) {
+        const responseTimes = recentLeads
+          .filter(lead => lead.lastActivityDate && lead.createdAt)
+          .map(lead => {
+            const created = new Date(lead.createdAt);
+            const activity = new Date(lead.lastActivityDate);
+            return (activity.getTime() - created.getTime()) / (1000 * 60 * 60); // hours
+          });
+        
+        if (responseTimes.length > 0) {
+          const avgHours = responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length;
+          avgResponseTime = avgHours < 1 
+            ? `${Math.round(avgHours * 60)} min` 
+            : `${Math.round(avgHours)} hrs`;
+          
+          // Calculate percentage based on response time (lower is better)
+          // If average response is within 2 hours, consider it 100%
+          const targetResponseHours = 2;
+          responsePercentage = Math.min(100, Math.round((targetResponseHours / Math.max(avgHours, 0.1)) * 100));
+        }
+      }
+      
+      // Calculate proposal acceptance rate
+      const sentProposals = proposalsData.filter(prop => prop.sentAt);
+      const acceptedProposals = sentProposals.filter(prop => prop.acceptedAt);
+      const proposalAcceptanceRate = sentProposals.length > 0
+        ? Math.round((acceptedProposals.length / sentProposals.length) * 100)
+        : 0;
+      
+      const metrics = [
+        {
+          id: 1,
+          name: "Win Rate",
+          value: `${winRate}%`,
+          percentage: winRate,
+          change: winRate > 50 ? 5 : -2,
+          trend: winRate > 50 ? 'up' : 'down',
+          color: 'bg-green-500'
+        },
+        {
+          id: 2,
+          name: "Lead Response Time",
+          value: avgResponseTime,
+          percentage: responsePercentage,
+          change: responsePercentage > 70 ? 10 : -10,
+          trend: responsePercentage > 70 ? 'up' : 'down',
+          color: 'bg-blue-500'
+        },
+        {
+          id: 3,
+          name: "Proposal Acceptance",
+          value: `${proposalAcceptanceRate}%`,
+          percentage: proposalAcceptanceRate,
+          change: proposalAcceptanceRate > 30 ? 2 : -3,
+          trend: proposalAcceptanceRate > 30 ? 'up' : 'down',
+          color: 'bg-amber-500'
+        }
+      ];
+      
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error fetching performance metrics:', error);
+      res.status(500).json({ error: 'Failed to fetch performance metrics' });
+    }
+  });
+  
+  // Add endpoint for migration status
+  app.get('/api/dashboard/migrations', async (req, res) => {
+    try {
+      // Get current migration statuses from database
+      const { systemSettings } = await import('@shared/schema');
+      
+      // Check if any migrations are in progress based on system settings
+      const settingsData = await db.select().from(systemSettings);
+      
+      // Create migration status based on actual database state
+      const hasMigratedContacts = settingsData.some(s => 
+        s.settingKey === 'hasMigratedContacts' && s.settingValue === 'true'
+      );
+      
+      const hasMigratedOpportunities = settingsData.some(s => 
+        s.settingKey === 'hasMigratedOpportunities' && s.settingValue === 'true'
+      );
+      
+      const migrationInProgress = settingsData.some(s => 
+        s.settingKey === 'migrationInProgress' && s.settingValue === 'true'
+      );
+      
+      const migrations = [
+        {
+          id: 1,
+          name: "Contact Data Migration",
+          status: hasMigratedContacts ? "Complete" : (migrationInProgress ? "In Progress" : "Pending"),
+          progress: hasMigratedContacts ? 100 : (migrationInProgress ? 65 : 0),
+          progressText: hasMigratedContacts ? "All contacts migrated" : "Migrating contact records"
+        },
+        {
+          id: 2,
+          name: "Opportunity Migration",
+          status: hasMigratedOpportunities ? "Complete" : "Pending",
+          progress: hasMigratedOpportunities ? 100 : 0,
+          progressText: hasMigratedOpportunities ? "All opportunities migrated" : "Waiting to start"
+        }
+      ];
+      
+      res.json(migrations);
+    } catch (error) {
+      console.error('Error fetching migration status:', error);
+      res.status(500).json({ error: 'Failed to fetch migration status' });
+    }
+  });
+  
   // Set up permission system and register routes
   registerPermissionRoutes(app);
   
