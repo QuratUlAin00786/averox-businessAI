@@ -132,8 +132,8 @@ export default function Dashboard() {
                     return;
                   }
                   
-                  // User is authenticated, navigate to dashboard settings
-                  setLocation("/settings/dashboard");
+                  // Force navigation with window.location for more reliable routing
+                  window.location.href = "/settings/dashboard";
                 } catch (error) {
                   console.error("Navigation error:", error);
                 }
