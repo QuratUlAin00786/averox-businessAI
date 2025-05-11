@@ -2131,19 +2131,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Events routes
   app.get('/api/events', async (req: Request, res: Response) => {
     try {
+      console.log('[Events] Fetching all events');
+      
+      // Fetch events from database
       const events = await storage.listEvents();
-      res.json(events);
+      
+      // Decrypt sensitive fields in events array before sending response
+      const decryptedEvents = await decryptArrayFromDatabase(events, 'events');
+      console.log(`[Events] Successfully decrypted ${decryptedEvents.length} events`);
+      
+      res.json(decryptedEvents);
     } catch (error) {
+      console.error('[Events] Error fetching events:', error);
       handleError(res, error);
     }
   });
 
   app.post('/api/events', async (req: Request, res: Response) => {
     try {
+      console.log('[Event Create] Creating new event with data:', req.body);
+      
+      // Validate data
       const eventData = insertEventSchema.parse(req.body);
-      const event = await storage.createEvent(eventData);
-      res.status(201).json(event);
+      
+      // Encrypt sensitive fields
+      const encryptedData = await encryptForDatabase(eventData, 'events');
+      console.log('[Encryption] Event data fields encrypted for database storage');
+      
+      // Convert date strings to Date objects before saving
+      if (typeof encryptedData.startDate === 'string' && encryptedData.startDate) {
+        encryptedData.startDate = new Date(encryptedData.startDate);
+      }
+      if (typeof encryptedData.endDate === 'string' && encryptedData.endDate) {
+        encryptedData.endDate = new Date(encryptedData.endDate);
+      }
+      
+      // Create event with encrypted data
+      const event = await storage.createEvent(encryptedData);
+      
+      // Decrypt for response
+      const decryptedEvent = await decryptFromDatabase(event, 'events');
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Created Event',
+          detail: `Created new event: ${decryptedEvent.title}`,
+          relatedToType: 'event',
+          relatedToId: decryptedEvent.id,
+          createdAt: new Date(),
+          icon: 'calendar-plus'
+        });
+      }
+      
+      res.status(201).json(decryptedEvent);
     } catch (error) {
+      console.error('[Event Create] Error creating event:', error);
       handleError(res, error);
     }
   });
@@ -2151,12 +2195,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/events/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`[Event Get] Fetching event with id ${id}`);
+      
+      // Get event from database
       const event = await storage.getEvent(id);
       if (!event) {
+        console.error(`[Event Get] Event not found with id ${id}`);
         return res.status(404).json({ error: "Event not found" });
       }
-      res.json(event);
+      
+      // Decrypt sensitive fields before sending response
+      const decryptedEvent = await decryptFromDatabase(event, 'events');
+      console.log('[Event Get] Successfully decrypted event data');
+      
+      res.json(decryptedEvent);
     } catch (error) {
+      console.error('[Event Get] Error fetching event:', error);
       handleError(res, error);
     }
   });
@@ -2164,13 +2218,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/events/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const eventData = insertEventSchema.partial().parse(req.body);
-      const updatedEvent = await storage.updateEvent(id, eventData);
-      if (!updatedEvent) {
+      console.log(`[Event Update] Updating event ${id} with data:`, req.body);
+      
+      // Get current event for activity logging
+      const currentEvent = await storage.getEvent(id);
+      if (!currentEvent) {
+        console.error(`[Event Update] Event not found with id ${id}`);
         return res.status(404).json({ error: "Event not found" });
       }
-      res.json(updatedEvent);
+      
+      // Validate input data
+      const eventData = insertEventSchema.partial().parse(req.body);
+      
+      // Encrypt sensitive fields before database update
+      const encryptedData = await encryptForDatabase(eventData, 'events');
+      console.log('[Encryption] Event data fields encrypted for database update');
+      
+      // Convert date strings to Date objects
+      if (typeof encryptedData.startDate === 'string' && encryptedData.startDate) {
+        encryptedData.startDate = new Date(encryptedData.startDate);
+      }
+      if (typeof encryptedData.endDate === 'string' && encryptedData.endDate) {
+        encryptedData.endDate = new Date(encryptedData.endDate);
+      }
+      
+      // Update event with encrypted data
+      const updatedEvent = await storage.updateEvent(id, encryptedData);
+      if (!updatedEvent) {
+        return res.status(404).json({ error: "Event not found after update" });
+      }
+      
+      // Decrypt for response
+      const decryptedEvent = await decryptFromDatabase(updatedEvent, 'events');
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Updated Event',
+          detail: `Updated event: ${decryptedEvent.title}`,
+          relatedToType: 'event',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'edit-calendar'
+        });
+      }
+      
+      res.json(decryptedEvent);
     } catch (error) {
+      console.error('[Event Update] Error updating event:', error);
       handleError(res, error);
     }
   });
@@ -2178,12 +2274,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/events/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteEvent(id);
-      if (!success) {
+      console.log(`[Event Delete] Deleting event ${id}`);
+      
+      // Get event for activity logging before deletion
+      const event = await storage.getEvent(id);
+      if (!event) {
+        console.error(`[Event Delete] Event not found with id ${id}`);
         return res.status(404).json({ error: "Event not found" });
       }
+      
+      // Decrypt for logging
+      const decryptedEvent = await decryptFromDatabase(event, 'events');
+      
+      // Delete the event
+      const success = await storage.deleteEvent(id);
+      if (!success) {
+        return res.status(404).json({ error: "Event could not be deleted" });
+      }
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Deleted Event',
+          detail: `Deleted event: ${decryptedEvent.title}`,
+          relatedToType: 'event',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'calendar-x'
+        });
+      }
+      
       res.status(204).end();
     } catch (error) {
+      console.error('[Event Delete] Error deleting event:', error);
       handleError(res, error);
     }
   });
