@@ -29,11 +29,25 @@ async function getConnectionString(): Promise<string> {
   // If we're using encrypted connection strings and we have the IV
   if (USE_ENCRYPTED_CONNECTION && DATABASE_URL_IV) {
     try {
-      return await decryptConnectionString(connectionString, DATABASE_URL_IV);
+      console.log('[Database] Using encrypted database connection');
+      const startTime = Date.now();
+      
+      const decryptedString = await decryptConnectionString(connectionString, DATABASE_URL_IV);
+      
+      const duration = Date.now() - startTime;
+      console.log(`[Database] Connection string decryption completed in ${duration}ms`);
+      
+      return decryptedString;
     } catch (error) {
       console.error('Failed to decrypt database connection string:', error);
       throw new Error('Database connection configuration is invalid');
     }
+  }
+  
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('[Database] Using unencrypted database connection in production environment');
+  } else {
+    console.log('[Database] Using unencrypted database connection in development environment');
   }
   
   return connectionString;
@@ -44,24 +58,50 @@ let pool: Pool;
 let db: ReturnType<typeof drizzle>;
 
 /**
- * Initialize the database connection
+ * Initialize the database connection with proper security measures
  */
 export async function initDatabase() {
   try {
+    console.log('[Database] Initializing secure database connection...');
+    const startTime = Date.now();
+    
+    // Get connection string (potentially decrypted)
     const connectionString = await getConnectionString();
-    pool = new Pool({ connectionString });
+    
+    // Create connection pool with secure settings
+    pool = new Pool({ 
+      connectionString,
+      ssl: process.env.NODE_ENV === 'production' // Enable SSL in production
+    });
+    
+    // Initialize Drizzle ORM
     db = drizzle({ client: pool, schema });
+    
+    const duration = Date.now() - startTime;
+    console.log(`[Database] Secure database connection initialized in ${duration}ms`);
+    
     return { pool, db };
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    console.error('[Database] Failed to initialize secure database:', error);
     throw error;
   }
 }
 
-// Initialize pool and db with non-encrypted connection for now
-// This will be replaced by the async initialization from initDatabase
-pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Perform initial database connection
+console.log('[Database] Setting up initial database connection...');
+pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' // Enable SSL in production 
+});
 db = drizzle({ client: pool, schema });
+
+// Optional: Initialize the secure connection immediately if enabled
+if (USE_ENCRYPTED_CONNECTION) {
+  console.log('[Database] Encrypted connection enabled, initializing secure connection...');
+  initDatabase().catch(err => {
+    console.error('[Database] Failed to initialize secure database connection:', err);
+  });
+}
 
 // Export for use in other modules
 export { pool, db };

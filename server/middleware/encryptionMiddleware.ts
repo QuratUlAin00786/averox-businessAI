@@ -1,9 +1,13 @@
 /**
  * Middleware for encrypting/decrypting sensitive data in API requests/responses
+ * Uses the Averox CryptoSphere SDK for enhanced security and key monitoring
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { encryptFields, decryptFields } from '../utils/encryption';
+
+// Whether to enable encryption middleware (controlled via environment variable)
+const ENCRYPTION_ENABLED = process.env.ENABLE_ENCRYPTION === 'true';
 
 // Define fields that should be encrypted across different API endpoints
 const SENSITIVE_FIELDS_MAP: Record<string, string[]> = {
@@ -56,13 +60,18 @@ function getSensitiveFieldsForPath(path: string): string[] {
  */
 export const encryptSensitiveData = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (req.method !== 'GET' && req.body && typeof req.body === 'object') {
-      const sensitiveFields = getSensitiveFieldsForPath(req.path);
-      
-      if (sensitiveFields.length > 0) {
-        req.body = await encryptFields(req.body, sensitiveFields);
-      }
+    // Skip encryption if not enabled or if it's a GET request
+    if (!ENCRYPTION_ENABLED || req.method === 'GET' || !req.body || typeof req.body !== 'object') {
+      return next();
     }
+
+    const sensitiveFields = getSensitiveFieldsForPath(req.path);
+    
+    if (sensitiveFields.length > 0) {
+      req.body = await encryptFields(req.body, sensitiveFields);
+      console.log(`[Encryption] Encrypted ${sensitiveFields.length} fields for ${req.path}`);
+    }
+    
     next();
   } catch (error) {
     console.error('Error encrypting request data:', error);
@@ -74,6 +83,11 @@ export const encryptSensitiveData = async (req: Request, res: Response, next: Ne
  * Middleware to decrypt sensitive fields in response bodies
  */
 export const decryptSensitiveData = async (req: Request, res: Response, next: NextFunction) => {
+  // Skip decryption setup if not enabled
+  if (!ENCRYPTION_ENABLED) {
+    return next();
+  }
+  
   const originalSend = res.send;
   
   res.send = async function(body?: any): Response {
@@ -88,6 +102,7 @@ export const decryptSensitiveData = async (req: Request, res: Response, next: Ne
           } else {
             body = await decryptFields(body, sensitiveFields);
           }
+          console.log(`[Encryption] Decrypted ${sensitiveFields.length} fields for ${req.path}`);
         }
       }
       

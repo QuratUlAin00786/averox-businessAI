@@ -17,10 +17,27 @@ export async function encrypt(data: string | object, additionalData?: object): P
   keyId: string;
 }> {
   try {
+    // Track encryption timing for performance monitoring
+    const startTime = Date.now();
+    
+    // Combine provided additionalData with default metadata
+    const metadata = {
+      timestamp: new Date().toISOString(),
+      application: 'averox-business-ai',
+      purpose: 'data-protection',
+      ...additionalData
+    };
+    
     const result = await cryptoSphere.encrypt({
       data,
-      additionalData
+      additionalData: metadata
     });
+    
+    // Performance monitoring
+    const duration = Date.now() - startTime;
+    if (duration > 100) {
+      console.warn(`[Encryption] Slow encryption operation: ${duration}ms`);
+    }
     
     return {
       encrypted: result.encrypted,
@@ -29,7 +46,7 @@ export async function encrypt(data: string | object, additionalData?: object): P
     };
   } catch (error) {
     console.error('Encryption error:', error);
-    throw new Error(`Failed to encrypt data: ${error.message}`);
+    throw new Error(`Failed to encrypt data: ${(error as Error).message}`);
   }
 }
 
@@ -42,16 +59,25 @@ export async function encrypt(data: string | object, additionalData?: object): P
  */
 export async function decrypt(encrypted: string, iv: string, keyId?: string): Promise<any> {
   try {
+    // Track decryption timing for performance monitoring
+    const startTime = Date.now();
+    
     const result = await cryptoSphere.decrypt({
       encrypted,
       iv,
       keyId
     });
     
+    // Performance monitoring
+    const duration = Date.now() - startTime;
+    if (duration > 100) {
+      console.warn(`[Encryption] Slow decryption operation: ${duration}ms`);
+    }
+    
     return result.decrypted;
   } catch (error) {
     console.error('Decryption error:', error);
-    throw new Error(`Failed to decrypt data: ${error.message}`);
+    throw new Error(`Failed to decrypt data: ${(error as Error).message}`);
   }
 }
 
