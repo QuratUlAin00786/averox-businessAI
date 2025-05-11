@@ -3,13 +3,34 @@ import { encrypt, decrypt, encryptObject, decryptObject } from '../utils/encrypt
 
 // List of URL patterns that contain sensitive data that should be encrypted/decrypted
 const SENSITIVE_ROUTES = [
-  { path: /^\/api\/accounts/, fields: ['billingAddress', 'notes', 'email', 'phone'] },
-  { path: /^\/api\/contacts/, fields: ['email', 'phone', 'address', 'notes'] },
-  { path: /^\/api\/leads/, fields: ['email', 'phone', 'address', 'notes'] },
-  { path: /^\/api\/opportunities/, fields: ['notes'] },
-  { path: /^\/api\/users/, fields: ['email', 'firstName', 'lastName'] },
-  { path: /^\/api\/invoices/, fields: ['billingAddress', 'shippingAddress', 'notes'] },
-  { path: /^\/api\/proposals/, fields: ['content'] },
+  { 
+    path: /^\/api\/accounts/, 
+    fields: ['billing_address', 'notes', 'email', 'phone', 'address', 'billingAddress'] 
+  },
+  { 
+    path: /^\/api\/contacts/, 
+    fields: ['email', 'phone', 'address', 'notes', 'first_name', 'last_name'] 
+  },
+  { 
+    path: /^\/api\/leads/, 
+    fields: ['email', 'phone', 'address', 'notes', 'first_name', 'last_name'] 
+  },
+  { 
+    path: /^\/api\/opportunities/, 
+    fields: ['notes', 'description'] 
+  },
+  { 
+    path: /^\/api\/users/, 
+    fields: ['email', 'firstName', 'lastName', 'first_name', 'last_name'] 
+  },
+  { 
+    path: /^\/api\/invoices/, 
+    fields: ['billingAddress', 'shippingAddress', 'billing_address', 'shipping_address', 'notes'] 
+  },
+  { 
+    path: /^\/api\/proposals/, 
+    fields: ['content', 'notes', 'description'] 
+  },
 ];
 
 /**
