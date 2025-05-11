@@ -63,7 +63,7 @@ export default function Accounts() {
   // Update account mutation
   const updateAccountMutation = useMutation({
     mutationFn: async ({ id, account }: { id: number; account: z.infer<typeof insertAccountSchema> }) => {
-      return apiRequest("PUT", `/api/accounts/${id}`, account);
+      return apiRequest("PATCH", `/api/accounts/${id}`, account);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts"] });
