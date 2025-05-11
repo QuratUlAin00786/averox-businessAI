@@ -1456,6 +1456,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
+      console.log(`[Account Update] Updating account ${id} with data:`, req.body);
+      
       // Validate input data
       const accountData = insertAccountSchema.partial().parse(req.body);
       
@@ -1466,13 +1468,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update account in database
       const updatedAccount = await storage.updateAccount(id, encryptedAccountData);
       if (!updatedAccount) {
+        console.error(`[Account Update] Account not found with id ${id}`);
         return res.status(404).json({ error: "Account not found" });
       }
       
       // Decrypt for response
       const decryptedAccount = await decryptFromDatabase(updatedAccount, 'accounts');
+      
+      // Update activity log
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Updated Account',
+          detail: `Updated account: ${decryptedAccount.name}`,
+          relatedToType: 'account',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'edit'
+        });
+      }
+      
       res.json(decryptedAccount);
     } catch (error) {
+      console.error('[Account Update] Error updating account:', error);
       handleError(res, error);
     }
   });
