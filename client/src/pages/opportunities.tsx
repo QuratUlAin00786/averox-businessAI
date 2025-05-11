@@ -30,18 +30,23 @@ export default function Opportunities() {
     error,
   } = useQuery<Opportunity[]>({
     queryKey: ["/api/opportunities"],
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: `Failed to load opportunities: ${error.message}`,
-        variant: "destructive",
-      });
+    
+    // Error handling using onSettled instead of onError to fix TypeScript compatibility
+    onSettled: (data, error) => {
+      if (error) {
+        toast({
+          title: "Error",
+          description: `Failed to load opportunities: ${(error as Error).message}`,
+          variant: "destructive",
+        });
+      }
     },
   });
 
   // Create opportunity mutation
   const createOpportunityMutation = useMutation({
     mutationFn: async (data: InsertOpportunity) => {
+      console.log("Creating opportunity:", data);
       return apiRequestJson<Opportunity>("POST", "/api/opportunities", data);
     },
     onSuccess: () => {
@@ -66,6 +71,7 @@ export default function Opportunities() {
   // Update opportunity mutation
   const updateOpportunityMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertOpportunity> }) => {
+      console.log("Updating opportunity:", id, data);
       return apiRequestJson<Opportunity>("PATCH", `/api/opportunities/${id}`, data);
     },
     onSuccess: () => {
@@ -90,6 +96,7 @@ export default function Opportunities() {
   // Delete opportunity mutation
   const deleteOpportunityMutation = useMutation({
     mutationFn: async (id: number) => {
+      console.log("Deleting opportunity:", id);
       return apiRequestJson<Opportunity>("DELETE", `/api/opportunities/${id}`);
     },
     onSuccess: () => {
