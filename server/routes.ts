@@ -1498,12 +1498,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/accounts/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteAccount(id);
-      if (!success) {
+      console.log(`[Account Delete] Deleting account ${id}`);
+      
+      // Get account for activity logging before deletion
+      const account = await storage.getAccount(id);
+      if (!account) {
+        console.error(`[Account Delete] Account not found with id ${id}`);
         return res.status(404).json({ error: "Account not found" });
       }
+      
+      // Decrypt for logging
+      const decryptedAccount = await decryptFromDatabase(account, 'accounts');
+      
+      // Delete the account
+      const success = await storage.deleteAccount(id);
+      if (!success) {
+        return res.status(404).json({ error: "Account could not be deleted" });
+      }
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Deleted Account',
+          detail: `Deleted account: ${decryptedAccount.name}`,
+          relatedToType: 'account',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'trash'
+        });
+      }
+      
       res.status(204).end();
     } catch (error) {
+      console.error('[Account Delete] Error deleting account:', error);
       handleError(res, error);
     }
   });
@@ -1511,19 +1539,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Leads routes
   app.get('/api/leads', async (req: Request, res: Response) => {
     try {
+      console.log('[Leads] Fetching all leads');
+      
+      // Fetch leads from database
       const leads = await storage.listLeads();
-      res.json(leads);
+      
+      // Decrypt sensitive fields in leads array before sending response
+      const decryptedLeads = await decryptArrayFromDatabase(leads, 'leads');
+      console.log(`[Leads] Successfully decrypted ${decryptedLeads.length} leads`);
+      
+      res.json(decryptedLeads);
     } catch (error) {
+      console.error('[Leads] Error fetching leads:', error);
       handleError(res, error);
     }
   });
 
   app.post('/api/leads', async (req: Request, res: Response) => {
     try {
+      console.log('[Lead Create] Creating new lead with data:', req.body);
+      
+      // Validate data
       const leadData = insertLeadSchema.parse(req.body);
-      const lead = await storage.createLead(leadData);
-      res.status(201).json(lead);
+      
+      // Encrypt sensitive fields
+      const encryptedData = await encryptForDatabase(leadData, 'leads');
+      console.log('[Encryption] Lead data fields encrypted for database storage');
+      
+      // Create lead with encrypted data
+      const lead = await storage.createLead(encryptedData);
+      
+      // Decrypt for response
+      const decryptedLead = await decryptFromDatabase(lead, 'leads');
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Created Lead',
+          detail: `Created new lead: ${decryptedLead.firstName} ${decryptedLead.lastName}`,
+          relatedToType: 'lead',
+          relatedToId: decryptedLead.id,
+          createdAt: new Date(),
+          icon: 'plus'
+        });
+      }
+      
+      res.status(201).json(decryptedLead);
     } catch (error) {
+      console.error('[Lead Create] Error creating lead:', error);
       handleError(res, error);
     }
   });
@@ -1531,12 +1595,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/leads/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`[Lead Get] Fetching lead with id ${id}`);
+      
+      // Get lead from database
       const lead = await storage.getLead(id);
       if (!lead) {
+        console.error(`[Lead Get] Lead not found with id ${id}`);
         return res.status(404).json({ error: "Lead not found" });
       }
-      res.json(lead);
+      
+      // Decrypt sensitive fields before sending response
+      const decryptedLead = await decryptFromDatabase(lead, 'leads');
+      console.log('[Lead Get] Successfully decrypted lead data');
+      
+      res.json(decryptedLead);
     } catch (error) {
+      console.error('[Lead Get] Error fetching lead:', error);
       handleError(res, error);
     }
   });
@@ -1544,13 +1618,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/leads/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const leadData = insertLeadSchema.partial().parse(req.body);
-      const updatedLead = await storage.updateLead(id, leadData);
-      if (!updatedLead) {
+      console.log(`[Lead Update] Updating lead ${id} with data:`, req.body);
+      
+      // Get current lead for activity logging
+      const currentLead = await storage.getLead(id);
+      if (!currentLead) {
+        console.error(`[Lead Update] Lead not found with id ${id}`);
         return res.status(404).json({ error: "Lead not found" });
       }
-      res.json(updatedLead);
+      
+      // Validate input data
+      const leadData = insertLeadSchema.partial().parse(req.body);
+      
+      // Encrypt sensitive fields before database update
+      const encryptedData = await encryptForDatabase(leadData, 'leads');
+      console.log('[Encryption] Lead data fields encrypted for database update');
+      
+      // Update lead with encrypted data
+      const updatedLead = await storage.updateLead(id, encryptedData);
+      if (!updatedLead) {
+        return res.status(404).json({ error: "Lead not found after update" });
+      }
+      
+      // Decrypt for response
+      const decryptedLead = await decryptFromDatabase(updatedLead, 'leads');
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Updated Lead',
+          detail: `Updated lead: ${decryptedLead.firstName} ${decryptedLead.lastName}`,
+          relatedToType: 'lead',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'edit'
+        });
+      }
+      
+      res.json(decryptedLead);
     } catch (error) {
+      console.error('[Lead Update] Error updating lead:', error);
       handleError(res, error);
     }
   });
@@ -1558,12 +1666,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/leads/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteLead(id);
-      if (!success) {
+      console.log(`[Lead Delete] Deleting lead ${id}`);
+      
+      // Get lead for activity logging before deletion
+      const lead = await storage.getLead(id);
+      if (!lead) {
+        console.error(`[Lead Delete] Lead not found with id ${id}`);
         return res.status(404).json({ error: "Lead not found" });
       }
+      
+      // Decrypt for logging
+      const decryptedLead = await decryptFromDatabase(lead, 'leads');
+      
+      // Delete the lead
+      const success = await storage.deleteLead(id);
+      if (!success) {
+        return res.status(404).json({ error: "Lead could not be deleted" });
+      }
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Deleted Lead',
+          detail: `Deleted lead: ${decryptedLead.firstName} ${decryptedLead.lastName}`,
+          relatedToType: 'lead',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'trash'
+        });
+      }
+      
       res.status(204).end();
     } catch (error) {
+      console.error('[Lead Delete] Error deleting lead:', error);
       handleError(res, error);
     }
   });
@@ -1571,6 +1707,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/leads/:id/convert', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`[Lead Convert] Converting lead ${id} with data:`, req.body);
+      
       const { contact, account, opportunity } = req.body;
       
       const validatedData: {
@@ -1579,21 +1717,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         opportunity?: any
       } = {};
       
+      // Validate each component of the conversion
       if (contact) {
-        validatedData.contact = insertContactSchema.parse(contact);
+        const validatedContact = insertContactSchema.parse(contact);
+        // Encrypt contact data
+        validatedData.contact = await encryptForDatabase(validatedContact, 'contacts');
+        console.log('[Encryption] Contact data fields encrypted for database storage');
       }
       
       if (account) {
-        validatedData.account = insertAccountSchema.parse(account);
+        const validatedAccount = insertAccountSchema.parse(account);
+        // Encrypt account data
+        validatedData.account = await encryptForDatabase(validatedAccount, 'accounts');
+        console.log('[Encryption] Account data fields encrypted for database storage');
       }
       
       if (opportunity) {
-        validatedData.opportunity = insertOpportunitySchema.parse(opportunity);
+        const validatedOpportunity = insertOpportunitySchema.parse(opportunity);
+        // Encrypt opportunity data
+        validatedData.opportunity = await encryptForDatabase(validatedOpportunity, 'opportunities');
+        console.log('[Encryption] Opportunity data fields encrypted for database storage');
       }
       
+      // Get the lead before conversion for activity logging
+      const leadBeforeConversion = await storage.getLead(id);
+      if (!leadBeforeConversion) {
+        console.error(`[Lead Convert] Lead not found with id ${id}`);
+        return res.status(404).json({ error: "Lead not found" });
+      }
+      
+      // Decrypt for logging
+      const decryptedLead = await decryptFromDatabase(leadBeforeConversion, 'leads');
+      
+      // Perform the conversion with encrypted data
       const result = await storage.convertLead(id, validatedData);
-      res.json(result);
+      
+      // Decrypt the result data
+      let decryptedResult = { ...result };
+      
+      if (result.contact) {
+        decryptedResult.contact = await decryptFromDatabase(result.contact, 'contacts');
+      }
+      
+      if (result.account) {
+        decryptedResult.account = await decryptFromDatabase(result.account, 'accounts');
+      }
+      
+      if (result.opportunity) {
+        decryptedResult.opportunity = await decryptFromDatabase(result.opportunity, 'opportunities');
+      }
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Converted Lead',
+          detail: `Converted lead: ${decryptedLead.firstName} ${decryptedLead.lastName}`,
+          relatedToType: 'lead',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'refresh-cw'
+        });
+      }
+      
+      res.json(decryptedResult);
     } catch (error) {
+      console.error('[Lead Convert] Error converting lead:', error);
       handleError(res, error);
     }
   });
