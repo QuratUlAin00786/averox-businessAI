@@ -87,7 +87,8 @@ export async function encryptForDatabase<T extends Record<string, any>>(data: T,
     return data;
   }
   
-  const result = { ...data };
+  // Create a new object to avoid mutating the original
+  const result = { ...data } as Record<string, any>;
   const encryptionPromises: Promise<void>[] = [];
   
   // Encrypt each field if it should be encrypted
@@ -108,7 +109,7 @@ export async function encryptForDatabase<T extends Record<string, any>>(data: T,
   // Wait for all encryption operations to complete
   await Promise.all(encryptionPromises);
   
-  return result;
+  return result as T;
 }
 
 /**
@@ -123,7 +124,8 @@ export async function decryptFromDatabase<T extends Record<string, any>>(data: T
     return data;
   }
   
-  const result = { ...data };
+  // Create a new object to avoid mutating the original
+  const result = { ...data } as Record<string, any>;
   const decryptionPromises: Promise<void>[] = [];
   
   // Decrypt each field if it should be encrypted
@@ -152,7 +154,7 @@ export async function decryptFromDatabase<T extends Record<string, any>>(data: T
   // Wait for all decryption operations to complete
   await Promise.all(decryptionPromises);
   
-  return result;
+  return result as T;
 }
 
 /**

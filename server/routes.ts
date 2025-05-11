@@ -13,6 +13,7 @@ import manufacturingRouter from "./manufacturing-routes-fixed";
 import { db } from "./db";
 import { eq, sql, desc, asc } from "drizzle-orm";
 import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryption-middleware";
+import { encryptForDatabase, decryptFromDatabase, decryptArrayFromDatabase } from "./utils/database-encryption";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -1358,8 +1359,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Accounts routes
   app.get('/api/accounts', async (req: Request, res: Response) => {
     try {
+      // Fetch accounts from database
       const accounts = await storage.listAccounts();
-      res.json(accounts);
+      
+      // Decrypt sensitive fields in accounts array before sending response
+      const decryptedAccounts = await decryptArrayFromDatabase(accounts, 'accounts');
+      res.json(decryptedAccounts);
     } catch (error) {
       handleError(res, error);
     }
@@ -1367,9 +1372,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/accounts', async (req: Request, res: Response) => {
     try {
+      // Validate input data
       const accountData = insertAccountSchema.parse(req.body);
-      const account = await storage.createAccount(accountData);
-      res.status(201).json(account);
+      
+      // Encrypt sensitive fields before database insert
+      const encryptedAccountData = await encryptForDatabase(accountData, 'accounts');
+      console.log('[Encryption] Account data fields encrypted for database insertion');
+      
+      // Create account in database
+      const account = await storage.createAccount(encryptedAccountData);
+      
+      // Decrypt for response
+      const decryptedAccount = await decryptFromDatabase(account, 'accounts');
+      res.status(201).json(decryptedAccount);
     } catch (error) {
       handleError(res, error);
     }
@@ -1382,7 +1397,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!account) {
         return res.status(404).json({ error: "Account not found" });
       }
-      res.json(account);
+      
+      // Decrypt sensitive fields before sending response
+      const decryptedAccount = await decryptFromDatabase(account, 'accounts');
+      res.json(decryptedAccount);
     } catch (error) {
       handleError(res, error);
     }
@@ -1391,12 +1409,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/accounts/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Validate input data
       const accountData = insertAccountSchema.partial().parse(req.body);
-      const updatedAccount = await storage.updateAccount(id, accountData);
+      
+      // Encrypt sensitive fields before database update
+      const encryptedAccountData = await encryptForDatabase(accountData, 'accounts');
+      console.log('[Encryption] Account data fields encrypted for database update');
+      
+      // Update account in database
+      const updatedAccount = await storage.updateAccount(id, encryptedAccountData);
       if (!updatedAccount) {
         return res.status(404).json({ error: "Account not found" });
       }
-      res.json(updatedAccount);
+      
+      // Decrypt for response
+      const decryptedAccount = await decryptFromDatabase(updatedAccount, 'accounts');
+      res.json(decryptedAccount);
     } catch (error) {
       handleError(res, error);
     }
