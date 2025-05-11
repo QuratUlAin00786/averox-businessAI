@@ -177,6 +177,14 @@ export function EncryptionTester() {
                 <p>
                   Timestamp: {result.timestamp}
                 </p>
+                {result.debug && (
+                  <div className="mt-2 p-2 bg-muted/30 rounded border border-muted">
+                    <p className="font-medium mb-1">Debug Information:</p>
+                    <pre className="text-xs overflow-auto">
+                      {JSON.stringify(result.debug, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </div>
             </div>
           )}

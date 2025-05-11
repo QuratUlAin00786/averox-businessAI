@@ -133,7 +133,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: 'Encryption test completed',
         data: req.body,
         encryption_enabled: process.env.ENCRYPTION_ENABLED === 'true',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        // Debug info to help with troubleshooting
+        debug: {
+          encryptionSettings: {
+            ENCRYPTION_ENABLED: process.env.ENCRYPTION_ENABLED,
+            ENABLE_ENCRYPTION: process.env.ENABLE_ENCRYPTION,
+            effective: process.env.ENCRYPTION_ENABLED === 'true'
+          }
+        }
       });
     } catch (error) {
       console.error('Error in encryption test:', error);
