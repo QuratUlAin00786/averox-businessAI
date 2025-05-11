@@ -8,7 +8,8 @@ import {
   Settings,
   LogOut,
   HelpCircle,
-  Globe
+  Globe,
+  ShieldCheck
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -194,6 +195,10 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
                   <DropdownMenuItem onClick={() => setLocation("/settings")}>
                     <Settings className="w-4 h-4 mr-2" />
                     <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLocation("/security")}>
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    <span>Security</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Globe className="w-4 h-4 mr-2" />

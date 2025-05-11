@@ -112,7 +112,8 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: t.navigation.workflows, path: '/workflows', icon: <LucideIcons.Workflow className="w-5 h-5" />, key: 'workflows' as keyof MenuVisibilitySettings },
     { name: t.navigation.subscriptions, path: '/subscriptions', icon: <LucideIcons.CreditCard className="w-5 h-5" />, key: 'subscriptions' as keyof MenuVisibilitySettings },
     { name: t.navigation.training, path: '/training-help', icon: <LucideIcons.HelpCircle className="w-5 h-5" />, key: 'training' as keyof MenuVisibilitySettings },
-    { name: t.navigation.settings, path: '/settings', icon: <LucideIcons.Settings className="w-5 h-5" />, key: null }
+    { name: t.navigation.settings, path: '/settings', icon: <LucideIcons.Settings className="w-5 h-5" />, key: null },
+    { name: "Security", path: '/security', icon: <LucideIcons.ShieldCheck className="w-5 h-5" />, key: null }
   ].filter(item => {
     // If key is null (like Dashboard and Settings), always show it
     if (item.key === null) return true;
@@ -211,7 +212,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   };
 
   const getSystemItems = () => {
-    return finalNavItems.filter(item => item.path === '/settings');
+    return finalNavItems.filter(item => item.path === '/settings' || item.path === '/security');
   };
 
   const sidebarContent = (
