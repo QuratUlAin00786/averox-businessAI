@@ -12,7 +12,7 @@ import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant"
 import manufacturingRouter from "./manufacturing-routes-fixed";
 import { db } from "./db";
 import { eq, sql, desc, asc } from "drizzle-orm";
-import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryptionMiddleware";
+import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryption-middleware";
 import { 
   insertUserSchema,
   insertContactSchema,

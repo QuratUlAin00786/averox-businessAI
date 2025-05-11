@@ -21,19 +21,43 @@ export function encryptSensitiveData(req: Request, res: Response, next: NextFunc
   }
 
   try {
+    // Check if encryption is enabled
+    if (process.env.ENCRYPTION_ENABLED !== 'true') {
+      return next();
+    }
+
     // Find if this is a sensitive route that needs encryption
     const routeConfig = SENSITIVE_ROUTES.find(route => route.path.test(req.path));
     
     if (routeConfig) {
+      // Create a promise array to handle all encryption operations
+      const encryptionPromises = [];
+      
       // Apply field-specific encryption
       for (const field of routeConfig.fields) {
         if (req.body[field] && typeof req.body[field] === 'string') {
-          req.body[field] = encrypt(req.body[field]);
+          const encryptPromise = async () => {
+            try {
+              const encryptedData = await encrypt(req.body[field]);
+              req.body[field] = JSON.stringify(encryptedData);
+            } catch (err) {
+              console.error(`Error encrypting field ${field}:`, err);
+            }
+          };
+          encryptionPromises.push(encryptPromise());
         }
       }
+      
+      // Wait for all encryption operations to finish before proceeding
+      Promise.all(encryptionPromises)
+        .then(() => next())
+        .catch(err => {
+          console.error('Error during batch encryption:', err);
+          next();
+        });
+    } else {
+      next();
     }
-    
-    next();
   } catch (error) {
     console.error('Error encrypting request data:', error);
     next();
@@ -51,40 +75,90 @@ export function decryptSensitiveData(req: Request, res: Response, next: NextFunc
   res.send = function(body?: any): Response {
     if (body && typeof body === 'object' && req.method !== 'DELETE') {
       try {
+        // Check if encryption is enabled
+        if (process.env.ENCRYPTION_ENABLED !== 'true') {
+          return originalSend.call(this, body);
+        }
+        
         // Find if this is a sensitive route that needs decryption
         const routeConfig = SENSITIVE_ROUTES.find(route => route.path.test(req.path));
         
         if (routeConfig) {
-          // Check if we have an array of objects or a single object
-          if (Array.isArray(body)) {
-            body = body.map(item => {
-              // Apply field-specific decryption to each item in array
-              for (const field of routeConfig.fields) {
-                if (item[field] && typeof item[field] === 'string') {
-                  try {
-                    item[field] = decrypt(item[field]);
-                  } catch (e) {
-                    // If decryption fails, keep original value (might not be encrypted yet)
+          // Handle decryption asynchronously
+          const processDecryption = async () => {
+            try {
+              // Check if we have an array of objects or a single object
+              if (Array.isArray(body)) {
+                // Create a new array with decrypted items
+                const decryptedItems = await Promise.all(body.map(async (item) => {
+                  const decryptedItem = { ...item };
+                  
+                  // Apply field-specific decryption to each item in array
+                  for (const field of routeConfig.fields) {
+                    if (item[field] && typeof item[field] === 'string') {
+                      try {
+                        // Check if the field is a JSON stringified encryption object
+                        try {
+                          const encryptedData = JSON.parse(item[field]);
+                          if (encryptedData.encrypted && encryptedData.iv) {
+                            const decrypted = await decrypt(encryptedData.encrypted, encryptedData.iv, encryptedData.keyId);
+                            decryptedItem[field] = decrypted;
+                          }
+                        } catch (parseError) {
+                          // Not a JSON string, might not be encrypted
+                        }
+                      } catch (decryptError) {
+                        console.error(`Error decrypting field ${field} in array item:`, decryptError);
+                      }
+                    }
+                  }
+                  return decryptedItem;
+                }));
+                
+                return originalSend.call(this, decryptedItems);
+              } else {
+                // Single object case
+                const decryptedBody = { ...body };
+                
+                // Process each field
+                for (const field of routeConfig.fields) {
+                  if (body[field] && typeof body[field] === 'string') {
+                    try {
+                      // Check if the field is a JSON stringified encryption object
+                      try {
+                        const encryptedData = JSON.parse(body[field]);
+                        if (encryptedData.encrypted && encryptedData.iv) {
+                          const decrypted = await decrypt(encryptedData.encrypted, encryptedData.iv, encryptedData.keyId);
+                          decryptedBody[field] = decrypted;
+                        }
+                      } catch (parseError) {
+                        // Not a JSON string, might not be encrypted
+                      }
+                    } catch (decryptError) {
+                      console.error(`Error decrypting field ${field}:`, decryptError);
+                    }
                   }
                 }
+                
+                return originalSend.call(this, decryptedBody);
               }
-              return item;
-            });
-          } else {
-            // Apply field-specific decryption to single object
-            for (const field of routeConfig.fields) {
-              if (body[field] && typeof body[field] === 'string') {
-                try {
-                  body[field] = decrypt(body[field]);
-                } catch (e) {
-                  // If decryption fails, keep original value (might not be encrypted yet)
-                }
-              }
+            } catch (error) {
+              console.error('Error during decryption process:', error);
+              return originalSend.call(this, body);
             }
-          }
+          };
+          
+          // Execute the decryption process
+          processDecryption().catch(error => {
+            console.error('Unhandled decryption error:', error);
+            return originalSend.call(this, body);
+          });
+          
+          // Don't return here, as the response will be sent by processDecryption
+          return undefined as any;
         }
       } catch (error) {
-        console.error('Error decrypting response data:', error);
+        console.error('Error in decryption middleware:', error);
       }
     }
     
