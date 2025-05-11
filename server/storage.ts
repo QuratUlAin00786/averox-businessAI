@@ -47,8 +47,9 @@ import {
   addCommunicationsToDatabase
 } from './communication-integration';
 import { eq, and, desc, asc, sql, gte } from "drizzle-orm";
-import { db } from './db';
+import { db, encryptSensitiveFields, decryptSensitiveFields } from './db';
 import session from "express-session";
+import { encrypt, decrypt } from './utils/encryption';
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { pool } from './db';
