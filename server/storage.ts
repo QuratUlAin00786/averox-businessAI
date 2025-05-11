@@ -47,14 +47,8 @@ import {
   addCommunicationsToDatabase
 } from './communication-integration';
 import { eq, and, desc, asc, sql, gte } from "drizzle-orm";
-import { db as rawDb, encryptSensitiveFields, decryptSensitiveFields } from './db';
+import { db } from './db';
 import session from "express-session";
-import { encrypt, decrypt } from './utils/encryption';
-import { encryptedDb, decryptDbData } from './utils/db-encryption';
-
-// Choose which database object to use based on whether encryption is enabled
-const USE_FIELD_ENCRYPTION = process.env.USE_FIELD_ENCRYPTION === 'true';
-const db = USE_FIELD_ENCRYPTION ? encryptedDb : rawDb;
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { pool } from './db';

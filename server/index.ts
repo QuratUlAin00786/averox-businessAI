@@ -12,10 +12,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Apply encryption middleware for API routes
-app.use('/api', encryptSensitiveData); // Encrypt request data
-app.use('/api', decryptSensitiveData); // Decrypt response data
-
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
