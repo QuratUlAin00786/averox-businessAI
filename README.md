@@ -24,6 +24,7 @@ A comprehensive AI-powered business solution platform that provides modular, sca
 - **Backend**: Node.js, Express.js, Drizzle ORM
 - **Database**: PostgreSQL
 - **Authentication**: Passport.js, Express Session
+- **Security**: AES-256 encryption with Averox CryptoSphere SDK
 - **AI Integration**: OpenAI API
 - **Payment Processing**: Stripe
 
@@ -88,6 +89,34 @@ To create demo data:
 npx tsx scripts/create-demo-accounts-simple.ts
 ```
 
+## Security Implementation
+
+The system implements advanced security measures to protect sensitive data:
+
+### AES-256 Encryption
+
+The application uses the Averox CryptoSphere SDK to provide AES-256 encryption for sensitive data:
+
+- **Selective Field Encryption**: Only sensitive fields are encrypted, maintaining performance
+- **Transparent Middleware**: Automatic encryption/decryption via Express middleware
+- **Database Security**: Support for encrypted database connection strings
+- **Key Management**: Integrated with the Averox key monitoring system
+- **Performance Optimization**: Encryption monitoring to identify bottlenecks
+
+To enable encryption, set the following environment variables:
+
+```
+ENABLE_ENCRYPTION=true
+CRYPTOSPHERE_API_KEY=your_api_key
+CRYPTOSPHERE_KEY_ID=your_key_id
+```
+
+You can test the encryption functionality with:
+
+```bash
+node scripts/test-encryption.js
+```
+
 ## API Documentation
 
 API endpoints follow RESTful conventions and are organized by domain:
@@ -99,6 +128,7 @@ API endpoints follow RESTful conventions and are organized by domain:
 - `/api/opportunities` - Sales pipeline
 - `/api/products` - Product catalog
 - `/api/invoices` - Billing and invoicing
+- `/api/encryption-test` - Test endpoint for encryption functionality
 
 ## Contributing
 
