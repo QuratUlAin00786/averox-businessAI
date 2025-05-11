@@ -1,7 +1,9 @@
 import React from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { EncryptionTester } from '@/components/security/encryption-tester';
+import { DatabaseEncryptionTester } from '@/components/security/database-encryption-tester';
 import { ShieldCheck } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function SecurityPage() {
   return (
@@ -30,10 +32,37 @@ export default function SecurityPage() {
               <li>Encryption key rotation support</li>
               <li>Performance monitoring for encryption operations</li>
               <li>Support for encrypted database connections</li>
+              <li>Pre-database encryption of sensitive data</li>
+              <li>Automatic field detection for sensitive information</li>
             </ul>
           </div>
           
-          <EncryptionTester />
+          <Tabs defaultValue="middleware" className="mt-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="middleware">Middleware Encryption</TabsTrigger>
+              <TabsTrigger value="database">Database Encryption</TabsTrigger>
+            </TabsList>
+            <TabsContent value="middleware">
+              <div className="p-2">
+                <h3 className="text-lg font-medium mb-2">API Middleware Encryption</h3>
+                <p className="text-muted-foreground mb-4">
+                  Test the API middleware encryption that protects data during transit between client and server.
+                  This encryption layer intercepts requests and responses to encrypt/decrypt sensitive fields.
+                </p>
+                <EncryptionTester />
+              </div>
+            </TabsContent>
+            <TabsContent value="database">
+              <div className="p-2">
+                <h3 className="text-lg font-medium mb-2">Database-Level Encryption</h3>
+                <p className="text-muted-foreground mb-4">
+                  Test the database-level encryption that protects sensitive data before it's stored in the database.
+                  This provides an additional layer of protection for data at rest.
+                </p>
+                <DatabaseEncryptionTester />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

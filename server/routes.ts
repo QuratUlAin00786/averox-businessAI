@@ -154,6 +154,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Test endpoint for database encryption - encrypts data at the database layer
+  app.post('/api/database-encryption-test', async (req, res) => {
+    try {
+      if (!req.body || Object.keys(req.body).length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Request body is required for testing database encryption'
+        });
+      }
+      
+      // Use our database encryption utilities to encrypt and then decrypt the data
+      // This simulates what happens during database storage and retrieval
+      const entityType = req.query.entityType as string || 'test';
+      
+      console.log(`[Database Encryption Test] Testing encryption for entity type: ${entityType}`);
+      
+      // Step 1: Encrypt the data as if preparing for database storage
+      const encryptedData = await encryptForDatabase(req.body, entityType);
+      
+      // Step 2: Decrypt the data as if retrieving from database
+      const decryptedData = await decryptFromDatabase(encryptedData, entityType);
+      
+      // Return all stages to show the process
+      return res.json({
+        success: true,
+        message: 'Database encryption test completed',
+        original: req.body,
+        encrypted: encryptedData,
+        decrypted: decryptedData,
+        encryption_enabled: process.env.ENCRYPTION_ENABLED === 'true',
+        metadata: {
+          entityType,
+          timestamp: new Date().toISOString(),
+          environment: process.env.NODE_ENV || 'development'
+        }
+      });
+    } catch (error) {
+      console.error('Error in database encryption test:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Database encryption test failed',
+        error: (error as Error).message
+      });
+    }
+  });
+  
   // Dashboard Data API endpoints
   app.get('/api/dashboard/stats', async (req, res) => {
     try {

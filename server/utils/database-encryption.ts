@@ -164,6 +164,17 @@ export async function decryptFromDatabase<T extends Record<string, any>>(data: T
  * @returns Promise resolving to array of objects with encrypted sensitive fields
  */
 export async function encryptArrayForDatabase<T extends Record<string, any>>(dataArray: T[], entityType?: string): Promise<T[]> {
+  // Skip encryption if disabled
+  if (process.env.ENCRYPTION_ENABLED !== 'true') {
+    return dataArray;
+  }
+  
+  // Process empty arrays quickly
+  if (!dataArray || dataArray.length === 0) {
+    return [];
+  }
+  
+  console.log(`[Encryption] Encrypting array of ${dataArray.length} ${entityType || 'items'} for database`);
   return Promise.all(dataArray.map(item => encryptForDatabase(item, entityType)));
 }
 
@@ -174,5 +185,15 @@ export async function encryptArrayForDatabase<T extends Record<string, any>>(dat
  * @returns Promise resolving to array of objects with decrypted sensitive fields
  */
 export async function decryptArrayFromDatabase<T extends Record<string, any>>(dataArray: T[], entityType?: string): Promise<T[]> {
+  // Skip decryption if disabled
+  if (process.env.ENCRYPTION_ENABLED !== 'true') {
+    return dataArray;
+  }
+  
+  // Process empty arrays quickly
+  if (!dataArray || dataArray.length === 0) {
+    return [];
+  }
+  
   return Promise.all(dataArray.map(item => decryptFromDatabase(item, entityType)));
 }
