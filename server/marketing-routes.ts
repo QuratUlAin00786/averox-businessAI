@@ -16,6 +16,7 @@ import {
 } from "@shared/marketing";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { encryptForDatabase, decryptFromDatabase, decryptArrayFromDatabase } from "./utils/database-encryption";
 
 export function setupMarketingRoutes(app: Express) {
   // Email Templates API Endpoints
