@@ -1610,10 +1610,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/opportunities', async (req: Request, res: Response) => {
     try {
+      console.log('[Opportunity Create] Creating new opportunity with data:', req.body);
+      
+      // Validate data
       const opportunityData = insertOpportunitySchema.parse(req.body);
-      const opportunity = await storage.createOpportunity(opportunityData);
-      res.status(201).json(opportunity);
+      
+      // Encrypt sensitive fields
+      const encryptedData = await encryptForDatabase(opportunityData, 'opportunities');
+      console.log('[Encryption] Opportunity data fields encrypted for database storage');
+      
+      // Create opportunity with encrypted data
+      const opportunity = await storage.createOpportunity(encryptedData);
+      
+      // Decrypt for response
+      const decryptedOpportunity = await decryptFromDatabase(opportunity, 'opportunities');
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Created Opportunity',
+          detail: `Created new opportunity: ${decryptedOpportunity.name}`,
+          relatedToType: 'opportunity',
+          relatedToId: decryptedOpportunity.id,
+          createdAt: new Date(),
+          icon: 'plus'
+        });
+      }
+      
+      res.status(201).json(decryptedOpportunity);
     } catch (error) {
+      console.error('[Opportunity Create] Error creating opportunity:', error);
       handleError(res, error);
     }
   });
@@ -1634,13 +1661,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/opportunities/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const opportunityData = insertOpportunitySchema.partial().parse(req.body);
-      const updatedOpportunity = await storage.updateOpportunity(id, opportunityData);
-      if (!updatedOpportunity) {
+      console.log(`[Opportunity Update] Updating opportunity ${id} with data:`, req.body);
+      
+      // Get current opportunity for activity logging
+      const currentOpportunity = await storage.getOpportunity(id);
+      if (!currentOpportunity) {
+        console.error(`[Opportunity Update] Opportunity not found with id ${id}`);
         return res.status(404).json({ error: "Opportunity not found" });
       }
-      res.json(updatedOpportunity);
+      
+      // Validate input data
+      const opportunityData = insertOpportunitySchema.partial().parse(req.body);
+      
+      // Encrypt sensitive fields before database update
+      const encryptedData = await encryptForDatabase(opportunityData, 'opportunities');
+      console.log('[Encryption] Opportunity data fields encrypted for database update');
+      
+      // Update opportunity with encrypted data
+      const updatedOpportunity = await storage.updateOpportunity(id, encryptedData);
+      if (!updatedOpportunity) {
+        return res.status(404).json({ error: "Opportunity not found after update" });
+      }
+      
+      // Decrypt for response
+      const decryptedOpportunity = await decryptFromDatabase(updatedOpportunity, 'opportunities');
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Updated Opportunity',
+          detail: `Updated opportunity: ${decryptedOpportunity.name}`,
+          relatedToType: 'opportunity',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'edit'
+        });
+      }
+      
+      res.json(decryptedOpportunity);
     } catch (error) {
+      console.error('[Opportunity Update] Error updating opportunity:', error);
       handleError(res, error);
     }
   });
@@ -1648,12 +1709,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/opportunities/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteOpportunity(id);
-      if (!success) {
+      console.log(`[Opportunity Delete] Deleting opportunity ${id}`);
+      
+      // Get opportunity for activity logging before deletion
+      const opportunity = await storage.getOpportunity(id);
+      if (!opportunity) {
+        console.error(`[Opportunity Delete] Opportunity not found with id ${id}`);
         return res.status(404).json({ error: "Opportunity not found" });
       }
+      
+      // Decrypt for logging
+      const decryptedOpportunity = await decryptFromDatabase(opportunity, 'opportunities');
+      
+      // Delete the opportunity
+      const success = await storage.deleteOpportunity(id);
+      if (!success) {
+        return res.status(404).json({ error: "Opportunity could not be deleted" });
+      }
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Deleted Opportunity',
+          detail: `Deleted opportunity: ${decryptedOpportunity.name}`,
+          relatedToType: 'opportunity',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'trash'
+        });
+      }
+      
       res.status(204).end();
     } catch (error) {
+      console.error('[Opportunity Delete] Error deleting opportunity:', error);
       handleError(res, error);
     }
   });
@@ -1697,10 +1786,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/tasks', async (req: Request, res: Response) => {
     try {
+      console.log('[Task Create] Creating new task with data:', req.body);
+      
+      // Validate data
       const taskData = insertTaskSchema.parse(req.body);
-      const task = await storage.createTask(taskData);
-      res.status(201).json(task);
+      
+      // Encrypt sensitive fields
+      const encryptedData = await encryptForDatabase(taskData, 'tasks');
+      console.log('[Encryption] Task data fields encrypted for database storage');
+      
+      // Convert date strings to Date objects before saving
+      if (typeof encryptedData.dueDate === 'string' && encryptedData.dueDate) {
+        encryptedData.dueDate = new Date(encryptedData.dueDate);
+      }
+      if (typeof encryptedData.reminderDate === 'string' && encryptedData.reminderDate) {
+        encryptedData.reminderDate = new Date(encryptedData.reminderDate);
+      }
+      
+      // Create task with encrypted data
+      const task = await storage.createTask(encryptedData);
+      
+      // Decrypt for response
+      const decryptedTask = await decryptFromDatabase(task, 'tasks');
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Created Task',
+          detail: `Created new task: ${decryptedTask.title}`,
+          relatedToType: 'task',
+          relatedToId: decryptedTask.id,
+          createdAt: new Date(),
+          icon: 'plus'
+        });
+      }
+      
+      res.status(201).json(decryptedTask);
     } catch (error) {
+      console.error('[Task Create] Error creating task:', error);
       handleError(res, error);
     }
   });
@@ -1721,13 +1845,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/tasks/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const taskData = insertTaskSchema.partial().parse(req.body);
-      const updatedTask = await storage.updateTask(id, taskData);
-      if (!updatedTask) {
+      console.log(`[Task Update] Updating task ${id} with data:`, req.body);
+      
+      // Get current task for activity logging
+      const currentTask = await storage.getTask(id);
+      if (!currentTask) {
+        console.error(`[Task Update] Task not found with id ${id}`);
         return res.status(404).json({ error: "Task not found" });
       }
-      res.json(updatedTask);
+      
+      // Validate input data
+      const taskData = insertTaskSchema.partial().parse(req.body);
+      
+      // Encrypt sensitive fields before database update
+      const encryptedData = await encryptForDatabase(taskData, 'tasks');
+      console.log('[Encryption] Task data fields encrypted for database update');
+      
+      // Convert date strings to Date objects
+      if (typeof encryptedData.dueDate === 'string' && encryptedData.dueDate) {
+        encryptedData.dueDate = new Date(encryptedData.dueDate);
+      }
+      if (typeof encryptedData.reminderDate === 'string' && encryptedData.reminderDate) {
+        encryptedData.reminderDate = new Date(encryptedData.reminderDate);
+      }
+      
+      // Update task with encrypted data
+      const updatedTask = await storage.updateTask(id, encryptedData);
+      if (!updatedTask) {
+        return res.status(404).json({ error: "Task not found after update" });
+      }
+      
+      // Decrypt for response
+      const decryptedTask = await decryptFromDatabase(updatedTask, 'tasks');
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Updated Task',
+          detail: `Updated task: ${decryptedTask.title}`,
+          relatedToType: 'task',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'edit'
+        });
+      }
+      
+      res.json(decryptedTask);
     } catch (error) {
+      console.error('[Task Update] Error updating task:', error);
       handleError(res, error);
     }
   });
@@ -1735,12 +1901,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteTask(id);
-      if (!success) {
+      console.log(`[Task Delete] Deleting task ${id}`);
+      
+      // Get task for activity logging before deletion
+      const task = await storage.getTask(id);
+      if (!task) {
+        console.error(`[Task Delete] Task not found with id ${id}`);
         return res.status(404).json({ error: "Task not found" });
       }
+      
+      // Decrypt for logging
+      const decryptedTask = await decryptFromDatabase(task, 'tasks');
+      
+      // Delete the task
+      const success = await storage.deleteTask(id);
+      if (!success) {
+        return res.status(404).json({ error: "Task could not be deleted" });
+      }
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Deleted Task',
+          detail: `Deleted task: ${decryptedTask.title}`,
+          relatedToType: 'task',
+          relatedToId: id,
+          createdAt: new Date(),
+          icon: 'trash'
+        });
+      }
+      
       res.status(204).end();
     } catch (error) {
+      console.error('[Task Delete] Error deleting task:', error);
       handleError(res, error);
     }
   });
