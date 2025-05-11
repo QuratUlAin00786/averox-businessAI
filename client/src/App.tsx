@@ -59,6 +59,7 @@ import SegmentBuilder from "@/pages/marketing/segment-builder";
 import EmailTemplateEditor from "@/pages/marketing/email-template-editor";
 import Manufacturing from "@/pages/Manufacturing";
 import InvoicePayment from "@/pages/InvoicePayment";
+import SecurityPage from "@/pages/security";
 import SetupWizard from "@/pages/setup-wizard";
 
 function Router() {
@@ -407,6 +408,12 @@ function Router() {
       <ProtectedRoute path="/manufacturing/:parentPath/:childPath" component={({ params }: { params: { parentPath: string, childPath: string } }) => (
         <Layout>
           <Manufacturing subPath={`${params.parentPath}/${params.childPath}`} />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/security" component={() => (
+        <Layout>
+          <SecurityPage />
         </Layout>
       )} />
       
