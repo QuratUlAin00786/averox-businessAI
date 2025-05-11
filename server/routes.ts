@@ -12,6 +12,7 @@ import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant"
 import manufacturingRouter from "./manufacturing-routes-fixed";
 import { db } from "./db";
 import { eq, sql, desc, asc } from "drizzle-orm";
+import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryptionMiddleware";
 import { 
   insertUserSchema,
   insertContactSchema,
@@ -79,6 +80,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
   
+  // Apply encryption middleware for sensitive data
+  app.use(encryptSensitiveData);
+  app.use(decryptSensitiveData);
+  
+  // Log encryption status
+  console.log('[Encryption] Averox CryptoSphere encryption middleware applied');
+  
   // Test authentication endpoint 
   app.get('/api/auth-test', (req, res) => {
     if (req.isAuthenticated()) {
@@ -91,6 +99,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ 
         authenticated: false, 
         sessionID: req.sessionID
+      });
+    }
+  });
+  
+  // Test encryption endpoint to verify encryption middleware
+  app.post('/api/encryption-test', async (req, res) => {
+    try {
+      // If we don't have a request body, return an error
+      if (!req.body || Object.keys(req.body).length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Request body is required for testing encryption'
+        });
+      }
+      
+      // Return the request body to let the client verify encryption
+      // This should trigger the encryption/decryption middleware
+      return res.json({ 
+        success: true, 
+        message: 'Encryption test completed',
+        data: req.body,
+        encryption_enabled: process.env.ENABLE_ENCRYPTION === 'true',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error in encryption test:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Encryption test failed',
+        error: (error as Error).message
       });
     }
   });
