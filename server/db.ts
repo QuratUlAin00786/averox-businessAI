@@ -65,15 +65,20 @@ export function encryptSensitiveFields<T extends Record<string, any>>(
   data: T, 
   fieldsToEncrypt: string[]
 ): T {
-  const result = { ...data };
+  // Create a mutable copy of the data object
+  const result = { ...data } as Record<string, any>;
 
   for (const field of fieldsToEncrypt) {
-    if (result[field] && typeof result[field] === 'string') {
-      result[field] = encrypt(result[field]) as any;
+    if (
+      Object.prototype.hasOwnProperty.call(result, field) && 
+      result[field] && 
+      typeof result[field] === 'string'
+    ) {
+      result[field] = encrypt(result[field] as string);
     }
   }
 
-  return result;
+  return result as T;
 }
 
 /**
@@ -86,12 +91,17 @@ export function decryptSensitiveFields<T extends Record<string, any>>(
   data: T, 
   fieldsToDecrypt: string[]
 ): T {
-  const result = { ...data };
+  // Create a mutable copy of the data object
+  const result = { ...data } as Record<string, any>;
 
   for (const field of fieldsToDecrypt) {
-    if (result[field] && typeof result[field] === 'string') {
+    if (
+      Object.prototype.hasOwnProperty.call(result, field) && 
+      result[field] && 
+      typeof result[field] === 'string'
+    ) {
       try {
-        result[field] = decrypt(result[field]) as any;
+        result[field] = decrypt(result[field] as string);
       } catch (e) {
         // If field wasn't encrypted, leave as is
         console.warn(`Could not decrypt field ${field}, might not be encrypted`);
@@ -99,5 +109,5 @@ export function decryptSensitiveFields<T extends Record<string, any>>(
     }
   }
 
-  return result;
+  return result as T;
 }
