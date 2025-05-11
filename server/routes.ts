@@ -84,8 +84,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(encryptSensitiveData);
   app.use(decryptSensitiveData);
   
-  // Log encryption status
+  // Log encryption status and environment variables for debugging
   console.log('[Encryption] Averox CryptoSphere encryption middleware applied');
+  console.log('[Encryption Debug] Environment variables:', {
+    ENCRYPTION_ENABLED: process.env.ENCRYPTION_ENABLED,
+    ENABLE_ENCRYPTION: process.env.ENABLE_ENCRYPTION,
+    encryption_status: process.env.ENCRYPTION_ENABLED === 'true'
+  });
   
   // Test authentication endpoint 
   app.get('/api/auth-test', (req, res) => {
@@ -113,6 +118,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'Request body is required for testing encryption'
         });
       }
+
+      console.log('[Encryption Test] Debug info:', {
+        ENCRYPTION_ENABLED_VALUE: process.env.ENCRYPTION_ENABLED,
+        ENCRYPTION_ENABLED_CHECK: process.env.ENCRYPTION_ENABLED === 'true',
+        NODE_ENV: process.env.NODE_ENV,
+        ENV_KEYS: Object.keys(process.env).filter(key => key.includes('ENCRYPT'))
+      });
       
       // Return the request body to let the client verify encryption
       // This should trigger the encryption/decryption middleware
