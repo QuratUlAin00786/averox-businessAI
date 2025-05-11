@@ -7,7 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 import { encryptFields, decryptFields } from '../utils/encryption';
 
 // Whether to enable encryption middleware (controlled via environment variable)
-const ENCRYPTION_ENABLED = process.env.ENABLE_ENCRYPTION === 'true';
+const ENCRYPTION_ENABLED = process.env.ENCRYPTION_ENABLED === 'true';
 
 // Define fields that should be encrypted across different API endpoints
 const SENSITIVE_FIELDS_MAP: Record<string, string[]> = {

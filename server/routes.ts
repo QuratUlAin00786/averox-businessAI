@@ -120,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true, 
         message: 'Encryption test completed',
         data: req.body,
-        encryption_enabled: process.env.ENABLE_ENCRYPTION === 'true',
+        encryption_enabled: process.env.ENCRYPTION_ENABLED === 'true',
         timestamp: new Date().toISOString()
       });
     } catch (error) {
