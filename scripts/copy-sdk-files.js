@@ -2,8 +2,13 @@
  * This script ensures the Averox CryptoSphere SDK is copied to the deployment location
  * Run this before deployment to ensure the SDK is available
  */
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the directory name in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Define source and destination paths
 const srcFilePath = path.join(__dirname, '../server/utils/averox-cryptosphere.js');
@@ -36,7 +41,7 @@ try {
  * Fallback implementation of Averox CryptoSphere SDK
  * This is used when the actual SDK is not available
  */
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 class AveroxCryptoSphere {
   constructor(config = {}) {
@@ -128,7 +133,7 @@ class AveroxCryptoSphere {
   }
 }
 
-module.exports = { AveroxCryptoSphere };
+export { AveroxCryptoSphere };
 `;
     
     fs.writeFileSync(destFilePath, fallbackCode);

@@ -48,7 +48,7 @@ interface DecryptResult {
 
 // Import the SDK class
 // Implement a fallback if the SDK is not available
-let AveroxCryptoSphere;
+let AveroxCryptoSphere: any;
 try {
   AveroxCryptoSphere = require('./averox-cryptosphere.js').AveroxCryptoSphere;
   console.log("[CryptoSphere] Successfully imported Averox CryptoSphere SDK");
@@ -57,8 +57,21 @@ try {
   // Create a simple fallback implementation with basic AES encryption
   const crypto = require('crypto');
   
+  interface FallbackConfig {
+    apiKey?: string;
+    keyId?: string;
+    algorithm?: string;
+    endpoint?: string;
+    debug?: boolean;
+    telemetry?: boolean;
+  }
+
   class FallbackCryptoSphere {
-    constructor(config) {
+    private config: FallbackConfig;
+    private algorithm: string;
+    private keyId: string;
+
+    constructor(config: FallbackConfig = {}) {
       this.config = config || {};
       this.algorithm = 'aes-256-gcm';
       this.keyId = config.keyId || 'AES-FALLBACK';
@@ -68,7 +81,7 @@ try {
       });
     }
 
-    async encrypt({ data, additionalData }) {
+    async encrypt({ data, additionalData }: { data: string | object, additionalData?: Record<string, any> }): Promise<EncryptResult> {
       // Generate a secure key from a consistent seed for demo purposes
       const key = crypto.scryptSync(process.env.ENCRYPTION_KEY || 'averox-encryption-key', 'salt', 32);
       const iv = crypto.randomBytes(16);
@@ -97,7 +110,7 @@ try {
       };
     }
 
-    async decrypt({ encrypted, iv }) {
+    async decrypt({ encrypted, iv }: { encrypted: string, iv: string }): Promise<DecryptResult> {
       try {
         // Generate the same key used for encryption
         const key = crypto.scryptSync(process.env.ENCRYPTION_KEY || 'averox-encryption-key', 'salt', 32);
@@ -135,7 +148,7 @@ try {
             timestamp: new Date().toISOString()
           };
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('[CryptoSphere] Fallback decryption error:', error);
         throw new Error(`Failed to decrypt data: ${error.message}`);
       }
