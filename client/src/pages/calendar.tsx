@@ -38,35 +38,11 @@ export default function Calendar() {
     }
   });
   
-  // Create event mutation with direct fetch for debugging
+  // Create event mutation using standard apiRequest
   const createMutation = useMutation({
-    mutationFn: async (eventData: InsertEvent) => {
+    mutationFn: (eventData: InsertEvent) => {
       console.log('Creating event with data:', eventData);
-      
-      try {
-        const response = await fetch('/api/events', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(eventData)
-        });
-        
-        console.log('Response status:', response.status);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Error response:', errorText);
-          throw new Error(`Failed to create event: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        console.log('Response data:', result);
-        return result;
-      } catch (error) {
-        console.error('Fetch error:', error);
-        throw error;
-      }
+      return apiRequest('POST', '/api/events', eventData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
@@ -88,10 +64,7 @@ export default function Calendar() {
   // Update event mutation
   const updateMutation = useMutation({
     mutationFn: (data: { id: number; event: Partial<InsertEvent> }) => {
-      return apiRequest(`/api/events/${data.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data.event)
-      });
+      return apiRequest('PATCH', `/api/events/${data.id}`, data.event);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
@@ -114,9 +87,7 @@ export default function Calendar() {
   // Delete event mutation
   const deleteMutation = useMutation({
     mutationFn: (id: number) => {
-      return apiRequest(`/api/events/${id}`, {
-        method: 'DELETE'
-      });
+      return apiRequest('DELETE', `/api/events/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
