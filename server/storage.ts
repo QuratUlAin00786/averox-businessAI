@@ -3714,8 +3714,96 @@ export class DatabaseStorage implements IStorage {
   }
 
   async convertLead(id: number, convertTo: { contact?: InsertContact, account?: InsertAccount, opportunity?: InsertOpportunity }): Promise<{ contact?: Contact, account?: Account, opportunity?: Opportunity, lead: Lead }> {
-    // Implement with database queries
-    throw new Error('Method not implemented');
+    try {
+      // Fetch the lead to convert
+      const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+      
+      if (!lead) {
+        throw new Error(`Lead with ID ${id} not found`);
+      }
+
+      const result: { contact?: Contact, account?: Account, opportunity?: Opportunity, lead: Lead } = {
+        lead
+      };
+
+      // Start a transaction
+      await db.transaction(async (tx) => {
+        console.log(`[Lead Conversion] Starting transaction for lead ${id}`);
+        
+        // Create contact if requested
+        if (convertTo.contact) {
+          // If no contact data provided, create from lead data
+          const contactData = {
+            ...convertTo.contact,
+            firstName: convertTo.contact.firstName || lead.firstName,
+            lastName: convertTo.contact.lastName || lead.lastName,
+            email: convertTo.contact.email || lead.email,
+            phone: convertTo.contact.phone || lead.phone,
+            company: convertTo.contact.company || lead.company,
+            title: convertTo.contact.title || lead.title,
+            ownerId: convertTo.contact.ownerId || lead.ownerId,
+            notes: convertTo.contact.notes || lead.notes,
+          };
+          
+          console.log(`[Lead Conversion] Creating contact from lead ${id}`);
+          const [contact] = await tx.insert(contacts).values(contactData).returning();
+          result.contact = contact;
+        }
+
+        // Create account if requested
+        if (convertTo.account) {
+          // If no account data provided, create from lead data
+          const accountData = {
+            ...convertTo.account,
+            name: convertTo.account.name || lead.company || `${lead.firstName} ${lead.lastName}'s Account`,
+            ownerId: convertTo.account.ownerId || lead.ownerId,
+            notes: convertTo.account.notes || lead.notes,
+          };
+          
+          console.log(`[Lead Conversion] Creating account from lead ${id}`);
+          const [account] = await tx.insert(accounts).values(accountData).returning();
+          result.account = account;
+        }
+
+        // Create opportunity if requested
+        if (convertTo.opportunity) {
+          // If no opportunity data provided, create with basic data
+          const opportunityData = {
+            ...convertTo.opportunity,
+            name: convertTo.opportunity.name || `${lead.firstName} ${lead.lastName} Opportunity`,
+            accountId: convertTo.opportunity.accountId || (result.account ? result.account.id : null),
+            ownerId: convertTo.opportunity.ownerId || lead.ownerId,
+            notes: convertTo.opportunity.notes || lead.notes,
+          };
+          
+          console.log(`[Lead Conversion] Creating opportunity from lead ${id}`);
+          const [opportunity] = await tx.insert(opportunities).values(opportunityData).returning();
+          result.opportunity = opportunity;
+        }
+
+        // Update lead to mark as converted
+        const updateData: any = {
+          isConverted: true,
+          convertedToContactId: result.contact?.id || null,
+          convertedToAccountId: result.account?.id || null,
+          convertedToOpportunityId: result.opportunity?.id || null,
+        };
+        
+        console.log(`[Lead Conversion] Updating lead ${id} as converted`);
+        const [updatedLead] = await tx.update(leads)
+          .set(updateData)
+          .where(eq(leads.id, id))
+          .returning();
+          
+        result.lead = updatedLead;
+      });
+
+      console.log(`[Lead Conversion] Successfully converted lead ${id}`);
+      return result;
+    } catch (error) {
+      console.error('Error converting lead:', error);
+      throw error;
+    }
   }
 
   // Opportunity Methods
