@@ -228,6 +228,56 @@ router.get('/warehouse/bins', async (req: Request, res: Response) => {
   }
 });
 
+// Add a duplicate endpoint at '/storage-bins' to match the frontend expectation
+router.get('/storage-bins', async (req: Request, res: Response) => {
+  try {
+    // Get storage bins with utilization data - using storage_bins and storage_bin_contents
+    const result = await db.execute(sql`
+      WITH bin_utilization AS (
+        SELECT 
+          sb.id, 
+          sb.bin_code as code,
+          sb.capacity as total_capacity,
+          COALESCE(sb.available_capacity, 0) as available_capacity,
+          (sb.capacity - COALESCE(sb.available_capacity, 0)) as used_capacity
+        FROM storage_bins sb
+        WHERE sb.is_active = true
+      )
+      SELECT 
+        sb.id,
+        sb.bin_code as code,
+        sb.aisle || '-' || sb.rack || '-' || sb.level || '-' || sb.position as name,
+        w.name as parent_name,
+        sb.bin_type as type,
+        sb.capacity,
+        sb.available_capacity,
+        sb.is_active as "isActive",
+        sb.max_weight,
+        sb.current_weight,
+        sb.height,
+        sb.width,
+        sb.depth,
+        CASE 
+          WHEN bu.total_capacity > 0 THEN 
+            ROUND(((bu.total_capacity - bu.available_capacity) / bu.total_capacity) * 100)
+          ELSE 0
+        END as utilization_percentage
+      FROM storage_bins sb
+      JOIN bin_utilization bu ON sb.id = bu.id
+      LEFT JOIN warehouses w ON sb.warehouse_id = w.id
+      ORDER BY sb.bin_code
+    `);
+    
+    // Extract rows from PostgreSQL result
+    const bins = result.rows || [];
+    
+    return res.json(bins);
+  } catch (error) {
+    console.error('Error fetching storage bins:', error);
+    return res.status(500).json({ error: 'Failed to fetch storage bins' });
+  }
+});
+
 // Get all storage locations with hierarchical structure
 router.get('/storage/locations', async (req: Request, res: Response) => {
   try {
@@ -1328,6 +1378,17 @@ router.get('/returns', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
+    // Check column existence to avoid errors
+    const columnCheck = await db.execute(sql`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'return_authorizations'
+    `);
+    
+    const columns = columnCheck.rows.map(row => row.column_name.toLowerCase());
+    const hasAuthorizedBy = columns.includes('authorized_by');
+    
+    // Adjust query based on available columns
     const result = await db.execute(sql`
       SELECT 
         ra.id,
@@ -1342,8 +1403,8 @@ router.get('/returns', async (req: Request, res: Response) => {
         ra.authorized_date,
         ra.received_date,
         ra.processed_date,
-        ra.authorized_by,
-        u.username as authorized_by_name,
+        ${hasAuthorizedBy ? sql`ra.authorized_by,` : sql`NULL as authorized_by,`}
+        ${hasAuthorizedBy ? sql`u.username as authorized_by_name,` : sql`NULL as authorized_by_name,`}
         ra.notes,
         (SELECT COUNT(*) FROM return_items WHERE return_authorization_id = ra.id) as item_count,
         (SELECT SUM(quantity) FROM return_items WHERE return_authorization_id = ra.id) as total_quantity,
@@ -1351,7 +1412,7 @@ router.get('/returns', async (req: Request, res: Response) => {
         ra.updated_at
       FROM return_authorizations ra
       LEFT JOIN accounts c ON ra.customer_id = c.id
-      LEFT JOIN users u ON ra.authorized_by = u.id
+      ${hasAuthorizedBy ? sql`LEFT JOIN users u ON ra.authorized_by = u.id` : sql`LEFT JOIN users u ON FALSE`}
       ORDER BY ra.created_at DESC
     `);
     
