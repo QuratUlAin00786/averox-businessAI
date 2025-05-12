@@ -1363,6 +1363,45 @@ router.get('/trade-compliance', async (req: Request, res: Response) => {
 // ---------------------------------------------------------------
 // RETURNS MANAGEMENT
 // ---------------------------------------------------------------
+// Utility endpoint to check table columns - helps with debugging schema issues
+router.get('/columns/:table', async (req: Request, res: Response) => {
+  try {
+    const tableName = req.params.table;
+    
+    // Check if the table exists first
+    const tableExistsResult = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = ${tableName}
+      ) as exists
+    `);
+    
+    if (!tableExistsResult.rows || !tableExistsResult.rows[0] || !tableExistsResult.rows[0].exists) {
+      return res.json({ error: `Table '${tableName}' does not exist` });
+    }
+    
+    // Get column information
+    const columnResult = await db.execute(sql`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = ${tableName}
+      ORDER BY ordinal_position
+    `);
+    
+    // Properly type the columns result
+    const columns = (columnResult.rows || []).map(row => ({
+      column_name: String(row.column_name || ''),
+      data_type: String(row.data_type || ''),
+      is_nullable: String(row.is_nullable || '')
+    }));
+    
+    return res.json(columns);
+  } catch (error) {
+    console.error(`Error fetching columns for table ${req.params.table}:`, error);
+    return res.status(500).json({ error: `Failed to fetch columns for ${req.params.table}` });
+  }
+});
+
 router.get('/returns', async (req: Request, res: Response) => {
   try {
     // First verify if return_authorizations table exists
@@ -1378,17 +1417,7 @@ router.get('/returns', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
-    // Check column existence to avoid errors
-    const columnCheck = await db.execute(sql`
-      SELECT column_name
-      FROM information_schema.columns
-      WHERE table_name = 'return_authorizations'
-    `);
-    
-    const columns = columnCheck.rows.map(row => row.column_name.toLowerCase());
-    const hasAuthorizedBy = columns.includes('authorized_by');
-    
-    // Adjust query based on available columns
+    // Use a comprehensive query with verified columns
     const result = await db.execute(sql`
       SELECT 
         ra.id,
@@ -1396,23 +1425,27 @@ router.get('/returns', async (req: Request, res: Response) => {
         ra.status,
         ra.customer_id,
         c.name as customer_name,
-        ra.return_reason,
         ra.return_type,
-        ra.disposition,
-        ra.requested_date,
-        ra.authorized_date,
-        ra.received_date,
-        ra.processed_date,
-        ${hasAuthorizedBy ? sql`ra.authorized_by,` : sql`NULL as authorized_by,`}
-        ${hasAuthorizedBy ? sql`u.username as authorized_by_name,` : sql`NULL as authorized_by_name,`}
-        ra.notes,
-        (SELECT COUNT(*) FROM return_items WHERE return_authorization_id = ra.id) as item_count,
-        (SELECT SUM(quantity) FROM return_items WHERE return_authorization_id = ra.id) as total_quantity,
+        ra.return_reason,
         ra.created_at,
-        ra.updated_at
+        ra.created_by,
+        ra.approved_by,
+        ra.approval_date,
+        ra.expected_return_date,
+        ra.actual_return_date,
+        ra.source_document_type,
+        ra.source_document_id,
+        ra.notes,
+        ra.shipping_method,
+        ra.shipping_tracking,
+        ra.quality_check_required,
+        ra.resolution,
+        ra.resolution_date,
+        ra.return_address,
+        (SELECT COUNT(*) FROM return_items WHERE return_authorization_id = ra.id) as item_count,
+        (SELECT SUM(quantity) FROM return_items WHERE return_authorization_id = ra.id) as total_quantity
       FROM return_authorizations ra
       LEFT JOIN accounts c ON ra.customer_id = c.id
-      ${hasAuthorizedBy ? sql`LEFT JOIN users u ON ra.authorized_by = u.id` : sql`LEFT JOIN users u ON FALSE`}
       ORDER BY ra.created_at DESC
     `);
     
