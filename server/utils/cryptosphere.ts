@@ -47,7 +47,7 @@ interface DecryptResult {
 }
 
 // Import the SDK class
-const AveroxCryptoSphere = require('../utils/averox-cryptosphere.js').AveroxCryptoSphere;
+const AveroxCryptoSphere = require('./averox-cryptosphere.js').AveroxCryptoSphere;
 
 // Create a typed class wrapper
 export class CryptoSphere {
