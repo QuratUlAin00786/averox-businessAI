@@ -271,7 +271,12 @@ export default function MRPDashboard() {
                     Material demand forecasts for production planning
                   </CardDescription>
                 </div>
-                <Button variant="outline">Create Forecast</Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = "/manufacturing/forecasting/create"}
+                >
+                  Create Forecast
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -301,7 +306,13 @@ export default function MRPDashboard() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <Button variant="outline" size="sm">View Details</Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => window.location.href = `/manufacturing/forecasting/${forecast.id}`}
+                              >
+                                View Details
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -336,7 +347,9 @@ export default function MRPDashboard() {
               ) : (
                 <div className="py-12 text-center text-muted-foreground">
                   <p className="mb-4">No active forecasts found</p>
-                  <Button>Create Your First Forecast</Button>
+                  <Button onClick={() => window.location.href = "/manufacturing/forecasting/create"}>
+                    Create Your First Forecast
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -353,15 +366,52 @@ export default function MRPDashboard() {
                     Current inventory levels and valuation
                   </CardDescription>
                 </div>
-                <Button variant="outline">Generate Report</Button>
+                <Button 
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/manufacturing/inventory/report', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          reportType: 'inventory-status',
+                          format: 'pdf'
+                        })
+                      });
+                      
+                      if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'inventory-status-report.pdf';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                      } else {
+                        console.error('Error generating report:', await response.text());
+                      }
+                    } catch (error) {
+                      console.error('Error generating report:', error);
+                    }
+                  }}
+                >
+                  Generate Report
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
               <div className="py-8 text-center text-muted-foreground">
                 <p className="mb-4">
-                  The inventory status dashboard with real-time tracking and analytics is currently loading data from the database...
+                  View detailed inventory status with real-time tracking and analytics
                 </p>
-                <Button>View Detailed Inventory</Button>
+                <Button 
+                  onClick={() => window.location.href = "/manufacturing/inventory"}
+                >
+                  View Detailed Inventory
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -377,15 +427,48 @@ export default function MRPDashboard() {
                     Material requirements planning results
                   </CardDescription>
                 </div>
-                <Button>Run MRP Process</Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/manufacturing/mrp/run', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          planningHorizon: 30, // 30 days
+                          considerSafetyStock: true,
+                          considerLeadTimes: true,
+                          considerCapacityConstraints: false,
+                          warehouseId: 1
+                        })
+                      });
+                      
+                      if (response.ok) {
+                        const result = await response.json();
+                        window.location.href = `/manufacturing/mrp/runs/${result.runId}`;
+                      } else {
+                        console.error('Error running MRP process:', await response.text());
+                      }
+                    } catch (error) {
+                      console.error('Error running MRP process:', error);
+                    }
+                  }}
+                >
+                  Run MRP Process
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
               <div className="py-8 text-center text-muted-foreground">
                 <p className="mb-4">
-                  The MRP planning results dashboard with purchase recommendations and production scheduling is currently loading data from the database...
+                  View MRP planning results with purchase recommendations and production scheduling
                 </p>
-                <Button>View Planning Details</Button>
+                <Button
+                  onClick={() => window.location.href = "/manufacturing/mrp/runs"}
+                >
+                  View Planning Details
+                </Button>
               </div>
             </CardContent>
           </Card>
