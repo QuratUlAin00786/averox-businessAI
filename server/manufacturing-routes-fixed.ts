@@ -1442,8 +1442,8 @@ router.get('/returns', async (req: Request, res: Response) => {
         ra.resolution,
         ra.resolution_date,
         ra.return_address,
-        (SELECT COUNT(*) FROM return_items WHERE return_authorization_id = ra.id) as item_count,
-        (SELECT SUM(quantity) FROM return_items WHERE return_authorization_id = ra.id) as total_quantity
+        (SELECT COUNT(*) FROM return_items WHERE return_id = ra.id) as item_count,
+        (SELECT SUM(quantity) FROM return_items WHERE return_id = ra.id) as total_quantity
       FROM return_authorizations ra
       LEFT JOIN accounts c ON ra.customer_id = c.id
       ORDER BY ra.created_at DESC
@@ -1457,22 +1457,22 @@ router.get('/returns', async (req: Request, res: Response) => {
       const itemsResult = await db.execute(sql`
         SELECT 
           ri.id,
-          ri.return_authorization_id,
+          ri.return_id,
           ri.product_id,
           p.name as product_name,
           p.sku as product_code,
           ri.quantity,
           ri.unit_of_measure,
           ri.return_reason,
-          ri.lot_number,
-          ri.serial_number,
+          ri.batch_lot_id as lot_number,
+          CAST(NULL as text) as serial_number,
           ri.condition,
           ri.disposition,
           ri.status,
           ri.notes
         FROM return_items ri
         LEFT JOIN products p ON ri.product_id = p.id
-        WHERE ri.return_authorization_id = ${returnAuth.id}
+        WHERE ri.return_id = ${returnAuth.id}
       `);
       
       // Extract rows from PostgreSQL result
