@@ -132,8 +132,8 @@ export default function Dashboard() {
                     return;
                   }
                   
-                  // Force navigation with window.location for more reliable routing
-                  window.location.href = "/settings/dashboard";
+                  // Use Wouter's setLocation for client-side routing to maintain app state
+                  setLocation("/settings/dashboard");
                 } catch (error) {
                   console.error("Navigation error:", error);
                 }
