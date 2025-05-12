@@ -41,6 +41,10 @@ EOL
 echo "Copying deployment guide..."
 cp DEPLOYMENT.md $DEPLOY_DIR/
 
+# Ensure CryptoSphere SDK is copied
+echo "Copying CryptoSphere SDK..."
+node scripts/copy-sdk-files.js
+
 echo ""
 echo "====== Preparation Complete ======"
 echo "Your deployment-ready application is available in: $DEPLOY_DIR"

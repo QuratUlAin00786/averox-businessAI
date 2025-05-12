@@ -11,12 +11,12 @@ const destDir = path.join(__dirname, '../dist/server/utils/');
 const destFilePath = path.join(destDir, 'averox-cryptosphere.js');
 
 console.log('Copying CryptoSphere SDK to deployment location...');
-console.log(`Source: ${srcFilePath}`);
-console.log(`Destination: ${destFilePath}`);
+console.log('Source: ' + srcFilePath);
+console.log('Destination: ' + destFilePath);
 
 // Create the destination directory if it doesn't exist
 if (!fs.existsSync(destDir)) {
-  console.log(`Creating directory: ${destDir}`);
+  console.log('Creating directory: ' + destDir);
   fs.mkdirSync(destDir, { recursive: true });
 }
 
@@ -123,7 +123,7 @@ class AveroxCryptoSphere {
       }
     } catch (error) {
       console.error('[AveroxCryptoSphere] Fallback decryption error:', error);
-      throw new Error(`Failed to decrypt data: \${error.message}`);
+      throw new Error("Failed to decrypt data: " + error.message);
     }
   }
 }
