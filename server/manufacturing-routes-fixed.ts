@@ -235,8 +235,7 @@ router.get('/products', async (req: Request, res: Response) => {
         description, 
         price,
         category_id,
-        stock_quantity,
-        unit_of_measure
+        stock_quantity
       FROM products 
       ORDER BY name ASC
     `);

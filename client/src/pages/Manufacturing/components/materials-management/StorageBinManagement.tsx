@@ -501,29 +501,34 @@ export default function StorageBinManagement() {
         
         <TabsContent value="bins" className="mt-6">
           <Card>
-            <CardHeader>
-              <div className="flex justify-between">
-                <div>
-                  <CardTitle>Storage Bin Management</CardTitle>
-                  <CardDescription>
-                    Manage storage locations and bin arrangements
-                  </CardDescription>
-                </div>
-                <Button onClick={() => setShowAddBinDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Storage Bin
-                </Button>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Storage Bins Management</CardTitle>
+                <CardDescription>Manage all storage bins across your warehouses</CardDescription>
               </div>
+              <Button onClick={() => setShowAddBinDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Storage Bin
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center border rounded-md px-3 mb-4 w-full max-w-sm">
-                <Search className="h-4 w-4 text-muted-foreground mr-2" />
-                <Input 
-                  className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0" 
+              <div className="relative mb-4">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
                   placeholder="Search storage bins..."
+                  className="pl-8"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                {searchTerm && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-2 top-2 h-5 w-5 p-0"
+                    onClick={() => setSearchTerm('')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
               
               {filteredStorageBins?.length > 0 ? (
@@ -540,7 +545,7 @@ export default function StorageBinManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredStorageBins.map((bin) => (
+                    {filteredStorageBins.map((bin: any) => (
                       <TableRow key={bin.id}>
                         <TableCell className="font-medium">{bin.code}</TableCell>
                         <TableCell>{bin.name}</TableCell>
@@ -569,7 +574,16 @@ export default function StorageBinManagement() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">View</Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedBin(bin);
+                              setShowBinDetailDialog(true);
+                            }}
+                          >
+                            View
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -590,26 +604,21 @@ export default function StorageBinManagement() {
         
         <TabsContent value="warehouses" className="mt-6">
           <Card>
-            <CardHeader>
-              <div className="flex justify-between">
-                <div>
-                  <CardTitle>Warehouse Management</CardTitle>
-                  <CardDescription>
-                    Manage warehouse facilities and capacity
-                  </CardDescription>
-                </div>
-                <Button onClick={() => setShowAddWarehouseDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Warehouse
-                </Button>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Warehouses Management</CardTitle>
+                <CardDescription>Manage all warehouse locations</CardDescription>
               </div>
+              <Button onClick={() => setShowAddWarehouseDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Warehouse
+              </Button>
             </CardHeader>
             <CardContent>
               {warehouses?.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
+                      <TableHead>Code</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead>Capacity</TableHead>
@@ -618,7 +627,7 @@ export default function StorageBinManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {warehouses.map((warehouse) => (
+                    {warehouses.map((warehouse: any) => (
                       <TableRow key={warehouse.id}>
                         <TableCell className="font-medium">{warehouse.code}</TableCell>
                         <TableCell>{warehouse.name}</TableCell>
@@ -637,7 +646,16 @@ export default function StorageBinManagement() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">View</Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedWarehouse(warehouse);
+                              setShowWarehouseDetailDialog(true);
+                            }}
+                          >
+                            View
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -654,66 +672,135 @@ export default function StorageBinManagement() {
         
         <TabsContent value="zones" className="mt-6">
           <Card>
-            <CardHeader>
-              <div className="flex justify-between">
-                <div>
-                  <CardTitle>Storage Zone Management</CardTitle>
-                  <CardDescription>
-                    Manage storage zones within warehouses
-                  </CardDescription>
-                </div>
-                <Button onClick={() => setShowAddZoneDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Zone
-                </Button>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Storage Zones Management</CardTitle>
+                <CardDescription>Manage warehouse zones and sections</CardDescription>
               </div>
+              <Button onClick={() => setShowAddZoneDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Zone
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">
-                  No storage zone data available. Please add data to the database.
-                </p>
-                <Button>View Zones</Button>
-              </div>
+              {zonesData?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Warehouse</TableHead>
+                      <TableHead>Zone Type</TableHead>
+                      <TableHead>Capacity</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {zonesData.map((zone: any) => (
+                      <TableRow key={zone.id}>
+                        <TableCell className="font-medium">{zone.code}</TableCell>
+                        <TableCell>{zone.name}</TableCell>
+                        <TableCell>{zone.warehouse_name || '-'}</TableCell>
+                        <TableCell>{zone.zone_type || 'Standard'}</TableCell>
+                        <TableCell>
+                          {zone.capacity 
+                            ? `${zone.capacity} ${zone.capacityUom || 'units'}` 
+                            : 'Not specified'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedZone(zone);
+                              setShowZoneDetailDialog(true);
+                            }}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No storage zones found. Please add zones to organize your warehouses.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
         
         <TabsContent value="transfers" className="mt-6">
           <Card>
-            <CardHeader>
-              <div className="flex justify-between">
-                <div>
-                  <CardTitle>Material Transfers</CardTitle>
-                  <CardDescription>
-                    Manage movement of materials between locations
-                  </CardDescription>
-                </div>
-                <Button onClick={() => setShowAddTransferDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Transfer
-                </Button>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Material Transfers</CardTitle>
+                <CardDescription>Track and manage material movements between storage locations</CardDescription>
               </div>
+              <Button onClick={() => setShowAddTransferDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Record Transfer
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">
-                  No material transfer data available. Please add data to the database.
-                </p>
-                <Button>View Transfer History</Button>
-              </div>
+              {isLoadingTransfers ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : transfersData?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Material</TableHead>
+                      <TableHead>From</TableHead>
+                      <TableHead>To</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transfersData.map((transfer: any) => (
+                      <TableRow key={transfer.id}>
+                        <TableCell>{new Date(transfer.transaction_date).toLocaleDateString()}</TableCell>
+                        <TableCell>{transfer.product_name}</TableCell>
+                        <TableCell>{transfer.source_bin_code || 'External'}</TableCell>
+                        <TableCell>{transfer.destination_bin_code || 'External'}</TableCell>
+                        <TableCell>{transfer.quantity} {transfer.unit_of_measure}</TableCell>
+                        <TableCell>{transfer.reference_number || '-'}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedTransfer(transfer);
+                              setShowTransferDetailDialog(true);
+                            }}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No material transfers found. Use the "Record Transfer" button to add material movements.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-      
+
       {/* Add Storage Bin Dialog */}
       <Dialog open={showAddBinDialog} onOpenChange={setShowAddBinDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Storage Bin</DialogTitle>
             <DialogDescription>
-              Create a new storage bin in your warehouse
+              Create a new storage bin in one of your warehouses
             </DialogDescription>
           </DialogHeader>
           
@@ -745,12 +832,15 @@ export default function StorageBinManagement() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a warehouse" />
+                          <SelectValue placeholder="Select warehouse" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {warehousesData?.map((warehouse: any) => (
-                          <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                        {warehouses?.map((warehouse: any) => (
+                          <SelectItem 
+                            key={warehouse.id} 
+                            value={warehouse.id.toString()}
+                          >
                             {warehouse.name}
                           </SelectItem>
                         ))}
@@ -766,19 +856,22 @@ export default function StorageBinManagement() {
                 name="zone_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Zone (Optional)</FormLabel>
+                    <FormLabel>Zone</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a zone" />
+                          <SelectValue placeholder="Select zone (optional)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {zonesData?.map((zone: any) => (
-                          <SelectItem key={zone.id} value={zone.id.toString()}>
+                          <SelectItem 
+                            key={zone.id} 
+                            value={zone.id.toString()}
+                          >
                             {zone.name}
                           </SelectItem>
                         ))}
@@ -811,7 +904,7 @@ export default function StorageBinManagement() {
                     <FormItem>
                       <FormLabel>Rack</FormLabel>
                       <FormControl>
-                        <Input placeholder="01" {...field} />
+                        <Input placeholder="1" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -827,7 +920,7 @@ export default function StorageBinManagement() {
                     <FormItem>
                       <FormLabel>Level</FormLabel>
                       <FormControl>
-                        <Input placeholder="1" {...field} />
+                        <Input placeholder="2" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -841,7 +934,7 @@ export default function StorageBinManagement() {
                     <FormItem>
                       <FormLabel>Position</FormLabel>
                       <FormControl>
-                        <Input placeholder="1" {...field} />
+                        <Input placeholder="3" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -856,36 +949,8 @@ export default function StorageBinManagement() {
                   <FormItem>
                     <FormLabel>Capacity</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" {...field} />
+                      <Input type="number" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={storageBinForm.control}
-                name="bin_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bin Type</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select bin type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Standard">Standard</SelectItem>
-                        <SelectItem value="Bulk">Bulk</SelectItem>
-                        <SelectItem value="High Value">High Value</SelectItem>
-                        <SelectItem value="Refrigerated">Refrigerated</SelectItem>
-                        <SelectItem value="Hazardous">Hazardous</SelectItem>
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -893,57 +958,65 @@ export default function StorageBinManagement() {
               
               <DialogFooter>
                 <Button 
-                  type="submit" 
-                  disabled={storageBinForm.formState.isSubmitting || addStorageBinMutation.isPending}
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowAddBinDialog(false)}
                 >
-                  {(storageBinForm.formState.isSubmitting || addStorageBinMutation.isPending) ? 
-                    'Creating...' : 'Create Bin'}
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={addStorageBinMutation.isPending}
+                >
+                  {addStorageBinMutation.isPending ? 'Adding...' : 'Add Storage Bin'}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Add Warehouse Dialog */}
       <Dialog open={showAddWarehouseDialog} onOpenChange={setShowAddWarehouseDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Warehouse</DialogTitle>
             <DialogDescription>
-              Create a new warehouse in your inventory system
+              Create a new warehouse location
             </DialogDescription>
           </DialogHeader>
           
           <Form {...warehouseForm}>
             <form onSubmit={warehouseForm.handleSubmit(onSubmitWarehouse)} className="space-y-4">
-              <FormField
-                control={warehouseForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Warehouse Name*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Main Warehouse" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={warehouseForm.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Warehouse Code*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="WH-001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={warehouseForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name*</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Main Warehouse" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={warehouseForm.control}
+                  name="code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Code*</FormLabel>
+                      <FormControl>
+                        <Input placeholder="WH001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <FormField
                 control={warehouseForm.control}
@@ -967,7 +1040,7 @@ export default function StorageBinManagement() {
                     <FormItem>
                       <FormLabel>City</FormLabel>
                       <FormControl>
-                        <Input placeholder="City" {...field} />
+                        <Input placeholder="Chicago" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -981,7 +1054,7 @@ export default function StorageBinManagement() {
                     <FormItem>
                       <FormLabel>State/Province</FormLabel>
                       <FormControl>
-                        <Input placeholder="State" {...field} />
+                        <Input placeholder="IL" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -997,7 +1070,7 @@ export default function StorageBinManagement() {
                     <FormItem>
                       <FormLabel>Country</FormLabel>
                       <FormControl>
-                        <Input placeholder="Country" {...field} />
+                        <Input placeholder="USA" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1009,9 +1082,9 @@ export default function StorageBinManagement() {
                   name="zip"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Postal/ZIP Code</FormLabel>
+                      <FormLabel>Postal Code</FormLabel>
                       <FormControl>
-                        <Input placeholder="12345" {...field} />
+                        <Input placeholder="60007" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1019,20 +1092,63 @@ export default function StorageBinManagement() {
                 />
               </div>
               
+              <FormField
+                control={warehouseForm.control}
+                name="capacity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Capacity</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={warehouseForm.control}
+                name="is_manufacturing"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Manufacturing Facility</FormLabel>
+                      <FormDescription>
+                        Is this location also used for manufacturing operations?
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              
               <DialogFooter>
                 <Button 
-                  type="submit" 
-                  disabled={warehouseForm.formState.isSubmitting || addWarehouseMutation.isPending}
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowAddWarehouseDialog(false)}
                 >
-                  {(warehouseForm.formState.isSubmitting || addWarehouseMutation.isPending) ? 
-                    'Creating...' : 'Create Warehouse'}
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={addWarehouseMutation.isPending}
+                >
+                  {addWarehouseMutation.isPending ? 'Adding...' : 'Add Warehouse'}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Add Zone Dialog */}
       <Dialog open={showAddZoneDialog} onOpenChange={setShowAddZoneDialog}>
         <DialogContent className="max-w-md">
@@ -1045,33 +1161,35 @@ export default function StorageBinManagement() {
           
           <Form {...zoneForm}>
             <form onSubmit={zoneForm.handleSubmit(onSubmitZone)} className="space-y-4">
-              <FormField
-                control={zoneForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Zone Name*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Refrigerated Zone" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={zoneForm.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Zone Code*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ZONE-001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={zoneForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name*</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Raw Materials Zone" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={zoneForm.control}
+                  name="code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Code*</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ZONE-A" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <FormField
                 control={zoneForm.control}
@@ -1085,12 +1203,15 @@ export default function StorageBinManagement() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a warehouse" />
+                          <SelectValue placeholder="Select warehouse" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {warehousesData?.map((warehouse: any) => (
-                          <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                        {warehouses?.map((warehouse: any) => (
+                          <SelectItem 
+                            key={warehouse.id} 
+                            value={warehouse.id.toString()}
+                          >
                             {warehouse.name}
                           </SelectItem>
                         ))}
@@ -1118,12 +1239,13 @@ export default function StorageBinManagement() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="Standard">Standard</SelectItem>
-                        <SelectItem value="Bulk">Bulk Storage</SelectItem>
-                        <SelectItem value="Refrigerated">Refrigerated</SelectItem>
-                        <SelectItem value="Hazardous">Hazardous Materials</SelectItem>
-                        <SelectItem value="Picking">Picking Area</SelectItem>
-                        <SelectItem value="Receiving">Receiving Area</SelectItem>
-                        <SelectItem value="Shipping">Shipping Area</SelectItem>
+                        <SelectItem value="Raw Materials">Raw Materials</SelectItem>
+                        <SelectItem value="Work In Progress">Work In Progress</SelectItem>
+                        <SelectItem value="Finished Goods">Finished Goods</SelectItem>
+                        <SelectItem value="Quarantine">Quarantine</SelectItem>
+                        <SelectItem value="Returns">Returns</SelectItem>
+                        <SelectItem value="Shipping">Shipping</SelectItem>
+                        <SelectItem value="Receiving">Receiving</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -1138,7 +1260,7 @@ export default function StorageBinManagement() {
                   <FormItem>
                     <FormLabel>Capacity</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" {...field} />
+                      <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1153,8 +1275,7 @@ export default function StorageBinManagement() {
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Enter description for this zone" 
-                        className="resize-none" 
+                        placeholder="Enter additional details about this zone..." 
                         {...field} 
                       />
                     </FormControl>
@@ -1165,25 +1286,31 @@ export default function StorageBinManagement() {
               
               <DialogFooter>
                 <Button 
-                  type="submit" 
-                  disabled={zoneForm.formState.isSubmitting || addZoneMutation.isPending}
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowAddZoneDialog(false)}
                 >
-                  {(zoneForm.formState.isSubmitting || addZoneMutation.isPending) ? 
-                    'Creating...' : 'Create Zone'}
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={addZoneMutation.isPending}
+                >
+                  {addZoneMutation.isPending ? 'Adding...' : 'Add Zone'}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-      
-      {/* Add Material Transfer Dialog */}
+
+      {/* Add Transfer Dialog */}
       <Dialog open={showAddTransferDialog} onOpenChange={setShowAddTransferDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>New Material Transfer</DialogTitle>
+            <DialogTitle>Record Material Transfer</DialogTitle>
             <DialogDescription>
-              Transfer materials between storage locations
+              Move materials between storage locations
             </DialogDescription>
           </DialogHeader>
           
@@ -1194,19 +1321,22 @@ export default function StorageBinManagement() {
                 name="product_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Product*</FormLabel>
+                    <FormLabel>Material/Product*</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a product" />
+                          <SelectValue placeholder="Select material" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {productsData?.map((product: any) => (
-                          <SelectItem key={product.id} value={product.id.toString()}>
+                          <SelectItem 
+                            key={product.id} 
+                            value={product.id.toString()}
+                          >
                             {product.name}
                           </SelectItem>
                         ))}
@@ -1217,61 +1347,69 @@ export default function StorageBinManagement() {
                 )}
               />
               
-              <FormField
-                control={transferForm.control}
-                name="source_bin_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Source Bin*</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select source bin" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {storageData?.map((bin: any) => (
-                          <SelectItem key={bin.id} value={bin.id.toString()}>
-                            {bin.code} - {bin.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={transferForm.control}
-                name="destination_bin_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Destination Bin*</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select destination bin" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {storageData?.map((bin: any) => (
-                          <SelectItem key={bin.id} value={bin.id.toString()}>
-                            {bin.code} - {bin.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={transferForm.control}
+                  name="source_bin_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Source Location*</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="From" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {storageData?.map((bin: any) => (
+                            <SelectItem 
+                              key={bin.id} 
+                              value={bin.id.toString()}
+                            >
+                              {bin.code} - {bin.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={transferForm.control}
+                  name="destination_bin_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Destination Location*</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="To" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {storageData?.map((bin: any) => (
+                            <SelectItem 
+                              key={bin.id} 
+                              value={bin.id.toString()}
+                            >
+                              {bin.code} - {bin.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <FormField
                 control={transferForm.control}
@@ -1280,7 +1418,7 @@ export default function StorageBinManagement() {
                   <FormItem>
                     <FormLabel>Quantity*</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0.01" step="0.01" {...field} />
+                      <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1317,13 +1455,13 @@ export default function StorageBinManagement() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Rebalancing">Inventory Rebalancing</SelectItem>
-                        <SelectItem value="StockRotation">Stock Rotation</SelectItem>
-                        <SelectItem value="Production">Production Need</SelectItem>
-                        <SelectItem value="Quality">Quality Control</SelectItem>
-                        <SelectItem value="Shipping">Shipping Preparation</SelectItem>
-                        <SelectItem value="Receiving">Receiving Process</SelectItem>
-                        <SelectItem value="Other">Other Reason</SelectItem>
+                        <SelectItem value="Production">Production</SelectItem>
+                        <SelectItem value="Replenishment">Replenishment</SelectItem>
+                        <SelectItem value="Consolidation">Consolidation</SelectItem>
+                        <SelectItem value="Quality Control">Quality Control</SelectItem>
+                        <SelectItem value="Relocation">Relocation</SelectItem>
+                        <SelectItem value="Return">Return</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -1339,8 +1477,7 @@ export default function StorageBinManagement() {
                     <FormLabel>Notes</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Additional notes about this transfer" 
-                        className="resize-none" 
+                        placeholder="Optional notes about this transfer..." 
                         {...field} 
                       />
                     </FormControl>
@@ -1351,15 +1488,332 @@ export default function StorageBinManagement() {
               
               <DialogFooter>
                 <Button 
-                  type="submit" 
-                  disabled={transferForm.formState.isSubmitting || addTransferMutation.isPending}
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowAddTransferDialog(false)}
                 >
-                  {(transferForm.formState.isSubmitting || addTransferMutation.isPending) ? 
-                    'Processing...' : 'Process Transfer'}
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={addTransferMutation.isPending}
+                >
+                  {addTransferMutation.isPending ? 'Processing...' : 'Record Transfer'}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Bin Detail Dialog */}
+      <Dialog open={showBinDetailDialog} onOpenChange={setShowBinDetailDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Storage Bin Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about this storage bin
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedBin && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium">Bin Code</h4>
+                  <p>{selectedBin.code}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Name</h4>
+                  <p>{selectedBin.name || '-'}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Warehouse</h4>
+                <p>{selectedBin.parent_name || '-'}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium">Aisle</h4>
+                  <p>{selectedBin.aisle || '-'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Rack</h4>
+                  <p>{selectedBin.rack || '-'}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium">Level</h4>
+                  <p>{selectedBin.level || '-'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Position</h4>
+                  <p>{selectedBin.position || '-'}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Capacity</h4>
+                <p>{selectedBin.capacity ? `${selectedBin.capacity} ${selectedBin.capacityUom || 'units'}` : 'Not specified'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Utilization</h4>
+                <div className="flex items-center mt-1">
+                  <div className="w-full h-2 bg-gray-200 rounded-full mr-2">
+                    <div 
+                      className={`h-full rounded-full ${
+                        selectedBin.utilization_percentage >= 90 ? 'bg-red-500' : 
+                        selectedBin.utilization_percentage >= 70 ? 'bg-yellow-500' : 
+                        'bg-green-500'
+                      }`} 
+                      style={{ width: `${selectedBin.utilization_percentage || 0}%` }}
+                    ></div>
+                  </div>
+                  <span>{selectedBin.utilization_percentage || 0}%</span>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Mixed Storage</h4>
+                <p>{selectedBin.is_mixing_allowed ? 'Allowed' : 'Not Allowed'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Special Handling Notes</h4>
+                <p className="text-sm text-gray-500">{selectedBin.special_handling_notes || 'None'}</p>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowBinDetailDialog(false)}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Warehouse Detail Dialog */}
+      <Dialog open={showWarehouseDetailDialog} onOpenChange={setShowWarehouseDetailDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Warehouse Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about this warehouse
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedWarehouse && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium">Code</h4>
+                  <p>{selectedWarehouse.code}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Name</h4>
+                  <p>{selectedWarehouse.name}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Address</h4>
+                <p>{selectedWarehouse.address || '-'}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium">City</h4>
+                  <p>{selectedWarehouse.city || '-'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">State/Province</h4>
+                  <p>{selectedWarehouse.state || '-'}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium">Country</h4>
+                  <p>{selectedWarehouse.country || '-'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Postal Code</h4>
+                  <p>{selectedWarehouse.zip || '-'}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Capacity</h4>
+                <p>{selectedWarehouse.capacity ? `${selectedWarehouse.capacity} ${selectedWarehouse.capacityUom || 'units'}` : 'Not specified'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Manufacturing Facility</h4>
+                <p>{selectedWarehouse.is_manufacturing ? 'Yes' : 'No'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Contact Person</h4>
+                <p>{selectedWarehouse.contact_person || '-'}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium">Phone</h4>
+                  <p>{selectedWarehouse.contact_phone || '-'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Email</h4>
+                  <p>{selectedWarehouse.contact_email || '-'}</p>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowWarehouseDetailDialog(false)}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Zone Detail Dialog */}
+      <Dialog open={showZoneDetailDialog} onOpenChange={setShowZoneDetailDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Zone Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about this storage zone
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedZone && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium">Code</h4>
+                  <p>{selectedZone.code}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Name</h4>
+                  <p>{selectedZone.name}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Warehouse</h4>
+                <p>{selectedZone.warehouse_name || '-'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Zone Type</h4>
+                <p>{selectedZone.zone_type || 'Standard'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Capacity</h4>
+                <p>{selectedZone.capacity ? `${selectedZone.capacity} ${selectedZone.capacityUom || 'units'}` : 'Not specified'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Description</h4>
+                <p className="text-sm text-gray-500">{selectedZone.description || 'No description provided'}</p>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowZoneDetailDialog(false)}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Transfer Detail Dialog */}
+      <Dialog open={showTransferDetailDialog} onOpenChange={setShowTransferDetailDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Transfer Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about this material transfer
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedTransfer && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium">Material</h4>
+                <p>{selectedTransfer.product_name}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium">Date</h4>
+                  <p>{new Date(selectedTransfer.transaction_date).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Time</h4>
+                  <p>{new Date(selectedTransfer.transaction_date).toLocaleTimeString()}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">From Location</h4>
+                <p>{selectedTransfer.source_bin_code || 'External'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">To Location</h4>
+                <p>{selectedTransfer.destination_bin_code || 'External'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Quantity</h4>
+                <p>{selectedTransfer.quantity} {selectedTransfer.unit_of_measure}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Reference Number</h4>
+                <p>{selectedTransfer.reference_number || '-'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Reason</h4>
+                <p>{selectedTransfer.transfer_reason || '-'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium">Notes</h4>
+                <p className="text-sm text-gray-500">{selectedTransfer.notes || 'No notes provided'}</p>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowTransferDetailDialog(false)}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
