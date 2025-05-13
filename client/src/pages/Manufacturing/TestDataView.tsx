@@ -80,7 +80,7 @@ export default function TestDataView() {
                 {bomsError instanceof Error ? bomsError.message : 'Unknown error'}
               </pre>
             </div>
-          ) : !boms || boms.length === 0 ? (
+          ) : !boms || (Array.isArray(boms) && boms.length === 0) ? (
             <div className="p-4 text-center">
               <p>No BOM data available.</p>
               <p className="text-sm text-muted-foreground mt-2">
@@ -123,6 +123,21 @@ export default function TestDataView() {
           ) : (
             <div className="overflow-auto max-h-96">
               <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(mrpData, null, 2)}</pre>
+              
+              {/* Show specific sections of MRP data if available */}
+              {mrpData && typeof mrpData === 'object' && 'lowStockItems' in mrpData && Array.isArray(mrpData.lowStockItems) && (
+                <div className="mt-4 border-t pt-4">
+                  <h3 className="text-lg font-medium mb-2">Low Stock Items ({mrpData.lowStockItems.length})</h3>
+                  <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(mrpData.lowStockItems, null, 2)}</pre>
+                </div>
+              )}
+              
+              {mrpData && typeof mrpData === 'object' && 'forecasts' in mrpData && Array.isArray(mrpData.forecasts) && (
+                <div className="mt-4 border-t pt-4">
+                  <h3 className="text-lg font-medium mb-2">Forecasts ({mrpData.forecasts.length})</h3>
+                  <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(mrpData.forecasts, null, 2)}</pre>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

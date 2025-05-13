@@ -428,16 +428,20 @@ function AutoLogin() {
   const { user, loginMutation } = useAuth();
   
   useEffect(() => {
-    // Only attempt login if there's no user already
-    if (!user) {
-      // Auto-login with admin credentials
-      loginMutation.mutate({ 
-        username: "admin", 
-        password: "password" 
-      });
-      console.log("Auto-login attempted with admin/password");
+    // Only attempt login if there's no user already and mutation isn't in progress
+    if (!user && !loginMutation.isPending && !loginMutation.isSuccess) {
+      // Use a timeout to prevent render loops
+      const timer = setTimeout(() => {
+        console.log("Auto-login attempted with admin/password");
+        loginMutation.mutate({ 
+          username: "admin", 
+          password: "password" 
+        });
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [user, loginMutation]);
+  }, [user, loginMutation.isPending, loginMutation.isSuccess]);
   
   return null; // This component doesn't render anything
 }
