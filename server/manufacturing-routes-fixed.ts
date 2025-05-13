@@ -2441,7 +2441,7 @@ router.post('/valuation-methods', async (req: Request, res: Response) => {
       VALUES (
         ${method_name},
         ${description || null},
-        ${applicable_material_types ? JSON.stringify(applicable_material_types) : null},
+        ${applicable_material_types ? `{${applicable_material_types.map(t => `"${t}"`).join(',')}}` : null},
         ${calculation_formula || null},
         ${is_default || false},
         ${is_active !== undefined ? is_active : true},
