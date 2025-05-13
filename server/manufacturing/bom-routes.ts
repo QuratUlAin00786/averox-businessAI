@@ -9,6 +9,12 @@ const router = Router();
 // Get all BOMs
 router.get('/', async (req: Request, res: Response) => {
   try {
+    console.log('Fetching all BOMs');
+    
+    // First, check if there are any bill_of_materials records
+    const countCheck = await db.execute(sql`SELECT COUNT(*) FROM bill_of_materials`);
+    console.log('Found bill_of_materials records:', countCheck.rows?.[0]?.count || 0);
+    
     const result = await db.execute(sql`
       SELECT 
         b.id,
@@ -35,10 +41,51 @@ router.get('/', async (req: Request, res: Response) => {
       ORDER BY b.created_at DESC
     `);
     
+    console.log('BOM query result:', result?.rows?.length || 0, 'records found');
+    
+    // If no results, check the 'boms' table as fallback
+    if (!result.rows || result.rows.length === 0) {
+      console.log('No records in bill_of_materials, checking boms table');
+      
+      const countCheckBoms = await db.execute(sql`SELECT COUNT(*) FROM boms`);
+      console.log('Found boms records:', countCheckBoms.rows?.[0]?.count || 0);
+      
+      if (countCheckBoms.rows?.[0]?.count > 0) {
+        const bomsResult = await db.execute(sql`
+          SELECT 
+            b.id,
+            b.product_id,
+            p.name as product_name,
+            p.sku as product_sku,
+            b.version,
+            b.name,
+            b.description,
+            b.is_active,
+            b.created_at,
+            b.created_by,
+            u.username as created_by_name,
+            b.approved_by,
+            a.username as approved_by_name,
+            b.approved_at,
+            b.industry_type,
+            NULL as notes,
+            0 as component_count
+          FROM boms b
+          LEFT JOIN products p ON b.product_id = p.id
+          LEFT JOIN users u ON b.created_by = u.id
+          LEFT JOIN users a ON b.approved_by = a.id
+          ORDER BY b.created_at DESC
+        `);
+        
+        console.log('Found', bomsResult?.rows?.length || 0, 'records in boms table');
+        return res.json(bomsResult.rows || []);
+      }
+    }
+    
     return res.json(result.rows || []);
   } catch (error) {
     console.error('Error fetching BOMs:', error);
-    return res.status(500).json({ error: 'Failed to fetch BOMs' });
+    return res.status(500).json({ error: 'Failed to fetch BOMs', details: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 
