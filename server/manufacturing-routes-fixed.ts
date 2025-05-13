@@ -2120,6 +2120,241 @@ router.get('/vendors/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Create a new vendor
+router.post('/vendors', async (req: Request, res: Response) => {
+  try {
+    const {
+      name,
+      vendor_code,
+      contact_person,
+      email,
+      phone,
+      address,
+      tax_id,
+      status,
+      payment_terms,
+      incoterms,
+      website,
+      vendor_type,
+      lead_time_days,
+      minimum_order_value,
+      is_preferred,
+      is_approved,
+      notes
+    } = req.body;
+    
+    // Validate required fields
+    if (!name) {
+      return res.status(400).json({
+        error: 'Vendor name is required'
+      });
+    }
+    
+    // Check if vendor code already exists
+    if (vendor_code) {
+      const checkResult = await db.execute(sql`
+        SELECT id FROM vendors WHERE vendor_code = ${vendor_code}
+      `);
+      
+      if (checkResult.rows.length > 0) {
+        return res.status(409).json({
+          error: 'A vendor with this code already exists'
+        });
+      }
+    }
+    
+    // Generate a unique vendor code if not provided
+    const vendorCodeToUse = vendor_code || `V-${Date.now().toString().slice(-8)}`;
+    
+    // Create the new vendor
+    const result = await db.execute(sql`
+      INSERT INTO vendors (
+        name,
+        vendor_code,
+        contact_person,
+        email,
+        phone,
+        address,
+        tax_id,
+        status,
+        payment_terms,
+        incoterms,
+        website,
+        vendor_type,
+        lead_time_days,
+        minimum_order_value,
+        is_preferred,
+        is_approved,
+        notes,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        ${name},
+        ${vendorCodeToUse},
+        ${contact_person || null},
+        ${email || null},
+        ${phone || null},
+        ${address || null},
+        ${tax_id || null},
+        ${status || 'Active'},
+        ${payment_terms || null},
+        ${incoterms || null},
+        ${website || null},
+        ${vendor_type || 'Supplier'},
+        ${lead_time_days || null},
+        ${minimum_order_value || null},
+        ${is_preferred !== undefined ? is_preferred : false},
+        ${is_approved !== undefined ? is_approved : false},
+        ${notes || null},
+        NOW(),
+        NOW()
+      )
+      RETURNING *
+    `);
+    
+    const newVendor = result.rows[0];
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Vendor created successfully',
+      vendor: newVendor
+    });
+  } catch (error) {
+    console.error('Error creating vendor:', error);
+    return res.status(500).json({ error: 'Failed to create vendor' });
+  }
+});
+
+// Update a vendor
+router.patch('/vendors/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const {
+      name,
+      contact_person,
+      email,
+      phone,
+      address,
+      tax_id,
+      status,
+      payment_terms,
+      incoterms,
+      website,
+      vendor_type,
+      lead_time_days,
+      minimum_order_value,
+      is_preferred,
+      is_approved,
+      notes,
+      quality_rejection_rate,
+      on_time_delivery_rate,
+      rating
+    } = req.body;
+    
+    // Check if vendor exists
+    const checkResult = await db.execute(sql`
+      SELECT id FROM vendors WHERE id = ${id}
+    `);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Vendor not found' });
+    }
+    
+    // Use individual updates for more reliable execution
+    await db.execute(sql`BEGIN`);
+    
+    try {
+      if (name !== undefined) {
+        await db.execute(sql`UPDATE vendors SET name = ${name} WHERE id = ${id}`);
+      }
+      
+      if (contact_person !== undefined) {
+        await db.execute(sql`UPDATE vendors SET contact_person = ${contact_person} WHERE id = ${id}`);
+      }
+      
+      if (email !== undefined) {
+        await db.execute(sql`UPDATE vendors SET email = ${email} WHERE id = ${id}`);
+      }
+      
+      if (phone !== undefined) {
+        await db.execute(sql`UPDATE vendors SET phone = ${phone} WHERE id = ${id}`);
+      }
+      
+      if (address !== undefined) {
+        await db.execute(sql`UPDATE vendors SET address = ${address} WHERE id = ${id}`);
+      }
+      
+      if (tax_id !== undefined) {
+        await db.execute(sql`UPDATE vendors SET tax_id = ${tax_id} WHERE id = ${id}`);
+      }
+      
+      if (status !== undefined) {
+        await db.execute(sql`UPDATE vendors SET status = ${status} WHERE id = ${id}`);
+      }
+      
+      if (payment_terms !== undefined) {
+        await db.execute(sql`UPDATE vendors SET payment_terms = ${payment_terms} WHERE id = ${id}`);
+      }
+      
+      if (incoterms !== undefined) {
+        await db.execute(sql`UPDATE vendors SET incoterms = ${incoterms} WHERE id = ${id}`);
+      }
+      
+      if (website !== undefined) {
+        await db.execute(sql`UPDATE vendors SET website = ${website} WHERE id = ${id}`);
+      }
+      
+      if (is_preferred !== undefined) {
+        await db.execute(sql`UPDATE vendors SET is_preferred = ${is_preferred} WHERE id = ${id}`);
+      }
+      
+      if (is_approved !== undefined) {
+        await db.execute(sql`UPDATE vendors SET is_approved = ${is_approved} WHERE id = ${id}`);
+      }
+      
+      if (notes !== undefined) {
+        await db.execute(sql`UPDATE vendors SET notes = ${notes} WHERE id = ${id}`);
+      }
+      
+      if (quality_rejection_rate !== undefined) {
+        await db.execute(sql`UPDATE vendors SET quality_rejection_rate = ${quality_rejection_rate} WHERE id = ${id}`);
+      }
+      
+      if (on_time_delivery_rate !== undefined) {
+        await db.execute(sql`UPDATE vendors SET on_time_delivery_rate = ${on_time_delivery_rate} WHERE id = ${id}`);
+      }
+      
+      if (rating !== undefined) {
+        await db.execute(sql`UPDATE vendors SET rating = ${rating} WHERE id = ${id}`);
+      }
+      
+      // Update timestamp
+      await db.execute(sql`UPDATE vendors SET updated_at = NOW() WHERE id = ${id}`);
+      
+      // Get updated vendor
+      const updatedResult = await db.execute(sql`SELECT * FROM vendors WHERE id = ${id}`);
+      
+      await db.execute(sql`COMMIT`);
+      
+      const updatedVendor = updatedResult.rows[0];
+      
+      return res.json({
+        success: true,
+        message: 'Vendor updated successfully',
+        vendor: updatedVendor
+      });
+    } catch (error) {
+      await db.execute(sql`ROLLBACK`);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error updating vendor:', error);
+    return res.status(500).json({ error: 'Failed to update vendor' });
+  }
+});
+
 // ---------------------------------------------------------------
 // MATERIAL VALUATIONS
 // ---------------------------------------------------------------
@@ -2149,6 +2384,144 @@ router.get('/valuation-methods', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching valuation methods:', error);
     return res.status(500).json({ error: 'Failed to fetch valuation methods' });
+  }
+});
+
+// Create a new valuation method
+router.post('/valuation-methods', async (req: Request, res: Response) => {
+  try {
+    const {
+      method_name,
+      description,
+      applicable_material_types,
+      calculation_formula,
+      is_default,
+      is_active
+    } = req.body;
+    
+    // Validate required fields
+    if (!method_name) {
+      return res.status(400).json({
+        error: 'Method name is required'
+      });
+    }
+    
+    // Check if method name already exists
+    const checkResult = await db.execute(sql`
+      SELECT id FROM material_valuation_methods WHERE method_name = ${method_name}
+    `);
+    
+    if (checkResult.rows.length > 0) {
+      return res.status(409).json({
+        error: 'A valuation method with this name already exists'
+      });
+    }
+    
+    // If this is set as default, unset any existing default
+    if (is_default) {
+      await db.execute(sql`
+        UPDATE material_valuation_methods
+        SET is_default = false
+        WHERE is_default = true
+      `);
+    }
+    
+    // Create the new valuation method
+    const result = await db.execute(sql`
+      INSERT INTO material_valuation_methods (
+        method_name,
+        description,
+        applicable_material_types,
+        calculation_formula,
+        is_default,
+        is_active,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        ${method_name},
+        ${description || null},
+        ${applicable_material_types ? JSON.stringify(applicable_material_types) : null},
+        ${calculation_formula || null},
+        ${is_default || false},
+        ${is_active !== undefined ? is_active : true},
+        NOW(),
+        NOW()
+      )
+      RETURNING *
+    `);
+    
+    const newMethod = result.rows[0];
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Valuation method created successfully',
+      method: newMethod
+    });
+  } catch (error) {
+    console.error('Error creating valuation method:', error);
+    return res.status(500).json({ error: 'Failed to create valuation method' });
+  }
+});
+
+// Update a valuation method
+router.patch('/valuation-methods/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {
+      description,
+      applicable_material_types,
+      calculation_formula,
+      is_default,
+      is_active
+    } = req.body;
+    
+    // Check if method exists
+    const checkResult = await db.execute(sql`
+      SELECT id, method_name FROM material_valuation_methods WHERE id = ${id}
+    `);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Valuation method not found' });
+    }
+    
+    // If setting as default, unset any existing default
+    if (is_default) {
+      await db.execute(sql`
+        UPDATE material_valuation_methods
+        SET is_default = false
+        WHERE is_default = true AND id != ${id}
+      `);
+    }
+    
+    // Update the method
+    await db.execute(sql`
+      UPDATE material_valuation_methods
+      SET
+        description = COALESCE(${description !== undefined ? description : null}, description),
+        applicable_material_types = COALESCE(${applicable_material_types ? JSON.stringify(applicable_material_types) : null}, applicable_material_types),
+        calculation_formula = COALESCE(${calculation_formula !== undefined ? calculation_formula : null}, calculation_formula),
+        is_default = COALESCE(${is_default !== undefined ? is_default : null}, is_default),
+        is_active = COALESCE(${is_active !== undefined ? is_active : null}, is_active),
+        updated_at = NOW()
+      WHERE id = ${id}
+    `);
+    
+    // Get the updated record
+    const updatedResult = await db.execute(sql`
+      SELECT * FROM material_valuation_methods WHERE id = ${id}
+    `);
+    
+    const updatedMethod = updatedResult.rows[0];
+    
+    return res.json({
+      success: true,
+      message: 'Valuation method updated successfully',
+      method: updatedMethod
+    });
+  } catch (error) {
+    console.error('Error updating valuation method:', error);
+    return res.status(500).json({ error: 'Failed to update valuation method' });
   }
 });
 
@@ -2372,14 +2745,14 @@ router.patch('/valuations/:id/status', async (req: Request, res: Response) => {
       SELECT * FROM material_valuations WHERE id = ${id}
     `);
     
-    if (result.rows.length === 0) {
+    if (updatedRecord.rows.length === 0) {
       return res.status(404).json({ error: 'Valuation not found' });
     }
     
     return res.json({
       success: true,
       message: `Valuation ${is_active ? 'activated' : 'deactivated'} successfully`,
-      valuation: result.rows[0]
+      valuation: updatedRecord.rows[0]
     });
   } catch (error) {
     console.error('Error updating valuation status:', error);
