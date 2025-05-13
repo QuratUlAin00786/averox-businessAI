@@ -100,6 +100,19 @@ export default function StorageBinManagement() {
   const [showAddZoneDialog, setShowAddZoneDialog] = useState(false);
   const [showAddTransferDialog, setShowAddTransferDialog] = useState(false);
   
+  // View detail dialogs
+  const [selectedBin, setSelectedBin] = useState<any>(null);
+  const [showBinDetailDialog, setShowBinDetailDialog] = useState(false);
+  
+  const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
+  const [showWarehouseDetailDialog, setShowWarehouseDetailDialog] = useState(false);
+  
+  const [selectedZone, setSelectedZone] = useState<any>(null);
+  const [showZoneDetailDialog, setShowZoneDetailDialog] = useState(false);
+  
+  const [selectedTransfer, setSelectedTransfer] = useState<any>(null);
+  const [showTransferDetailDialog, setShowTransferDetailDialog] = useState(false);
+  
   // Fetch storage bins with utilization data
   const { 
     data: storageBinsResponse, 
