@@ -502,7 +502,7 @@ router.get('/inventory/levels', async (req: Request, res: Response) => {
           WHEN (COALESCE(is_sums.inflows, 0) - COALESCE(is_sums.outflows, 0)) <= p.reorder_level THEN true 
           ELSE false 
         END as needs_reorder,
-        p.unit_price as unit_cost
+        p.price as unit_cost
       FROM products p
       LEFT JOIN inventory_sums is_sums ON p.id = is_sums.product_id
       ORDER BY p.name
@@ -535,8 +535,8 @@ router.get('/inventory/valuation', async (req: Request, res: Response) => {
         p.name,
         p.sku,
         COALESCE(is_sums.inflows, 0) - COALESCE(is_sums.outflows, 0) as current_quantity,
-        COALESCE(is_sums.avg_unit_cost, p.unit_price) as unit_cost,
-        (COALESCE(is_sums.inflows, 0) - COALESCE(is_sums.outflows, 0)) * COALESCE(is_sums.avg_unit_cost, p.unit_price) as total_value
+        COALESCE(is_sums.avg_unit_cost, p.price) as unit_cost,
+        (COALESCE(is_sums.inflows, 0) - COALESCE(is_sums.outflows, 0)) * COALESCE(is_sums.avg_unit_cost, p.price) as total_value
       FROM products p
       LEFT JOIN inventory_sums is_sums ON p.id = is_sums.product_id
       WHERE (COALESCE(is_sums.inflows, 0) - COALESCE(is_sums.outflows, 0)) > 0
