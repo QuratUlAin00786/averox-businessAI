@@ -544,7 +544,7 @@ router.post('/:id/copy', async (req: Request, res: Response) => {
           true,
           ${new Date().toISOString()},
           ${req.user?.id || 1},
-          'Copied from version ${id}',
+          ${`Copied from version ${id}`},
           ${sourceBom.manufacturing_type}
         )
         RETURNING id

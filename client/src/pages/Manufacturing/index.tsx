@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Factory, Boxes, Settings, ChevronRight, TrendingUp, BarChart3, FileSpreadsheet } from 'lucide-react';
+import { Package, Factory, Boxes, Settings, ChevronRight, TrendingUp, BarChart3, FileSpreadsheet, Layers, FileText } from 'lucide-react';
 
 type ManufacturingModule = {
   id: string;
@@ -10,6 +10,7 @@ type ManufacturingModule = {
   description: string;
   icon: React.ReactNode;
   path: string;
+  highlighted?: boolean;
 };
 
 export default function ManufacturingIndex() {
@@ -27,6 +28,14 @@ export default function ManufacturingIndex() {
       description: 'Work orders, scheduling, production lines, and quality control',
       icon: <Factory className="h-12 w-12 text-primary" />,
       path: '/manufacturing/production'
+    },
+    {
+      id: 'boms',
+      name: 'Bill of Materials',
+      description: 'Design and manage product structures, components, and assemblies',
+      icon: <Layers className="h-12 w-12 text-primary" />,
+      path: '/manufacturing/boms',
+      highlighted: true
     },
     {
       id: 'planning',
@@ -71,7 +80,13 @@ export default function ManufacturingIndex() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {modules.map((module) => (
           <Link key={module.id} href={module.path}>
-            <Card className="h-full cursor-pointer hover:bg-slate-50 transition-colors">
+            <Card 
+              className={`h-full cursor-pointer transition-colors ${
+                module.highlighted 
+                  ? "border-primary border-2 shadow-md" 
+                  : "hover:bg-slate-50"
+              }`}
+            >
               <CardHeader>
                 <div className="flex items-center justify-between">
                   {module.icon}
@@ -81,7 +96,10 @@ export default function ManufacturingIndex() {
                 <CardDescription>{module.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant={module.highlighted ? "default" : "outline"} 
+                  className="w-full"
+                >
                   Manage {module.name}
                 </Button>
               </CardContent>

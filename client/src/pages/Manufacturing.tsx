@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import ManufacturingIndex from './Manufacturing/index';
 import MaterialsManagement from './Manufacturing/MaterialsManagement';
 import ProductionManagement from './Manufacturing/ProductionManagement';
+import BillOfMaterialsPage from './Manufacturing/BillOfMaterialsPage';
 import MRPPage from './Manufacturing/MaterialsManagement/MRPPage';
 import StorageBinPage from './Manufacturing/MaterialsManagement/StorageBinPage';
 import BatchLotPage from './Manufacturing/MaterialsManagement/BatchLotPage';
@@ -28,6 +29,11 @@ export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
   // Handle Production Management section
   if (subPath === 'production') {
     return <ProductionManagement />;
+  }
+
+  // Handle BOM Management
+  if (subPath === 'boms') {
+    return <BillOfMaterialsPage />;
   }
 
   // Handle Materials Management subsections
