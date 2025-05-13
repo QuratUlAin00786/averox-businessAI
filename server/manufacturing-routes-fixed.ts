@@ -234,7 +234,7 @@ router.get('/products', async (req: Request, res: Response) => {
         sku, 
         description, 
         price,
-        category,
+        category_id,
         stock_quantity,
         unit_of_measure
       FROM products 
