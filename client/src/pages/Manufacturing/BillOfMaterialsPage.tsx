@@ -189,6 +189,17 @@ export default function BillOfMaterialsPage() {
   const [deletingItemId, setDeletingItemId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, isLoading: authLoading } = useAuth();
+  
+  useEffect(() => {
+    if (!user && !authLoading) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "You must be logged in to access this page",
+      });
+    }
+  }, [user, authLoading, toast]);
 
   // Fetch BOMs list
   const { data: boms, isLoading, error } = useQuery<Bom[]>({
@@ -444,6 +455,25 @@ export default function BillOfMaterialsPage() {
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>Failed to load Bills of Materials</AlertDescription>
       </Alert>
+    );
+  }
+
+  // If not authenticated and not loading, show message
+  if (!user && !authLoading) {
+    return (
+      <div className="container mx-auto my-8 p-8 border rounded-lg shadow-md">
+        <h1 className="text-3xl font-bold text-center mb-4">Authentication Required</h1>
+        <p className="text-center text-gray-600 mb-6">Please log in to access the Bill of Materials Management module.</p>
+      </div>
+    );
+  }
+
+  // If still loading authentication, show loading spinner
+  if (authLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
