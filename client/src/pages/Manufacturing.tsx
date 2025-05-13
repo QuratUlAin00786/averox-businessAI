@@ -10,6 +10,7 @@ import VendorPage from './Manufacturing/MaterialsManagement/VendorPage';
 import ValuationsPage from './Manufacturing/MaterialsManagement/ValuationsPage';
 import ReturnsPage from './Manufacturing/MaterialsManagement/ReturnsPage';
 import TradeCompliancePage from './Manufacturing/MaterialsManagement/TradeCompliancePage';
+import TestDataView from './Manufacturing/TestDataView';
 
 type ManufacturingProps = {
   subPath?: string;
@@ -63,6 +64,11 @@ export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
 
   if (subPath === 'materials/compliance') {
     return <TradeCompliancePage />;
+  }
+  
+  // Add test data view route
+  if (subPath === 'test-data') {
+    return <TestDataView />;
   }
 
   // If no match, default to index
