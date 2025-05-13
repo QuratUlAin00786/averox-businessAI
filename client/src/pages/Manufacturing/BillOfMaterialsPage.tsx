@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -350,13 +351,13 @@ export default function BillOfMaterialsPage() {
     mutationFn: (data: { bomId: number, copyDetails: BomCopyFormValues }) => {
       return apiRequest("POST", `/api/manufacturing/boms/${data.bomId}/copy`, data.copyDetails);
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/boms'] });
       setCopyDialogOpen(false);
       bomCopyForm.reset();
       toast({
         title: "BOM copied",
-        description: `New BOM version created: ${data.name}`,
+        description: "New BOM version created successfully",
       });
     },
     onError: (error) => {
