@@ -1595,6 +1595,307 @@ router.get('/batch-lots/expiring', async (req: Request, res: Response) => {
   }
 });
 
+// Create a new batch lot
+router.post('/batch-lots', async (req: Request, res: Response) => {
+  try {
+    const {
+      product_id,
+      lot_number,
+      batch_number,
+      quantity,
+      unit_of_measure,
+      warehouse_id,
+      vendor_id,
+      manufacture_date,
+      expiration_date,
+      receipt_date,
+      cost,
+      purchase_order_id,
+      production_order_id,
+      status,
+      quality_status,
+      country_of_origin,
+      is_quarantine,
+      quarantine_reason,
+      notes
+    } = req.body;
+    
+    // Validate required fields
+    if (!product_id || !lot_number || !quantity || !unit_of_measure) {
+      return res.status(400).json({ 
+        error: 'Missing required fields. Product ID, lot number, quantity, and unit of measure are required.' 
+      });
+    }
+    
+    // Generate a unique batch number if not provided
+    const batchNumberToUse = batch_number || `BN-${Date.now().toString().slice(-8)}`;
+    
+    // Insert the new batch lot
+    const result = await db.execute(sql`
+      INSERT INTO batch_lots (
+        product_id,
+        lot_number,
+        batch_number,
+        quantity,
+        unit_of_measure,
+        warehouse_id,
+        vendor_id,
+        manufacture_date,
+        expiration_date,
+        receipt_date,
+        cost,
+        purchase_order_id,
+        production_order_id,
+        status,
+        quality_status,
+        country_of_origin,
+        is_quarantine,
+        quarantine_reason,
+        notes,
+        created_at,
+        updated_at,
+        created_by
+      )
+      VALUES (
+        ${product_id},
+        ${lot_number},
+        ${batchNumberToUse},
+        ${quantity},
+        ${unit_of_measure},
+        ${warehouse_id || null},
+        ${vendor_id || null},
+        ${manufacture_date ? new Date(manufacture_date) : null},
+        ${expiration_date ? new Date(expiration_date) : null},
+        ${receipt_date ? new Date(receipt_date) : new Date()},
+        ${cost || null},
+        ${purchase_order_id || null},
+        ${production_order_id || null},
+        ${status || 'Available'},
+        ${quality_status || 'Pending'},
+        ${country_of_origin || null},
+        ${is_quarantine || false},
+        ${quarantine_reason || null},
+        ${notes || null},
+        NOW(),
+        NOW(),
+        ${req.user?.id || null}
+      )
+      RETURNING *
+    `);
+    
+    const newBatchLot = result.rows[0];
+    
+    // Also create an inventory transaction if warehouse is specified
+    if (warehouse_id) {
+      await db.execute(sql`
+        INSERT INTO inventory_transactions (
+          product_id,
+          type,
+          quantity,
+          reference_id,
+          reference_type,
+          notes,
+          location,
+          created_at,
+          created_by,
+          batch_id
+        )
+        VALUES (
+          ${product_id},
+          'Receive',
+          ${quantity},
+          ${newBatchLot.id},
+          'Batch',
+          ${`Received batch/lot ${lot_number}`},
+          ${warehouse_id},
+          NOW(),
+          ${req.user?.id || null},
+          ${newBatchLot.id}
+        )
+      `);
+    }
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Batch lot created successfully',
+      batchLot: newBatchLot
+    });
+  } catch (error) {
+    console.error('Error creating batch lot:', error);
+    return res.status(500).json({ error: 'Failed to create batch lot' });
+  }
+});
+
+// Update a batch lot
+router.patch('/batch-lots/:id', async (req: Request, res: Response) => {
+  try {
+    const batchLotId = parseInt(req.params.id);
+    
+    if (isNaN(batchLotId)) {
+      return res.status(400).json({ error: 'Invalid batch lot ID' });
+    }
+    
+    const {
+      quantity,
+      warehouse_id,
+      status,
+      quality_status,
+      is_quarantine,
+      quarantine_reason,
+      quarantine_until,
+      notes
+    } = req.body;
+    
+    // Check if the batch lot exists
+    const checkResult = await db.execute(sql`
+      SELECT * FROM batch_lots WHERE id = ${batchLotId}
+    `);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Batch lot not found' });
+    }
+    
+    const existingBatchLot = checkResult.rows[0];
+    
+    // Build update query dynamically based on provided fields
+    let updateFields = [];
+    let updateValues = [];
+    
+    if (quantity !== undefined) {
+      updateFields.push('quantity = $' + (updateValues.length + 1));
+      updateValues.push(quantity);
+    }
+    
+    if (warehouse_id !== undefined) {
+      updateFields.push('warehouse_id = $' + (updateValues.length + 1));
+      updateValues.push(warehouse_id);
+    }
+    
+    if (status !== undefined) {
+      updateFields.push('status = $' + (updateValues.length + 1));
+      updateValues.push(status);
+    }
+    
+    if (quality_status !== undefined) {
+      updateFields.push('quality_status = $' + (updateValues.length + 1));
+      updateValues.push(quality_status);
+    }
+    
+    if (is_quarantine !== undefined) {
+      updateFields.push('is_quarantine = $' + (updateValues.length + 1));
+      updateValues.push(is_quarantine);
+    }
+    
+    if (quarantine_reason !== undefined) {
+      updateFields.push('quarantine_reason = $' + (updateValues.length + 1));
+      updateValues.push(quarantine_reason);
+    }
+    
+    if (quarantine_until !== undefined) {
+      updateFields.push('quarantine_until = $' + (updateValues.length + 1));
+      updateValues.push(new Date(quarantine_until));
+    }
+    
+    if (notes !== undefined) {
+      updateFields.push('notes = $' + (updateValues.length + 1));
+      updateValues.push(notes);
+    }
+    
+    // Always update the updated_at timestamp
+    updateFields.push('updated_at = NOW()');
+    
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    // Execute the update query
+    const updateQuery = `
+      UPDATE batch_lots
+      SET ${updateFields.join(', ')}
+      WHERE id = $${updateValues.length + 1}
+      RETURNING *
+    `;
+    
+    updateValues.push(batchLotId);
+    
+    const result = await db.execute({
+      text: updateQuery,
+      values: updateValues
+    });
+    
+    const updatedBatchLot = result.rows[0];
+    
+    // If warehouse_id changed, create a transfer transaction
+    if (warehouse_id !== undefined && warehouse_id !== existingBatchLot.warehouse_id) {
+      await db.execute(sql`
+        INSERT INTO inventory_transactions (
+          product_id,
+          type,
+          quantity,
+          reference_id,
+          reference_type,
+          notes,
+          location,
+          created_at,
+          created_by,
+          batch_id
+        )
+        VALUES (
+          ${existingBatchLot.product_id},
+          'Transfer',
+          ${quantity || existingBatchLot.quantity},
+          ${batchLotId},
+          'Batch',
+          ${`Batch/lot ${existingBatchLot.lot_number} transferred to new location`},
+          ${warehouse_id},
+          NOW(),
+          ${req.user?.id || null},
+          ${batchLotId}
+        )
+      `);
+    }
+    
+    // If status changed to Consumed, create a consumption transaction
+    if (status === 'Consumed' && existingBatchLot.status !== 'Consumed') {
+      await db.execute(sql`
+        INSERT INTO inventory_transactions (
+          product_id,
+          type,
+          quantity,
+          reference_id,
+          reference_type,
+          notes,
+          location,
+          created_at,
+          created_by,
+          batch_id
+        )
+        VALUES (
+          ${existingBatchLot.product_id},
+          'Consume',
+          ${-1 * (quantity || existingBatchLot.quantity)},
+          ${batchLotId},
+          'Batch',
+          ${`Batch/lot ${existingBatchLot.lot_number} marked as consumed`},
+          ${existingBatchLot.warehouse_id},
+          NOW(),
+          ${req.user?.id || null},
+          ${batchLotId}
+        )
+      `);
+    }
+    
+    return res.json({
+      success: true,
+      message: 'Batch lot updated successfully',
+      batchLot: updatedBatchLot
+    });
+  } catch (error) {
+    console.error('Error updating batch lot:', error);
+    return res.status(500).json({ error: 'Failed to update batch lot' });
+  }
+});
+
 // ---------------------------------------------------------------
 // VENDOR MANAGEMENT
 // ---------------------------------------------------------------
@@ -3378,7 +3679,8 @@ router.post('/warehouse/transfers/add', async (req: Request, res: Response) => {
         RETURNING id
       `);
       
-      const transferId = transferResult.rows[0].id;
+      const transferOutId = transferOutResult.rows[0].id;
+      const transferInId = transferInResult.rows[0].id;
       
       // Commit the transaction
       await db.execute(sql`COMMIT`);
@@ -3387,7 +3689,10 @@ router.post('/warehouse/transfers/add', async (req: Request, res: Response) => {
         success: true,
         message: 'Material transfer completed successfully',
         transfer: {
-          id: transferId,
+          ids: {
+            outbound: transferOutId,
+            inbound: transferInId
+          },
           product: product.name,
           quantity,
           source_bin: sourceBinResult.rows[0].bin_code,
