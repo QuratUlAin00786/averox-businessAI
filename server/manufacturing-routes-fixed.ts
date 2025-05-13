@@ -3328,28 +3328,51 @@ router.post('/warehouse/transfers/add', async (req: Request, res: Response) => {
         WHERE id = ${destination_bin_id}
       `);
       
-      // Create a record of the transfer
-      const transferResult = await db.execute(sql`
+      // Create a record of the outbound transfer
+      const transferOutResult = await db.execute(sql`
         INSERT INTO inventory_transactions (
           product_id,
-          transaction_type,
-          source_bin_id,
-          destination_bin_id,
+          type,
           quantity,
-          transaction_date,
-          reference_number,
+          reference_id,
+          reference_type,
           notes,
+          location,
           created_at
         )
         VALUES (
           ${product_id},
           'Transfer',
-          ${source_bin_id},
-          ${destination_bin_id},
-          ${quantity},
-          NOW(),
+          ${-quantity}, -- negative for outbound
           ${reference_number || null},
-          ${notes || null},
+          'Transfer',
+          ${notes ? `Source bin: ${source_bin_id}, ${notes}` : `Source bin: ${source_bin_id}`},
+          ${source_bin_id},
+          NOW()
+        )
+        RETURNING id
+      `);
+      
+      // Create the incoming transfer record
+      const transferInResult = await db.execute(sql`
+        INSERT INTO inventory_transactions (
+          product_id,
+          type,
+          quantity,
+          reference_id,
+          reference_type,
+          notes,
+          location,
+          created_at
+        )
+        VALUES (
+          ${product_id},
+          'Transfer',
+          ${quantity}, -- positive for inbound
+          ${reference_number || null},
+          'Transfer',
+          ${notes ? `Destination bin: ${destination_bin_id}, ${notes}` : `Destination bin: ${destination_bin_id}`},
+          ${destination_bin_id},
           NOW()
         )
         RETURNING id
@@ -3389,21 +3412,18 @@ router.get('/warehouse/transfers', async (req: Request, res: Response) => {
     const result = await db.execute(sql`
       SELECT 
         t.id,
-        t.transaction_date,
+        t.created_at as transaction_date,
         t.quantity,
-        t.transaction_type,
-        t.reference_number,
+        t.type as transaction_type,
+        t.reference_id as reference_number,
         t.notes,
         p.name as product_name,
         p.sku as product_code,
-        sb1.bin_code as source_bin_code,
-        sb2.bin_code as destination_bin_code
+        t.location as bin_location
       FROM inventory_transactions t
       LEFT JOIN products p ON t.product_id = p.id
-      LEFT JOIN storage_bins sb1 ON t.source_bin_id = sb1.id
-      LEFT JOIN storage_bins sb2 ON t.destination_bin_id = sb2.id
-      WHERE t.transaction_type = 'Transfer'
-      ORDER BY t.transaction_date DESC
+      WHERE t.type = 'Transfer' OR t.reference_type = 'Transfer'
+      ORDER BY t.created_at DESC
     `);
     
     const transfers = result.rows || [];
