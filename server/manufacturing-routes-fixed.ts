@@ -223,6 +223,31 @@ router.get('/forecasts', async (req: Request, res: Response) => {
   }
 });
 
+// Get all products for dropdown selection
+router.get('/products', async (req: Request, res: Response) => {
+  try {
+    // Fetch all products from the database
+    const result = await db.execute(sql`
+      SELECT 
+        id, 
+        name, 
+        sku, 
+        description, 
+        price,
+        category,
+        stock_quantity,
+        unit_of_measure
+      FROM products 
+      ORDER BY name ASC
+    `);
+    
+    return res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
 // Get forecast details
 router.get('/forecasts/:id', async (req: Request, res: Response) => {
   try {

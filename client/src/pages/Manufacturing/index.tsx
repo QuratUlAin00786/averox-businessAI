@@ -38,10 +38,18 @@ export default function ManufacturingIndex() {
       highlighted: true
     },
     {
+      id: 'forecasting',
+      name: 'Demand Forecasting',
+      description: 'Create and manage material forecasts for production planning',
+      icon: <TrendingUp className="h-12 w-12 text-primary" />,
+      path: '/manufacturing/forecasting',
+      highlighted: true
+    },
+    {
       id: 'planning',
       name: 'Production Planning',
       description: 'Long-term capacity planning and resource allocation',
-      icon: <TrendingUp className="h-12 w-12 text-primary" />,
+      icon: <FileSpreadsheet className="h-12 w-12 text-primary" />,
       path: '/manufacturing/planning'
     },
     {
