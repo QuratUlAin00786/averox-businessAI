@@ -357,6 +357,211 @@ router.post('/forecasts', async (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------
+// INVENTORY MANAGEMENT
+// ---------------------------------------------------------------
+// Get inventory transactions
+router.get('/inventory/transactions', async (req: Request, res: Response) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT 
+        it.id,
+        it.product_id,
+        p.name as product_name,
+        p.sku as product_sku,
+        it.quantity,
+        it.type,
+        it.reference_id,
+        it.reference_type,
+        it.unit_cost,
+        it.created_at,
+        it.created_by,
+        u.username as created_by_name,
+        it.notes,
+        it.location,
+        it.batch_id,
+        it.expiry_date
+      FROM inventory_transactions it
+      LEFT JOIN products p ON it.product_id = p.id
+      LEFT JOIN users u ON it.created_by = u.id
+      ORDER BY it.created_at DESC
+      LIMIT 100
+    `);
+    
+    return res.json(result.rows || []);
+  } catch (error) {
+    console.error('Error fetching inventory transactions:', error);
+    return res.status(500).json({ error: 'Failed to fetch inventory transactions' });
+  }
+});
+
+// Add inventory transaction
+router.post('/inventory/transactions', async (req: Request, res: Response) => {
+  try {
+    const {
+      product_id,
+      quantity = 0,
+      type = 'Purchase', // Default type
+      reference_id = null,
+      reference_type = null,
+      unit_cost = null,
+      expiry_date = null,
+      batch_id = null,
+      notes = '',
+      location = null
+    } = req.body;
+    
+    // Validate required fields
+    if (!product_id) {
+      return res.status(400).json({ error: 'Product ID is required' });
+    }
+    
+    if (quantity === 0) {
+      return res.status(400).json({ error: 'Quantity cannot be zero' });
+    }
+    
+    // Validate transaction type
+    const validTypes = ['Purchase', 'Sale', 'Adjustment', 'Return', 'Transfer', 'Production', 'Consumption', 'QualityReject', 'ScrapDisposal', 'IntakeForProduction', 'ProductionOutput'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ 
+        error: 'Invalid transaction type',
+        validValues: validTypes
+      });
+    }
+    
+    // Insert inventory transaction
+    const result = await db.execute(sql`
+      INSERT INTO inventory_transactions (
+        product_id,
+        quantity,
+        type,
+        reference_id,
+        reference_type,
+        unit_cost,
+        created_at,
+        created_by,
+        expiry_date,
+        batch_id,
+        notes,
+        location
+      )
+      VALUES (
+        ${product_id},
+        ${quantity},
+        ${type},
+        ${reference_id},
+        ${reference_type},
+        ${unit_cost},
+        ${new Date().toISOString()},
+        ${req.user?.id || 1},
+        ${expiry_date},
+        ${batch_id},
+        ${notes},
+        ${location}
+      )
+      RETURNING id
+    `);
+    
+    // Get the ID of the inserted transaction
+    const transactionId = result.rows?.[0]?.id;
+    
+    return res.status(201).json({
+      id: transactionId,
+      product_id,
+      quantity,
+      type,
+      created_at: new Date().toISOString(),
+      message: 'Inventory transaction recorded successfully'
+    });
+  } catch (error) {
+    console.error('Error creating inventory transaction:', error);
+    return res.status(500).json({ error: 'Failed to record inventory transaction' });
+  }
+});
+
+// Get current inventory levels
+router.get('/inventory/levels', async (req: Request, res: Response) => {
+  try {
+    // Calculate current inventory levels based on transactions
+    const result = await db.execute(sql`
+      WITH inventory_sums AS (
+        SELECT 
+          product_id,
+          SUM(CASE WHEN type IN ('Purchase', 'Return', 'Adjustment', 'Transfer', 'Production', 'ProductionOutput') THEN quantity ELSE 0 END) AS inflows,
+          SUM(CASE WHEN type IN ('Sale', 'Consumption', 'QualityReject', 'ScrapDisposal', 'IntakeForProduction') THEN quantity ELSE 0 END) AS outflows
+        FROM inventory_transactions
+        GROUP BY product_id
+      )
+      SELECT 
+        p.id,
+        p.name,
+        p.sku,
+        p.description,
+        COALESCE(is_sums.inflows, 0) - COALESCE(is_sums.outflows, 0) as current_quantity,
+        p.reorder_level,
+        CASE 
+          WHEN (COALESCE(is_sums.inflows, 0) - COALESCE(is_sums.outflows, 0)) <= p.reorder_level THEN true 
+          ELSE false 
+        END as needs_reorder,
+        p.unit_price as unit_cost
+      FROM products p
+      LEFT JOIN inventory_sums is_sums ON p.id = is_sums.product_id
+      ORDER BY p.name
+    `);
+    
+    return res.json(result.rows || []);
+  } catch (error) {
+    console.error('Error fetching inventory levels:', error);
+    return res.status(500).json({ error: 'Failed to fetch inventory levels' });
+  }
+});
+
+// Get inventory valuation
+router.get('/inventory/valuation', async (req: Request, res: Response) => {
+  try {
+    // Calculate inventory valuation based on transactions and costs
+    const result = await db.execute(sql`
+      WITH inventory_sums AS (
+        SELECT 
+          product_id,
+          SUM(CASE WHEN type IN ('Purchase', 'Return', 'Adjustment', 'Transfer', 'Production', 'ProductionOutput') THEN quantity ELSE 0 END) AS inflows,
+          SUM(CASE WHEN type IN ('Sale', 'Consumption', 'QualityReject', 'ScrapDisposal', 'IntakeForProduction') THEN quantity ELSE 0 END) AS outflows,
+          AVG(unit_cost) as avg_unit_cost
+        FROM inventory_transactions
+        WHERE unit_cost IS NOT NULL
+        GROUP BY product_id
+      )
+      SELECT 
+        p.id,
+        p.name,
+        p.sku,
+        COALESCE(is_sums.inflows, 0) - COALESCE(is_sums.outflows, 0) as current_quantity,
+        COALESCE(is_sums.avg_unit_cost, p.unit_price) as unit_cost,
+        (COALESCE(is_sums.inflows, 0) - COALESCE(is_sums.outflows, 0)) * COALESCE(is_sums.avg_unit_cost, p.unit_price) as total_value
+      FROM products p
+      LEFT JOIN inventory_sums is_sums ON p.id = is_sums.product_id
+      WHERE (COALESCE(is_sums.inflows, 0) - COALESCE(is_sums.outflows, 0)) > 0
+      ORDER BY total_value DESC
+    `);
+    
+    // Calculate total inventory value
+    let totalInventoryValue = 0;
+    if (result.rows && result.rows.length > 0) {
+      totalInventoryValue = result.rows.reduce((sum, item) => sum + Number(item.total_value || 0), 0);
+    }
+    
+    return res.json({
+      items: result.rows || [],
+      totalValue: totalInventoryValue,
+      valuationDate: new Date().toISOString(),
+      valuationMethod: 'Average Cost'
+    });
+  } catch (error) {
+    console.error('Error calculating inventory valuation:', error);
+    return res.status(500).json({ error: 'Failed to calculate inventory valuation' });
+  }
+});
+
+// ---------------------------------------------------------------
 // PRODUCTION ORDERS
 // ---------------------------------------------------------------
 // Get all production orders
