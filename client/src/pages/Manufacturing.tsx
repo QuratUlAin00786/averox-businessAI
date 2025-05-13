@@ -3,6 +3,7 @@ import ManufacturingIndex from './Manufacturing/index';
 import MaterialsManagement from './Manufacturing/MaterialsManagement';
 import ProductionManagement from './Manufacturing/ProductionManagement';
 import BillOfMaterialsPage from './Manufacturing/BillOfMaterialsPage';
+import ForecastingPage from './Manufacturing/ForecastingPage';
 import MRPPage from './Manufacturing/MaterialsManagement/MRPPage';
 import StorageBinPage from './Manufacturing/MaterialsManagement/StorageBinPage';
 import BatchLotPage from './Manufacturing/MaterialsManagement/BatchLotPage';
@@ -64,6 +65,11 @@ export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
 
   if (subPath === 'materials/compliance') {
     return <TradeCompliancePage />;
+  }
+  
+  // Add forecasting route
+  if (subPath === 'forecasting') {
+    return <ForecastingPage />;
   }
   
   // Add test data view route

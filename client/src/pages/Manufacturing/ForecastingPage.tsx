@@ -26,25 +26,27 @@ import { zodResolver } from '@hookform/resolvers/zod';
 const forecastFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  startDate: z.date({
+  start_date: z.date({
     required_error: 'Start date is required',
   }),
-  endDate: z.date({
+  end_date: z.date({
     required_error: 'End date is required',
   }).refine((date) => date > new Date(), {
     message: 'End date must be in the future',
   }),
-  productId: z.number({
+  product_id: z.number({
     required_error: 'Product is required',
   }),
-  period: z.enum(['Monthly', 'Quarterly', 'Yearly'], {
+  forecast_period: z.enum(['Monthly', 'Quarterly', 'Yearly'], {
     required_error: 'Period is required',
   }),
-  forecastType: z.enum(['Statistical', 'Manual', 'Combined'], {
+  forecast_type: z.enum(['Statistical', 'Manual', 'Combined'], {
     required_error: 'Forecast type is required',
   }),
-  confidence: z.number().min(0).max(1).default(0.8),
-  unitOfMeasure: z.string().min(1, 'Unit of measure is required'),
+  confidence_level: z.number().min(0).max(1).default(0.8),
+  unit_of_measure: z.enum(['Each', 'Kilogram', 'Liter', 'Meter', 'Pound', 'Gallon'], {
+    required_error: 'Unit of measure is required',
+  }),
 });
 
 export default function ForecastingPage() {
@@ -70,11 +72,12 @@ export default function ForecastingPage() {
     defaultValues: {
       name: '',
       description: '',
-      startDate: new Date(),
-      endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)),
-      period: 'Monthly',
-      forecastType: 'Statistical',
-      confidence: 0.8
+      start_date: new Date(),
+      end_date: new Date(new Date().setMonth(new Date().getMonth() + 3)),
+      forecast_period: 'Monthly',
+      forecast_type: 'Statistical',
+      confidence_level: 0.8,
+      unit_of_measure: 'Each'
     }
   });
   
@@ -147,7 +150,7 @@ export default function ForecastingPage() {
                 
                 <FormField
                   control={form.control}
-                  name="forecastType"
+                  name="forecast_type"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Forecast Type</FormLabel>
@@ -170,7 +173,7 @@ export default function ForecastingPage() {
                 
                 <FormField
                   control={form.control}
-                  name="startDate"
+                  name="start_date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Start Date</FormLabel>
@@ -185,7 +188,7 @@ export default function ForecastingPage() {
                 
                 <FormField
                   control={form.control}
-                  name="endDate"
+                  name="end_date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>End Date</FormLabel>
@@ -200,7 +203,7 @@ export default function ForecastingPage() {
                 
                 <FormField
                   control={form.control}
-                  name="period"
+                  name="forecast_period"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Forecast Period</FormLabel>
@@ -223,7 +226,7 @@ export default function ForecastingPage() {
                 
                 <FormField
                   control={form.control}
-                  name="productId"
+                  name="product_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Product</FormLabel>
@@ -256,7 +259,7 @@ export default function ForecastingPage() {
                 
                 <FormField
                   control={form.control}
-                  name="unitOfMeasure"
+                  name="unit_of_measure"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Unit of Measure</FormLabel>
@@ -282,7 +285,7 @@ export default function ForecastingPage() {
                 
                 <FormField
                   control={form.control}
-                  name="confidence"
+                  name="confidence_level"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Confidence Level (0-1)</FormLabel>

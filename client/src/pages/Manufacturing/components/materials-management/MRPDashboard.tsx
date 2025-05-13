@@ -273,7 +273,7 @@ export default function MRPDashboard() {
                 </div>
                 <Button 
                   variant="outline"
-                  onClick={() => window.location.href = "/manufacturing/forecasting/create"}
+                  onClick={() => window.location.href = "/manufacturing/forecasting"}
                 >
                   Create Forecast
                 </Button>
@@ -347,7 +347,7 @@ export default function MRPDashboard() {
               ) : (
                 <div className="py-12 text-center text-muted-foreground">
                   <p className="mb-4">No active forecasts found</p>
-                  <Button onClick={() => window.location.href = "/manufacturing/forecasting/create"}>
+                  <Button onClick={() => window.location.href = "/manufacturing/forecasting"}>
                     Create Your First Forecast
                   </Button>
                 </div>
