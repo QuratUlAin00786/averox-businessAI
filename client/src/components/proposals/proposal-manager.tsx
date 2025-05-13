@@ -893,12 +893,23 @@ export function ProposalManager({
       // when the editor loads
       console.log("Pre-fetching proposal elements...");
       const elementsResponse = await fetch(`/api/proposals/${proposal.id}/elements`);
+      
+      let elements = [];
+      
       if (!elementsResponse.ok) {
         console.warn("Could not pre-fetch elements:", elementsResponse.status);
       } else {
         const elementsData = await elementsResponse.json();
-        const elements = elementsData.data || elementsData;
+        elements = elementsData.data || elementsData;
         console.log("Pre-fetched elements:", elements);
+        
+        // Clean session storage for this proposal
+        try {
+          sessionStorage.removeItem(`proposal_${proposal.id}_elements`);
+          sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
+        } catch (error) {
+          console.warn("Error clearing sessionStorage:", error);
+        }
         
         // Store element data in sessionStorage for the editor to use
         // This ensures the editor has immediate access to elements
@@ -913,20 +924,27 @@ export function ProposalManager({
         } catch (error) {
           console.warn("Could not store elements in sessionStorage:", error);
         }
-        
-        // If there are no elements, prepare to create one automatically
-        if (!elements || elements.length === 0) {
-          console.log("No elements found. Will create one automatically when editor opens.");
-        }
       }
       
-      // Important: Make sure we reset editorVisible to false before setting it to true
-      // This helps React properly detect the state change and re-render components
-      console.log("Setting editorVisible to false first");
+      // Reset all state completely first to ensure a clean startup
+      console.log("Clearing editor state completely first");
       setEditorVisible(false);
       
-      // Step 3: Make the editor visible with a short delay
-      // This ensures React has time to process the state updates
+      // Add the metadata to the proposal for the elements count
+      if (!freshProposal._metadata) {
+        freshProposal._metadata = {
+          elementsCount: elements.length,
+          commentsCount: 0,
+          collaboratorsCount: 0,
+          activitiesCount: 0
+        };
+      }
+      
+      // Set the selected proposal with updated metadata
+      setSelectedProposal(freshProposal);
+      
+      // Now trigger a slight delay before opening the editor
+      // This allows React to finish processing state changes
       setTimeout(() => {
         console.log("Setting editor visible to true, selected proposal is:", freshProposal.id);
         setEditorVisible(true);
@@ -934,15 +952,19 @@ export function ProposalManager({
         // Force immediate focus on the editor panel and attempt to select "editor" tab
         setTimeout(() => {
           console.log("Focusing editor tab...");
-          const editorTab = document.querySelector('[data-value="editor"]');
-          if (editorTab) {
-            console.log("Editor tab found, clicking it");
-            (editorTab as HTMLElement).click();
-          } else {
-            console.log("Editor tab not found in DOM");
+          try {
+            const editorTab = document.querySelector('[data-value="editor"]');
+            if (editorTab) {
+              console.log("Editor tab found, clicking it");
+              (editorTab as HTMLElement).click();
+            } else {
+              console.log("Editor tab not found in DOM");
+            }
+          } catch (error) {
+            console.warn("Error focusing editor tab:", error);
           }
-        }, 200);
-      }, 300);
+        }, 300);
+      }, 500);
     } catch (error: any) {
       console.error("Error in handleOpenEditor:", error);
       toast({
