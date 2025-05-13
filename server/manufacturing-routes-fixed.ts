@@ -3334,8 +3334,8 @@ router.post('/warehouse/transfers/add', async (req: Request, res: Response) => {
         INSERT INTO inventory_transactions (
           product_id,
           transaction_type,
-          source_location_id,
-          destination_location_id,
+          source_bin_id,
+          destination_bin_id,
           quantity,
           transaction_date,
           reference_number,
@@ -3401,8 +3401,8 @@ router.get('/warehouse/transfers', async (req: Request, res: Response) => {
         sb2.bin_code as destination_bin_code
       FROM inventory_transactions t
       LEFT JOIN products p ON t.product_id = p.id
-      LEFT JOIN storage_bins sb1 ON t.source_location_id = sb1.id
-      LEFT JOIN storage_bins sb2 ON t.destination_location_id = sb2.id
+      LEFT JOIN storage_bins sb1 ON t.source_bin_id = sb1.id
+      LEFT JOIN storage_bins sb2 ON t.destination_bin_id = sb2.id
       WHERE t.transaction_type = 'Transfer'
       ORDER BY t.transaction_date DESC
     `);
