@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { db } from './db';
+import { db, pool } from './db';
 import { sql } from 'drizzle-orm';
 import { 
   LowStockItem, 
@@ -1808,20 +1808,82 @@ router.patch('/batch-lots/:id', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'No fields to update' });
     }
     
-    // Execute the update query
-    const updateQuery = `
-      UPDATE batch_lots
-      SET ${updateFields.join(', ')}
-      WHERE id = $${updateValues.length + 1}
-      RETURNING *
-    `;
+    // For simplicity and to avoid errors, let's revert to using separate updates
+    // This isn't as efficient but is more reliable
+    let updateResult;
     
-    updateValues.push(batchLotId);
+    // Start a transaction
+    await db.execute(sql`BEGIN`);
     
-    const result = await db.execute({
-      text: updateQuery,
-      values: updateValues
-    });
+    try {
+      // Perform individual updates for each field
+      if (quantity !== undefined) {
+        await db.execute(sql`
+          UPDATE batch_lots SET quantity = ${quantity} WHERE id = ${batchLotId}
+        `);
+      }
+      
+      if (warehouse_id !== undefined) {
+        await db.execute(sql`
+          UPDATE batch_lots SET warehouse_id = ${warehouse_id} WHERE id = ${batchLotId}
+        `);
+      }
+      
+      if (status !== undefined) {
+        await db.execute(sql`
+          UPDATE batch_lots SET status = ${status} WHERE id = ${batchLotId}
+        `);
+      }
+      
+      if (quality_status !== undefined) {
+        await db.execute(sql`
+          UPDATE batch_lots SET quality_status = ${quality_status} WHERE id = ${batchLotId}
+        `);
+      }
+      
+      if (is_quarantine !== undefined) {
+        await db.execute(sql`
+          UPDATE batch_lots SET is_quarantine = ${is_quarantine} WHERE id = ${batchLotId}
+        `);
+      }
+      
+      if (quarantine_reason !== undefined) {
+        await db.execute(sql`
+          UPDATE batch_lots SET quarantine_reason = ${quarantine_reason} WHERE id = ${batchLotId}
+        `);
+      }
+      
+      if (quarantine_until !== undefined) {
+        await db.execute(sql`
+          UPDATE batch_lots SET quarantine_until = ${new Date(quarantine_until)} WHERE id = ${batchLotId}
+        `);
+      }
+      
+      if (notes !== undefined) {
+        await db.execute(sql`
+          UPDATE batch_lots SET notes = ${notes} WHERE id = ${batchLotId}
+        `);
+      }
+      
+      // Update the timestamp
+      await db.execute(sql`
+        UPDATE batch_lots SET updated_at = NOW() WHERE id = ${batchLotId}
+      `);
+      
+      // Get the updated record
+      updateResult = await db.execute(sql`
+        SELECT * FROM batch_lots WHERE id = ${batchLotId}
+      `);
+      
+      // Commit the transaction
+      await db.execute(sql`COMMIT`);
+    } catch (error) {
+      // Rollback in case of error
+      await db.execute(sql`ROLLBACK`);
+      throw error;
+    }
+    
+    const result = updateResult;
     
     const updatedBatchLot = result.rows[0];
     
@@ -2138,6 +2200,190 @@ router.get('/valuations', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching material valuations:', error);
     return res.status(500).json({ error: 'Failed to fetch material valuations' });
+  }
+});
+
+// Create a new material valuation
+router.post('/valuations', async (req: Request, res: Response) => {
+  try {
+    const {
+      product_id,
+      valuation_method,
+      value_per_unit,
+      warehouse_id,
+      currency,
+      accounting_period,
+      batch_lot_id,
+      is_active,
+      change_reason
+    } = req.body;
+    
+    // Validate required fields
+    if (!product_id || !valuation_method || value_per_unit === undefined) {
+      return res.status(400).json({
+        error: 'Missing required fields. Product ID, valuation method, and value per unit are required.'
+      });
+    }
+    
+    // Verify the product exists
+    const productCheck = await db.execute(sql`
+      SELECT id, name FROM products WHERE id = ${product_id}
+    `);
+    
+    if (productCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Verify the valuation method exists and is active
+    const methodCheck = await db.execute(sql`
+      SELECT method_name FROM material_valuation_methods 
+      WHERE method_name = ${valuation_method} AND is_active = true
+    `);
+    
+    if (methodCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Valuation method not found or inactive' });
+    }
+    
+    // Check for existing valuation with same product and method
+    // to store as previous value
+    const prevValuation = await db.execute(sql`
+      SELECT value_per_unit
+      FROM material_valuations
+      WHERE product_id = ${product_id} 
+      AND valuation_method::text = ${valuation_method}
+      AND is_active = true
+      ORDER BY valuation_date DESC
+      LIMIT 1
+    `);
+    
+    const previous_value = prevValuation.rows.length > 0 
+      ? prevValuation.rows[0].value_per_unit 
+      : null;
+    
+    // If there's an existing active valuation, set it to inactive
+    if (is_active) {
+      await db.execute(sql`
+        UPDATE material_valuations
+        SET is_active = false
+        WHERE product_id = ${product_id} 
+        AND valuation_method::text = ${valuation_method}
+        AND is_active = true
+      `);
+    }
+    
+    // Create the new valuation
+    const result = await db.execute(sql`
+      INSERT INTO material_valuations (
+        product_id,
+        valuation_method,
+        value_per_unit,
+        warehouse_id,
+        valuation_date,
+        previous_value_per_unit,
+        is_active,
+        currency,
+        accounting_period,
+        batch_lot_id,
+        change_reason,
+        updated_by
+      )
+      VALUES (
+        ${product_id},
+        ${valuation_method}::material_valuation_method,
+        ${value_per_unit},
+        ${warehouse_id || null},
+        NOW(),
+        ${previous_value || null},
+        ${is_active !== undefined ? is_active : true},
+        ${currency || 'USD'},
+        ${accounting_period || null},
+        ${batch_lot_id || null},
+        ${change_reason || 'Initial valuation'},
+        ${req.user?.id || null}
+      )
+      RETURNING *
+    `);
+    
+    const newValuation = result.rows[0];
+    
+    // Update the last_calculated timestamp on the valuation method
+    await db.execute(sql`
+      UPDATE material_valuation_methods
+      SET last_calculated = NOW()
+      WHERE method_name = ${valuation_method}
+    `);
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Material valuation created successfully',
+      valuation: newValuation
+    });
+  } catch (error) {
+    console.error('Error creating material valuation:', error);
+    return res.status(500).json({ error: 'Failed to create material valuation' });
+  }
+});
+
+// Update material valuation status (active/inactive)
+router.patch('/valuations/:id/status', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+    
+    if (is_active === undefined) {
+      return res.status(400).json({ error: 'Missing required field: is_active' });
+    }
+    
+    // Get the valuation details first
+    const checkResult = await db.execute(sql`
+      SELECT product_id, valuation_method
+      FROM material_valuations
+      WHERE id = ${id}
+    `);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Valuation not found' });
+    }
+    
+    const { product_id, valuation_method } = checkResult.rows[0];
+    
+    // If activating this valuation, deactivate all others for the same product/method
+    if (is_active) {
+      await db.execute(sql`
+        UPDATE material_valuations
+        SET is_active = false
+        WHERE product_id = ${product_id} 
+        AND valuation_method = ${valuation_method}
+        AND id != ${id}
+      `);
+    }
+    
+    // Update the status of this valuation
+    const result = await db.execute(sql`
+      UPDATE material_valuations
+      SET 
+        is_active = ${is_active},
+        updated_by = ${req.user?.id || null}
+      WHERE id = ${id}
+    `);
+    
+    // Get the updated record
+    const updatedRecord = await db.execute(sql`
+      SELECT * FROM material_valuations WHERE id = ${id}
+    `);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Valuation not found' });
+    }
+    
+    return res.json({
+      success: true,
+      message: `Valuation ${is_active ? 'activated' : 'deactivated'} successfully`,
+      valuation: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating valuation status:', error);
+    return res.status(500).json({ error: 'Failed to update valuation status' });
   }
 });
 
