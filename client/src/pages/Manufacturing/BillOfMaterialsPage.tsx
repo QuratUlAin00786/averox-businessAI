@@ -205,12 +205,24 @@ export default function BillOfMaterialsPage() {
   // Fetch BOMs list
   const { data: boms, isLoading, error } = useQuery<Bom[]>({
     queryKey: ['/api/manufacturing/boms'],
+    onSuccess: (data) => {
+      console.log("BOM list data loaded successfully:", data);
+    },
+    onError: (err) => {
+      console.error("Error loading BOM list:", err);
+    }
   });
 
   // Fetch BOM details when selected
   const { data: selectedBom, isLoading: isLoadingBomDetails } = useQuery<BomDetail>({
     queryKey: ['/api/manufacturing/boms', selectedBomId],
     enabled: !!selectedBomId,
+    onSuccess: (data) => {
+      console.log("BOM detail data loaded successfully:", data);
+    },
+    onError: (err) => {
+      console.error("Error loading BOM details:", err);
+    }
   });
 
   // Fetch products for the dropdown
