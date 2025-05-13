@@ -5109,6 +5109,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Move an element up or down
+  app.post('/api/proposals/:proposalId/elements/:id/move', async (req: Request, res: Response) => {
+    try {
+      // Parse IDs
+      const proposalId = parseInt(req.params.proposalId);
+      const elementId = parseInt(req.params.id);
+      const { direction } = req.body;
+      
+      console.log(`Moving element ${elementId} in proposal ${proposalId} ${direction}`);
+      
+      // Validate IDs and direction
+      if (isNaN(proposalId) || isNaN(elementId)) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Valid proposal ID and element ID are required",
+          details: { 
+            proposalId: req.params.proposalId,
+            elementId: req.params.id 
+          }
+        });
+      }
+      
+      if (direction !== 'up' && direction !== 'down') {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Direction must be 'up' or 'down'",
+          details: { direction }
+        });
+      }
+      
+      // Get the current element to verify it belongs to the right proposal
+      const currentElement = await storage.getProposalElement(elementId);
+      if (!currentElement) {
+        return res.status(404).json({
+          success: false,
+          error: "Not Found",
+          message: "Proposal element not found",
+          details: { id: elementId }
+        });
+      }
+      
+      // Verify the element belongs to the specified proposal
+      if (currentElement.proposalId !== proposalId) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Element does not belong to the specified proposal",
+          details: { 
+            elementId: elementId,
+            elementProposalId: currentElement.proposalId,
+            requestedProposalId: proposalId
+          }
+        });
+      }
+      
+      // Get all elements for this proposal to re-sort them
+      const allElements = await storage.listProposalElements(proposalId);
+      
+      // Sort elements by sort order
+      const sortedElements = allElements.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      
+      // Find the current element index
+      const currentIndex = sortedElements.findIndex(e => e.id === elementId);
+      
+      if (currentIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          error: "Logic Error",
+          message: "Element not found in sorted list"
+        });
+      }
+      
+      // Calculate new index based on direction
+      let newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      // Check if move is possible
+      if (newIndex < 0 || newIndex >= sortedElements.length) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: `Cannot move element ${direction}`,
+          details: { 
+            currentIndex,
+            maxIndex: sortedElements.length - 1
+          }
+        });
+      }
+      
+      // Get the element to swap with
+      const targetElement = sortedElements[newIndex];
+      
+      // Swap sort orders
+      const tempSortOrder = targetElement.sortOrder;
+      
+      // Update both elements
+      await storage.updateProposalElement(currentElement.id, {
+        ...currentElement,
+        sortOrder: tempSortOrder
+      });
+      
+      await storage.updateProposalElement(targetElement.id, {
+        ...targetElement,
+        sortOrder: currentElement.sortOrder
+      });
+      
+      // Log activity
+      try {
+        await storage.createProposalActivity({
+          proposalId,
+          activityType: "ELEMENT_MOVED",
+          description: `Element "${currentElement.name}" moved ${direction}`,
+          userId: req.user?.id || 2,
+          metadata: {
+            elementId,
+            direction,
+            oldIndex: currentIndex,
+            newIndex
+          }
+        });
+      } catch (logError) {
+        console.error("Failed to log element move activity:", logError);
+        // Continue despite logging error
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: `Element moved ${direction} successfully`,
+        data: {
+          id: elementId,
+          newIndex
+        }
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
   // DELETE a proposal element
   app.delete('/api/proposals/:proposalId/elements/:id', async (req: Request, res: Response) => {
     try {

@@ -140,7 +140,7 @@ export function getElementDefaultContent(type: ProposalElementType): any {
       return {
         title: 'Signature',
         name: '',
-        title: '',
+        signerTitle: '',
         date: '',
         companyName: ''
       };
