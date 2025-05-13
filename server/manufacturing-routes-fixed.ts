@@ -402,15 +402,16 @@ router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResp
           const result = await db.execute(sql`
             SELECT 
               id,
-              name,
-              description,
+              external_reference as name,
+              notes as description,
+              forecast_period as period,
+              confidence_level as confidence,
               start_date as "startDate",
               end_date as "endDate",
-              status,
+              CASE WHEN is_approved THEN 'Approved' ELSE 'Active' END as status,
               created_at as "createdAt",
               created_by as "createdBy"
             FROM material_forecasts
-            WHERE status = 'Active'
             ORDER BY created_at DESC
             LIMIT 5
           `);
