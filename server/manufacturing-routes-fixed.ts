@@ -357,6 +357,311 @@ router.post('/forecasts', async (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------
+// PRODUCTION ORDERS
+// ---------------------------------------------------------------
+// Get all production orders
+router.get('/production-orders', async (req: Request, res: Response) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT 
+        po.id,
+        po.order_number,
+        po.product_id,
+        p.name as product_name,
+        p.sku as product_sku,
+        po.quantity,
+        po.unit_of_measure,
+        po.status,
+        po.priority,
+        po.planned_start_date,
+        po.planned_end_date,
+        po.actual_start_date,
+        po.actual_end_date,
+        po.batch_number,
+        po.notes,
+        po.completed_quantity,
+        po.rejected_quantity,
+        po.created_at,
+        po.created_by,
+        u.username as created_by_name,
+        po.warehouse_id,
+        po.bom_id,
+        po.routing_id,
+        po.industry_type
+      FROM production_orders po
+      LEFT JOIN products p ON po.product_id = p.id
+      LEFT JOIN users u ON po.created_by = u.id
+      ORDER BY po.created_at DESC
+      LIMIT 100
+    `);
+    
+    return res.json(result.rows || []);
+  } catch (error) {
+    console.error('Error fetching production orders:', error);
+    return res.status(500).json({ error: 'Failed to fetch production orders' });
+  }
+});
+
+// Get production order details
+router.get('/production-orders/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await db.execute(sql`
+      SELECT 
+        po.id,
+        po.order_number,
+        po.product_id,
+        p.name as product_name,
+        p.sku as product_sku,
+        po.quantity,
+        po.unit_of_measure,
+        po.status,
+        po.priority,
+        po.planned_start_date,
+        po.planned_end_date,
+        po.actual_start_date,
+        po.actual_end_date,
+        po.batch_number,
+        po.notes,
+        po.completed_quantity,
+        po.rejected_quantity,
+        po.created_at,
+        po.created_by,
+        u.username as created_by_name,
+        po.warehouse_id,
+        w.name as warehouse_name,
+        po.bom_id,
+        po.routing_id,
+        po.industry_type,
+        r.name as routing_name
+      FROM production_orders po
+      LEFT JOIN products p ON po.product_id = p.id
+      LEFT JOIN users u ON po.created_by = u.id
+      LEFT JOIN warehouses w ON po.warehouse_id = w.id
+      LEFT JOIN routings r ON po.routing_id = r.id
+      WHERE po.id = ${id}
+    `);
+    
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Production order not found' });
+    }
+    
+    // Get BOM items if available
+    let bomItems = [];
+    if (result.rows[0].bom_id) {
+      const bomResult = await db.execute(sql`
+        SELECT 
+          bi.id,
+          bi.component_id,
+          p.name as component_name,
+          p.sku as component_sku,
+          bi.quantity,
+          bi.unit_of_measure,
+          bi.scrap_rate,
+          bi.is_optional,
+          bi.operation,
+          bi.notes
+        FROM bom_items bi
+        LEFT JOIN products p ON bi.component_id = p.id
+        WHERE bi.bom_id = ${result.rows[0].bom_id}
+        ORDER BY bi.position
+      `);
+      bomItems = bomResult.rows || [];
+    }
+    
+    return res.json({
+      ...result.rows[0],
+      bomItems
+    });
+  } catch (error) {
+    console.error('Error fetching production order details:', error);
+    return res.status(500).json({ error: 'Failed to fetch production order details' });
+  }
+});
+
+// Create a production order
+router.post('/production-orders', async (req: Request, res: Response) => {
+  try {
+    const {
+      product_id,
+      quantity = 0,
+      unit_of_measure = 'Each',
+      planned_start_date,
+      planned_end_date,
+      status = 'Draft',
+      priority = 'Medium',
+      warehouse_id = 1,
+      bom_id = null,
+      routing_id = null,
+      batch_number = null,
+      notes = '',
+      industry_type = 'Manufacturing'
+    } = req.body;
+    
+    // Validate required fields
+    if (!product_id) {
+      return res.status(400).json({ error: 'Product ID is required' });
+    }
+    
+    if (quantity <= 0) {
+      return res.status(400).json({ error: 'Quantity must be greater than zero' });
+    }
+    
+    // Generate order number (Format: PO-YYYY-XXXX)
+    const year = new Date().getFullYear();
+    // Get the current highest order number to increment
+    const orderNumberResult = await db.execute(sql`
+      SELECT order_number
+      FROM production_orders
+      WHERE order_number LIKE ${'PO-' + year + '-%'}
+      ORDER BY order_number DESC
+      LIMIT 1
+    `);
+    
+    let nextOrderNumber;
+    
+    if (orderNumberResult.rows && orderNumberResult.rows.length > 0) {
+      // Extract the numeric part of the last order number and increment it
+      const lastOrderNumber = orderNumberResult.rows[0].order_number;
+      const lastOrderSequence = parseInt(lastOrderNumber.split('-')[2], 10);
+      nextOrderNumber = 'PO-' + year + '-' + String(lastOrderSequence + 1).padStart(4, '0');
+    } else {
+      // No existing orders for this year, start with 0001
+      nextOrderNumber = 'PO-' + year + '-0001';
+    }
+    
+    // Insert the production order
+    const result = await db.execute(sql`
+      INSERT INTO production_orders (
+        order_number,
+        product_id,
+        quantity,
+        unit_of_measure,
+        status,
+        priority,
+        planned_start_date,
+        planned_end_date,
+        created_at,
+        created_by,
+        warehouse_id,
+        bom_id,
+        routing_id,
+        batch_number,
+        notes,
+        industry_type,
+        completed_quantity,
+        rejected_quantity
+      )
+      VALUES (
+        ${nextOrderNumber},
+        ${product_id},
+        ${quantity},
+        ${unit_of_measure},
+        ${status},
+        ${priority},
+        ${planned_start_date},
+        ${planned_end_date},
+        ${new Date().toISOString()},
+        ${req.user?.id || 1},
+        ${warehouse_id},
+        ${bom_id},
+        ${routing_id},
+        ${batch_number},
+        ${notes},
+        ${industry_type},
+        ${0},
+        ${0}
+      )
+      RETURNING id
+    `);
+    
+    // Get the ID of the inserted production order
+    const productionOrderId = result.rows?.[0]?.id;
+    
+    return res.status(201).json({
+      id: productionOrderId,
+      order_number: nextOrderNumber,
+      product_id,
+      quantity,
+      status,
+      created_at: new Date().toISOString(),
+      message: 'Production order created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating production order:', error);
+    return res.status(500).json({ error: 'Failed to create production order' });
+  }
+});
+
+// Update production order status
+router.patch('/production-orders/:id/status', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status, completed_quantity = null, rejected_quantity = null, actual_start_date = null, actual_end_date = null } = req.body;
+    
+    // Validate status value
+    const validStatuses = ['Draft', 'Scheduled', 'InProgress', 'Completed', 'OnHold', 'Cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        error: 'Invalid status value',
+        validValues: validStatuses
+      });
+    }
+    
+    // Build the update SQL query based on provided fields
+    let updateFields = sql`status = ${status}`;
+    
+    if (completed_quantity !== null) {
+      updateFields = sql`${updateFields}, completed_quantity = ${completed_quantity}`;
+    }
+    
+    if (rejected_quantity !== null) {
+      updateFields = sql`${updateFields}, rejected_quantity = ${rejected_quantity}`;
+    }
+    
+    // Update timestamps based on status
+    if (status === 'InProgress' && actual_start_date === null) {
+      updateFields = sql`${updateFields}, actual_start_date = ${new Date().toISOString()}`;
+    }
+    
+    if (status === 'Completed' && actual_end_date === null) {
+      updateFields = sql`${updateFields}, actual_end_date = ${new Date().toISOString()}`;
+    }
+    
+    // If explicit dates are provided, use those
+    if (actual_start_date !== null) {
+      updateFields = sql`${updateFields}, actual_start_date = ${actual_start_date}`;
+    }
+    
+    if (actual_end_date !== null) {
+      updateFields = sql`${updateFields}, actual_end_date = ${actual_end_date}`;
+    }
+    
+    // Execute the update
+    const result = await db.execute(sql`
+      UPDATE production_orders
+      SET ${updateFields}
+      WHERE id = ${id}
+      RETURNING id, order_number, status, completed_quantity, rejected_quantity, actual_start_date, actual_end_date
+    `);
+    
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Production order not found' });
+    }
+    
+    return res.json({
+      ...result.rows[0],
+      message: 'Production order status updated successfully'
+    });
+    
+  } catch (error) {
+    console.error('Error updating production order status:', error);
+    return res.status(500).json({ error: 'Failed to update production order status' });
+  }
+});
+
+// ---------------------------------------------------------------
 // MRP DASHBOARD
 // ---------------------------------------------------------------
 router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResponse>) => {
