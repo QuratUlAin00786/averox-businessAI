@@ -415,25 +415,27 @@ router.patch('/:id', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'No fields provided for update' });
     }
     
-    // Create the SQL SET clause
-    let setClause = '';
+    // Using drizzle's sql tag for safe query building
+    let updateQuery = sql`UPDATE bill_of_materials SET `;
+    
+    // Build the SET clause dynamically
     for (let i = 0; i < updateColumns.length; i++) {
+      const column = updateColumns[i];
+      const value = updateValues[i];
+      
       if (i > 0) {
-        setClause += ', ';
+        updateQuery = sql`${updateQuery}, `;
       }
-      setClause += `${updateColumns[i]} = $${i + 1}`;
+      
+      // Add each column=value pair
+      updateQuery = sql`${updateQuery}${sql.identifier([column])} = ${value}`;
     }
     
-    // Execute the update with parameterized values
-    const result = await db.execute({
-      text: `
-        UPDATE bill_of_materials
-        SET ${setClause}
-        WHERE id = $${updateColumns.length + 1}
-        RETURNING id, name, is_active, revision_notes
-      `,
-      values: [...updateValues, id]
-    });
+    // Complete the query with WHERE clause and RETURNING
+    updateQuery = sql`${updateQuery} WHERE id = ${id} RETURNING id, name, is_active, revision_notes`;
+    
+    // Execute the query
+    const result = await db.execute(updateQuery);
     
     return res.json({
       ...result.rows[0],
