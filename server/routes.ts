@@ -5109,6 +5109,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DELETE a proposal element
+  app.delete('/api/proposals/:proposalId/elements/:id', async (req: Request, res: Response) => {
+    try {
+      // Parse IDs
+      const proposalId = parseInt(req.params.proposalId);
+      const elementId = parseInt(req.params.id);
+      
+      console.log(`DELETE request for element ${elementId} in proposal ${proposalId}`);
+      
+      // Validate IDs
+      if (isNaN(proposalId) || isNaN(elementId)) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Valid proposal ID and element ID are required",
+          details: { 
+            proposalId: req.params.proposalId,
+            elementId: req.params.id 
+          }
+        });
+      }
+      
+      // Get the current element to verify it belongs to the right proposal
+      const currentElement = await storage.getProposalElement(elementId);
+      if (!currentElement) {
+        return res.status(404).json({
+          success: false,
+          error: "Not Found",
+          message: "Proposal element not found",
+          details: { id: elementId }
+        });
+      }
+      
+      // Verify the element belongs to the specified proposal
+      if (currentElement.proposalId !== proposalId) {
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error",
+          message: "Element does not belong to the specified proposal",
+          details: { 
+            elementId: elementId,
+            elementProposalId: currentElement.proposalId,
+            requestedProposalId: proposalId
+          }
+        });
+      }
+      
+      // Delete the element
+      const success = await storage.deleteProposalElement(elementId);
+      
+      if (!success) {
+        return res.status(500).json({
+          success: false,
+          error: "Database Error",
+          message: "Failed to delete element"
+        });
+      }
+      
+      // Log activity
+      try {
+        await storage.createProposalActivity({
+          proposalId,
+          activityType: "ELEMENT_DELETED",
+          description: `Element "${currentElement.name}" deleted`,
+          userId: req.user?.id || 2,
+          metadata: {
+            elementId,
+            elementType: currentElement.elementType
+          }
+        });
+      } catch (logError) {
+        console.error("Failed to log element deletion activity:", logError);
+        // Continue despite logging error
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: "Element deleted successfully",
+        data: {
+          id: elementId,
+          name: currentElement.name
+        }
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
   // Keep the original endpoint for backward compatibility
   app.patch('/api/proposal-elements/:id', async (req: Request, res: Response) => {
     try {
