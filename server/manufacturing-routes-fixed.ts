@@ -1114,6 +1114,92 @@ router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResp
 // ---------------------------------------------------------------
 // WAREHOUSE MANAGEMENT 
 // ---------------------------------------------------------------
+router.post('/warehouse/bins/add', async (req: Request, res: Response) => {
+  try {
+    const { 
+      bin_code, 
+      warehouse_id, 
+      zone_id,
+      aisle, 
+      rack, 
+      level, 
+      position, 
+      capacity, 
+      bin_type, 
+      max_weight, 
+      height, 
+      width, 
+      depth,
+      is_mixing_allowed,
+      special_handling_notes 
+    } = req.body;
+
+    // Validate required fields
+    if (!bin_code || !warehouse_id) {
+      return res.status(400).json({ error: 'Bin code and warehouse ID are required' });
+    }
+
+    // Calculate available capacity - initially equals full capacity
+    const available_capacity = capacity;
+
+    // Add record to storage_bins table
+    const result = await db.execute(sql`
+      INSERT INTO storage_bins (
+        bin_code, 
+        warehouse_id, 
+        zone_id,
+        aisle, 
+        rack, 
+        level, 
+        position, 
+        capacity, 
+        available_capacity,
+        bin_type, 
+        max_weight, 
+        height, 
+        width, 
+        depth,
+        is_mixing_allowed,
+        special_handling_notes,
+        is_active,
+        created_at
+      )
+      VALUES (
+        ${bin_code}, 
+        ${warehouse_id}, 
+        ${zone_id || null},
+        ${aisle || null}, 
+        ${rack || null}, 
+        ${level || null}, 
+        ${position || null}, 
+        ${capacity || 0}, 
+        ${available_capacity || 0},
+        ${bin_type || 'Standard'},
+        ${max_weight || null}, 
+        ${height || null}, 
+        ${width || null}, 
+        ${depth || null},
+        ${is_mixing_allowed || false},
+        ${special_handling_notes || null},
+        true,
+        NOW()
+      )
+      RETURNING id, bin_code, warehouse_id
+    `);
+
+    const newBin = result.rows[0];
+
+    res.status(201).json({
+      success: true,
+      message: 'Storage bin created successfully',
+      bin: newBin
+    });
+  } catch (error) {
+    console.error('Error creating storage bin:', error);
+    res.status(500).json({ error: 'Failed to create storage bin' });
+  }
+});
+
 router.get('/warehouse/bins', async (req: Request, res: Response) => {
   try {
     // Get storage bins with utilization data - using storage_bins and storage_bin_contents
@@ -1213,7 +1299,171 @@ router.get('/storage-bins', async (req: Request, res: Response) => {
   }
 });
 
+// Storage zone management endpoint
+router.post('/warehouse/zones/add', async (req: Request, res: Response) => {
+  try {
+    const { 
+      name, 
+      code,
+      description,
+      warehouse_id,
+      zone_type,
+      capacity,
+      is_active
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !code || !warehouse_id) {
+      return res.status(400).json({ error: 'Zone name, code, and warehouse ID are required' });
+    }
+
+    // Add record to warehouse_zones table
+    const result = await db.execute(sql`
+      INSERT INTO warehouse_zones (
+        name,
+        code,
+        description,
+        warehouse_id,
+        zone_type,
+        capacity,
+        is_active,
+        created_at
+      )
+      VALUES (
+        ${name},
+        ${code},
+        ${description || null},
+        ${warehouse_id},
+        ${zone_type || 'Standard'},
+        ${capacity || 0},
+        ${is_active !== undefined ? is_active : true},
+        NOW()
+      )
+      RETURNING id, name, code, warehouse_id
+    `);
+
+    const newZone = result.rows[0];
+
+    res.status(201).json({
+      success: true,
+      message: 'Storage zone created successfully',
+      zone: newZone
+    });
+  } catch (error) {
+    console.error('Error creating storage zone:', error);
+    res.status(500).json({ error: 'Failed to create storage zone' });
+  }
+});
+
+// Get all storage zones
+router.get('/warehouse/zones', async (req: Request, res: Response) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT 
+        z.id,
+        z.code,
+        z.name,
+        z.description,
+        z.zone_type,
+        z.capacity,
+        z.is_active as "isActive",
+        z.warehouse_id,
+        w.name as warehouse_name,
+        w.code as warehouse_code
+      FROM warehouse_zones z
+      LEFT JOIN warehouses w ON z.warehouse_id = w.id
+      ORDER BY z.name
+    `);
+    
+    // Extract rows from PostgreSQL result
+    const zones = result.rows || [];
+    
+    return res.json(zones);
+  } catch (error) {
+    console.error('Error fetching storage zones:', error);
+    return res.status(500).json({ error: 'Failed to fetch storage zones' });
+  }
+});
+
 // Get all storage locations with hierarchical structure
+router.post('/storage/locations/add', async (req: Request, res: Response) => {
+  try {
+    const { 
+      name, 
+      code,
+      address,
+      city,
+      state,
+      country,
+      zip,
+      capacity,
+      is_manufacturing,
+      description,
+      contact_person,
+      contact_phone,
+      contact_email,
+      parent_warehouse_id
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !code) {
+      return res.status(400).json({ error: 'Warehouse name and code are required' });
+    }
+
+    // Add record to warehouses table
+    const result = await db.execute(sql`
+      INSERT INTO warehouses (
+        name,
+        code,
+        address,
+        city,
+        state,
+        country,
+        zip,
+        capacity,
+        is_manufacturing,
+        description,
+        contact_person,
+        contact_phone,
+        contact_email,
+        parent_warehouse_id,
+        is_active,
+        created_at
+      )
+      VALUES (
+        ${name},
+        ${code},
+        ${address || null},
+        ${city || null},
+        ${state || null},
+        ${country || null},
+        ${zip || null},
+        ${capacity || 0},
+        ${is_manufacturing || false},
+        ${description || null},
+        ${contact_person || null},
+        ${contact_phone || null},
+        ${contact_email || null},
+        ${parent_warehouse_id || null},
+        true,
+        NOW()
+      )
+      RETURNING id, name, code
+    `);
+
+    const newWarehouse = result.rows[0];
+
+    res.status(201).json({
+      success: true,
+      message: 'Warehouse created successfully',
+      warehouse: newWarehouse
+    });
+  } catch (error) {
+    console.error('Error creating warehouse:', error);
+    res.status(500).json({ error: 'Failed to create warehouse' });
+  }
+});
+
 router.get('/storage/locations', async (req: Request, res: Response) => {
   try {
     // Using warehouses table with corrected column names
@@ -3006,6 +3256,163 @@ router.post('/boms/:id/copy', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error copying BOM:', error);
     return res.status(500).json({ error: 'Failed to copy BOM' });
+  }
+});
+
+// Material transfers endpoint
+router.post('/warehouse/transfers/add', async (req: Request, res: Response) => {
+  try {
+    const { 
+      product_id,
+      source_bin_id,
+      destination_bin_id,
+      quantity,
+      transfer_reason,
+      reference_number,
+      notes
+    } = req.body;
+
+    // Validate required fields
+    if (!product_id || !source_bin_id || !destination_bin_id || !quantity) {
+      return res.status(400).json({ 
+        error: 'Product ID, source bin, destination bin, and quantity are required' 
+      });
+    }
+
+    // Begin a transaction
+    await db.execute(sql`BEGIN`);
+
+    try {
+      // Get product details
+      const productResult = await db.execute(sql`
+        SELECT id, name, sku FROM products WHERE id = ${product_id}
+      `);
+      
+      if (productResult.rows.length === 0) {
+        await db.execute(sql`ROLLBACK`);
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      
+      const product = productResult.rows[0];
+      
+      // Check if source bin exists and has enough stock
+      const sourceBinResult = await db.execute(sql`
+        SELECT bin_code, available_capacity FROM storage_bins WHERE id = ${source_bin_id}
+      `);
+      
+      if (sourceBinResult.rows.length === 0) {
+        await db.execute(sql`ROLLBACK`);
+        return res.status(404).json({ error: 'Source bin not found' });
+      }
+      
+      // Check if destination bin exists
+      const destBinResult = await db.execute(sql`
+        SELECT bin_code, available_capacity FROM storage_bins WHERE id = ${destination_bin_id}
+      `);
+      
+      if (destBinResult.rows.length === 0) {
+        await db.execute(sql`ROLLBACK`);
+        return res.status(404).json({ error: 'Destination bin not found' });
+      }
+
+      // Update source bin capacity
+      await db.execute(sql`
+        UPDATE storage_bins 
+        SET available_capacity = available_capacity - ${quantity}
+        WHERE id = ${source_bin_id}
+      `);
+      
+      // Update destination bin capacity
+      await db.execute(sql`
+        UPDATE storage_bins 
+        SET available_capacity = available_capacity + ${quantity}
+        WHERE id = ${destination_bin_id}
+      `);
+      
+      // Create a record of the transfer
+      const transferResult = await db.execute(sql`
+        INSERT INTO inventory_transactions (
+          product_id,
+          transaction_type,
+          source_location_id,
+          destination_location_id,
+          quantity,
+          transaction_date,
+          reference_number,
+          notes,
+          created_at
+        )
+        VALUES (
+          ${product_id},
+          'Transfer',
+          ${source_bin_id},
+          ${destination_bin_id},
+          ${quantity},
+          NOW(),
+          ${reference_number || null},
+          ${notes || null},
+          NOW()
+        )
+        RETURNING id
+      `);
+      
+      const transferId = transferResult.rows[0].id;
+      
+      // Commit the transaction
+      await db.execute(sql`COMMIT`);
+      
+      res.status(201).json({
+        success: true,
+        message: 'Material transfer completed successfully',
+        transfer: {
+          id: transferId,
+          product: product.name,
+          quantity,
+          source_bin: sourceBinResult.rows[0].bin_code,
+          destination_bin: destBinResult.rows[0].bin_code,
+          date: new Date()
+        }
+      });
+    } catch (error) {
+      // If anything goes wrong, roll back the transaction
+      await db.execute(sql`ROLLBACK`);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error creating material transfer:', error);
+    res.status(500).json({ error: 'Failed to create material transfer' });
+  }
+});
+
+// Get transfers history
+router.get('/warehouse/transfers', async (req: Request, res: Response) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT 
+        t.id,
+        t.transaction_date,
+        t.quantity,
+        t.transaction_type,
+        t.reference_number,
+        t.notes,
+        p.name as product_name,
+        p.sku as product_code,
+        sb1.bin_code as source_bin_code,
+        sb2.bin_code as destination_bin_code
+      FROM inventory_transactions t
+      LEFT JOIN products p ON t.product_id = p.id
+      LEFT JOIN storage_bins sb1 ON t.source_location_id = sb1.id
+      LEFT JOIN storage_bins sb2 ON t.destination_location_id = sb2.id
+      WHERE t.transaction_type = 'Transfer'
+      ORDER BY t.transaction_date DESC
+    `);
+    
+    const transfers = result.rows || [];
+    
+    return res.json(transfers);
+  } catch (error) {
+    console.error('Error fetching material transfers:', error);
+    return res.status(500).json({ error: 'Failed to fetch material transfers' });
   }
 });
 
