@@ -12,8 +12,12 @@ import {
   WorkCenterUtilization,
   MrpDashboardResponse
 } from './types/manufacturing';
+import bomRouter from './manufacturing/bom-routes';
 
 const router = Router();
+
+// Import and use the BOM routes
+router.use('/boms', bomRouter);
 
 // ---------------------------------------------------------------
 // MRP RUN AND PLANNING 
