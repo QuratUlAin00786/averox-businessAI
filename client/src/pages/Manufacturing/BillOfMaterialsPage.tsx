@@ -192,20 +192,17 @@ export default function BillOfMaterialsPage() {
   // Fetch BOMs list
   const { data: boms, isLoading, error } = useQuery<Bom[]>({
     queryKey: ['/api/manufacturing/boms'],
-    queryFn: () => apiRequest('/api/manufacturing/boms').then(res => res),
   });
 
   // Fetch BOM details when selected
   const { data: selectedBom, isLoading: isLoadingBomDetails } = useQuery<BomDetail>({
     queryKey: ['/api/manufacturing/boms', selectedBomId],
-    queryFn: () => apiRequest(`/api/manufacturing/boms/${selectedBomId}`).then(res => res),
     enabled: !!selectedBomId,
   });
 
   // Fetch products for the dropdown
   const { data: products, isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ['/api/products'],
-    queryFn: () => apiRequest('/api/products').then(res => res),
   });
 
   // BOM creation form
@@ -251,10 +248,7 @@ export default function BillOfMaterialsPage() {
   // Create BOM mutation
   const createBomMutation = useMutation({
     mutationFn: (newBom: BomFormValues) => {
-      return apiRequest('/api/manufacturing/boms', {
-        method: 'POST',
-        data: newBom,
-      });
+      return apiRequest("POST", '/api/manufacturing/boms', newBom);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/boms'] });
@@ -277,10 +271,7 @@ export default function BillOfMaterialsPage() {
   // Add BOM item mutation
   const addBomItemMutation = useMutation({
     mutationFn: (data: { bomId: number, item: BomItemFormValues }) => {
-      return apiRequest(`/api/manufacturing/boms/${data.bomId}/items`, {
-        method: 'POST',
-        data: data.item,
-      });
+      return apiRequest("POST", `/api/manufacturing/boms/${data.bomId}/items`, data.item);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/boms', selectedBomId] });
@@ -313,9 +304,7 @@ export default function BillOfMaterialsPage() {
   // Delete BOM item mutation
   const deleteBomItemMutation = useMutation({
     mutationFn: (data: { bomId: number, itemId: number }) => {
-      return apiRequest(`/api/manufacturing/boms/${data.bomId}/items/${data.itemId}`, {
-        method: 'DELETE',
-      });
+      return apiRequest("DELETE", `/api/manufacturing/boms/${data.bomId}/items/${data.itemId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/boms', selectedBomId] });
@@ -337,10 +326,7 @@ export default function BillOfMaterialsPage() {
   // Update BOM mutation
   const updateBomMutation = useMutation({
     mutationFn: (data: { bomId: number, updates: Partial<BomFormValues> }) => {
-      return apiRequest(`/api/manufacturing/boms/${data.bomId}`, {
-        method: 'PATCH',
-        data: data.updates,
-      });
+      return apiRequest("PATCH", `/api/manufacturing/boms/${data.bomId}`, data.updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/boms'] });
@@ -362,10 +348,7 @@ export default function BillOfMaterialsPage() {
   // Copy BOM mutation
   const copyBomMutation = useMutation({
     mutationFn: (data: { bomId: number, copyDetails: BomCopyFormValues }) => {
-      return apiRequest(`/api/manufacturing/boms/${data.bomId}/copy`, {
-        method: 'POST',
-        data: data.copyDetails,
-      });
+      return apiRequest("POST", `/api/manufacturing/boms/${data.bomId}/copy`, data.copyDetails);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/boms'] });
