@@ -347,65 +347,6 @@ router.patch('/:id', async (req: Request, res: Response) => {
       approval_date
     } = req.body;
     
-    // Build the update SQL query based on provided fields
-    let updateFields = sql``;
-    let isFirstField = true;
-    
-    if (name !== undefined) {
-      updateFields = sql`${updateFields}${isFirstField ? '' : ', '}name = ${name}`;
-      isFirstField = false;
-    }
-    
-    if (description !== undefined) {
-      updateFields = sql`${updateFields}${isFirstField ? '' : ', '}description = ${description}`;
-      isFirstField = false;
-    }
-    
-    if (is_active !== undefined) {
-      updateFields = sql`${updateFields}${isFirstField ? '' : ', '}is_active = ${is_active}`;
-      isFirstField = false;
-    }
-    
-    if (manufacturing_type !== undefined) {
-      updateFields = sql`${updateFields}${isFirstField ? '' : ', '}manufacturing_type = ${manufacturing_type}`;
-      isFirstField = false;
-    }
-    
-    if (notes !== undefined) {
-      updateFields = sql`${updateFields}${isFirstField ? '' : ', '}notes = ${notes}`;
-      isFirstField = false;
-    }
-    
-    if (revision_notes !== undefined) {
-      updateFields = sql`${updateFields}${isFirstField ? '' : ', '}revision_notes = ${revision_notes}`;
-      isFirstField = false;
-    }
-    
-    if (yield_percentage !== undefined) {
-      updateFields = sql`${updateFields}${isFirstField ? '' : ', '}yield = ${yield_percentage}`;
-      isFirstField = false;
-    }
-    
-    if (total_cost !== undefined) {
-      updateFields = sql`${updateFields}${isFirstField ? '' : ', '}total_cost = ${total_cost}`;
-      isFirstField = false;
-    }
-    
-    if (approved_by !== undefined) {
-      updateFields = sql`${updateFields}${isFirstField ? '' : ', '}approved_by = ${approved_by}`;
-      isFirstField = false;
-    }
-    
-    if (approval_date !== undefined) {
-      updateFields = sql`${updateFields}${isFirstField ? '' : ', '}approval_date = ${approval_date}`;
-      isFirstField = false;
-    }
-    
-    // If no fields were provided to update
-    if (isFirstField) {
-      return res.status(400).json({ error: 'No fields provided for update' });
-    }
-    
     // Check if the BOM exists
     const bomCheck = await db.execute(sql`
       SELECT id FROM bill_of_materials WHERE id = ${id}
@@ -415,13 +356,84 @@ router.patch('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'BOM not found' });
     }
     
-    // Execute the update
-    const result = await db.execute(sql`
-      UPDATE bill_of_materials
-      SET ${updateFields}
-      WHERE id = ${id}
-      RETURNING id, name, is_active, revision_notes
-    `);
+    // Build individual update statements to avoid SQL syntax issues
+    const updateValues = [];
+    const updateColumns = [];
+    
+    if (name !== undefined) {
+      updateColumns.push('name');
+      updateValues.push(name);
+    }
+    
+    if (description !== undefined) {
+      updateColumns.push('description');
+      updateValues.push(description);
+    }
+    
+    if (is_active !== undefined) {
+      updateColumns.push('is_active');
+      updateValues.push(is_active);
+    }
+    
+    if (manufacturing_type !== undefined) {
+      updateColumns.push('manufacturing_type');
+      updateValues.push(manufacturing_type);
+    }
+    
+    if (notes !== undefined) {
+      updateColumns.push('notes');
+      updateValues.push(notes);
+    }
+    
+    if (revision_notes !== undefined) {
+      updateColumns.push('revision_notes');
+      updateValues.push(revision_notes);
+    }
+    
+    if (yield_percentage !== undefined) {
+      updateColumns.push('yield');
+      updateValues.push(yield_percentage);
+    }
+    
+    if (total_cost !== undefined) {
+      updateColumns.push('total_cost');
+      updateValues.push(total_cost);
+    }
+    
+    if (approved_by !== undefined) {
+      updateColumns.push('approved_by');
+      updateValues.push(approved_by);
+    }
+    
+    if (approval_date !== undefined) {
+      updateColumns.push('approval_date');
+      updateValues.push(approval_date);
+    }
+    
+    // If no fields were provided to update
+    if (updateColumns.length === 0) {
+      return res.status(400).json({ error: 'No fields provided for update' });
+    }
+    
+    // Create the SQL SET clause
+    let setClause = '';
+    for (let i = 0; i < updateColumns.length; i++) {
+      if (i > 0) {
+        setClause += ', ';
+      }
+      setClause += `${updateColumns[i]} = $${i + 1}`;
+    }
+    
+    // Execute the update with parameterized values
+    const result = await db.execute({
+      text: `
+        UPDATE bill_of_materials
+        SET ${setClause}
+        WHERE id = $${updateColumns.length + 1}
+        RETURNING id, name, is_active, revision_notes
+      `,
+      values: [...updateValues, id]
+    });
     
     return res.json({
       ...result.rows[0],
