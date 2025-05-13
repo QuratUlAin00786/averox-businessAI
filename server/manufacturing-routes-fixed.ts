@@ -998,7 +998,7 @@ router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResp
           p.name as material_name,
           p.sku as material_code,
           p.reorder_level as reorder_point,
-          p.quantity as current_quantity
+          p.stock_quantity as current_quantity
         FROM products p
         ORDER BY p.id
         LIMIT 10
@@ -1006,14 +1006,16 @@ router.get('/mrp/dashboard', async (req: Request, res: Response<MrpDashboardResp
       
       // Convert PostgreSQL result into a proper array for the client
       lowStockItems = (result.rows || []).map(row => ({
+        id: Number(row.material_id),
         material_id: Number(row.material_id),
         material_name: String(row.material_name || ''),
         material_code: row.material_code ? String(row.material_code) : undefined,
-        current_quantity: Number(row.current_quantity || 0),
-        reorder_point: Number(row.reorder_point || 0),
+        current_stock: Number(row.current_quantity || 0),
+        minimum_stock: 0, // Default value
+        reorder_level: Number(row.reorder_point || 0),
         unit_of_measure: 'Each', // Default value
         category: 'Material', // Default value
-        supplier_name: undefined
+        supplier_name: 'Default Supplier' // Default value
       }));
     } catch (lowStockError) {
       console.error('Error fetching low stock items:', lowStockError);
