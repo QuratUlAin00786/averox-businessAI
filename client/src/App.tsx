@@ -2,7 +2,8 @@ import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { useEffect } from "react";
 import { LanguageProvider } from "@/hooks/use-language";
 import { SystemSettingsProvider } from "@/hooks/use-system-settings";
 import { NotificationsProvider } from "@/hooks/use-notifications";
@@ -422,6 +423,25 @@ function Router() {
   );
 }
 
+// Auto-login component for development/testing
+function AutoLogin() {
+  const { user, loginMutation } = useAuth();
+  
+  useEffect(() => {
+    // Only attempt login if there's no user already
+    if (!user) {
+      // Auto-login with admin credentials
+      loginMutation.mutate({ 
+        username: "admin", 
+        password: "password" 
+      });
+      console.log("Auto-login attempted with admin/password");
+    }
+  }, [user, loginMutation]);
+  
+  return null; // This component doesn't render anything
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -429,6 +449,7 @@ function App() {
         <LanguageProvider>
           <SystemSettingsProvider>
             <NotificationsProvider>
+              <AutoLogin />
               <Router />
               <Toaster />
             </NotificationsProvider>
