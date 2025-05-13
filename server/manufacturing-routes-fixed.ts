@@ -2520,10 +2520,11 @@ router.post('/boms', async (req: Request, res: Response) => {
       name,
       description = '',
       is_active = true,
-      effective_date = null,
-      expiration_date = null,
-      revision = null,
-      industry_type = null
+      manufacturing_type = null,
+      notes = '',
+      revision_notes = '',
+      yield_percentage = 100,
+      total_cost = 0
     } = req.body;
     
     // Validate required fields
@@ -2546,7 +2547,7 @@ router.post('/boms', async (req: Request, res: Response) => {
     
     // Check if a BOM already exists for this product with the same version
     const existingBomCheck = await db.execute(sql`
-      SELECT id FROM boms WHERE product_id = ${product_id} AND version = ${version}
+      SELECT id FROM bill_of_materials WHERE product_id = ${product_id} AND version = ${version}
     `);
     
     if (existingBomCheck.rows && existingBomCheck.rows.length > 0) {
@@ -2558,7 +2559,7 @@ router.post('/boms', async (req: Request, res: Response) => {
     
     // Insert the BOM
     const result = await db.execute(sql`
-      INSERT INTO boms (
+      INSERT INTO bill_of_materials (
         product_id,
         version,
         name,
@@ -2566,10 +2567,12 @@ router.post('/boms', async (req: Request, res: Response) => {
         is_active,
         created_at,
         created_by,
-        effective_date,
-        expiration_date,
-        revision,
-        industry_type
+        manufacturing_type,
+        notes,
+        revision_notes,
+        yield,
+        total_cost,
+        is_default
       )
       VALUES (
         ${product_id},
@@ -2579,10 +2582,12 @@ router.post('/boms', async (req: Request, res: Response) => {
         ${is_active},
         ${new Date().toISOString()},
         ${req.user?.id || 1},
-        ${effective_date},
-        ${expiration_date},
-        ${revision},
-        ${industry_type}
+        ${manufacturing_type || 'Discrete'},
+        ${notes},
+        ${revision_notes},
+        ${yield_percentage},
+        ${total_cost},
+        ${false}
       )
       RETURNING id
     `);
