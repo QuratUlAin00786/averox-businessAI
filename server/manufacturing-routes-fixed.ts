@@ -200,9 +200,34 @@ router.post('/forecasts', async (req: Request, res: Response) => {
       items = []
     } = req.body;
     
-    // Insert into material_forecasts table
+    // Check if we have items
+    if (items.length === 0) {
+      return res.status(400).json({ error: 'At least one product item is required' });
+    }
+    
+    const firstItem = items[0];
+    
+    // Calculate forecast period based on date range (monthly, quarterly, yearly)
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    const monthsDiff = (endDateObj.getFullYear() - startDateObj.getFullYear()) * 12 + 
+                       (endDateObj.getMonth() - startDateObj.getMonth());
+    
+    let forecastPeriod = 'Monthly';
+    if (monthsDiff >= 3 && monthsDiff < 12) {
+      forecastPeriod = 'Quarterly';
+    } else if (monthsDiff >= 12) {
+      forecastPeriod = 'Yearly';
+    }
+    
+    // Insert into material_forecasts table with required fields
     const result = await db.execute(sql`
       INSERT INTO material_forecasts (
+        product_id,
+        forecast_period,
+        quantity,
+        unit_of_measure,
+        warehouse_id,
         external_reference,
         notes,
         start_date,
@@ -215,6 +240,11 @@ router.post('/forecasts', async (req: Request, res: Response) => {
         confidence_level
       )
       VALUES (
+        ${firstItem.productId},
+        ${forecastPeriod},
+        ${firstItem.quantity},
+        ${'Each'}, -- Default UOM, could be parameterized
+        ${1}, -- Using the warehouse we found in the database
         ${name},
         ${description},
         ${startDate},
@@ -232,23 +262,9 @@ router.post('/forecasts', async (req: Request, res: Response) => {
     // Extract the inserted ID from the PostgreSQL result
     const forecastId = result.rows?.[0]?.id;
     
-    // For this schema, we don't have a separate items table
-    // So we'll just update the product_id and quantity in the main forecast record
-    // In a real implementation, you'd need to handle multiple items differently
-    if (items.length > 0 && forecastId) {
-      const firstItem = items[0];
-      await db.execute(sql`
-        UPDATE material_forecasts
-        SET 
-          product_id = ${firstItem.productId},
-          quantity = ${firstItem.quantity}
-        WHERE id = ${forecastId}
-      `);
-      
-      // Log about additional items if there are more than one
-      if (items.length > 1) {
-        console.log(`Note: ${items.length - 1} additional forecast items couldn't be saved due to schema limitations`);
-      }
+    // Log about additional items if there are more than one
+    if (items.length > 1) {
+      console.log(`Note: ${items.length - 1} additional forecast items couldn't be saved as separate records due to schema limitations`);
     }
     
     return res.status(201).json({
@@ -260,6 +276,8 @@ router.post('/forecasts', async (req: Request, res: Response) => {
       status: 'Active',
       createdAt: new Date().toISOString(),
       createdBy: req.user?.id || 1,
+      product: firstItem.productId,
+      quantity: firstItem.quantity,
       items: items.length
     });
   } catch (error) {
