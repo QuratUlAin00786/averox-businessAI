@@ -814,6 +814,22 @@ router.patch('/production-orders/:id/status', async (req: Request, res: Response
       });
     }
     
+    // Get the current production order to check previous status
+    const orderQuery = await db.execute(sql`
+      SELECT po.*, p.name as product_name, p.sku as product_sku
+      FROM production_orders po
+      LEFT JOIN products p ON po.product_id = p.id
+      WHERE po.id = ${id}
+    `);
+    
+    if (!orderQuery.rows || orderQuery.rows.length === 0) {
+      return res.status(404).json({ error: 'Production order not found' });
+    }
+    
+    const productionOrder = orderQuery.rows[0];
+    const previousStatus = productionOrder.status;
+    const completedQuantity = completed_quantity || productionOrder.quantity || 0;
+    
     // Build the update SQL query based on provided fields
     let updateFields = sql`status = ${status}`;
     
@@ -843,6 +859,95 @@ router.patch('/production-orders/:id/status', async (req: Request, res: Response
       updateFields = sql`${updateFields}, actual_end_date = ${actual_end_date}`;
     }
     
+    // If status is changing to Completed, handle inventory updates
+    let inventoryUpdated = false;
+    if (status === 'Completed' && previousStatus !== 'Completed') {
+      try {
+        // Begin transaction for inventory updates
+        await db.execute(sql`BEGIN`);
+        
+        // Create inventory transaction for the produced product
+        await db.execute(sql`
+          INSERT INTO inventory_transactions (
+            product_id,
+            quantity,
+            type,
+            reference_id,
+            reference_type,
+            unit_cost,
+            created_at,
+            created_by,
+            notes,
+            location
+          )
+          VALUES (
+            ${productionOrder.product_id},
+            ${completedQuantity},
+            'ProductionOutput',
+            ${id},
+            'production_order',
+            ${productionOrder.unit_cost || null},
+            ${new Date().toISOString()},
+            ${req.user?.id || 1},
+            ${`Produced in production order #${id} (${productionOrder.order_number})`},
+            ${productionOrder.location || productionOrder.warehouse_id || null}
+          )
+        `);
+        
+        // Check if there's a BOM (Bill of Materials) for the product
+        const bomResult = await db.execute(sql`
+          SELECT bi.*, p.name as component_name, p.sku as component_sku
+          FROM bom_items bi
+          JOIN products p ON bi.component_id = p.id
+          WHERE bi.bom_id = ${productionOrder.bom_id || 0}
+        `);
+        
+        const bomItems = bomResult.rows || [];
+        
+        // For each BOM item, create an inventory transaction to consume the components
+        for (const item of bomItems) {
+          const requiredQuantity = parseFloat(item.quantity || 0) * completedQuantity;
+          
+          // Create inventory transaction for consuming the component
+          await db.execute(sql`
+            INSERT INTO inventory_transactions (
+              product_id,
+              quantity,
+              type,
+              reference_id,
+              reference_type,
+              created_at,
+              created_by,
+              notes,
+              location
+            )
+            VALUES (
+              ${item.component_id},
+              ${requiredQuantity},
+              'IntakeForProduction',
+              ${id},
+              'production_order',
+              ${new Date().toISOString()},
+              ${req.user?.id || 1},
+              ${`Used in production order #${id} (${productionOrder.order_number}) for ${productionOrder.product_name}`},
+              ${productionOrder.location || productionOrder.warehouse_id || null}
+            )
+          `);
+        }
+        
+        // Commit transaction
+        await db.execute(sql`COMMIT`);
+        inventoryUpdated = true;
+      } catch (error) {
+        // Rollback transaction in case of error
+        await db.execute(sql`ROLLBACK`);
+        console.error('Error updating inventory for production completion:', error);
+        return res.status(500).json({ 
+          error: 'Failed to update inventory for production completion. Transaction rolled back.' 
+        });
+      }
+    }
+    
     // Execute the update
     const result = await db.execute(sql`
       UPDATE production_orders
@@ -855,9 +960,14 @@ router.patch('/production-orders/:id/status', async (req: Request, res: Response
       return res.status(404).json({ error: 'Production order not found' });
     }
     
+    let message = 'Production order status updated successfully';
+    if (inventoryUpdated) {
+      message += '. Inventory has been updated automatically.';
+    }
+    
     return res.json({
       ...result.rows[0],
-      message: 'Production order status updated successfully'
+      message: message
     });
     
   } catch (error) {
