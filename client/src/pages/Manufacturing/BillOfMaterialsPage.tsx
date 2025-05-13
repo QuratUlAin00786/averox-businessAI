@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
+import { Redirect } from 'wouter';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -458,14 +459,9 @@ export default function BillOfMaterialsPage() {
     );
   }
 
-  // If not authenticated and not loading, show message
+  // If not authenticated and not loading, redirect to auth page
   if (!user && !authLoading) {
-    return (
-      <div className="container mx-auto my-8 p-8 border rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-center mb-4">Authentication Required</h1>
-        <p className="text-center text-gray-600 mb-6">Please log in to access the Bill of Materials Management module.</p>
-      </div>
-    );
+    return <Redirect to="/auth" />;
   }
 
   // If still loading authentication, show loading spinner
