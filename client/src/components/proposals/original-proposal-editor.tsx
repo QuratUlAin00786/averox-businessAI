@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Proposal, 
@@ -103,6 +103,23 @@ export function ProposalEditor({
   const [selectedRole, setSelectedRole] = useState<string>('Viewer');
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Helper function to save selected element ID to session storage
+  const saveSelectedElementId = useCallback((elementId: number) => {
+    try {
+      // First clear old format
+      sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
+      
+      // Then save the ID using the new format
+      sessionStorage.setItem(
+        `proposal_${proposal.id}_selected_element_id`, 
+        elementId.toString()
+      );
+      console.log("Saved element ID to session storage:", elementId);
+    } catch (err) {
+      console.warn("Failed to store element ID in session storage:", err);
+    }
+  }, [proposal.id]);
   
   // Add a debug effect for tab changes
   useEffect(() => {
@@ -239,6 +256,15 @@ export function ProposalEditor({
         } else if (elements.length > 0) {
           // If we don't have a stored element/ID but have elements, select the first one
           console.log("No stored element, selecting first element:", elements[0].id);
+          // Save the ID of the selected element to storage
+          try {
+            sessionStorage.setItem(
+              `proposal_${proposal.id}_selected_element_id`, 
+              elements[0].id.toString()
+            );
+          } catch (err) {
+            console.warn("Failed to store element ID in session storage:", err);
+          }
           setSelectedElement(elements[0]);
           setActiveTab('editor');
         }
@@ -469,6 +495,15 @@ export function ProposalEditor({
       // If we have elements already, just select the first one
       if (elements.length > 0 && !selectedElement) {
         console.log("Auto-selecting first element:", elements[0].id);
+        // Save the ID of the selected element to storage
+        try {
+          sessionStorage.setItem(
+            `proposal_${proposal.id}_selected_element_id`, 
+            elements[0].id.toString()
+          );
+        } catch (err) {
+          console.warn("Failed to store element ID in session storage:", err);
+        }
         setSelectedElement(elements[0]);
         
         // Switch to editor tab if not already on it
