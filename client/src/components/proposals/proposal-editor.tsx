@@ -764,7 +764,11 @@ export function ProposalEditor({
                                   ? "bg-primary/10 border-primary/30" 
                                   : "bg-white border-neutral-200 hover:bg-neutral-100"
                               )}
-                              onClick={() => setSelectedElement(element)}
+                              onClick={() => {
+                                console.log("Element clicked:", element);
+                                setSelectedElement(element);
+                                setActiveTab('editor');
+                              }}
                             >
                               <div className="font-medium">{name}</div>
                               <div className="text-xs text-muted-foreground truncate">{details}</div>

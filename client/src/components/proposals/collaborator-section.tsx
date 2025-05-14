@@ -56,22 +56,35 @@ export function CollaboratorSection({ proposalId, isReadOnly }: CollaboratorSect
   } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
-      const response = await fetch('/api/users');
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
+      try {
+        console.log("Fetching users for collaborator selection");
+        const response = await fetch('/api/users');
+        if (!response.ok) {
+          console.error("Failed to fetch users, status:", response.status);
+          throw new Error('Failed to fetch users');
+        }
+        
+        const result = await response.json();
+        console.log("Raw users API response:", result);
+        
+        // If the response already has a data property, use it, otherwise use the result itself
+        const usersData = Array.isArray(result) ? result : (result.data || []);
+        console.log("Processed users data:", usersData);
+        
+        if (!Array.isArray(usersData)) {
+          console.error("Users data is not an array:", usersData);
+          return [];
+        }
+        
+        return usersData;
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        return [];
       }
-      
-      const result = await response.json();
-      console.log("Raw users API response:", result);
-      
-      // If the response already has a data property, use it, otherwise use the result itself
-      const usersData = result.data || result;
-      console.log("Processed users data:", usersData);
-      
-      return usersData;
     },
-    staleTime: 60000, // Keep data fresh for 1 minute
-    enabled: true, // Always fetch users regardless of readOnly status
+    staleTime: 5000, // Keep data fresh for 5 seconds
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    enabled: !isReadOnly, // Only fetch users when not in read-only mode
   });
 
   // Add collaborator mutation
