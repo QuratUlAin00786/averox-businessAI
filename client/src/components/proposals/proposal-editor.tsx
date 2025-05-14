@@ -164,6 +164,25 @@ export function ProposalEditor({
   
   const [isDraggingElement, setIsDraggingElement] = useState<number | null>(null);
   const [selectedElement, setSelectedElement] = useState<ProposalElement | null>(null);
+  
+  // Dedicated handler for element selection to ensure consistent behavior
+  const handleElementSelection = (element: ProposalElement) => {
+    console.log("Selecting element:", element);
+    
+    // Store element in session storage to persist through page navigations
+    try {
+      sessionStorage.setItem(
+        `proposal_${proposal.id}_selected_element`, 
+        JSON.stringify(element)
+      );
+    } catch (err) {
+      console.warn("Failed to store selected element in session storage:", err);
+    }
+    
+    // Update state and switch to editor tab
+    setSelectedElement(element);
+    setActiveTab('editor');
+  };
   const [newComment, setNewComment] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('Viewer');
@@ -764,11 +783,7 @@ export function ProposalEditor({
                                   ? "bg-primary/10 border-primary/30" 
                                   : "bg-white border-neutral-200 hover:bg-neutral-100"
                               )}
-                              onClick={() => {
-                                console.log("Element clicked:", element);
-                                setSelectedElement(element);
-                                setActiveTab('editor');
-                              }}
+                              onClick={() => handleElementSelection(element)}
                             >
                               <div className="font-medium">{name}</div>
                               <div className="text-xs text-muted-foreground truncate">{details}</div>
