@@ -857,6 +857,12 @@ export function ProposalManager({
     try {
       console.log("Opening editor for proposal via handleOpenEditor:", proposal);
       
+      // Show a toast notification immediately to confirm the function was called
+      toast({
+        title: "Opening editor",
+        description: "Preparing proposal editor...",
+      });
+      
       // Safety check - make sure proposal has required properties
       if (!proposal || !proposal.id) {
         console.error("Invalid proposal object:", proposal);

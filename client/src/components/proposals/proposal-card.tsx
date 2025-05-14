@@ -100,24 +100,49 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
               }}>
                 <ClipboardEdit className="h-4 w-4 mr-2" /> Edit Content
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(proposal)}>
+              <DropdownMenuItem onClick={(e) => {
+                console.log("Edit Details clicked for proposal:", proposal.id);
+                e.preventDefault();
+                e.stopPropagation();
+                onEdit(proposal);
+              }}>
                 <Eye className="h-4 w-4 mr-2" /> Edit Details
               </DropdownMenuItem>
               {proposal.status === 'Draft' && (
-                <DropdownMenuItem onClick={() => onSend(proposal)}>
+                <DropdownMenuItem onClick={(e) => {
+                  console.log("Send to Client clicked for proposal:", proposal.id);
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onSend(proposal);
+                }}>
                   <Send className="h-4 w-4 mr-2" /> Send to Client
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => {
+                console.log("Download PDF clicked for proposal:", proposal.id);
+                e.preventDefault();
+                e.stopPropagation();
+                // PDF download functionality would go here
+              }}>
                 <Download className="h-4 w-4 mr-2" /> Download PDF
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => {
+                console.log("Share Link clicked for proposal:", proposal.id);
+                e.preventDefault();
+                e.stopPropagation();
+                // Share functionality would go here
+              }}>
                 <ExternalLink className="h-4 w-4 mr-2" /> Share Link
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-red-600"
-                onClick={() => onDelete(proposal.id)}
+                onClick={(e) => {
+                  console.log("Delete clicked for proposal:", proposal.id);
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete(proposal.id);
+                }}
               >
                 <Trash className="h-4 w-4 mr-2" /> Delete
               </DropdownMenuItem>
