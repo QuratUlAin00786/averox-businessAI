@@ -4899,7 +4899,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // }
       
       const proposalId = parseInt(req.params.proposalId);
-      const elements = await storage.listProposalElements(proposalId);
+      let elements = await storage.listProposalElements(proposalId);
+      
+      // Decrypt content for each element if it's encrypted
+      try {
+        const { cryptoSphere } = await import('./utils/cryptosphere.js').catch(() => import('./utils/cryptosphere'));
+        
+        // Process each element and decrypt content if needed
+        elements = await Promise.all(elements.map(async (element) => {
+          // Check if content appears to be encrypted
+          if (element.content && 
+              typeof element.content === 'object' && 
+              element.content.iv && 
+              element.content.encrypted && 
+              element.content.keyId) {
+            
+            try {
+              // Decrypt the content
+              console.log(`Decrypting content for element ${element.id}`);
+              const decrypted = await cryptoSphere.decrypt({
+                encrypted: element.content.encrypted,
+                iv: element.content.iv,
+                keyId: element.content.keyId
+              });
+              
+              // Replace the encrypted content with decrypted content
+              element.content = decrypted.decrypted;
+              console.log(`Successfully decrypted content for element ${element.id}`);
+            } catch (decryptError) {
+              console.error(`Failed to decrypt content for element ${element.id}:`, decryptError);
+              // If decryption fails, provide a placeholder that won't break the UI
+              element.content = { 
+                text: "Content could not be decrypted. Please contact support." 
+              };
+            }
+          }
+          return element;
+        }));
+      } catch (decryptionError) {
+        console.error("Error during content decryption:", decryptionError);
+        // Continue with encrypted content if decryption module fails
+      }
       
       // Return standardized response format
       res.status(200).json({
@@ -5016,7 +5056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const element = await storage.getProposalElement(id);
+      let element = await storage.getProposalElement(id);
       
       if (!element) {
         return res.status(404).json({
@@ -5025,6 +5065,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Proposal element not found",
           details: { id }
         });
+      }
+      
+      // Decrypt content if it's encrypted
+      try {
+        const { cryptoSphere } = await import('./utils/cryptosphere.js').catch(() => import('./utils/cryptosphere'));
+        
+        // Check if content appears to be encrypted
+        if (element.content && 
+            typeof element.content === 'object' && 
+            element.content.iv && 
+            element.content.encrypted && 
+            element.content.keyId) {
+          
+          try {
+            // Decrypt the content
+            console.log(`Decrypting content for element ${element.id}`);
+            const decrypted = await cryptoSphere.decrypt({
+              encrypted: element.content.encrypted,
+              iv: element.content.iv,
+              keyId: element.content.keyId
+            });
+            
+            // Replace the encrypted content with decrypted content
+            element.content = decrypted.decrypted;
+            console.log(`Successfully decrypted content for element ${element.id}`);
+          } catch (decryptError) {
+            console.error(`Failed to decrypt content for element ${element.id}:`, decryptError);
+            // If decryption fails, provide a placeholder that won't break the UI
+            element.content = { 
+              text: "Content could not be decrypted. Please contact support." 
+            };
+          }
+        }
+      } catch (decryptionError) {
+        console.error("Error during content decryption:", decryptionError);
+        // Continue with encrypted content if decryption module fails
       }
       
       // Return standardized response format
