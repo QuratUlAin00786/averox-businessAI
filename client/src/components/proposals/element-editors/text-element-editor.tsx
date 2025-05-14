@@ -10,17 +10,37 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
   const isInitialRender = useRef(true);
   const lastSavedText = useRef('');
   
-  // Parse content safely
+  // Parse content safely with enhanced error handling
   const parseContent = (contentData: any): { text: string } => {
-    if (typeof contentData === 'string') {
-      try {
-        return JSON.parse(contentData);
-      } catch (e) {
-        console.error('Error parsing content:', e);
-        return { text: '' };
+    try {
+      // Handle string content (needs parsing)
+      if (typeof contentData === 'string') {
+        try {
+          const parsed = JSON.parse(contentData);
+          return parsed && typeof parsed === 'object' ? parsed : { text: contentData };
+        } catch (e) {
+          console.error('Error parsing content string:', e);
+          // If JSON parsing fails, treat the entire string as text content
+          return { text: contentData };
+        }
       }
+      
+      // Handle object content (already parsed)
+      if (contentData && typeof contentData === 'object') {
+        // If text property doesn't exist, create an empty one
+        if (!('text' in contentData)) {
+          console.warn('Content object missing text property:', contentData);
+          return { ...contentData, text: '' };
+        }
+        return contentData;
+      }
+      
+      // Handle null/undefined case
+      return { text: '' };
+    } catch (err) {
+      console.error('Unexpected error in parseContent:', err, contentData);
+      return { text: '' };
     }
-    return contentData || { text: '' };
   };
   
   // Get initial content
@@ -53,20 +73,50 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
     setIsDirty(newText !== lastSavedText.current);
   };
   
-  // Save handler with explicit user action
+  // Save handler with explicit user action and enhanced error handling
   const handleSave = () => {
     if (!isDirty) return;
     
-    const updatedContent = { text };
-    lastSavedText.current = text;
-    setIsDirty(false);
-    
-    onChange({
-      ...element,
-      content: updatedContent
-    });
-    
-    console.log('Text saved:', text);
+    try {
+      // Preserve any existing content properties other than text
+      const existingContent = parseContent(element.content);
+      const updatedContent = { 
+        ...existingContent,
+        text 
+      };
+      
+      // Update our local state
+      lastSavedText.current = text;
+      setIsDirty(false);
+      
+      // Format content based on how it was originally provided
+      let newContent: any;
+      if (typeof element.content === 'string') {
+        // If content was originally a string, convert back to string
+        newContent = JSON.stringify(updatedContent);
+      } else {
+        // Otherwise keep as object
+        newContent = updatedContent;
+      }
+      
+      // Log what we're saving for debugging
+      console.log('Saving text element with content:', {
+        original: element.content,
+        new: newContent,
+        text
+      });
+      
+      // Call the onChange handler
+      onChange({
+        ...element,
+        content: newContent
+      });
+      
+      console.log('Text saved successfully:', text);
+    } catch (error) {
+      console.error('Error saving text:', error);
+      // We don't reset isDirty here so the user can try again
+    }
   };
   
   // Auto-save when focus leaves the textarea

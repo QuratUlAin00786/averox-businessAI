@@ -44,14 +44,46 @@ export function ElementEditorFactory({ element, onSave, isReadOnly = false }: El
     }
   }
   
-  // Parse string content into object if needed
+  // Parse string content into object if needed with better error handling
   if (typeof elementCopy.content === 'string') {
     try {
-      elementCopy.content = JSON.parse(elementCopy.content);
-      console.log("Parsed content from string:", elementCopy.content);
+      const contentStr = elementCopy.content.trim();
+      
+      // Only try to parse if it looks like JSON (starts with { or [)
+      if (contentStr && (contentStr.startsWith('{') || contentStr.startsWith('['))) {
+        try {
+          const parsedContent = JSON.parse(contentStr);
+          console.log("Parsed content from string:", parsedContent);
+          elementCopy.content = parsedContent;
+        } catch (parseError) {
+          console.error("Error parsing content JSON:", parseError, "Content:", contentStr);
+          // If JSON parsing fails but we have content, use the string as-is
+          // This helps with plain text that might have been stored as a string
+          if (contentStr.length > 0 && elementCopy.elementType === 'Text') {
+            console.log("Using string content as text:", contentStr);
+            elementCopy.content = { text: contentStr };
+          } else {
+            // For non-text elements or empty content, use default
+            console.log("Using default content for", elementCopy.elementType);
+            elementCopy.content = getDefaultElementContent(elementCopy.elementType);
+          }
+        }
+      } else if (contentStr.length > 0) {
+        // If content doesn't look like JSON but has text, use it directly for text elements
+        if (elementCopy.elementType === 'Text') {
+          console.log("Using plain string content as text:", contentStr);
+          elementCopy.content = { text: contentStr };
+        } else {
+          console.log("String content doesn't look like JSON, using default for", elementCopy.elementType);
+          elementCopy.content = getDefaultElementContent(elementCopy.elementType);
+        }
+      } else {
+        // Empty content, use default
+        console.log("Empty content string, using default for", elementCopy.elementType);
+        elementCopy.content = getDefaultElementContent(elementCopy.elementType);
+      }
     } catch (error) {
-      console.error("Error parsing content:", error);
-      // If parsing fails, set to default
+      console.error("Unexpected error handling content:", error);
       elementCopy.content = getDefaultElementContent(elementCopy.elementType);
     }
   }

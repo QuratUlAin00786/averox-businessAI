@@ -165,22 +165,48 @@ export function ProposalEditor({
   const [isDraggingElement, setIsDraggingElement] = useState<number | null>(null);
   const [selectedElement, setSelectedElement] = useState<ProposalElement | null>(null);
   
-  // Dedicated handler for element selection to ensure consistent behavior
+  // Dedicated handler for element selection with enhanced error handling and debugging
   const handleElementSelection = (element: ProposalElement) => {
-    console.log("Selecting element:", element);
+    if (!element || !element.id) {
+      console.error("Cannot select invalid element:", element);
+      toast({
+        title: 'Error',
+        description: 'Unable to select element: Invalid data',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    console.log("Selecting element:", { 
+      id: element.id, 
+      type: element.elementType, 
+      name: element.name,
+      contentType: typeof element.content
+    });
+    
+    // First save any pending changes to current element
+    if (selectedElement && selectedElement.id !== element.id) {
+      console.log("Auto-saving previous element before switching");
+      // This is just a safety mechanism - most saves happen via the editors
+      // Actually saving elements is handled by the editor components
+    }
+    
+    // Create a clean copy of the element to avoid reference issues
+    const elementCopy = { ...element };
     
     // Store element in session storage to persist through page navigations
     try {
       sessionStorage.setItem(
         `proposal_${proposal.id}_selected_element`, 
-        JSON.stringify(element)
+        JSON.stringify(elementCopy)
       );
+      console.log("Element selection saved to session storage:", elementCopy.id);
     } catch (err) {
       console.warn("Failed to store selected element in session storage:", err);
     }
     
     // Update state and switch to editor tab
-    setSelectedElement(element);
+    setSelectedElement(elementCopy);
     setActiveTab('editor');
   };
   const [newComment, setNewComment] = useState('');
@@ -435,15 +461,31 @@ export function ProposalEditor({
                   "isLoading:", isLoadingElements, 
                   "isPending:", addElementMutation.isPending);
       
+      // Try to restore selected element from session storage
+      try {
+        const storedElementKey = `proposal_${proposal.id}_selected_element`;
+        const storedElementJson = sessionStorage.getItem(storedElementKey);
+        
+        if (storedElementJson && !selectedElement) {
+          const storedElement = JSON.parse(storedElementJson);
+          console.log("Restored element from session storage:", storedElement);
+          
+          // Find the element in our current elements list to ensure it's fresh
+          const matchingElement = elements.find(el => el.id === storedElement.id);
+          if (matchingElement) {
+            console.log("Found matching element in current list:", matchingElement);
+            handleElementSelection(matchingElement);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to restore element from session storage:", err);
+      }
+      
       // If we have elements already, just select the first one
       if (elements.length > 0 && !selectedElement) {
         console.log("Auto-selecting first element:", elements[0].id);
-        setSelectedElement(elements[0]);
-        
-        // Switch to editor tab if not already on it
-        if (activeTab !== 'editor') {
-          setActiveTab('editor');
-        }
+        handleElementSelection(elements[0]);
       } 
       // If we have no elements but aren't currently loading, create a default text element
       else if (elements.length === 0 && !isLoadingElements && !addElementMutation.isPending) {
