@@ -856,7 +856,6 @@ export function ProposalManager({
   const handleOpenEditor = async (proposal: Proposal) => {
     try {
       console.log("Opening editor for proposal via handleOpenEditor:", proposal);
-      console.log("Current editor state - editorVisible:", editorVisible, "selectedProposal:", selectedProposal?.id);
       
       // Safety check - make sure proposal has required properties
       if (!proposal || !proposal.id) {
@@ -869,9 +868,21 @@ export function ProposalManager({
         return;
       }
       
-      // First set the selected proposal ID
-      setSelectedProposalId(proposal.id);
-      console.log("Set selectedProposalId to:", proposal.id);
+      // First, completely reset the state to avoid any conflicts
+      setEditorVisible(false);
+      setSelectedProposalId(null);
+      setSelectedProposal(null);
+      
+      // Clear any existing session storage for proposals
+      try {
+        sessionStorage.removeItem(`proposal_${proposal.id}_elements`);
+        sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
+      } catch (error) {
+        console.warn("Error clearing sessionStorage:", error);
+      }
+      
+      // Wait for the state to reset
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Then fetch fresh data
       console.log("Fetching fresh proposal data for ID:", proposal.id);
@@ -885,34 +896,24 @@ export function ProposalManager({
       const freshProposal = responseData.data || responseData;
       console.log("Fetched fresh proposal data:", freshProposal);
       
-      // Step 1: Set the proposal data first
-      console.log("Setting selectedProposal to:", freshProposal.id);
+      // Set the selected proposal ID
+      setSelectedProposalId(proposal.id);
+      
+      // Set the proposal data
       setSelectedProposal(freshProposal);
       
-      // Step 2: Pre-fetch the proposal elements so they're ready
-      // when the editor loads
+      // Pre-fetch the proposal elements
       console.log("Pre-fetching proposal elements...");
       const elementsResponse = await fetch(`/api/proposals/${proposal.id}/elements`);
       
       let elements = [];
       
-      if (!elementsResponse.ok) {
-        console.warn("Could not pre-fetch elements:", elementsResponse.status);
-      } else {
+      if (elementsResponse.ok) {
         const elementsData = await elementsResponse.json();
         elements = elementsData.data || elementsData;
         console.log("Pre-fetched elements:", elements);
         
-        // Clean session storage for this proposal
-        try {
-          sessionStorage.removeItem(`proposal_${proposal.id}_elements`);
-          sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
-        } catch (error) {
-          console.warn("Error clearing sessionStorage:", error);
-        }
-        
-        // Store element data in sessionStorage for the editor to use
-        // This ensures the editor has immediate access to elements
+        // Store element data in sessionStorage
         try {
           sessionStorage.setItem(`proposal_${proposal.id}_elements`, JSON.stringify(elements));
           
@@ -926,11 +927,7 @@ export function ProposalManager({
         }
       }
       
-      // Reset all state completely first to ensure a clean startup
-      console.log("Clearing editor state completely first");
-      setEditorVisible(false);
-      
-      // Add the metadata to the proposal for the elements count
+      // Add metadata to the proposal
       if (!freshProposal._metadata) {
         freshProposal._metadata = {
           elementsCount: elements.length,
@@ -943,28 +940,19 @@ export function ProposalManager({
       // Set the selected proposal with updated metadata
       setSelectedProposal(freshProposal);
       
-      // Now trigger a slight delay before opening the editor
-      // This allows React to finish processing state changes
-      setTimeout(() => {
-        console.log("Setting editor visible to true, selected proposal is:", freshProposal.id);
-        setEditorVisible(true);
-        
-        // Force immediate focus on the editor panel and attempt to select "editor" tab
-        setTimeout(() => {
-          console.log("Focusing editor tab...");
-          try {
-            const editorTab = document.querySelector('[data-value="editor"]');
-            if (editorTab) {
-              console.log("Editor tab found, clicking it");
-              (editorTab as HTMLElement).click();
-            } else {
-              console.log("Editor tab not found in DOM");
-            }
-          } catch (error) {
-            console.warn("Error focusing editor tab:", error);
-          }
-        }, 300);
-      }, 500);
+      // Wait for state updates to complete
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Finally, make the editor visible
+      console.log("Setting editor visible to true for proposal:", freshProposal.id);
+      setEditorVisible(true);
+      
+      // Success message
+      toast({
+        title: "Editor opened",
+        description: "Proposal editor is ready",
+      });
+      
     } catch (error: any) {
       console.error("Error in handleOpenEditor:", error);
       toast({

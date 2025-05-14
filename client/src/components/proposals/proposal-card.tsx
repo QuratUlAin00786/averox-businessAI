@@ -92,7 +92,12 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onEditContent(proposal)}>
+              <DropdownMenuItem onClick={(e) => {
+                console.log("Edit Content clicked for proposal:", proposal.id);
+                e.preventDefault();
+                e.stopPropagation();
+                onEditContent(proposal);
+              }}>
                 <ClipboardEdit className="h-4 w-4 mr-2" /> Edit Content
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(proposal)}>
