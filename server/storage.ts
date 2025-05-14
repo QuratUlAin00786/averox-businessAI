@@ -5967,35 +5967,65 @@ export class DatabaseStorage implements IStorage {
 
   async updateProposalElement(id: number, element: Partial<InsertProposalElement>): Promise<ProposalElement | undefined> {
     try {
-      // Create a clean update object
-      const updateData: Record<string, any> = {};
+      // Get the current element first
+      const currentElement = await this.getProposalElement(id);
+      if (!currentElement) {
+        console.error(`Element with ID ${id} not found`);
+        return undefined;
+      }
       
-      // Copy safe properties from element to updateData
-      if (element.name !== undefined) updateData.name = element.name;
-      if (element.elementType !== undefined) updateData.elementType = element.elementType;
-      if (element.content !== undefined) updateData.content = element.content;
-      if (element.isActive !== undefined) updateData.isActive = element.isActive;
-      if (element.isGlobal !== undefined) updateData.isGlobal = element.isGlobal;
-      if (element.category !== undefined) updateData.category = element.category;
-      if (element.thumbnail !== undefined) updateData.thumbnail = element.thumbnail;
-      if (element.proposalId !== undefined) updateData.proposalId = element.proposalId;
-      if (element.sortOrder !== undefined) updateData.sortOrder = element.sortOrder;
-      if (element.createdBy !== undefined) updateData.createdBy = element.createdBy;
+      // Log what's coming in for debugging
+      console.log(`Updating element ${id} with:`, {
+        name: element.name,
+        contentType: typeof element.content,
+        contentLength: element.content ? 
+          (typeof element.content === 'string' ? element.content.length : JSON.stringify(element.content).length) 
+          : 0
+      });
       
-      // Always update the updatedAt timestamp
-      updateData.updatedAt = new Date().toISOString();
+      // Prepare a sanitized update object without Date objects
+      let sanitizedContent = element.content;
       
-      // Execute the update
-      const [updatedElement] = await db.update(proposalElements)
-        .set(updateData)
-        .where(eq(proposalElements.id, id))
-        .returning();
+      // Ensure content is properly formatted
+      if (sanitizedContent && typeof sanitizedContent === 'object') {
+        sanitizedContent = JSON.stringify(sanitizedContent);
+      }
       
-      if (updatedElement && element.proposalId) {
+      // Use a direct query to update the element to avoid timestamp issues
+      const result = await db.query.proposalElements.findMany({
+        where: eq(proposalElements.id, id),
+        limit: 1
+      });
+      
+      if (result.length === 0) {
+        console.error(`Element with ID ${id} not found in query`);
+        return undefined;
+      }
+      
+      // Execute a simpler update with minimal fields
+      const updateResult = await db.execute(sql`
+        UPDATE proposal_elements 
+        SET 
+          name = ${element.name || currentElement.name},
+          content = ${sanitizedContent || currentElement.content},
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `);
+      
+      if (!updateResult.rows || updateResult.rows.length === 0) {
+        console.error('No rows returned from update');
+        return undefined;
+      }
+      
+      // Get the updated element
+      const updatedElement = await this.getProposalElement(id);
+      
+      if (updatedElement && currentElement.proposalId) {
         // Log activity
         await this.createProposalActivity({
-          proposalId: element.proposalId,
-          userId: element.updatedBy || null,
+          proposalId: currentElement.proposalId,
+          userId: element.updatedBy || currentElement.createdBy || null,
           activityType: 'Element Updated',
           description: `Updated ${updatedElement.elementType} element`
         });
