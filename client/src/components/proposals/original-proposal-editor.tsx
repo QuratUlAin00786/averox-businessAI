@@ -153,14 +153,34 @@ export function ProposalEditor({
   useEffect(() => {
     console.log("ProposalEditor component mounted with isOpen:", isOpen, "proposalId:", proposal.id);
     
-    // Check if there are cached elements in session storage
+    // Check if we have an element ID in session storage
     let storedElement = null;
+    let storedElementId = null;
     try {
-      const storedElementString = sessionStorage.getItem(`proposal_${proposal.id}_selected_element`);
-      if (storedElementString) {
-        const parsedElement = JSON.parse(storedElementString);
-        console.log("Found stored selected element:", parsedElement);
-        storedElement = parsedElement;
+      // First try the new ID-only approach
+      const storedId = sessionStorage.getItem(`proposal_${proposal.id}_selected_element_id`);
+      if (storedId) {
+        console.log("Found stored selected element ID:", storedId);
+        storedElementId = parseInt(storedId, 10);
+      } else {
+        // For backwards compatibility, try the old approach but extract just the ID
+        const storedElementString = sessionStorage.getItem(`proposal_${proposal.id}_selected_element`);
+        if (storedElementString) {
+          try {
+            const parsedElement = JSON.parse(storedElementString);
+            storedElement = parsedElement;
+            if (parsedElement && parsedElement.id) {
+              console.log("Found stored element with ID:", parsedElement.id);
+              storedElementId = parsedElement.id;
+              
+              // Clean up old storage format
+              console.log("Removing old storage format");
+              sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`); 
+            }
+          } catch (parseError) {
+            console.warn("Error parsing stored element:", parseError);
+          }
+        }
       }
     } catch (error) {
       console.warn("Error reading from sessionStorage:", error);
@@ -171,8 +191,22 @@ export function ProposalEditor({
       refetchElements().then(() => {
         console.log("Elements fetched, ready for editing");
         
-        // If we had a stored element, try to match it with fetched elements
-        if (storedElement && elements.length > 0) {
+        // If we had a stored element ID, try to match it with fetched elements
+        if (storedElementId && elements.length > 0) {
+          const foundElement = elements.find(e => e.id === storedElementId);
+          if (foundElement) {
+            console.log("Setting stored element by ID as selected:", foundElement.id);
+            setSelectedElement(foundElement);
+            setActiveTab('editor');
+          } else if (elements.length > 0) {
+            // If we can't find the element with stored ID, select the first one
+            console.log("Element with ID", storedElementId, "not found, selecting first element:", elements[0].id);
+            setSelectedElement(elements[0]);
+            setActiveTab('editor');
+          }
+        } 
+        // For backwards compatibility, try with storedElement object if no ID was found
+        else if (storedElement && elements.length > 0) {
           const foundElement = elements.find(e => e.id === storedElement.id);
           if (foundElement) {
             console.log("Setting stored element as selected:", foundElement.id);
@@ -185,7 +219,7 @@ export function ProposalEditor({
             setActiveTab('editor');
           }
         } else if (elements.length > 0) {
-          // If we don't have a stored element but have elements, select the first one
+          // If we don't have a stored element/ID but have elements, select the first one
           console.log("No stored element, selecting first element:", elements[0].id);
           setSelectedElement(elements[0]);
           setActiveTab('editor');
