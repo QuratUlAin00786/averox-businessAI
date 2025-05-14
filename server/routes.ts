@@ -5090,12 +5090,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process the update using the same logic as the original endpoint
       try {
-        const updatedElement = await storage.updateProposalElement(elementId, req.body);
-        return res.status(200).json({
-          success: true,
-          data: updatedElement,
-          message: "Element updated successfully"
-        });
+        // Check if we have the special _updateData field in the content
+        if (req.body.content && 
+            typeof req.body.content === 'object' && 
+            req.body.content._updateData) {
+          
+          console.log("Detected _updateData field in content, handling special update");
+          
+          // Extract the update data and process it
+          const updateData = req.body.content._updateData;
+          
+          // Create a modified request body with the extracted content
+          const modifiedBody = {
+            ...req.body,
+            content: updateData
+          };
+          
+          // Update with the modified body
+          const updatedElement = await storage.updateProposalElement(elementId, modifiedBody);
+          return res.status(200).json({
+            success: true,
+            data: updatedElement,
+            message: "Element updated successfully with extracted content"
+          });
+        } else {
+          // Standard update path without special handling
+          const updatedElement = await storage.updateProposalElement(elementId, req.body);
+          return res.status(200).json({
+            success: true,
+            data: updatedElement,
+            message: "Element updated successfully"
+          });
+        }
       } catch (error: any) {
         console.error("Error updating proposal element:", error);
         return res.status(500).json({

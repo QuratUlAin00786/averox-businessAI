@@ -4,47 +4,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ProposalElement } from '@shared/schema';
 import { ElementEditorProps } from './editor-types';
+import { extractContent, prepareContentForSave } from '@/lib/encryption-utils';
 
 export function TextElementEditor({ element, onChange, disabled = false }: ElementEditorProps) {
   // Create refs to track if we need to update
   const isInitialRender = useRef(true);
   const lastSavedText = useRef('');
   
-  // Parse content safely with enhanced error handling
-  const parseContent = (contentData: any): { text: string } => {
-    try {
-      // Handle string content (needs parsing)
-      if (typeof contentData === 'string') {
-        try {
-          const parsed = JSON.parse(contentData);
-          return parsed && typeof parsed === 'object' ? parsed : { text: contentData };
-        } catch (e) {
-          console.error('Error parsing content string:', e);
-          // If JSON parsing fails, treat the entire string as text content
-          return { text: contentData };
-        }
-      }
-      
-      // Handle object content (already parsed)
-      if (contentData && typeof contentData === 'object') {
-        // If text property doesn't exist, create an empty one
-        if (!('text' in contentData)) {
-          console.warn('Content object missing text property:', contentData);
-          return { ...contentData, text: '' };
-        }
-        return contentData;
-      }
-      
-      // Handle null/undefined case
-      return { text: '' };
-    } catch (err) {
-      console.error('Unexpected error in parseContent:', err, contentData);
-      return { text: '' };
-    }
-  };
-  
-  // Get initial content
-  const initialContent = parseContent(element.content);
+  // Get initial content with support for encrypted data
+  const defaultContent = { text: 'Enter text here...' };
+  const initialContent = extractContent(element.content, defaultContent);
   const initialText = initialContent.text || '';
   
   // Set up state
@@ -55,16 +24,16 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
   useEffect(() => {
     lastSavedText.current = initialText;
     isInitialRender.current = false;
-  }, []);
+  }, [initialText]);
   
   // Handle external content changes (only if not editing)
   useEffect(() => {
     if (!isDirty && !isInitialRender.current) {
-      const parsedContent = parseContent(element.content);
-      setText(parsedContent.text || '');
-      lastSavedText.current = parsedContent.text || '';
+      const content = extractContent(element.content, defaultContent);
+      setText(content.text || '');
+      lastSavedText.current = content.text || '';
     }
-  }, [element.id, element.content]);
+  }, [element.id, element.content, isDirty]);
   
   // Text input handler with change marking
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -73,31 +42,22 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
     setIsDirty(newText !== lastSavedText.current);
   };
   
-  // Save handler with explicit user action and enhanced error handling
+  // Save handler with improved encryption support
   const handleSave = () => {
     if (!isDirty) return;
     
     try {
-      // Preserve any existing content properties other than text
-      const existingContent = parseContent(element.content);
+      // Create updated content object
       const updatedContent = { 
-        ...existingContent,
-        text 
+        text
       };
+      
+      // Prepare the content for saving, handling encryption metadata if present
+      const newContent = prepareContentForSave(element, updatedContent);
       
       // Update our local state
       lastSavedText.current = text;
       setIsDirty(false);
-      
-      // Format content based on how it was originally provided
-      let newContent: any;
-      if (typeof element.content === 'string') {
-        // If content was originally a string, convert back to string
-        newContent = JSON.stringify(updatedContent);
-      } else {
-        // Otherwise keep as object
-        newContent = updatedContent;
-      }
       
       // Log what we're saving for debugging
       console.log('Saving text element with content:', {

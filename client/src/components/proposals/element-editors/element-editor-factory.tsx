@@ -7,6 +7,7 @@ import { ListElementEditor } from './list-element-editor';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { getDefaultContent } from '../proposal-element-renderer';
+import { extractContent } from '@/lib/encryption-utils';
 
 // Export default content templates for when new elements are created
 export const getDefaultElementContent = (type: string) => {
@@ -34,58 +35,16 @@ export function ElementEditorFactory({ element, onSave, isReadOnly = false }: El
   // Create a copy to avoid directly mutating the original
   const elementCopy = { ...element };
   
-  // Ensure content is properly initialized
-  if (!elementCopy.content || (typeof elementCopy.content === 'string' && elementCopy.content === '')) {
-    try {
-      console.log("Initializing default content for", elementCopy.elementType);
-      elementCopy.content = getDefaultElementContent(elementCopy.elementType);
-    } catch (error) {
-      console.error("Error setting default content:", error);
-    }
-  }
+  // Get default content for this element type
+  const defaultContent = getDefaultElementContent(elementCopy.elementType);
   
-  // Parse string content into object if needed with better error handling
-  if (typeof elementCopy.content === 'string') {
-    try {
-      const contentStr = elementCopy.content.trim();
-      
-      // Only try to parse if it looks like JSON (starts with { or [)
-      if (contentStr && (contentStr.startsWith('{') || contentStr.startsWith('['))) {
-        try {
-          const parsedContent = JSON.parse(contentStr);
-          console.log("Parsed content from string:", parsedContent);
-          elementCopy.content = parsedContent;
-        } catch (parseError) {
-          console.error("Error parsing content JSON:", parseError, "Content:", contentStr);
-          // If JSON parsing fails but we have content, use the string as-is
-          // This helps with plain text that might have been stored as a string
-          if (contentStr.length > 0 && elementCopy.elementType === 'Text') {
-            console.log("Using string content as text:", contentStr);
-            elementCopy.content = { text: contentStr };
-          } else {
-            // For non-text elements or empty content, use default
-            console.log("Using default content for", elementCopy.elementType);
-            elementCopy.content = getDefaultElementContent(elementCopy.elementType);
-          }
-        }
-      } else if (contentStr.length > 0) {
-        // If content doesn't look like JSON but has text, use it directly for text elements
-        if (elementCopy.elementType === 'Text') {
-          console.log("Using plain string content as text:", contentStr);
-          elementCopy.content = { text: contentStr };
-        } else {
-          console.log("String content doesn't look like JSON, using default for", elementCopy.elementType);
-          elementCopy.content = getDefaultElementContent(elementCopy.elementType);
-        }
-      } else {
-        // Empty content, use default
-        console.log("Empty content string, using default for", elementCopy.elementType);
-        elementCopy.content = getDefaultElementContent(elementCopy.elementType);
-      }
-    } catch (error) {
-      console.error("Unexpected error handling content:", error);
-      elementCopy.content = getDefaultElementContent(elementCopy.elementType);
-    }
+  // Use the utility function to handle encrypted content
+  try {
+    console.log("Processing element content with encryption support");
+    elementCopy.content = extractContent(elementCopy.content, defaultContent);
+  } catch (error) {
+    console.error("Error extracting content:", error);
+    elementCopy.content = defaultContent;
   }
 
   try {
