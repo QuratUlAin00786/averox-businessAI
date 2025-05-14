@@ -100,8 +100,15 @@ export function ProposalEditor({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'editor' | 'elements' | 'comments'>('editor');
+  const [isDraggingElement, setIsDraggingElement] = useState<number | null>(null);
+  const [selectedElement, setSelectedElement] = useState<ProposalElement | null>(null);
+  const [newComment, setNewComment] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>('Viewer');
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
-  // Component lifecycle effect
+  // Component lifecycle effect with enhanced element restoration
   useEffect(() => {
     console.log("ProposalEditor component mounted with isOpen:", isOpen, "proposalId:", proposal.id);
     
@@ -110,9 +117,19 @@ export function ProposalEditor({
     try {
       const storedElementString = sessionStorage.getItem(`proposal_${proposal.id}_selected_element`);
       if (storedElementString) {
-        const parsedElement = JSON.parse(storedElementString);
-        console.log("Found stored selected element:", parsedElement);
-        storedElement = parsedElement;
+        try {
+          const parsedElement = JSON.parse(storedElementString);
+          if (parsedElement && parsedElement.id) {
+            console.log("Found stored selected element:", parsedElement.id);
+            storedElement = parsedElement;
+          } else {
+            console.warn("Stored element missing ID:", parsedElement);
+            sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
+          }
+        } catch (parseError) {
+          console.error("Error parsing stored element:", parseError);
+          sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
+        }
       }
     } catch (error) {
       console.warn("Error reading from sessionStorage:", error);
@@ -123,12 +140,36 @@ export function ProposalEditor({
       refetchElements().then(() => {
         console.log("Elements fetched, ready for editing");
         
+        // Cache the entire elements list in session storage
+        try {
+          sessionStorage.setItem(
+            `proposal_${proposal.id}_elements`, 
+            JSON.stringify(elements)
+          );
+          console.log("Cached elements in session storage");
+        } catch (cacheError) {
+          console.warn("Failed to cache elements in session storage:", cacheError);
+        }
+        
         // If we had a stored element, try to match it with fetched elements
         if (storedElement && elements.length > 0) {
           const foundElement = elements.find(e => e.id === storedElement.id);
           if (foundElement) {
             console.log("Setting stored element as selected:", foundElement.id);
-            setSelectedElement(foundElement);
+            // Use the fresh element from the server but preserve any unsaved changes
+            const mergedElement = {
+              ...foundElement,
+              // If the stored element has content that differs from the fetched one,
+              // prefer the stored content as it might contain unsaved changes
+              content: 
+                typeof storedElement.content === 'object' && 
+                typeof foundElement.content === 'object' &&
+                JSON.stringify(storedElement.content) !== JSON.stringify(foundElement.content)
+                  ? storedElement.content 
+                  : foundElement.content
+            };
+            
+            setSelectedElement(mergedElement);
             setActiveTab('editor');
           } else if (elements.length > 0) {
             // If we can't find the exact stored element but have elements, select the first one
@@ -141,29 +182,51 @@ export function ProposalEditor({
           console.log("No stored element, selecting first element:", elements[0].id);
           setSelectedElement(elements[0]);
           setActiveTab('editor');
+        } else {
+          console.log("No elements available for this proposal");
+          setSelectedElement(null);
         }
       });
     }
     
-    // Clear the session storage on unmount
+    // Clear only the selected element on unmount to avoid keeping stale selections
+    // but keep the elements cache for faster loading next time
     return () => {
-      console.log("Complete cleanup on component unmount");
+      console.log("Partial cleanup on component unmount");
       try {
         sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
-        sessionStorage.removeItem(`proposal_${proposal.id}_elements`);
       } catch (error) {
         console.warn("Error clearing sessionStorage:", error);
       }
     };
-  }, []);
+  }, [isOpen, proposal.id, refetchElements, elements]);
   
   // Add a debug effect for tab changes
   useEffect(() => {
     console.log("Active tab changed to:", activeTab);
   }, [activeTab]);
   
-  const [isDraggingElement, setIsDraggingElement] = useState<number | null>(null);
-  const [selectedElement, setSelectedElement] = useState<ProposalElement | null>(null);
+  // Add auto-save functionality for elements in session storage
+  useEffect(() => {
+    // Set up timer for autosaving
+    const autoSaveInterval = setInterval(() => {
+      if (selectedElement) {
+        try {
+          console.log("Auto-saving element to session storage:", selectedElement.id);
+          sessionStorage.setItem(
+            `proposal_${proposal.id}_selected_element`, 
+            JSON.stringify(selectedElement)
+          );
+        } catch (err) {
+          console.warn("Failed to auto-save selected element:", err);
+        }
+      }
+    }, 15000); // Auto-save every 15 seconds
+    
+    return () => {
+      clearInterval(autoSaveInterval);
+    };
+  }, [selectedElement, proposal.id]);
   
   // Dedicated handler for element selection with enhanced error handling and debugging
   const handleElementSelection = (element: ProposalElement) => {
