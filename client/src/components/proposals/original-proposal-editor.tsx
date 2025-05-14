@@ -201,6 +201,15 @@ export function ProposalEditor({
           } else if (elements.length > 0) {
             // If we can't find the element with stored ID, select the first one
             console.log("Element with ID", storedElementId, "not found, selecting first element:", elements[0].id);
+            // Save the ID of the selected element to storage
+            try {
+              sessionStorage.setItem(
+                `proposal_${proposal.id}_selected_element_id`, 
+                elements[0].id.toString()
+              );
+            } catch (err) {
+              console.warn("Failed to store element ID in session storage:", err);
+            }
             setSelectedElement(elements[0]);
             setActiveTab('editor');
           }
@@ -215,6 +224,15 @@ export function ProposalEditor({
           } else if (elements.length > 0) {
             // If we can't find the exact stored element but have elements, select the first one
             console.log("Stored element not found, selecting first element:", elements[0].id);
+            // Save the ID of the selected element to storage
+            try {
+              sessionStorage.setItem(
+                `proposal_${proposal.id}_selected_element_id`, 
+                elements[0].id.toString()
+              );
+            } catch (err) {
+              console.warn("Failed to store element ID in session storage:", err);
+            }
             setSelectedElement(elements[0]);
             setActiveTab('editor');
           }
@@ -231,8 +249,11 @@ export function ProposalEditor({
     return () => {
       console.log("Complete cleanup on component unmount");
       try {
+        // Clean up both old and new storage formats
         sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
+        sessionStorage.removeItem(`proposal_${proposal.id}_selected_element_id`);
         sessionStorage.removeItem(`proposal_${proposal.id}_elements`);
+        console.log("Session storage cleaned up for proposal:", proposal.id);
       } catch (error) {
         console.warn("Error clearing sessionStorage:", error);
       }
@@ -709,15 +730,19 @@ export function ProposalEditor({
     // Create a clean copy of the element to avoid reference issues
     const elementCopy = { ...element };
     
-    // Store element in session storage to persist through page navigations
+    // Store only the element ID in session storage to persist through page navigations
     try {
+      // Clear any old format storage
+      sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
+      
+      // Save only the ID using the new format
       sessionStorage.setItem(
-        `proposal_${proposal.id}_selected_element`, 
-        JSON.stringify(elementCopy)
+        `proposal_${proposal.id}_selected_element_id`, 
+        elementCopy.id.toString()
       );
-      console.log("Element selection saved to session storage:", elementCopy.id);
+      console.log("Element ID saved to session storage:", elementCopy.id);
     } catch (err) {
-      console.warn("Failed to store selected element in session storage:", err);
+      console.warn("Failed to store selected element ID in session storage:", err);
     }
     
     // Update state and switch to editor tab
