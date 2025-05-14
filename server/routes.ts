@@ -4907,28 +4907,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Process each element and decrypt content if needed
         elements = await Promise.all(elements.map(async (element) => {
-          const clonedElement = { ...element };
+          // Create a clean clone to avoid mutation issues
+          const clonedElement = { 
+            ...element,
+            content: undefined  // Start with empty content that we'll replace
+          };
           
           try {
             // Handle content that has encryption metadata (iv, encrypted, keyId properties)
-            if (clonedElement.content && 
-                typeof clonedElement.content === 'object' && 
-                clonedElement.content.iv && 
-                clonedElement.content.encrypted && 
-                clonedElement.content.keyId) {
+            if (element.content && 
+                typeof element.content === 'object' && 
+                element.content.iv && 
+                element.content.encrypted && 
+                element.content.keyId) {
               
-              console.log(`Decrypting content for element ${clonedElement.id}`);
+              console.log(`Decrypting content for element ${element.id}`);
               
               try {
                 // Decrypt the content
                 const decrypted = await cryptoSphere.decrypt({
-                  encrypted: clonedElement.content.encrypted,
-                  iv: clonedElement.content.iv,
-                  keyId: clonedElement.content.keyId
+                  encrypted: element.content.encrypted,
+                  iv: element.content.iv,
+                  keyId: element.content.keyId
                 });
                 
-                // Replace the encrypted content with decrypted content
-                // First check if the decrypted content is already an object 
+                // Parse the decrypted content into an appropriate format
                 let parsedContent;
                 
                 if (typeof decrypted.decrypted === 'string') {
@@ -4937,7 +4940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     parsedContent = JSON.parse(decrypted.decrypted);
                   } catch (parseError) {
                     // If it's not valid JSON, use it as text content
-                    if (clonedElement.elementType === 'Text') {
+                    if (element.elementType === 'Text') {
                       parsedContent = { text: decrypted.decrypted };
                     } else {
                       // For non-text elements, this is likely corrupted - use default content
@@ -4952,12 +4955,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   parsedContent = { text: "Unknown content format. Please contact support." };
                 }
                 
-                // Set the parsed content
+                // Set the parsed content as the only content
                 clonedElement.content = parsedContent;
-                console.log(`Successfully decrypted content for element ${clonedElement.id}`);
+                console.log(`Successfully decrypted content for element ${element.id}`);
                 
               } catch (decryptError) {
-                console.error(`Failed to decrypt content for element ${clonedElement.id}:`, decryptError);
+                console.error(`Failed to decrypt content for element ${element.id}:`, decryptError);
                 // If decryption fails, provide a placeholder that won't break the UI
                 clonedElement.content = { 
                   text: "Content could not be decrypted. Please contact support." 
@@ -4965,33 +4968,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             } 
             // Handle content that is a string (possibly JSON)
-            else if (typeof clonedElement.content === 'string' && clonedElement.content.trim()) {
+            else if (element.content && typeof element.content === 'string' && element.content.trim()) {
               try {
                 // Try parsing as JSON
-                clonedElement.content = JSON.parse(clonedElement.content);
-                console.log(`Successfully parsed string content for element ${clonedElement.id}`);
+                clonedElement.content = JSON.parse(element.content);
+                console.log(`Successfully parsed string content for element ${element.id}`);
               } catch (parseError) {
                 // If it's not valid JSON, for text elements we can use it directly
-                if (clonedElement.elementType === 'Text') {
-                  clonedElement.content = { text: clonedElement.content };
-                  console.log(`Used string content as text for element ${clonedElement.id}`);
+                if (element.elementType === 'Text') {
+                  clonedElement.content = { text: element.content };
+                  console.log(`Used string content as text for element ${element.id}`);
                 }
                 // Otherwise, use a default placeholder
                 else {
-                  console.warn(`Failed to parse string content for element ${clonedElement.id}:`, parseError);
+                  console.warn(`Failed to parse string content for element ${element.id}:`, parseError);
                   clonedElement.content = { text: "Invalid content format. Please contact support." };
                 }
               }
             }
+            // Handle content that is already an object but not encrypted
+            else if (element.content && typeof element.content === 'object') {
+              // Filter out any encryption metadata if it exists but isn't complete
+              const { iv, encrypted, keyId, ...actualContent } = element.content;
+              
+              // If we have remaining properties after removing encryption metadata, use them
+              if (Object.keys(actualContent).length > 0) {
+                clonedElement.content = actualContent;
+              } else {
+                // Default content by element type
+                switch (element.elementType) {
+                  case 'Text':
+                    clonedElement.content = { text: '' };
+                    break;
+                  case 'Header':
+                    clonedElement.content = { text: 'Header', level: 2 };
+                    break;
+                  case 'Image':
+                    clonedElement.content = { url: '', caption: '' };
+                    break;
+                  case 'Table':
+                    clonedElement.content = { rows: [['']] };
+                    break;
+                  case 'List':
+                    clonedElement.content = { items: [''], style: 'bullet' };
+                    break;
+                  default:
+                    clonedElement.content = {};
+                }
+              }
+            }
             
-            // If content is completely missing, use empty object
+            // If content is completely missing by this point, use an empty object
             if (!clonedElement.content) {
               clonedElement.content = {};
-              console.warn(`No content found for element ${clonedElement.id}, using empty object`);
+              console.warn(`No content found for element ${element.id}, using empty object`);
             }
             
           } catch (processError) {
-            console.error(`Error processing element ${clonedElement.id}:`, processError);
+            console.error(`Error processing element ${element.id}:`, processError);
             // Ensure we at least have something for content
             clonedElement.content = { text: "Error processing content." };
           }
@@ -5133,29 +5167,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const { cryptoSphere } = await import('./utils/cryptosphere.js').catch(() => import('./utils/cryptosphere'));
         
-        // Create a deep clone of the element to avoid modifying the original
-        const clonedElement = { ...element };
+        // Create a clean clone to avoid mutation issues
+        const clonedElement = { 
+          ...element,
+          content: undefined  // Start with empty content that we'll replace
+        };
         
         try {
           // Handle content that has encryption metadata (iv, encrypted, keyId properties)
-          if (clonedElement.content && 
-              typeof clonedElement.content === 'object' && 
-              clonedElement.content.iv && 
-              clonedElement.content.encrypted && 
-              clonedElement.content.keyId) {
+          if (element.content && 
+              typeof element.content === 'object' && 
+              element.content.iv && 
+              element.content.encrypted && 
+              element.content.keyId) {
             
-            console.log(`Decrypting content for element ${clonedElement.id}`);
+            console.log(`Decrypting content for element ${element.id}`);
             
             try {
               // Decrypt the content
               const decrypted = await cryptoSphere.decrypt({
-                encrypted: clonedElement.content.encrypted,
-                iv: clonedElement.content.iv,
-                keyId: clonedElement.content.keyId
+                encrypted: element.content.encrypted,
+                iv: element.content.iv,
+                keyId: element.content.keyId
               });
               
-              // Replace the encrypted content with decrypted content
-              // First check if the decrypted content is already an object 
+              // Parse the decrypted content into an appropriate format
               let parsedContent;
               
               if (typeof decrypted.decrypted === 'string') {
@@ -5164,7 +5200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   parsedContent = JSON.parse(decrypted.decrypted);
                 } catch (parseError) {
                   // If it's not valid JSON, use it as text content
-                  if (clonedElement.elementType === 'Text') {
+                  if (element.elementType === 'Text') {
                     parsedContent = { text: decrypted.decrypted };
                   } else {
                     // For non-text elements, this is likely corrupted - use default content
@@ -5179,12 +5215,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 parsedContent = { text: "Unknown content format. Please contact support." };
               }
               
-              // Set the parsed content
+              // Set the parsed content as the only content
               clonedElement.content = parsedContent;
-              console.log(`Successfully decrypted content for element ${clonedElement.id}`);
+              console.log(`Successfully decrypted content for element ${element.id}`);
               
             } catch (decryptError) {
-              console.error(`Failed to decrypt content for element ${clonedElement.id}:`, decryptError);
+              console.error(`Failed to decrypt content for element ${element.id}:`, decryptError);
               // If decryption fails, provide a placeholder that won't break the UI
               clonedElement.content = { 
                 text: "Content could not be decrypted. Please contact support." 
@@ -5192,29 +5228,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           } 
           // Handle content that is a string (possibly JSON)
-          else if (typeof clonedElement.content === 'string' && clonedElement.content.trim()) {
+          else if (element.content && typeof element.content === 'string' && element.content.trim()) {
             try {
               // Try parsing as JSON
-              clonedElement.content = JSON.parse(clonedElement.content);
-              console.log(`Successfully parsed string content for element ${clonedElement.id}`);
+              clonedElement.content = JSON.parse(element.content);
+              console.log(`Successfully parsed string content for element ${element.id}`);
             } catch (parseError) {
               // If it's not valid JSON, for text elements we can use it directly
-              if (clonedElement.elementType === 'Text') {
-                clonedElement.content = { text: clonedElement.content };
-                console.log(`Used string content as text for element ${clonedElement.id}`);
+              if (element.elementType === 'Text') {
+                clonedElement.content = { text: element.content };
+                console.log(`Used string content as text for element ${element.id}`);
               }
               // Otherwise, use a default placeholder
               else {
-                console.warn(`Failed to parse string content for element ${clonedElement.id}:`, parseError);
+                console.warn(`Failed to parse string content for element ${element.id}:`, parseError);
                 clonedElement.content = { text: "Invalid content format. Please contact support." };
               }
             }
           }
+          // Handle content that is already an object but not encrypted
+          else if (element.content && typeof element.content === 'object') {
+            // Filter out any encryption metadata if it exists but isn't complete
+            const { iv, encrypted, keyId, ...actualContent } = element.content;
+            
+            // If we have remaining properties after removing encryption metadata, use them
+            if (Object.keys(actualContent).length > 0) {
+              clonedElement.content = actualContent;
+            } else {
+              // Default content by element type
+              switch (element.elementType) {
+                case 'Text':
+                  clonedElement.content = { text: '' };
+                  break;
+                case 'Header':
+                  clonedElement.content = { text: 'Header', level: 2 };
+                  break;
+                case 'Image':
+                  clonedElement.content = { url: '', caption: '' };
+                  break;
+                case 'Table':
+                  clonedElement.content = { rows: [['']] };
+                  break;
+                case 'List':
+                  clonedElement.content = { items: [''], style: 'bullet' };
+                  break;
+                default:
+                  clonedElement.content = {};
+              }
+            }
+          }
           
-          // If content is completely missing, use empty object
+          // If content is completely missing by this point, use an empty object
           if (!clonedElement.content) {
             clonedElement.content = {};
-            console.warn(`No content found for element ${clonedElement.id}, using empty object`);
+            console.warn(`No content found for element ${element.id}, using empty object`);
           }
           
           // Replace the original element with our processed version
