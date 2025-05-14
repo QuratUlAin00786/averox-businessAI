@@ -488,14 +488,7 @@ export function ProposalEditor({
       if (elements.length > 0 && !selectedElement) {
         console.log("Auto-selecting first element:", elements[0].id);
         // Save the ID of the selected element to storage
-        try {
-          sessionStorage.setItem(
-            `proposal_${proposal.id}_selected_element_id`, 
-            elements[0].id.toString()
-          );
-        } catch (err) {
-          console.warn("Failed to store element ID in session storage:", err);
-        }
+        saveSelectedElementId(elements[0].id);
         setSelectedElement(elements[0]);
         
         // Switch to editor tab if not already on it
