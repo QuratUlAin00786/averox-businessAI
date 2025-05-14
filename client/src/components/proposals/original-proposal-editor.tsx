@@ -213,20 +213,15 @@ export function ProposalEditor({
           const foundElement = elements.find(e => e.id === storedElementId);
           if (foundElement) {
             console.log("Setting stored element by ID as selected:", foundElement.id);
+            // Update storage with current element ID
+            saveSelectedElementId(foundElement.id);
             setSelectedElement(foundElement);
             setActiveTab('editor');
           } else if (elements.length > 0) {
             // If we can't find the element with stored ID, select the first one
             console.log("Element with ID", storedElementId, "not found, selecting first element:", elements[0].id);
             // Save the ID of the selected element to storage
-            try {
-              sessionStorage.setItem(
-                `proposal_${proposal.id}_selected_element_id`, 
-                elements[0].id.toString()
-              );
-            } catch (err) {
-              console.warn("Failed to store element ID in session storage:", err);
-            }
+            saveSelectedElementId(elements[0].id);
             setSelectedElement(elements[0]);
             setActiveTab('editor');
           }
@@ -236,20 +231,15 @@ export function ProposalEditor({
           const foundElement = elements.find(e => e.id === storedElement.id);
           if (foundElement) {
             console.log("Setting stored element as selected:", foundElement.id);
+            // Update to new storage format
+            saveSelectedElementId(foundElement.id);
             setSelectedElement(foundElement);
             setActiveTab('editor');
           } else if (elements.length > 0) {
             // If we can't find the exact stored element but have elements, select the first one
             console.log("Stored element not found, selecting first element:", elements[0].id);
             // Save the ID of the selected element to storage
-            try {
-              sessionStorage.setItem(
-                `proposal_${proposal.id}_selected_element_id`, 
-                elements[0].id.toString()
-              );
-            } catch (err) {
-              console.warn("Failed to store element ID in session storage:", err);
-            }
+            saveSelectedElementId(elements[0].id);
             setSelectedElement(elements[0]);
             setActiveTab('editor');
           }
@@ -257,14 +247,7 @@ export function ProposalEditor({
           // If we don't have a stored element/ID but have elements, select the first one
           console.log("No stored element, selecting first element:", elements[0].id);
           // Save the ID of the selected element to storage
-          try {
-            sessionStorage.setItem(
-              `proposal_${proposal.id}_selected_element_id`, 
-              elements[0].id.toString()
-            );
-          } catch (err) {
-            console.warn("Failed to store element ID in session storage:", err);
-          }
+          saveSelectedElementId(elements[0].id);
           setSelectedElement(elements[0]);
           setActiveTab('editor');
         }
