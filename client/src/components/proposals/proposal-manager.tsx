@@ -908,7 +908,7 @@ export function ProposalManager({
       // Set the proposal data
       setSelectedProposal(freshProposal);
       
-      // Pre-fetch the proposal elements
+      // Pre-fetch the proposal ID only, don't cache elements
       console.log("Pre-fetching proposal elements...");
       const elementsResponse = await fetch(`/api/proposals/${proposal.id}/elements`);
       
@@ -917,19 +917,21 @@ export function ProposalManager({
       if (elementsResponse.ok) {
         const elementsData = await elementsResponse.json();
         elements = elementsData.data || elementsData;
-        console.log("Pre-fetched elements:", elements);
+        console.log("Pre-fetched elements count:", elements.length);
         
-        // Store element data in sessionStorage
+        // Only store element IDs for reference, not the full elements
         try {
-          sessionStorage.setItem(`proposal_${proposal.id}_elements`, JSON.stringify(elements));
+          // Remove any existing element data from sessionStorage
+          sessionStorage.removeItem(`proposal_${proposal.id}_elements`);
+          sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
           
-          // If there are elements, store the first one as the selected element
+          // Instead of storing potentially encrypted elements, just store the first element ID
           if (elements && elements.length > 0) {
-            console.log("Storing first element as selected:", elements[0].id);
-            sessionStorage.setItem(`proposal_${proposal.id}_selected_element`, JSON.stringify(elements[0]));
+            console.log("Storing first element ID as selected:", elements[0].id);
+            sessionStorage.setItem(`proposal_${proposal.id}_selected_element_id`, elements[0].id.toString());
           }
         } catch (error) {
-          console.warn("Could not store elements in sessionStorage:", error);
+          console.warn("Could not store element ID in sessionStorage:", error);
         }
       }
       
