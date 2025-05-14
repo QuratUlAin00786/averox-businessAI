@@ -272,11 +272,6 @@ export function ProposalEditor({
     setSelectedElement(elementCopy);
     setActiveTab('editor');
   };
-  const [newComment, setNewComment] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>('Viewer');
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
 
   // Fetch proposal elements with better error handling
   const {
