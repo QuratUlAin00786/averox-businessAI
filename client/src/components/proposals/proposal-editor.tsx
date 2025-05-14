@@ -51,7 +51,7 @@ import {
 } from 'lucide-react';
 
 // Import element renderer component
-import { ElementPreview, ElementRenderer } from '../proposal-element-renderer';
+import { ElementPreview, ElementRenderer } from './proposal-element-renderer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';

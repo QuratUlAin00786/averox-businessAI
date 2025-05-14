@@ -13,13 +13,13 @@ export const getDefaultElementContent = (type: string) => {
   return getDefaultContent(type);
 };
 
-interface ElementEditorFactoryProps {
+export interface ElementEditorFactoryProps {
   element: ProposalElement;
-  onChange: (updatedElement: ProposalElement) => void;
-  disabled?: boolean;
+  onSave: (updatedElement: ProposalElement) => void;
+  isReadOnly?: boolean;
 }
 
-export function ElementEditorFactory({ element, onChange, disabled = false }: ElementEditorFactoryProps) {
+export function ElementEditorFactory({ element, onSave, isReadOnly = false }: ElementEditorFactoryProps) {
   if (!element || !element.elementType) {
     return (
       <Alert variant="destructive">
@@ -62,8 +62,8 @@ export function ElementEditorFactory({ element, onChange, disabled = false }: El
         return (
           <TextElementEditor 
             element={elementCopy} 
-            onChange={onChange} 
-            disabled={disabled} 
+            onChange={onSave} 
+            disabled={isReadOnly} 
           />
         );
         
@@ -71,8 +71,8 @@ export function ElementEditorFactory({ element, onChange, disabled = false }: El
         return (
           <HeaderElementEditor 
             element={elementCopy} 
-            onChange={onChange} 
-            disabled={disabled} 
+            onChange={onSave} 
+            disabled={isReadOnly} 
           />
         );
         
@@ -80,8 +80,8 @@ export function ElementEditorFactory({ element, onChange, disabled = false }: El
         return (
           <ImageElementEditor 
             element={elementCopy} 
-            onChange={onChange} 
-            disabled={disabled} 
+            onChange={onSave} 
+            disabled={isReadOnly} 
           />
         );
         
@@ -89,8 +89,8 @@ export function ElementEditorFactory({ element, onChange, disabled = false }: El
         return (
           <TableElementEditor 
             element={elementCopy} 
-            onChange={onChange} 
-            disabled={disabled} 
+            onChange={onSave} 
+            disabled={isReadOnly} 
           />
         );
         
@@ -98,8 +98,8 @@ export function ElementEditorFactory({ element, onChange, disabled = false }: El
         return (
           <ListElementEditor 
             element={elementCopy} 
-            onChange={onChange} 
-            disabled={disabled} 
+            onChange={onSave} 
+            disabled={isReadOnly} 
           />
         );
         
