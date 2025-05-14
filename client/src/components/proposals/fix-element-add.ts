@@ -5,6 +5,11 @@ import { InsertProposalElement, ProposalElement } from '@shared/schema';
 export type ProposalElementType = 'Header' | 'Text' | 'Image' | 'Table' | 'List' | 'Quote' | 'ProductList' | 'Signature' | 'PageBreak' | 'Custom';
 
 /**
+ * Types of operations that can be performed on proposal elements
+ */
+export type ElementOperation = 'create' | 'update' | 'delete' | 'move';
+
+/**
  * Create a new proposal element
  */
 export async function createProposalElement(
@@ -70,6 +75,88 @@ export async function refreshProposalElements(
   } catch (error) {
     console.error('Error refreshing proposal elements:', error);
     return [];
+  }
+}
+
+/**
+ * Update an existing proposal element
+ */
+export async function updateProposalElement(
+  proposalId: number,
+  elementId: number,
+  updates: Partial<InsertProposalElement>
+): Promise<ProposalElement | null> {
+  console.log(`Updating element ${elementId} in proposal ${proposalId}`);
+  
+  try {
+    // Ensure content is a string if provided as an object
+    const updateData = { ...updates };
+    if (updateData.content && typeof updateData.content === 'object') {
+      updateData.content = JSON.stringify(updateData.content);
+    }
+    
+    // Make the API request
+    const response = await apiRequestJson<{ data: ProposalElement }>(
+      'PATCH',
+      `/api/proposals/${proposalId}/elements/${elementId}`,
+      updateData
+    );
+    
+    console.log('Element updated successfully:', response.data?.id);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating proposal element:', error);
+    return null;
+  }
+}
+
+/**
+ * Delete a proposal element
+ */
+export async function deleteProposalElement(
+  proposalId: number,
+  elementId: number
+): Promise<boolean> {
+  console.log(`Deleting element ${elementId} from proposal ${proposalId}`);
+  
+  try {
+    // Make the API request
+    const response = await apiRequestJson<{ success: boolean }>(
+      'DELETE',
+      `/api/proposals/${proposalId}/elements/${elementId}`
+    );
+    
+    console.log('Element deleted successfully:', elementId);
+    return response.success || false;
+  } catch (error) {
+    console.error('Error deleting proposal element:', error);
+    return false;
+  }
+}
+
+/**
+ * Move a proposal element up or down
+ */
+export async function moveProposalElement(
+  proposalId: number,
+  elementId: number,
+  direction: 'up' | 'down'
+): Promise<boolean> {
+  console.log(`Moving element ${elementId} ${direction} in proposal ${proposalId}`);
+  
+  try {
+    // Make the API request
+    const response = await apiRequestJson<{ success: boolean }>(
+      'POST',
+      `/api/proposals/${proposalId}/elements/${elementId}/move`,
+      { direction }
+    );
+    
+    console.log(`Element moved ${direction} successfully:`, elementId);
+    return response.success || false;
+  } catch (error) {
+    console.error(`Error moving proposal element ${direction}:`, error);
+    return false;
   }
 }
 
