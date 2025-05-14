@@ -5967,11 +5967,27 @@ export class DatabaseStorage implements IStorage {
 
   async updateProposalElement(id: number, element: Partial<InsertProposalElement>): Promise<ProposalElement | undefined> {
     try {
+      // Create a clean update object
+      const updateData: Record<string, any> = {};
+      
+      // Copy safe properties from element to updateData
+      if (element.name !== undefined) updateData.name = element.name;
+      if (element.elementType !== undefined) updateData.elementType = element.elementType;
+      if (element.content !== undefined) updateData.content = element.content;
+      if (element.isActive !== undefined) updateData.isActive = element.isActive;
+      if (element.isGlobal !== undefined) updateData.isGlobal = element.isGlobal;
+      if (element.category !== undefined) updateData.category = element.category;
+      if (element.thumbnail !== undefined) updateData.thumbnail = element.thumbnail;
+      if (element.proposalId !== undefined) updateData.proposalId = element.proposalId;
+      if (element.sortOrder !== undefined) updateData.sortOrder = element.sortOrder;
+      if (element.createdBy !== undefined) updateData.createdBy = element.createdBy;
+      
+      // Always update the updatedAt timestamp
+      updateData.updatedAt = new Date().toISOString();
+      
+      // Execute the update
       const [updatedElement] = await db.update(proposalElements)
-        .set({
-          ...element,
-          updatedAt: new Date()
-        })
+        .set(updateData)
         .where(eq(proposalElements.id, id))
         .returning();
       
