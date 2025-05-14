@@ -77,17 +77,38 @@ export function ElementPreview({ element, isSelected }: ElementPreviewProps) {
   }
 
   try {
-    // Safely parse content
+    // Safely parse content with detailed handling for different formats
     let content = {};
     try {
-      if (typeof element.content === 'string' && element.content.trim()) {
-        content = JSON.parse(element.content);
-      } else if (element.content && typeof element.content === 'object') {
+      // Handle encrypted content objects (should be rare since server decrypts now)
+      if (typeof element.content === 'object' && 
+          element.content !== null && 
+          'iv' in element.content && 
+          'encrypted' in element.content && 
+          'keyId' in element.content) {
+        console.warn("Received encrypted content that server didn't decrypt:", element.id);
+        // Use empty content in this case
+      }
+      // Handle regular object content (most common with server decryption)
+      else if (element.content && typeof element.content === 'object') {
         content = element.content;
       }
+      // Handle string content (try to parse as JSON)
+      else if (typeof element.content === 'string' && element.content.trim()) {
+        try {
+          const parsed = JSON.parse(element.content);
+          content = parsed;
+        } catch (parseError) {
+          console.warn("Failed to parse string content for element", element.id);
+          // For text elements, we can use the string directly as text content
+          if (element.elementType === 'Text') {
+            content = { text: element.content };
+          }
+        }
+      }
     } catch (error) {
-      console.error("Error parsing element content in preview:", error, element);
-      // Use default content on error
+      console.error("Error handling element content in preview:", error, element);
+      // Use empty content on error
       content = {};
     }
     

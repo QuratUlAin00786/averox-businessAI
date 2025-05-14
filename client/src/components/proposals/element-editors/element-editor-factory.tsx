@@ -7,7 +7,6 @@ import { ListElementEditor } from './list-element-editor';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { getDefaultContent } from '../proposal-element-renderer';
-import { extractContent } from '@/lib/encryption-utils';
 
 // Export default content templates for when new elements are created
 export const getDefaultElementContent = (type: string) => {
@@ -38,12 +37,44 @@ export function ElementEditorFactory({ element, onSave, isReadOnly = false }: El
   // Get default content for this element type
   const defaultContent = getDefaultElementContent(elementCopy.elementType);
   
-  // Use the utility function to handle encrypted content
+  // Process content based on data type
   try {
-    console.log("Processing element content with encryption support");
-    elementCopy.content = extractContent(elementCopy.content, defaultContent);
+    console.log("Processing element content");
+    
+    // If content is undefined/null, use default content
+    if (!elementCopy.content) {
+      console.log("No content found, using default");
+      elementCopy.content = defaultContent;
+    }
+    // If content is a string, try to parse it as JSON
+    else if (typeof elementCopy.content === 'string') {
+      try {
+        const parsedContent = JSON.parse(elementCopy.content);
+        console.log("Successfully parsed string content as JSON");
+        elementCopy.content = parsedContent;
+      } catch (parseError) {
+        console.log("Content is a string but not valid JSON, using as raw text");
+        // For text elements, we can use the string directly
+        if (elementCopy.elementType === 'Text') {
+          elementCopy.content = { text: elementCopy.content };
+        } else {
+          // For other element types, use default content
+          elementCopy.content = defaultContent;
+        }
+      }
+    }
+    // Handle content that's already in proper object format
+    else if (typeof elementCopy.content === 'object') {
+      // No conversion needed, content is already an object
+      console.log("Content is already an object, using as is");
+    }
+    else {
+      // Fallback for unknown content format
+      console.warn("Unknown content format, using default");
+      elementCopy.content = defaultContent;
+    }
   } catch (error) {
-    console.error("Error extracting content:", error);
+    console.error("Error processing content:", error);
     elementCopy.content = defaultContent;
   }
 

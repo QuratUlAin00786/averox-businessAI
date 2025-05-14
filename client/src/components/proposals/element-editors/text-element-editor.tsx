@@ -4,20 +4,33 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ProposalElement } from '@shared/schema';
 import { ElementEditorProps } from './editor-types';
-import { extractContent, prepareContentForSave } from '@/lib/encryption-utils';
 
 export function TextElementEditor({ element, onChange, disabled = false }: ElementEditorProps) {
   // Create refs to track if we need to update
   const isInitialRender = useRef(true);
   const lastSavedText = useRef('');
   
-  // Get initial content with support for encrypted data
+  // Get initial content
   const defaultContent = { text: 'Enter text here...' };
-  const initialContent = extractContent(element.content, defaultContent);
-  const initialText = initialContent.text || '';
+  
+  // Process the content based on its type
+  let initialText = '';
+  if (typeof element.content === 'string') {
+    // Attempt to parse string as JSON
+    try {
+      const parsed = JSON.parse(element.content);
+      initialText = parsed.text || '';
+    } catch (e) {
+      // If not valid JSON, use the string directly
+      initialText = element.content;
+    }
+  } else if (element.content && typeof element.content === 'object') {
+    // Object format - either server-decrypted content or direct content
+    initialText = element.content.text || '';
+  }
   
   // Set up state
-  const [text, setText] = useState(initialText);
+  const [text, setText] = useState(initialText || '');
   const [isDirty, setIsDirty] = useState(false);
   
   // Setup the lastSavedText ref on mount
@@ -29,9 +42,22 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
   // Handle external content changes (only if not editing)
   useEffect(() => {
     if (!isDirty && !isInitialRender.current) {
-      const content = extractContent(element.content, defaultContent);
-      setText(content.text || '');
-      lastSavedText.current = content.text || '';
+      let newText = '';
+      
+      // Handle different content formats
+      if (typeof element.content === 'string') {
+        try {
+          const parsed = JSON.parse(element.content);
+          newText = parsed.text || '';
+        } catch (e) {
+          newText = element.content;
+        }
+      } else if (element.content && typeof element.content === 'object') {
+        newText = element.content.text || '';
+      }
+      
+      setText(newText);
+      lastSavedText.current = newText;
     }
   }, [element.id, element.content, isDirty]);
   
@@ -42,7 +68,7 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
     setIsDirty(newText !== lastSavedText.current);
   };
   
-  // Save handler with improved encryption support
+  // Simple save handler
   const handleSave = () => {
     if (!isDirty) return;
     
@@ -52,9 +78,6 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
         text
       };
       
-      // Prepare the content for saving, handling encryption metadata if present
-      const newContent = prepareContentForSave(element, updatedContent);
-      
       // Update our local state
       lastSavedText.current = text;
       setIsDirty(false);
@@ -62,14 +85,14 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
       // Log what we're saving for debugging
       console.log('Saving text element with content:', {
         original: element.content,
-        new: newContent,
+        new: updatedContent,
         text
       });
       
       // Call the onChange handler
       onChange({
         ...element,
-        content: newContent
+        content: updatedContent
       });
       
       console.log('Text saved successfully:', text);
