@@ -312,12 +312,21 @@ export function ProposalEditor({
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (newElement) => {
       toast({
         title: 'Element Added',
         description: 'The element has been added to your proposal',
       });
-      refetchElements();
+      
+      // Make sure to select the newly added element
+      if (newElement && newElement.id) {
+        // Save element ID to session storage
+        saveSelectedElementId(newElement.id);
+        // We still need to refetch elements to get the complete list
+        refetchElements();
+      } else {
+        refetchElements();
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -749,19 +758,8 @@ export function ProposalEditor({
     const elementCopy = { ...element };
     
     // Store only the element ID in session storage to persist through page navigations
-    try {
-      // Clear any old format storage
-      sessionStorage.removeItem(`proposal_${proposal.id}_selected_element`);
-      
-      // Save only the ID using the new format
-      sessionStorage.setItem(
-        `proposal_${proposal.id}_selected_element_id`, 
-        elementCopy.id.toString()
-      );
-      console.log("Element ID saved to session storage:", elementCopy.id);
-    } catch (err) {
-      console.warn("Failed to store selected element ID in session storage:", err);
-    }
+    saveSelectedElementId(elementCopy.id);
+    console.log("Element ID saved to session storage:", elementCopy.id);
     
     // Update state and switch to editor tab
     setSelectedElement(elementCopy);
