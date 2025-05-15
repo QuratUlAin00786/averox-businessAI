@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ProposalElement } from '@shared/schema';
-import { ElementEditorProps } from './editor-types';
+import { ElementEditorProps, TextElementContent } from './editor-types';
 
 export function TextElementEditor({ element, onChange, disabled = false }: ElementEditorProps) {
   // Create refs to track if we need to update
@@ -11,14 +11,14 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
   const lastSavedText = useRef('');
   
   // Get initial content
-  const defaultContent = { text: 'Enter text here...' };
+  const defaultContent: TextElementContent = { text: 'Enter text here...' };
   
   // Process the content based on its type
   let initialText = '';
   if (typeof element.content === 'string') {
     // Attempt to parse string as JSON
     try {
-      const parsed = JSON.parse(element.content);
+      const parsed = JSON.parse(element.content) as TextElementContent;
       initialText = parsed.text || '';
     } catch (e) {
       // If not valid JSON, use the string directly
@@ -26,7 +26,8 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
     }
   } else if (element.content && typeof element.content === 'object') {
     // Object format - either server-decrypted content or direct content
-    initialText = element.content.text || '';
+    const contentObj = element.content as TextElementContent;
+    initialText = contentObj.text || '';
   }
   
   // Set up state
@@ -47,13 +48,14 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
       // Handle different content formats
       if (typeof element.content === 'string') {
         try {
-          const parsed = JSON.parse(element.content);
+          const parsed = JSON.parse(element.content) as TextElementContent;
           newText = parsed.text || '';
         } catch (e) {
           newText = element.content;
         }
       } else if (element.content && typeof element.content === 'object') {
-        newText = element.content.text || '';
+        const contentObj = element.content as TextElementContent;
+        newText = contentObj.text || '';
       }
       
       setText(newText);
@@ -74,7 +76,7 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
     
     try {
       // Create updated content object
-      const updatedContent = { 
+      const updatedContent: TextElementContent = { 
         text
       };
       
@@ -89,13 +91,11 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
         text
       });
       
-      // Call the onSave handler (this matches the ElementEditorFactory props interface)
-      if (typeof onChange === 'function') {
-        onChange({
-          ...element,
-          content: updatedContent
-        });
-      }
+      // Call the onChange handler with updated element
+      onChange({
+        ...element,
+        content: updatedContent
+      });
       
       console.log('Text saved successfully:', text);
     } catch (error) {
