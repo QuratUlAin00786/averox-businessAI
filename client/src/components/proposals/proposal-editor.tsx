@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { apiRequestJson } from '@/lib/queryClient';
-import { ElementEditorFactory } from './element-editors/element-editor-factory';
+import { ElementEditorFactory, getDefaultElementContent } from './element-editors/element-editor-factory';
 import DraggableElementList from './dnd/draggable-element-list';
 import { 
   Loader2, 
@@ -87,39 +87,7 @@ interface ProposalEditorProps {
 
 type ElementType = 'Header' | 'Text' | 'Image' | 'Table' | 'List' | 'Quote' | 'ProductList' | 'Signature' | 'PageBreak' | 'Custom';
 
-// Simple empty content by element type
-const getDefaultElementContent = (type: ElementType) => {
-  switch (type) {
-    case 'Header':
-      return { text: 'New Header', level: 1 };
-    case 'Text':
-      return { text: 'Enter your text here...' };
-    case 'Image':
-      return { url: '', caption: '', alt: '', width: 800 };
-    case 'Table':
-      return { 
-        headers: ['Column 1', 'Column 2', 'Column 3'],
-        rows: [
-          ['Cell 1', 'Cell 2', 'Cell 3'],
-          ['Cell 4', 'Cell 5', 'Cell 6'],
-        ]
-      };
-    case 'List':
-      return { items: ['Item 1', 'Item 2', 'Item 3'], ordered: false };
-    case 'Quote':
-      return { text: 'Quote text', attribution: 'Source' };
-    case 'ProductList':
-      return { productIds: [] };
-    case 'Signature':
-      return { name: 'Signature', role: 'Title', date: true };
-    case 'PageBreak':
-      return {};
-    case 'Custom':
-      return { html: '<div>Custom content</div>' };
-    default:
-      return {};
-  }
-};
+// We're now using the imported getDefaultElementContent function from ElementEditorFactory
 
 export function ProposalEditor({
   isOpen,
