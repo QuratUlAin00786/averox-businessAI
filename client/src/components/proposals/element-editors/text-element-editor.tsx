@@ -89,11 +89,13 @@ export function TextElementEditor({ element, onChange, disabled = false }: Eleme
         text
       });
       
-      // Call the onChange handler
-      onChange({
-        ...element,
-        content: updatedContent
-      });
+      // Call the onSave handler (this matches the ElementEditorFactory props interface)
+      if (typeof onChange === 'function') {
+        onChange({
+          ...element,
+          content: updatedContent
+        });
+      }
       
       console.log('Text saved successfully:', text);
     } catch (error) {

@@ -577,9 +577,19 @@ export function ProposalEditor({
     // If it's already a string, make sure it's valid JSON by parsing and re-stringifying
     let processedContent;
     try {
-      processedContent = typeof selectedElement.content === 'string' 
-        ? JSON.stringify(JSON.parse(selectedElement.content)) // Validate and normalize JSON string
-        : JSON.stringify(selectedElement.content); // Convert object to JSON string
+      // Convert content object to JSON string for storage if it's an object
+      if (typeof selectedElement.content === 'object' && selectedElement.content !== null) {
+        processedContent = JSON.stringify(selectedElement.content);
+      } 
+      // If it's already a string, validate that it's proper JSON
+      else if (typeof selectedElement.content === 'string') {
+        // Try to parse and re-stringify to normalize
+        processedContent = JSON.stringify(JSON.parse(selectedElement.content));
+      }
+      // Fallback for unexpected content
+      else {
+        throw new Error('Invalid content format');
+      }
     } catch (error) {
       console.error("Error processing content:", error);
       toast({
@@ -717,11 +727,11 @@ export function ProposalEditor({
     return (
       <ElementEditorFactory 
         element={preparedElement}
-        onChange={(updatedElement) => {
+        onSave={(updatedElement) => {
           console.log("Element updated in editor:", updatedElement);
           setSelectedElement(updatedElement);
         }}
-        disabled={isReadOnly}
+        isReadOnly={isReadOnly}
       />
     );
   };
