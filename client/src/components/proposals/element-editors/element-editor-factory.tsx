@@ -4,6 +4,7 @@ import { HeaderElementEditor } from './header-element-editor';
 import { ImageElementEditor } from './image-element-editor';
 import { TableElementEditor } from './table-element-editor';
 import { ListElementEditor } from './list-element-editor';
+import { SignatureElementEditor } from './signature-element-editor';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { getDefaultContent } from '../proposal-element-renderer';
@@ -119,6 +120,15 @@ export function ElementEditorFactory({ element, onSave, isReadOnly = false }: El
       case 'List':
         return (
           <ListElementEditor 
+            element={elementCopy} 
+            onChange={onSave} 
+            disabled={isReadOnly} 
+          />
+        );
+        
+      case 'Signature':
+        return (
+          <SignatureElementEditor 
             element={elementCopy} 
             onChange={onSave} 
             disabled={isReadOnly} 
