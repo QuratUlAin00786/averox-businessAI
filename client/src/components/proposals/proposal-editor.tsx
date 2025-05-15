@@ -574,17 +574,49 @@ export function ProposalEditor({
     
     // Ensure content is properly formatted for API
     // If it's an object, stringify it to ensure proper JSON format for storage
-    // If it's already a string, make sure it's valid JSON by parsing and re-stringifying
     let processedContent;
     try {
+      // Check for encrypted content that shouldn't be there
+      if (
+        typeof selectedElement.content === 'object' && 
+        selectedElement.content !== null && 
+        'iv' in selectedElement.content && 
+        'encrypted' in selectedElement.content
+      ) {
+        console.error("Cannot save encrypted content - this should have been decrypted by the server");
+        toast({
+          title: 'Error',
+          description: 'Cannot save encrypted content. Please try refreshing the page.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       // Convert content object to JSON string for storage if it's an object
       if (typeof selectedElement.content === 'object' && selectedElement.content !== null) {
-        processedContent = JSON.stringify(selectedElement.content);
+        // Remove any properties that shouldn't be there
+        const cleanContent: { text?: string, [key: string]: any } = { ...selectedElement.content };
+        // If it's a text element, ensure we keep the text property
+        if (selectedElement.elementType === 'Text' && !cleanContent.text) {
+          cleanContent.text = '';
+        }
+        
+        processedContent = JSON.stringify(cleanContent);
       } 
       // If it's already a string, validate that it's proper JSON
       else if (typeof selectedElement.content === 'string') {
-        // Try to parse and re-stringify to normalize
-        processedContent = JSON.stringify(JSON.parse(selectedElement.content));
+        try {
+          // Try to parse and re-stringify to normalize
+          const parsedContent = JSON.parse(selectedElement.content);
+          processedContent = JSON.stringify(parsedContent);
+        } catch (parseError) {
+          // If it's not valid JSON but we're working with text, create a proper text object
+          if (selectedElement.elementType === 'Text') {
+            processedContent = JSON.stringify({ text: selectedElement.content });
+          } else {
+            throw parseError;
+          }
+        }
       }
       // Fallback for unexpected content
       else {
@@ -704,6 +736,8 @@ export function ProposalEditor({
   const renderElementEditor = () => {
     if (!selectedElement) return null;
     
+    console.log("Rendering editor for element:", selectedElement);
+    
     // Prepare content for editor - ensure it's properly formatted
     let preparedElement = { ...selectedElement };
     
@@ -721,6 +755,20 @@ export function ProposalEditor({
         // Fallback to empty object if parsing fails
         preparedElement.content = {};
       }
+    }
+    
+    // Check for any encrypted content that the server hasn't decrypted
+    if (
+      typeof preparedElement.content === 'object' && 
+      preparedElement.content !== null && 
+      'iv' in preparedElement.content && 
+      'encrypted' in preparedElement.content
+    ) {
+      console.warn("Found encrypted content in editor - this should be decrypted by server");
+      
+      // Import the function from element-editor-factory
+      const defaultContent = getDefaultElementContent(preparedElement.elementType);
+      preparedElement.content = defaultContent;
     }
     
     // Use our ElementEditorFactory to render the appropriate editor
@@ -779,7 +827,15 @@ export function ProposalEditor({
                     
                     <div className="space-y-8">
                       {elements.map(element => (
-                        <div key={element.id} className="border rounded-md p-4 bg-white shadow-sm">
+                        <div 
+                          key={element.id} 
+                          className="border rounded-md p-4 bg-white shadow-sm cursor-pointer"
+                          onClick={() => {
+                            console.log(`Selecting element ${element.id} for editing`);
+                            setActiveTab('elements');
+                            setSelectedElement(element);
+                          }}
+                        >
                           {getElementDisplay(element)}
                         </div>
                       ))}
