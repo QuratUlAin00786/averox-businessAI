@@ -61,6 +61,7 @@ import EmailTemplateEditor from "@/pages/marketing/email-template-editor";
 import Manufacturing from "@/pages/Manufacturing";
 import InvoicePayment from "@/pages/InvoicePayment";
 import SecurityPage from "@/pages/security";
+import ProposalsPage from "@/pages/proposals";
 import SetupWizard from "@/pages/setup-wizard";
 
 function Router() {
@@ -415,6 +416,12 @@ function Router() {
       <ProtectedRoute path="/security" component={() => (
         <Layout>
           <SecurityPage />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/proposals" component={() => (
+        <Layout>
+          <ProposalsPage />
         </Layout>
       )} />
       
