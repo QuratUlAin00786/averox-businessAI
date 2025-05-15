@@ -3656,32 +3656,27 @@ export class DatabaseStorage implements IStorage {
 
   async createLead(lead: InsertLead): Promise<Lead> {
     try {
+      console.log('Creating lead with data:', lead);
       const [newLead] = await db.insert(leads).values({
         firstName: lead.firstName,
         lastName: lead.lastName,
         email: lead.email,
         phone: lead.phone,
         company: lead.company,
-        jobTitle: lead.jobTitle,
+        title: lead.title,
         status: lead.status,
         source: lead.source,
-        assignedTo: lead.assignedTo,
+        ownerId: lead.ownerId,
         notes: lead.notes,
-        tags: lead.tags,
-        budget: lead.budget,
-        timeline: lead.timeline,
-        requirements: lead.requirements,
-        lastContacted: lead.lastContacted,
-        isQualified: lead.isQualified,
-        score: lead.score,
-        socialProfiles: lead.socialProfiles,
-        createdAt: new Date(),
+        // These fields are handled by the database with default values:
+        // isConverted, convertedToContactId, convertedToAccountId, convertedToOpportunityId
       }).returning();
       
+      console.log('Lead created successfully:', newLead);
       return newLead;
     } catch (error) {
       console.error('Database error in createLead:', error);
-      throw new Error('Failed to create lead');
+      throw new Error(`Failed to create lead: ${error.message}`);
     }
   }
 
