@@ -732,15 +732,16 @@ export function addCommunicationsToDatabase(dbStorage: any) {
   ): Promise<Communication | null> {
     try {
       // Find appropriate integration for the channel
+      // We'll try to get an integration, but we won't require one to exist
+      // This allows for storing communications even without API integrations
       const [integration] = await db
         .select()
         .from(socialIntegrations)
         .where(eq(socialIntegrations.platform, data.channel as any))
         .limit(1);
-
-      if (!integration && data.channel !== 'email' && data.channel !== 'phone' && data.channel !== 'sms') {
-        throw new Error(`No integration found for channel ${data.channel}`);
-      }
+      
+      // We'll allow communications to be created even without an integration
+      // This way, the communication center can track all types of communications
 
       // Map our status values to the database enum values
       let dbStatus: 'Unread' | 'Read' | 'Replied' | 'Archived';

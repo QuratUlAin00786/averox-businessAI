@@ -3498,6 +3498,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Communication send request:', req.body);
       const { recipientId, channel, content, contactType, relatedToType, relatedToId } = req.body;
       
+      // Map channel to a valid socialPlatform enum value
+      let platformChannel = channel;
+      if (channel.toLowerCase() === 'phone' || channel.toLowerCase() === 'sms') {
+        // Map phone and SMS to Other since they aren't in the socialPlatform enum
+        platformChannel = 'Other';
+      } else if (channel.toLowerCase() === 'whatsapp') {
+        // Ensure correct capitalization for WhatsApp
+        platformChannel = 'WhatsApp';
+      } else if (channel.toLowerCase() === 'email') {
+        platformChannel = 'Email';
+      } else if (channel.toLowerCase() === 'messenger') {
+        platformChannel = 'Messenger';
+      } else if (channel.toLowerCase() === 'linkedin') {
+        platformChannel = 'LinkedIn';
+      } else if (channel.toLowerCase() === 'twitter' || channel.toLowerCase() === 'x') {
+        platformChannel = 'Twitter';
+      } else if (channel.toLowerCase() === 'instagram') {
+        platformChannel = 'Instagram';
+      } else if (channel.toLowerCase() === 'facebook') {
+        platformChannel = 'Facebook';
+      }
+      
       // We're going to handle two types of communications:
       // 1. Direct communications with a specific recipient (recipientId and contactType are required)
       // 2. Entity-related communications (relatedToType and relatedToId are required)
@@ -3542,7 +3564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const communication = await storage.createCommunication({
         contactId: contactId as number,
         contactType: contactTypeValue as 'lead' | 'customer',
-        channel,
+        channel: platformChannel, // Use the mapped channel that matches the database enum
         direction: 'outbound',
         content,
         status: 'read',
