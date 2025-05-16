@@ -42,10 +42,7 @@ export default function Leads() {
   // Create lead mutation
   const createLeadMutation = useMutation({
     mutationFn: async (data: InsertLead) => {
-      return apiRequestJson<Lead>("/api/leads", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequestJson<Lead>("POST", "/api/leads", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
@@ -67,10 +64,7 @@ export default function Leads() {
   // Update lead mutation
   const updateLeadMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertLead> }) => {
-      return apiRequestJson<Lead>(`/api/leads/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
+      return apiRequestJson<Lead>("PATCH", `/api/leads/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
@@ -92,9 +86,7 @@ export default function Leads() {
   // Delete lead mutation
   const deleteLeadMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequestJson(`/api/leads/${id}`, {
-        method: "DELETE",
-      });
+      return apiRequestJson("DELETE", `/api/leads/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
@@ -117,10 +109,7 @@ export default function Leads() {
   // Convert lead mutation
   const convertLeadMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return apiRequestJson(`/api/leads/${id}/convert`, {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequestJson("POST", `/api/leads/${id}/convert`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
