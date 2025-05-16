@@ -96,27 +96,10 @@ export function OpportunityDetail({
   // Get the appropriate account to use
   const accountToUse = getAccountWithPhone();
 
-  // Add debug logging via useEffect
+  // Monitor account data changes
   useEffect(() => {
-    if (account && opportunity) {
-      console.log('%c Opportunity Detail - Account Data:', 'background: #6366f1; color: white; padding: 2px 5px; border-radius: 3px;', account);
-      
-      // Log both the original account and the processed accountToUse
-      console.log('%c Opportunity Detail - Account Processing:', 'background: #6366f1; color: white; padding: 2px 5px; border-radius: 3px;', {
-        originalAccount: account,
-        isArray: Array.isArray(account),
-        accountToUse,
-        phone: accountToUse?.phone,
-        phoneType: accountToUse?.phone ? typeof accountToUse.phone : 'undefined',
-        hasPhone: !!accountToUse?.phone,
-        phoneToString: accountToUse?.phone ? String(accountToUse.phone) : ''
-      });
-      
-      // Save the phone to localStorage to debug persistence
-      if (accountToUse?.phone) {
-        localStorage.setItem('debug_account_phone', String(accountToUse.phone));
-      }
-    }
+    // This effect tracks when account data changes
+    // No need for debug logging in production
   }, [account, accountToUse, opportunity]);
 
   // Getting stage badge color
@@ -353,16 +336,8 @@ export function OpportunityDetail({
               </TabsContent>
               
               <TabsContent value="communications">
-                {/* Debug log for account data (called in useEffect to avoid React node issues) */}
-                <span className="hidden">{account && opportunity ? JSON.stringify({account, opportunity}) : ""}</span>
-                {/* Force a check to ensure account data is available */}
                 {account ? (
                   <>
-                    {/* Additional debug information for phone numbers - hidden from view */}
-                    <div className="hidden">
-                      Debug info logged to console
-                      {/* Using useEffect in the component to log this instead */}
-                    </div>
                     <CommunicationPanel 
                       contactId={opportunity.id}
                       contactType="customer"

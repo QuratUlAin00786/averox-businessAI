@@ -127,7 +127,7 @@ export function OpportunityForm({
 
   const handleSubmit = async (values: FormValues) => {
     try {
-      console.log("Submitting opportunity form with values:", values);
+      // Submit form values
       onSubmit(values);
     } catch (error) {
       console.error("Form submission error:", error);
