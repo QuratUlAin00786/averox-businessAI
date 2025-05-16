@@ -2073,7 +2073,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Updated task: ${decryptedTask.title}`,
           relatedToType: 'task',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'edit'
         });
       }
@@ -2114,7 +2113,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Deleted task: ${decryptedTask.title}`,
           relatedToType: 'task',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'trash'
         });
       }
@@ -2178,7 +2176,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Created new event: ${decryptedEvent.title}`,
           relatedToType: 'event',
           relatedToId: decryptedEvent.id,
-          createdAt: new Date(),
           icon: 'calendar-plus'
         });
       }
@@ -2257,7 +2254,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Updated event: ${decryptedEvent.title}`,
           relatedToType: 'event',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'edit-calendar'
         });
       }
@@ -3826,7 +3822,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: activityDetail,
           relatedToType: relatedToType || contactType,
           relatedToId: relatedToId || recipientId,
-          createdAt: new Date(),
           icon: 'sent'
         });
       }
