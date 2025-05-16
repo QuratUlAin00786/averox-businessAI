@@ -369,13 +369,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const campaignsData = await db.select().from(campaignsTable).limit(3);
       
       // Get workflows for lead counts
-      const workflowsData = await db.select().from(workflowsTable)
-        .where(eq(workflowsTable.entityType, 'lead'))
-        .where(eq(workflowsTable.isActive, true));
+      const workflowsData = await db
+        .select()
+        .from(workflowsTable)
+        .where(
+          and(
+            eq(workflowsTable.entityType, 'lead'),
+            eq(workflowsTable.isActive, true)
+          )
+        );
       
       const formattedCampaigns = campaignsData.map(campaign => {
         // Get associated workflow if it exists
-        const workflow = workflowsData.find(w => {
+        const workflow = workflowsData.find((w: any) => {
           try {
             // Try to parse the entityFilter to see if it's related to this campaign
             if (w.entityFilter) {
