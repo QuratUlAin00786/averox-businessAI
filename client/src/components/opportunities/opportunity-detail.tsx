@@ -368,7 +368,7 @@ export function OpportunityDetail({
                       contactType="customer"
                       contactName={opportunity.name}
                       email={accountToUse?.email || ""}
-                      phone={accountToUse?.phone || "123-456-7890"} 
+                      phone={accountToUse?.phone || ""} 
                     />
                   </>
                 ) : (
