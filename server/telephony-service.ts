@@ -24,8 +24,29 @@ async function getTwilioClient() {
       throw new Error('Invalid Twilio credentials');
     }
     
-    // Create and return Twilio client
-    return twilio(accountSid, authToken);
+    // Extract additional fields like phone numbers
+    const additionalFields = twilioKeys.additionalFields as Record<string, any> || {};
+    const defaultPhone = additionalFields.defaultPhone || '';
+    
+    // Update usage statistics
+    await db.update(apiKeys)
+      .set({
+        usageCount: (twilioKeys.usageCount || 0) + 1,
+        lastUsed: new Date()
+      })
+      .where(eq(apiKeys.id, twilioKeys.id));
+    
+    // Create and return Twilio client with additional information
+    const client = twilio(accountSid, authToken);
+    
+    // Return both the client and additional configuration
+    return {
+      client,
+      config: {
+        defaultPhone,
+        additionalFields
+      }
+    };
   } catch (error) {
     console.error('Error initializing Twilio client:', error);
     throw new Error('Could not initialize Twilio client');
@@ -35,7 +56,7 @@ async function getTwilioClient() {
 // Make an outbound call
 export async function makeOutboundCall(
   to: string, 
-  from: string, 
+  from: string = '', // Can be empty to use the default number from API key
   callbackUrl: string,
   options: {
     record?: boolean;
@@ -45,11 +66,19 @@ export async function makeOutboundCall(
   } = {}
 ) {
   try {
-    const client = await getTwilioClient();
+    const twilioData = await getTwilioClient();
+    const { client, config } = twilioData;
+    
+    // Use default phone number from config if no 'from' number is provided
+    const fromNumber = from || config.defaultPhone;
+    
+    if (!fromNumber) {
+      throw new Error('No phone number provided and no default phone number configured');
+    }
     
     const callParams: any = {
       to,
-      from,
+      from: fromNumber,
       url: callbackUrl,
       statusCallback: options.recordingStatusCallback,
       record: options.record ? 'record-from-answer' : 'do-not-record',
@@ -89,7 +118,7 @@ export async function makeOutboundCall(
 // Send SMS
 export async function sendSMS(
   to: string, 
-  from: string, 
+  from: string = '', // Can be empty to use the default number from API key
   body: string,
   options: {
     mediaUrls?: string[];
@@ -97,11 +126,19 @@ export async function sendSMS(
   } = {}
 ) {
   try {
-    const client = await getTwilioClient();
+    const twilioData = await getTwilioClient();
+    const { client, config } = twilioData;
+    
+    // Use default phone number from config if no 'from' number is provided
+    const fromNumber = from || config.defaultPhone;
+    
+    if (!fromNumber) {
+      throw new Error('No phone number provided and no default phone number configured');
+    }
     
     const messageParams: any = {
       to,
-      from,
+      from: fromNumber,
       body,
     };
     
@@ -135,7 +172,9 @@ export async function sendSMS(
 // Get call recordings
 export async function getCallRecordings(callSid: string) {
   try {
-    const client = await getTwilioClient();
+    const twilioData = await getTwilioClient();
+    const { client } = twilioData;
+    
     const recordings = await client.recordings.list({ callSid });
     
     return {
@@ -149,7 +188,7 @@ export async function getCallRecordings(callSid: string) {
         url: `https://api.twilio.com/2010-04-01/Accounts/${client.accountSid}/Recordings/${recording.sid}.mp3`
       }))
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting call recordings:', error);
     return {
       success: false,
@@ -170,7 +209,8 @@ export async function getCallLogs(
   } = {}
 ) {
   try {
-    const client = await getTwilioClient();
+    const twilioData = await getTwilioClient();
+    const { client } = twilioData;
     
     const params: any = {};
     
@@ -200,7 +240,7 @@ export async function getCallLogs(
         priceUnit: call.priceUnit
       }))
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting call logs:', error);
     return {
       success: false,
