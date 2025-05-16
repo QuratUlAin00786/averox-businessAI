@@ -61,7 +61,9 @@ import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -406,6 +408,35 @@ export default function ApiKeysManagement() {
                                   apiEndpoint: ""
                                 }
                               });
+                            } else if (value === "GooglePlaces") {
+                              createForm.setValue('additionalFields', {
+                                googlePlaces: {
+                                  apiKey: "",
+                                  enabledRegions: "GB,US",
+                                  restrictToCountry: ""
+                                }
+                              });
+                            } else if (value === "Loqate") {
+                              createForm.setValue('additionalFields', {
+                                loqate: {
+                                  apiKey: "",
+                                  serviceUrl: ""
+                                }
+                              });
+                            } else if (value === "SmartyStreets") {
+                              createForm.setValue('additionalFields', {
+                                smartyStreets: {
+                                  authId: "",
+                                  authToken: ""
+                                }
+                              });
+                            } else if (value === "PostcodeAPI") {
+                              createForm.setValue('additionalFields', {
+                                postcodeApi: {
+                                  apiKey: "",
+                                  serviceUrl: ""
+                                }
+                              });
                             }
                           }}
                           defaultValue={field.value}
@@ -428,6 +459,16 @@ export default function ApiKeysManagement() {
                             <SelectItem value="Messenger">Messenger</SelectItem>
                             <SelectItem value="LinkedIn">LinkedIn</SelectItem>
                             <SelectItem value="Instagram">Instagram</SelectItem>
+                            
+                            {/* Address Lookup Providers */}
+                            <SelectGroup>
+                              <SelectLabel>Address Lookup Services</SelectLabel>
+                              <SelectItem value="GooglePlaces">Google Places API</SelectItem>
+                              <SelectItem value="Loqate">Loqate/PCA</SelectItem>
+                              <SelectItem value="SmartyStreets">SmartyStreets</SelectItem>
+                              <SelectItem value="PostcodeAPI">Postcode API</SelectItem>
+                            </SelectGroup>
+                            
                             <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
@@ -916,6 +957,15 @@ export default function ApiKeysManagement() {
                           <SelectItem value="Messenger">Messenger</SelectItem>
                           <SelectItem value="LinkedIn">LinkedIn</SelectItem>
                           <SelectItem value="Instagram">Instagram</SelectItem>
+                          
+                          <SelectGroup>
+                            <SelectLabel>Address Lookup Services</SelectLabel>
+                            <SelectItem value="GooglePlaces">Google Places API</SelectItem>
+                            <SelectItem value="Loqate">Loqate/PCA</SelectItem>
+                            <SelectItem value="SmartyStreets">SmartyStreets</SelectItem>
+                            <SelectItem value="PostcodeAPI">Postcode API</SelectItem>
+                          </SelectGroup>
+                          
                           <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
