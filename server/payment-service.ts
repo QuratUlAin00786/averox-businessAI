@@ -154,9 +154,10 @@ export async function createStripeCustomer(email: string, name?: string, metadat
 // Create a Stripe subscription
 export async function createStripeSubscription(data: SubscriptionData) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
-    const subscription = await stripe.subscriptions.create({
+    const subscription = await client.subscriptions.create({
       customer: data.customerId,
       items: [
         {
@@ -201,18 +202,19 @@ export async function createStripeSubscription(data: SubscriptionData) {
 // Cancel a Stripe subscription
 export async function cancelStripeSubscription(subscriptionId: string, immediateCancel: boolean = false) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
     if (immediateCancel) {
       // Cancel immediately
-      const canceled = await stripe.subscriptions.cancel(subscriptionId);
+      const canceled = await client.subscriptions.cancel(subscriptionId);
       return {
         success: true,
         status: canceled.status,
       };
     } else {
       // Cancel at period end
-      const canceled = await stripe.subscriptions.update(subscriptionId, {
+      const canceled = await client.subscriptions.update(subscriptionId, {
         cancel_at_period_end: true,
       });
       return {
@@ -233,9 +235,10 @@ export async function cancelStripeSubscription(subscriptionId: string, immediate
 // Create a setup intent for saving payment methods
 export async function createStripeSetupIntent(customerId: string, paymentMethodTypes?: string[]) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
-    const setupIntent = await stripe.setupIntents.create({
+    const setupIntent = await client.setupIntents.create({
       customer: customerId,
       payment_method_types: paymentMethodTypes || ['card'],
     });
@@ -257,9 +260,10 @@ export async function createStripeSetupIntent(customerId: string, paymentMethodT
 // List payment methods for a customer
 export async function listStripePaymentMethods(customerId: string, type: string = 'card') {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
-    const paymentMethods = await stripe.paymentMethods.list({
+    const paymentMethods = await client.paymentMethods.list({
       customer: customerId,
       type: type as any,
     });
