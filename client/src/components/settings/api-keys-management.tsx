@@ -85,6 +85,12 @@ const twilioFieldsSchema = z.object({
   messagingServiceSid: z.string().optional(),
 });
 
+const whatsappFieldsSchema = z.object({
+  phoneNumber: z.string().min(1, "WhatsApp number is required").optional(),
+  businessId: z.string().min(1, "Business ID is required").optional(),
+  apiEndpoint: z.string().optional(),
+});
+
 // API key type matching the server schema
 interface ApiKey {
   id: number;
@@ -108,6 +114,11 @@ interface ApiKey {
       accountSid?: string;
       phoneNumber?: string;
       messagingServiceSid?: string;
+    };
+    whatsapp?: {
+      phoneNumber?: string;
+      businessId?: string;
+      apiEndpoint?: string;
     };
     [key: string]: any;
   };
@@ -348,6 +359,14 @@ export default function ApiKeysManagement() {
                                   messagingServiceSid: ""
                                 }
                               });
+                            } else if (value === "WhatsApp") {
+                              createForm.setValue('additionalFields', {
+                                whatsapp: {
+                                  phoneNumber: "",
+                                  businessId: "",
+                                  apiEndpoint: ""
+                                }
+                              });
                             }
                           }}
                           defaultValue={field.value}
@@ -362,11 +381,14 @@ export default function ApiKeysManagement() {
                             <SelectItem value="Stripe">Stripe</SelectItem>
                             <SelectItem value="SendGrid">SendGrid</SelectItem>
                             <SelectItem value="Twilio">Twilio</SelectItem>
+                            <SelectItem value="WhatsApp">WhatsApp</SelectItem>
                             <SelectItem value="Google">Google</SelectItem>
                             <SelectItem value="AWS">AWS</SelectItem>
                             <SelectItem value="Twitter">Twitter</SelectItem>
                             <SelectItem value="Facebook">Facebook</SelectItem>
+                            <SelectItem value="Messenger">Messenger</SelectItem>
                             <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                            <SelectItem value="Instagram">Instagram</SelectItem>
                             <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
