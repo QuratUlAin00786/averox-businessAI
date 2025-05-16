@@ -35,7 +35,7 @@ export interface SubscriptionData {
 }
 
 // Get Stripe client from API keys
-async function getStripeClient(): Promise<Stripe> {
+async function getStripeClient() {
   try {
     // Find Stripe API key
     const [stripeKey] = await db.select()
@@ -53,23 +53,53 @@ async function getStripeClient(): Promise<Stripe> {
     if (!apiKey) {
       throw new Error('Invalid Stripe credentials');
     }
+
+    // Extract additional fields for configuration
+    const additionalFields = stripeKey.additionalFields as Record<string, any> || {};
     
-    // Create and return Stripe client
-    return new Stripe(apiKey, {
+    // Update usage statistics
+    await db.update(apiKeys)
+      .set({
+        usageCount: (stripeKey.usageCount || 0) + 1,
+        lastUsed: new Date()
+      })
+      .where(eq(apiKeys.id, stripeKey.id));
+    
+    // Create Stripe client
+    const client = new Stripe(apiKey, {
       apiVersion: '2023-10-16',
     });
-  } catch (error) {
+    
+    // Return both the client and additional configuration
+    return {
+      client,
+      config: {
+        additionalFields,
+        webhookSecret: additionalFields.webhookSecret,
+        allowedPaymentMethods: additionalFields.allowedPaymentMethods || ['card']
+      }
+    };
+  } catch (error: any) {
     console.error('Error initializing Stripe client:', error);
-    throw new Error('Could not initialize Stripe client');
+    throw new Error('Could not initialize Stripe client: ' + (error.message || 'Unknown error'));
   }
 }
 
 // Create a payment intent with Stripe
 export async function createStripePaymentIntent(data: PaymentIntentData) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client, config } = stripeData;
     
-    const paymentIntent = await stripe.paymentIntents.create({
+    // Validate allowed payment methods if configured
+    if (data.paymentMethodId && config.allowedPaymentMethods && config.allowedPaymentMethods.length > 0) {
+      const paymentMethod = 'card'; // Default to card
+      if (!config.allowedPaymentMethods.includes(paymentMethod)) {
+        throw new Error(`Payment method ${paymentMethod} is not allowed. Allowed methods: ${config.allowedPaymentMethods.join(', ')}`);
+      }
+    }
+    
+    const paymentIntent = await client.paymentIntents.create({
       amount: Math.round(data.amount * 100), // Convert to cents
       currency: data.currency,
       description: data.description,
@@ -99,9 +129,10 @@ export async function createStripePaymentIntent(data: PaymentIntentData) {
 // Create a Stripe customer
 export async function createStripeCustomer(email: string, name?: string, metadata?: Record<string, string>) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
-    const customer = await stripe.customers.create({
+    const customer = await client.customers.create({
       email,
       name,
       metadata,

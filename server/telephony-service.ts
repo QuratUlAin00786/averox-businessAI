@@ -303,7 +303,7 @@ export function generateVoiceResponse(options: {
 // Create a conference call
 export async function createConferenceCall(
   participants: string[],
-  from: string,
+  from: string = '', // Can be empty to use the default number from API key
   options: {
     friendlyName?: string;
     recordConference?: boolean;
@@ -311,7 +311,15 @@ export async function createConferenceCall(
   } = {}
 ) {
   try {
-    const client = await getTwilioClient();
+    const twilioData = await getTwilioClient();
+    const { client, config } = twilioData;
+    
+    // Use default phone number from config if no 'from' number is provided
+    const fromNumber = from || config.defaultPhone;
+    
+    if (!fromNumber) {
+      throw new Error('No phone number provided and no default phone number configured');
+    }
     
     // Create a friendly name for the conference
     const friendlyName = options.friendlyName || `Conference_${Date.now()}`;
@@ -336,7 +344,7 @@ export async function createConferenceCall(
       return client.calls.create({
         twiml: twiml.toString(),
         to: participant,
-        from
+        from: fromNumber
       });
     }));
     
@@ -349,7 +357,7 @@ export async function createConferenceCall(
         status: call.status
       }))
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating conference call:', error);
     return {
       success: false,
