@@ -1491,7 +1491,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Updated account: ${decryptedAccount.name}`,
           relatedToType: 'account',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'edit'
         });
       }
@@ -1532,7 +1531,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Deleted account: ${decryptedAccount.name}`,
           relatedToType: 'account',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'trash'
         });
       }
@@ -1588,7 +1586,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Created new lead: ${decryptedLead.firstName} ${decryptedLead.lastName}`,
           relatedToType: 'lead',
           relatedToId: decryptedLead.id,
-          createdAt: new Date(),
           icon: 'plus'
         });
       }
@@ -1659,7 +1656,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Updated lead: ${decryptedLead.firstName} ${decryptedLead.lastName}`,
           relatedToType: 'lead',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'edit'
         });
       }
