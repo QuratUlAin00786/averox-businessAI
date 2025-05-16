@@ -122,8 +122,9 @@ export function addApiKeysToDatabaseStorage(storage: DatabaseStorage): void {
 
   storage.updateApiKey = async function(id: number, apiKeyData: Partial<InsertApiKey>): Promise<ApiKey | undefined> {
     try {
+      // Remove the updatedAt field as it doesn't exist in the schema
       const [updatedApiKey] = await db.update(apiKeys)
-        .set({ ...apiKeyData, updatedAt: new Date() })
+        .set(apiKeyData)
         .where(eq(apiKeys.id, id))
         .returning();
       return updatedApiKey;
