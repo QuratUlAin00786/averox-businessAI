@@ -551,6 +551,66 @@ export default function ApiKeysManagement() {
                     </div>
                   )}
 
+                  {/* WhatsApp specific fields */}
+                  {createForm.watch('provider') === 'WhatsApp' && (
+                    <div className="space-y-4">
+                      <div className="mt-2 mb-3">
+                        <h4 className="text-sm font-medium mb-2">WhatsApp Configuration</h4>
+                        <div className="text-sm text-muted-foreground">
+                          Configure WhatsApp Business API integration details
+                        </div>
+                      </div>
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.whatsapp.phoneNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>WhatsApp Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+15551234567" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your registered WhatsApp Business phone number
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.whatsapp.businessId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Business Account ID</FormLabel>
+                            <FormControl>
+                              <Input placeholder="123456789012345" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your WhatsApp Business Account ID
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.whatsapp.apiEndpoint"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>API Endpoint (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://graph.facebook.com/v14.0" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Optional: Custom API endpoint for WhatsApp Business API
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
                   <FormField
                     control={createForm.control}
                     name="isActive"
@@ -787,6 +847,14 @@ export default function ApiKeysManagement() {
                                 messagingServiceSid: editingApiKey?.additionalFields?.twilio?.messagingServiceSid || ""
                               }
                             });
+                          } else if (value === "WhatsApp") {
+                            editForm.setValue('additionalFields', {
+                              whatsapp: {
+                                phoneNumber: editingApiKey?.additionalFields?.whatsapp?.phoneNumber || "",
+                                businessId: editingApiKey?.additionalFields?.whatsapp?.businessId || "",
+                                apiEndpoint: editingApiKey?.additionalFields?.whatsapp?.apiEndpoint || ""
+                              }
+                            });
                           }
                         }}
                         defaultValue={field.value}
@@ -801,11 +869,14 @@ export default function ApiKeysManagement() {
                           <SelectItem value="Stripe">Stripe</SelectItem>
                           <SelectItem value="SendGrid">SendGrid</SelectItem>
                           <SelectItem value="Twilio">Twilio</SelectItem>
+                          <SelectItem value="WhatsApp">WhatsApp</SelectItem>
                           <SelectItem value="Google">Google</SelectItem>
                           <SelectItem value="AWS">AWS</SelectItem>
                           <SelectItem value="Twitter">Twitter</SelectItem>
                           <SelectItem value="Facebook">Facebook</SelectItem>
+                          <SelectItem value="Messenger">Messenger</SelectItem>
                           <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                          <SelectItem value="Instagram">Instagram</SelectItem>
                           <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
