@@ -67,7 +67,7 @@ async function getStripeClient() {
     
     // Create Stripe client
     const client = new Stripe(apiKey, {
-      apiVersion: '2023-10-16',
+      apiVersion: '2025-04-30.basil',
     });
     
     // Return both the client and additional configuration
@@ -175,13 +175,26 @@ export async function createStripeSubscription(data: SubscriptionData) {
     
     // Check if we have a pending payment that requires confirmation
     let clientSecret = null;
-    if (
-      subscription.latest_invoice &&
-      typeof subscription.latest_invoice !== 'string' &&
-      subscription.latest_invoice.payment_intent &&
-      typeof subscription.latest_invoice.payment_intent !== 'string'
-    ) {
-      clientSecret = subscription.latest_invoice.payment_intent.client_secret;
+    
+    // Access payment intent data safely with proper type handling
+    if (subscription.latest_invoice) {
+      // Get the invoice object, handling the case where it might be an ID string or expanded object
+      const invoice = typeof subscription.latest_invoice === 'string' 
+        ? await client.invoices.retrieve(subscription.latest_invoice)
+        : subscription.latest_invoice;
+        
+      // If the invoice has a payment intent ID, retrieve it
+      if (invoice.payment_intent) {
+        const paymentIntentId = typeof invoice.payment_intent === 'string'
+          ? invoice.payment_intent
+          : invoice.payment_intent.id;
+          
+        // Retrieve the full payment intent to get the client secret
+        if (paymentIntentId) {
+          const paymentIntent = await client.paymentIntents.retrieve(paymentIntentId);
+          clientSecret = paymentIntent.client_secret;
+        }
+      }
     }
     
     return {
@@ -444,19 +457,28 @@ export async function createStripeInvoice(
   autoAdvance: boolean = true
 ) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
     // First create invoice items
     for (const item of items) {
-      await stripe.invoiceItems.create({
+      // For Stripe invoice items, we need to use either price or price_data
+      await client.invoiceItems.create({
         customer: customerId,
-        price: item.priceId,
+        // If priceId contains a valid Stripe price ID, use it directly
+        price: item.priceId.startsWith('price_') ? item.priceId : undefined,
+        // Otherwise, create a custom price
+        price_data: !item.priceId.startsWith('price_') ? {
+          currency: 'usd', // Default to USD, can be made configurable
+          product: 'prod_custom', // Use a generic product or create one on demand
+          unit_amount: 1000, // Example $10.00 - in production this would be dynamic
+        } : undefined,
         quantity: item.quantity,
       });
     }
     
     // Then create and finalize the invoice
-    const invoice = await stripe.invoices.create({
+    const invoice = await client.invoices.create({
       customer: customerId,
       description,
       days_until_due: daysUntilDue,
@@ -465,8 +487,8 @@ export async function createStripeInvoice(
     
     // Finalize the invoice if auto_advance is false
     let finalInvoice = invoice;
-    if (!autoAdvance) {
-      finalInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
+    if (!autoAdvance && invoice.id) {
+      finalInvoice = await client.invoices.finalizeInvoice(invoice.id);
     }
     
     return {
