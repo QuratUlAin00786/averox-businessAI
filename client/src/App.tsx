@@ -36,6 +36,7 @@ import AdminUsers from "@/pages/admin-users";
 import CommunicationCenter from "@/pages/communication-center";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
+import Integrations from "@/pages/settings/integrations";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 import TrainingHelpPage from "@/pages/training-help";
@@ -188,6 +189,12 @@ function Router() {
       <ProtectedRoute path="/settings/data-migration" component={() => (
         <Layout>
           <SettingsDataMigration />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/settings/integrations" component={() => (
+        <Layout>
+          <Integrations />
         </Layout>
       )} />
       
