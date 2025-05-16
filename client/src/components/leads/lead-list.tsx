@@ -143,11 +143,11 @@ export function LeadList({
                   <div className="grid grid-cols-2 gap-2 text-neutral-600">
                     <div>
                       <p className="text-xs text-neutral-500">Email</p>
-                      <p className="truncate">{lead.email || "—"}</p>
+                      <p className="truncate">{typeof lead.email === 'object' ? "—" : lead.email || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Phone</p>
-                      <p>{lead.phone || "—"}</p>
+                      <p>{typeof lead.phone === 'object' ? "—" : lead.phone || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Source</p>
@@ -229,8 +229,8 @@ export function LeadList({
                         {lead.status || "New"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{lead.email || "—"}</TableCell>
-                    <TableCell>{lead.phone || "—"}</TableCell>
+                    <TableCell>{typeof lead.email === 'object' ? "—" : lead.email || "—"}</TableCell>
+                    <TableCell>{typeof lead.phone === 'object' ? "—" : lead.phone || "—"}</TableCell>
                     <TableCell>{lead.source || "—"}</TableCell>
                     <TableCell>
                       <DropdownMenu>
