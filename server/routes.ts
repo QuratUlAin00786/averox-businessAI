@@ -1696,7 +1696,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Deleted lead: ${decryptedLead.firstName} ${decryptedLead.lastName}`,
           relatedToType: 'lead',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'trash'
         });
       }
@@ -3043,8 +3042,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
           case 'Twitter':
             // Twitter API v2 test
-            if (!integration.accessToken || !integration.accessSecret) {
+            if (!integration.accessToken) {
               return res.status(400).json({ error: "Missing Twitter API credentials" });
+            }
+            
+            // Get the access secret from settings
+            const twitterSettings = typeof integration.settings === 'string'
+              ? JSON.parse(integration.settings)
+              : integration.settings || {};
+              
+            if (!twitterSettings.accessSecret) {
+              return res.status(400).json({ error: "Missing Twitter API secret" });
             }
             
             // For Twitter we'd need to use OAuth 1.0a to properly sign requests
@@ -3092,12 +3100,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return res.status(400).json({ error: "Missing WhatsApp API credentials" });
             }
             
-            // Get the phone number ID from additional fields
-            const additionalFields = typeof integration.additionalFields === 'string'
-              ? JSON.parse(integration.additionalFields)
-              : integration.additionalFields || {};
+            // Get the phone number ID from settings field
+            const integrationSettings = typeof integration.settings === 'string'
+              ? JSON.parse(integration.settings)
+              : integration.settings || {};
               
-            const phoneNumberId = additionalFields.phoneNumberId;
+            const phoneNumberId = integrationSettings.phoneNumberId;
             
             if (!phoneNumberId) {
               return res.status(400).json({ error: "Missing WhatsApp phone number ID" });
@@ -3130,10 +3138,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return res.status(400).json({ error: "Missing email service API credentials" });
             }
             
-            // Extract service type from additional fields
-            const emailFields = typeof integration.additionalFields === 'string'
-              ? JSON.parse(integration.additionalFields)
-              : integration.additionalFields || {};
+            // Extract service type from settings
+            const emailFields = typeof integration.settings === 'string'
+              ? JSON.parse(integration.settings)
+              : integration.settings || {};
               
             const emailService = emailFields.service || 'unknown';
             
