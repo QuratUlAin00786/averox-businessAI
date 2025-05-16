@@ -183,11 +183,14 @@ export async function createStripeSubscription(data: SubscriptionData) {
         ? await client.invoices.retrieve(subscription.latest_invoice)
         : subscription.latest_invoice;
         
-      // If the invoice has a payment intent ID, retrieve it
-      if (invoice.payment_intent) {
-        const paymentIntentId = typeof invoice.payment_intent === 'string'
-          ? invoice.payment_intent
-          : invoice.payment_intent.id;
+      // Get payment intent from invoice using a safer approach
+      // The invoice.payment_intent property is not properly typed in some versions
+      const paymentIntentData = (invoice as any).payment_intent;
+      
+      if (paymentIntentData) {
+        const paymentIntentId = typeof paymentIntentData === 'string'
+          ? paymentIntentData
+          : paymentIntentData.id;
           
         // Retrieve the full payment intent to get the client secret
         if (paymentIntentId) {
@@ -230,10 +233,16 @@ export async function cancelStripeSubscription(subscriptionId: string, immediate
       const canceled = await client.subscriptions.update(subscriptionId, {
         cancel_at_period_end: true,
       });
+      
+      // Calculate cancelAt date safely
+      const cancelAtDate = canceled.cancel_at 
+        ? new Date(canceled.cancel_at * 1000) 
+        : undefined;
+        
       return {
         success: true,
         status: canceled.status,
-        cancelAt: new Date(canceled.cancel_at * 1000),
+        cancelAt: cancelAtDate,
       };
     }
   } catch (error: any) {
@@ -462,19 +471,23 @@ export async function createStripeInvoice(
     
     // First create invoice items
     for (const item of items) {
-      // For Stripe invoice items, we need to use either price or price_data
-      await client.invoiceItems.create({
+      // For each item, we need different parameters depending on whether we have a price ID
+      const params: any = {
         customer: customerId,
-        // If priceId contains a valid Stripe price ID, use it directly
-        price: item.priceId.startsWith('price_') ? item.priceId : undefined,
-        // Otherwise, create a custom price
-        price_data: !item.priceId.startsWith('price_') ? {
-          currency: 'usd', // Default to USD, can be made configurable
-          product: 'prod_custom', // Use a generic product or create one on demand
-          unit_amount: 1000, // Example $10.00 - in production this would be dynamic
-        } : undefined,
-        quantity: item.quantity,
-      });
+        quantity: item.quantity
+      };
+      
+      // Add either price or price_data based on the provided price ID format
+      if (item.priceId.startsWith('price_')) {
+        params.price = item.priceId;
+      } else {
+        // Create a custom price for non-standard price IDs
+        params.unit_amount = 1000; // Example $10.00 (in cents)
+        params.currency = 'usd';   // Default to USD, can be made configurable
+        params.description = `Invoice item (${item.priceId})`;
+      }
+      
+      await client.invoiceItems.create(params);
     }
     
     // Then create and finalize the invoice
