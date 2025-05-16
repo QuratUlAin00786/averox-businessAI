@@ -1778,7 +1778,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Converted lead: ${decryptedLead.firstName} ${decryptedLead.lastName}`,
           relatedToType: 'lead',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'refresh-cw'
         });
       }
