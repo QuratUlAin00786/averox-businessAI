@@ -2308,7 +2308,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Deleted event: ${decryptedEvent.title}`,
           relatedToType: 'event',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'calendar-x'
         });
       }
