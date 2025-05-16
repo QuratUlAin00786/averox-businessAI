@@ -91,6 +91,28 @@ const whatsappFieldsSchema = z.object({
   apiEndpoint: z.string().optional(),
 });
 
+// Address lookup provider schemas
+const googlePlacesFieldsSchema = z.object({
+  apiKey: z.string().min(1, "API Key is required").optional(),
+  enabledRegions: z.string().optional(), // Comma-separated list of country codes
+  restrictToCountry: z.string().optional(),
+});
+
+const loqateFieldsSchema = z.object({
+  apiKey: z.string().min(1, "API Key is required").optional(),
+  serviceUrl: z.string().optional(),
+});
+
+const smartyStreetsFieldsSchema = z.object({
+  authId: z.string().min(1, "Auth ID is required").optional(),
+  authToken: z.string().min(1, "Auth Token is required").optional(),
+});
+
+const postcodeApiFieldsSchema = z.object({
+  apiKey: z.string().min(1, "API Key is required").optional(),
+  serviceUrl: z.string().optional(),
+});
+
 // API key type matching the server schema
 interface ApiKey {
   id: number;
@@ -119,6 +141,23 @@ interface ApiKey {
       phoneNumber?: string;
       businessId?: string;
       apiEndpoint?: string;
+    };
+    googlePlaces?: {
+      apiKey?: string;
+      enabledRegions?: string;
+      restrictToCountry?: string;
+    };
+    loqate?: {
+      apiKey?: string;
+      serviceUrl?: string;
+    };
+    smartyStreets?: {
+      authId?: string;
+      authToken?: string;
+    };
+    postcodeApi?: {
+      apiKey?: string;
+      serviceUrl?: string;
     };
     [key: string]: any;
   };
