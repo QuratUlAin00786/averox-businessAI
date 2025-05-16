@@ -691,6 +691,198 @@ export default function ApiKeysManagement() {
                     </div>
                   )}
 
+                  {/* Google Places API specific fields */}
+                  {createForm.watch('provider') === 'GooglePlaces' && (
+                    <div className="space-y-4">
+                      <div className="mt-2 mb-3">
+                        <h4 className="text-sm font-medium mb-2">Google Places API Configuration</h4>
+                        <div className="text-sm text-muted-foreground">
+                          Configure Google Places API for address lookup and autocomplete
+                        </div>
+                      </div>
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.googlePlaces.apiKey"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>API Key</FormLabel>
+                            <FormControl>
+                              <Input placeholder="AIzaSyC..." {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your Google Places API key
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.googlePlaces.enabledRegions"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Enabled Regions</FormLabel>
+                            <FormControl>
+                              <Input placeholder="GB,US" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Comma-separated list of country codes (default: GB,US)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.googlePlaces.restrictToCountry"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Restrict Lookups to Country (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="GB" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Optional: Limit address lookups to this country code
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Loqate specific fields */}
+                  {createForm.watch('provider') === 'Loqate' && (
+                    <div className="space-y-4">
+                      <div className="mt-2 mb-3">
+                        <h4 className="text-sm font-medium mb-2">Loqate/PCA Configuration</h4>
+                        <div className="text-sm text-muted-foreground">
+                          Configure Loqate (formerly PCA/Addressy) for global address validation
+                        </div>
+                      </div>
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.loqate.apiKey"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>API Key</FormLabel>
+                            <FormControl>
+                              <Input placeholder="XX11-XX11-XX11-XX11" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your Loqate API key
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.loqate.serviceUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Service URL (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://api.addressy.com" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Optional: Custom service endpoint URL
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* SmartyStreets specific fields */}
+                  {createForm.watch('provider') === 'SmartyStreets' && (
+                    <div className="space-y-4">
+                      <div className="mt-2 mb-3">
+                        <h4 className="text-sm font-medium mb-2">SmartyStreets Configuration</h4>
+                        <div className="text-sm text-muted-foreground">
+                          Configure SmartyStreets for US address validation and autocomplete
+                        </div>
+                      </div>
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.smartyStreets.authId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Auth ID</FormLabel>
+                            <FormControl>
+                              <Input placeholder="1234567890" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your SmartyStreets Auth ID
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.smartyStreets.authToken"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Auth Token</FormLabel>
+                            <FormControl>
+                              <Input placeholder="ABcdEF123456" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your SmartyStreets Auth Token
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Postcode API specific fields */}
+                  {createForm.watch('provider') === 'PostcodeAPI' && (
+                    <div className="space-y-4">
+                      <div className="mt-2 mb-3">
+                        <h4 className="text-sm font-medium mb-2">Postcode API Configuration</h4>
+                        <div className="text-sm text-muted-foreground">
+                          Configure Postcode API for UK/international postal code validation
+                        </div>
+                      </div>
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.postcodeApi.apiKey"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>API Key</FormLabel>
+                            <FormControl>
+                              <Input placeholder="pc_live_..." {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Your Postcode API key
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="additionalFields.postcodeApi.serviceUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Service URL (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://api.postcodes.io" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Optional: Custom service endpoint URL
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
                   <FormField
                     control={createForm.control}
                     name="isActive"
@@ -935,6 +1127,35 @@ export default function ApiKeysManagement() {
                                 apiEndpoint: editingApiKey?.additionalFields?.whatsapp?.apiEndpoint || ""
                               }
                             });
+                          } else if (value === "GooglePlaces") {
+                            editForm.setValue('additionalFields', {
+                              googlePlaces: {
+                                apiKey: editingApiKey?.additionalFields?.googlePlaces?.apiKey || "",
+                                enabledRegions: editingApiKey?.additionalFields?.googlePlaces?.enabledRegions || "GB,US",
+                                restrictToCountry: editingApiKey?.additionalFields?.googlePlaces?.restrictToCountry || ""
+                              }
+                            });
+                          } else if (value === "Loqate") {
+                            editForm.setValue('additionalFields', {
+                              loqate: {
+                                apiKey: editingApiKey?.additionalFields?.loqate?.apiKey || "",
+                                serviceUrl: editingApiKey?.additionalFields?.loqate?.serviceUrl || ""
+                              }
+                            });
+                          } else if (value === "SmartyStreets") {
+                            editForm.setValue('additionalFields', {
+                              smartyStreets: {
+                                authId: editingApiKey?.additionalFields?.smartyStreets?.authId || "",
+                                authToken: editingApiKey?.additionalFields?.smartyStreets?.authToken || ""
+                              }
+                            });
+                          } else if (value === "PostcodeAPI") {
+                            editForm.setValue('additionalFields', {
+                              postcodeApi: {
+                                apiKey: editingApiKey?.additionalFields?.postcodeApi?.apiKey || "",
+                                serviceUrl: editingApiKey?.additionalFields?.postcodeApi?.serviceUrl || ""
+                              }
+                            });
                           }
                         }}
                         defaultValue={field.value}
@@ -1174,6 +1395,198 @@ export default function ApiKeysManagement() {
                           </FormControl>
                           <FormDescription>
                             Optional: Custom API endpoint for WhatsApp Business API
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+                
+                {/* Google Places API specific fields */}
+                {editForm.watch('provider') === 'GooglePlaces' && (
+                  <div className="space-y-4">
+                    <div className="mt-2 mb-3">
+                      <h4 className="text-sm font-medium mb-2">Google Places API Configuration</h4>
+                      <div className="text-sm text-muted-foreground">
+                        Configure Google Places API for address lookup and autocomplete
+                      </div>
+                    </div>
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.googlePlaces.apiKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>API Key</FormLabel>
+                          <FormControl>
+                            <Input placeholder="AIzaSyC..." {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Your Google Places API key
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.googlePlaces.enabledRegions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Enabled Regions</FormLabel>
+                          <FormControl>
+                            <Input placeholder="GB,US" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Comma-separated list of country codes (default: GB,US)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.googlePlaces.restrictToCountry"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Restrict Lookups to Country (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="GB" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Optional: Limit address lookups to this country code
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+                
+                {/* Loqate specific fields */}
+                {editForm.watch('provider') === 'Loqate' && (
+                  <div className="space-y-4">
+                    <div className="mt-2 mb-3">
+                      <h4 className="text-sm font-medium mb-2">Loqate/PCA Configuration</h4>
+                      <div className="text-sm text-muted-foreground">
+                        Configure Loqate (formerly PCA/Addressy) for global address validation
+                      </div>
+                    </div>
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.loqate.apiKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>API Key</FormLabel>
+                          <FormControl>
+                            <Input placeholder="XX11-XX11-XX11-XX11" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Your Loqate API key
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.loqate.serviceUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Service URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://api.addressy.com" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Optional: Custom service endpoint URL
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+                
+                {/* SmartyStreets specific fields */}
+                {editForm.watch('provider') === 'SmartyStreets' && (
+                  <div className="space-y-4">
+                    <div className="mt-2 mb-3">
+                      <h4 className="text-sm font-medium mb-2">SmartyStreets Configuration</h4>
+                      <div className="text-sm text-muted-foreground">
+                        Configure SmartyStreets for US address validation and autocomplete
+                      </div>
+                    </div>
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.smartyStreets.authId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Auth ID</FormLabel>
+                          <FormControl>
+                            <Input placeholder="1234567890" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Your SmartyStreets Auth ID
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.smartyStreets.authToken"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Auth Token</FormLabel>
+                          <FormControl>
+                            <Input placeholder="ABcdEF123456" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Your SmartyStreets Auth Token
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+                
+                {/* Postcode API specific fields */}
+                {editForm.watch('provider') === 'PostcodeAPI' && (
+                  <div className="space-y-4">
+                    <div className="mt-2 mb-3">
+                      <h4 className="text-sm font-medium mb-2">Postcode API Configuration</h4>
+                      <div className="text-sm text-muted-foreground">
+                        Configure Postcode API for UK/international postal code validation
+                      </div>
+                    </div>
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.postcodeApi.apiKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>API Key</FormLabel>
+                          <FormControl>
+                            <Input placeholder="pc_live_..." {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Your Postcode API key
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="additionalFields.postcodeApi.serviceUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Service URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://api.postcodes.io" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Optional: Custom service endpoint URL
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
