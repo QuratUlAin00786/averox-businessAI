@@ -295,9 +295,10 @@ export async function listStripePaymentMethods(customerId: string, type: string 
 // Update payment method
 export async function updateStripePaymentMethod(paymentMethodId: string, billingDetails: any) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
-    const updated = await stripe.paymentMethods.update(paymentMethodId, {
+    const updated = await client.paymentMethods.update(paymentMethodId, {
       billing_details: billingDetails,
     });
     
@@ -321,24 +322,25 @@ export async function updateStripePaymentMethod(paymentMethodId: string, billing
 // Set default payment method
 export async function setDefaultStripePaymentMethod(customerId: string, paymentMethodId: string) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
     // Update customer's default payment method
-    await stripe.customers.update(customerId, {
+    await client.customers.update(customerId, {
       invoice_settings: {
         default_payment_method: paymentMethodId,
       },
     });
     
     // Update payment method's metadata to mark as default
-    const paymentMethods = await stripe.paymentMethods.list({
+    const paymentMethods = await client.paymentMethods.list({
       customer: customerId,
       type: 'card',
     });
     
     // Update all payment methods' metadata
     for (const pm of paymentMethods.data) {
-      await stripe.paymentMethods.update(pm.id, {
+      await client.paymentMethods.update(pm.id, {
         metadata: {
           is_default: pm.id === paymentMethodId ? 'true' : 'false',
         },
@@ -360,9 +362,10 @@ export async function setDefaultStripePaymentMethod(customerId: string, paymentM
 // Delete payment method
 export async function deleteStripePaymentMethod(paymentMethodId: string) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
-    await stripe.paymentMethods.detach(paymentMethodId);
+    await client.paymentMethods.detach(paymentMethodId);
     
     return {
       success: true,
@@ -379,9 +382,10 @@ export async function deleteStripePaymentMethod(paymentMethodId: string) {
 // Create a refund
 export async function createStripeRefund(paymentIntentId: string, amount?: number) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
-    const refund = await stripe.refunds.create({
+    const refund = await client.refunds.create({
       payment_intent: paymentIntentId,
       amount: amount ? Math.round(amount * 100) : undefined, // Convert to cents if partial refund
     });
@@ -404,9 +408,10 @@ export async function createStripeRefund(paymentIntentId: string, amount?: numbe
 // Get payment intent details
 export async function getStripePaymentIntent(paymentIntentId: string) {
   try {
-    const stripe = await getStripeClient();
+    const stripeData = await getStripeClient();
+    const { client } = stripeData;
     
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+    const paymentIntent = await client.paymentIntents.retrieve(paymentIntentId, {
       expand: ['latest_charge', 'payment_method'],
     });
     
