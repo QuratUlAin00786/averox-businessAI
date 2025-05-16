@@ -10,6 +10,8 @@ import { setupMarketingRoutes } from "./marketing-routes";
 import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
 import manufacturingRouter from "./manufacturing-routes-fixed";
+import telephonyRouter from "./telephony-routes";
+import paymentRouter from "./payment-routes";
 import { db } from "./db";
 import { eq, sql, desc, asc } from "drizzle-orm";
 import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryption-middleware";
