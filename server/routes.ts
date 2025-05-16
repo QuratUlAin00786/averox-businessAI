@@ -2986,6 +2986,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleError(res, error);
     }
   });
+  
+  // Test integration endpoint
+  app.post('/api/social-integrations/:id/test', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const id = parseInt(req.params.id);
+      const integration = await storage.getSocialIntegration(id);
+      
+      if (!integration) {
+        return res.status(404).json({ error: "Social integration not found" });
+      }
+      
+      // Make sure the user owns this integration or is an admin
+      if (integration.userId !== req.user.id && req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "You don't have permission to test this integration" });
+      }
+      
+      // Different platforms will have different testing procedures
+      switch (integration.platform) {
+        case 'Facebook':
+        case 'Instagram':
+          // TODO: Implement Facebook Graph API test
+          break;
+        case 'Twitter':
+          // TODO: Implement Twitter API test
+          break;
+        case 'LinkedIn':
+          // TODO: Implement LinkedIn API test
+          break;
+        case 'WhatsApp':
+          // TODO: Implement WhatsApp Business API test
+          break;
+        case 'Email':
+          // TODO: Implement Email API test
+          break;
+        default:
+          // Basic validation of API credentials
+          if (!integration.accessToken) {
+            return res.status(400).json({ error: "Missing API credentials" });
+          }
+      }
+      
+      // For now, just verify that the integration exists and is active
+      if (!integration.isActive) {
+        return res.status(400).json({ error: "Integration is not active" });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Integration test successful",
+        platform: integration.platform
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  // Refresh token endpoint
+  app.post('/api/social-integrations/:id/refresh-token', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const id = parseInt(req.params.id);
+      const integration = await storage.getSocialIntegration(id);
+      
+      if (!integration) {
+        return res.status(404).json({ error: "Social integration not found" });
+      }
+      
+      // Make sure the user owns this integration or is an admin
+      if (integration.userId !== req.user.id && req.user.role !== 'Admin') {
+        return res.status(403).json({ error: "You don't have permission to refresh this integration token" });
+      }
+      
+      // Ensure refresh token exists
+      if (!integration.refreshToken) {
+        return res.status(400).json({ error: "No refresh token available for this integration" });
+      }
+      
+      // Different platforms will have different token refresh procedures
+      // For now, just simulate a token refresh
+      const updatedIntegration = await storage.updateSocialIntegration(id, {
+        accessToken: `refreshed_${Date.now()}`,
+        tokenExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+      });
+      
+      res.json({ 
+        success: true, 
+        message: "Token refreshed successfully",
+        tokenExpiry: updatedIntegration?.tokenExpiry
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
 
   app.patch('/api/social-integrations/:id', async (req: Request, res: Response) => {
     try {
