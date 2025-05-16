@@ -1825,7 +1825,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Created new opportunity: ${decryptedOpportunity.name}`,
           relatedToType: 'opportunity',
           relatedToId: decryptedOpportunity.id,
-          createdAt: new Date(),
           icon: 'plus'
         });
       }
@@ -1886,7 +1885,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Updated opportunity: ${decryptedOpportunity.name}`,
           relatedToType: 'opportunity',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'edit'
         });
       }
@@ -1927,7 +1925,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Deleted opportunity: ${decryptedOpportunity.name}`,
           relatedToType: 'opportunity',
           relatedToId: id,
-          createdAt: new Date(),
           icon: 'trash'
         });
       }
@@ -2009,7 +2006,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           detail: `Created new task: ${decryptedTask.title}`,
           relatedToType: 'task',
           relatedToId: decryptedTask.id,
-          createdAt: new Date(),
           icon: 'plus'
         });
       }
