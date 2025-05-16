@@ -6698,6 +6698,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Register telephony routes
+  app.use('/api/telephony', telephonyRouter);
+
+  // Register payment routes
+  app.use('/api/payments', paymentRouter);
+
   // Create HTTP server
   const server = createServer(app);
   

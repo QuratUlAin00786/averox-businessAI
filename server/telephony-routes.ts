@@ -9,12 +9,12 @@ import {
 } from './telephony-service';
 import { db } from './db';
 import { communications } from '@shared/schema';
-import { checkIsAuthenticated, checkIsAdmin } from './middleware/auth';
+import { isAuthenticated, isAdmin } from './middleware/auth';
 
 export const telephonyRouter = Router();
 
 // Secure all telephony routes
-telephonyRouter.use(checkIsAuthenticated);
+telephonyRouter.use(isAuthenticated);
 
 // Make outbound call
 telephonyRouter.post('/call', async (req, res) => {
@@ -291,7 +291,7 @@ telephonyRouter.post('/incoming/sms', async (req, res) => {
 });
 
 // Admin-only routes
-telephonyRouter.use(checkIsAdmin);
+telephonyRouter.use(isAdmin);
 
 // Get all call logs (admin-only)
 telephonyRouter.get('/admin/logs', async (req, res) => {

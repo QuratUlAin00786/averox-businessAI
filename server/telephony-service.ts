@@ -1,4 +1,4 @@
-import { Twilio } from 'twilio';
+import twilio from 'twilio';
 import { apiKeys } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
@@ -25,7 +25,7 @@ async function getTwilioClient() {
     }
     
     // Create and return Twilio client
-    return new Twilio(accountSid, authToken);
+    return twilio(accountSid, authToken);
   } catch (error) {
     console.error('Error initializing Twilio client:', error);
     throw new Error('Could not initialize Twilio client');

@@ -13,7 +13,7 @@ import {
   getStripePaymentIntent,
   createStripeInvoice
 } from './payment-service';
-import { checkIsAuthenticated, checkIsAdmin } from './middleware/auth';
+import { isAuthenticated, isAdmin } from './middleware/auth';
 import { db } from './db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
@@ -21,7 +21,7 @@ import { eq } from 'drizzle-orm';
 export const paymentRouter = Router();
 
 // Secure all payment routes
-paymentRouter.use(checkIsAuthenticated);
+paymentRouter.use(isAuthenticated);
 
 // Create a payment intent
 paymentRouter.post('/intent', async (req, res) => {
@@ -302,7 +302,7 @@ paymentRouter.post('/invoice', async (req, res) => {
 });
 
 // Admin-only routes
-paymentRouter.use(checkIsAdmin);
+paymentRouter.use(isAdmin);
 
 // Get or create a customer for current user
 paymentRouter.post('/admin/customer-for-user/:userId', async (req, res) => {
