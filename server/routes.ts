@@ -724,9 +724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: null, // Global setting
           settingKey: 'menuItems',
           settingValue: defaultMenuItems as any,
-          scope: 'global',
-          createdAt: new Date(),
-          updatedAt: new Date()
+          scope: 'global'
         });
         
         menuItems = defaultMenuItems;
@@ -4819,7 +4817,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             activityType: "create",
             description: `Proposal "${proposal.name}" created`,
             metadata: {
-              createdAt: new Date(),
               fromTemplate: !!proposalToCreate.templateId,
               opportunityName: opportunity.name,
               accountName: account.name
