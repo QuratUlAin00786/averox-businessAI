@@ -58,7 +58,6 @@ router.post('/materials', async (req: Request, res: Response) => {
     const materialData = req.body;
     
     // Add audit fields
-    materialData.createdAt = new Date();
     materialData.createdBy = req.user?.id || null;
     
     const [result] = await db.insert(materials).values(materialData).returning();
@@ -192,7 +191,6 @@ router.post('/storage/locations', async (req: Request, res: Response) => {
     const locationData = req.body;
     
     // Add audit fields
-    locationData.createdAt = new Date();
     locationData.createdBy = req.user?.id || null;
     
     const [result] = await db.insert(storageLocations).values(locationData).returning();
@@ -257,7 +255,6 @@ router.post('/vendors', async (req: Request, res: Response) => {
     const vendorData = req.body;
     
     // Add audit fields
-    vendorData.createdAt = new Date();
     vendorData.createdBy = req.user?.id || null;
     
     const [result] = await db.insert(vendors).values(vendorData).returning();
@@ -334,7 +331,6 @@ router.post('/batch-lots', async (req: Request, res: Response) => {
     const batchData = req.body;
     
     // Add audit fields
-    batchData.createdAt = new Date();
     batchData.createdBy = req.user?.id || null;
     
     // Ensure remainingQuantity equals quantity for new batches
