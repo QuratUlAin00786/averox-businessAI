@@ -67,7 +67,7 @@ async function getStripeClient() {
     
     // Create Stripe client
     const client = new Stripe(apiKey, {
-      apiVersion: '2025-04-30.basil',
+      apiVersion: '2023-10-16', // Updated to a currently supported API version
     });
     
     // Return both the client and additional configuration
