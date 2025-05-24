@@ -130,21 +130,30 @@ export async function decryptFromDatabase<T extends Record<string, any>>(data: T
   
   // Decrypt each field if it should be encrypted
   for (const [key, value] of Object.entries(data)) {
-    if (value && typeof value === 'string' && shouldEncryptField(key, entityType)) {
+    if (value && shouldEncryptField(key, entityType)) {
       const decryptPromise = async () => {
         try {
-          // Check if the field is a JSON stringified encryption object
-          try {
-            const encryptedData = JSON.parse(value);
-            if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
-              const decrypted = await decrypt(encryptedData.encrypted, encryptedData.iv, encryptedData.keyId);
-              result[key] = decrypted;
+          // Handle different encryption formats
+          if (typeof value === 'string') {
+            // Check if the field is a JSON stringified encryption object
+            try {
+              const encryptedData = JSON.parse(value);
+              if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
+                const decrypted = await decrypt(encryptedData.encrypted, encryptedData.iv, encryptedData.keyId);
+                result[key] = decrypted;
+              }
+            } catch (parseError) {
+              // Not a JSON string, might not be encrypted
             }
-          } catch (parseError) {
-            // Not a JSON string, might not be encrypted
+          } else if (typeof value === 'object' && value.encrypted && value.iv && value.keyId) {
+            // Handle direct encryption object
+            const decrypted = await decrypt(value.encrypted, value.iv, value.keyId);
+            result[key] = decrypted;
           }
         } catch (err) {
           console.error(`Error decrypting field ${key}:`, err);
+          // Keep original value if decryption fails
+          result[key] = value;
         }
       };
       decryptionPromises.push(decryptPromise());

@@ -143,11 +143,11 @@ export function LeadList({
                   <div className="grid grid-cols-2 gap-2 text-neutral-600">
                     <div>
                       <p className="text-xs text-neutral-500">Email</p>
-                      <p className="truncate">{typeof lead.email === 'object' ? "—" : lead.email || "—"}</p>
+                      <p className="truncate">{lead.email || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Phone</p>
-                      <p>{typeof lead.phone === 'object' ? "—" : lead.phone || "—"}</p>
+                      <p>{lead.phone || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Source</p>
