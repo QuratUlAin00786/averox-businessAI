@@ -38,6 +38,7 @@ import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
 import Integrations from "@/pages/settings/integrations";
 import AuthPage from "@/pages/auth-page";
+import LandingPage from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 import TrainingHelpPage from "@/pages/training-help";
 import NewProduct from "@/pages/inventory/products/new";
@@ -71,6 +72,8 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       
       <Route path="/setup" component={SetupWizard} />
+      
+      <Route path="/landing" component={LandingPage} />
       
       <ProtectedRoute path="/" component={() => (
         <Layout>
