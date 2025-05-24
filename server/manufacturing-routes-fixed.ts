@@ -3011,7 +3011,7 @@ router.get('/bom', async (req: Request, res: Response) => {
       SELECT 
         bom.id,
         bom.name,
-        bom.revision,
+        bom.version,
         bom.status,
         p.id as product_id,
         p.name as product_name,
