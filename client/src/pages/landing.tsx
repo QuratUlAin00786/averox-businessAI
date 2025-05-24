@@ -25,7 +25,8 @@ import {
   Calendar,
   BarChart3,
   Cog,
-  Smartphone
+  Smartphone,
+  LogIn
 } from "lucide-react";
 
 export default function LandingPage() {
