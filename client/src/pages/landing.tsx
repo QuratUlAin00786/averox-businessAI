@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,24 @@ import {
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [, setLocation] = useLocation();
+
+  const handleLogin = () => {
+    setLocation('/auth');
+  };
+
+  const handleStartTrial = () => {
+    setLocation('/setup');
+  };
+
+  const handleBookDemo = () => {
+    // In a real implementation, this would open a calendar booking widget
+    window.open('mailto:sales@averox.com?subject=Demo Request&body=I would like to schedule a demo of Averox Business AI', '_blank');
+  };
+
+  const handleContactSales = () => {
+    window.open('mailto:sales@averox.com?subject=Sales Inquiry&body=I am interested in Averox Business AI and would like to speak with someone about pricing and features.', '_blank');
+  };
 
   const competitors = [
     {
@@ -302,6 +321,42 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header Navigation */}
+      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-2">
+              <Brain className="h-8 w-8 text-blue-600" />
+              <span className="text-xl font-bold text-gray-900">Averox Business AI</span>
+            </div>
+            
+            <nav className="hidden md:flex items-center gap-6">
+              <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
+              <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">Pricing</a>
+              <a href="#comparison" className="text-gray-600 hover:text-blue-600 transition-colors">vs Competitors</a>
+              <a href="#migration" className="text-gray-600 hover:text-blue-600 transition-colors">Migration</a>
+            </nav>
+            
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                onClick={handleLogin}
+                className="text-gray-600 hover:text-blue-600"
+              >
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In
+              </Button>
+              <Button 
+                onClick={handleStartTrial}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              >
+                Start Free Trial
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10" />
@@ -324,12 +379,21 @@ export default function LandingPage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 text-lg">
+              <Button 
+                size="lg" 
+                onClick={handleStartTrial}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 text-lg"
+              >
                 Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="px-8 py-3 text-lg border-2">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={handleBookDemo}
+                className="px-8 py-3 text-lg border-2"
+              >
                 <Download className="mr-2 h-5 w-5" />
-                One-Click Migration
+                Book Demo Call
               </Button>
             </div>
 
@@ -488,7 +552,10 @@ export default function LandingPage() {
               automate your workflows, and answer complex business questions in natural language. 
               Try asking me: 'What are my top 5 opportunities this month?' or 'Predict next quarter's revenue.'"
             </p>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+            <Button 
+              onClick={handleStartTrial}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+            >
               <MessageSquare className="mr-2 h-5 w-5" />
               Chat with AI Assistant
             </Button>
@@ -537,6 +604,7 @@ export default function LandingPage() {
                 </ul>
 
                 <Button 
+                  onClick={handleStartTrial}
                   className={`w-full ${plan.highlighted 
                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white' 
                     : 'border border-gray-300 hover:bg-gray-50'
@@ -551,7 +619,11 @@ export default function LandingPage() {
 
           <div className="text-center mt-12">
             <p className="text-gray-600 mb-4">Need a custom solution for your enterprise?</p>
-            <Button variant="outline" size="lg">
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={handleContactSales}
+            >
               <Phone className="mr-2 h-5 w-5" />
               Contact Sales for Custom Pricing
             </Button>
@@ -581,7 +653,11 @@ export default function LandingPage() {
           </div>
 
           <div className="text-center">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+            <Button 
+              size="lg" 
+              onClick={handleStartTrial}
+              className="bg-white text-blue-600 hover:bg-gray-100"
+            >
               <Download className="mr-2 h-5 w-5" />
               Start Migration Now
             </Button>
