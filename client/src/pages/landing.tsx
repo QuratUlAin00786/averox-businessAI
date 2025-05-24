@@ -781,7 +781,7 @@ export default function LandingPage() {
             <Card className="p-6 text-center bg-white text-gray-900">
               <h3 className="text-xl font-bold mb-3 text-blue-600">New to Averox?</h3>
               <p className="text-gray-600 mb-4">Start your 7-day free trial now</p>
-              <Button size="lg" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white mb-3">
+              <Button size="lg" onClick={handleStartTrial} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white mb-3">
                 <Users className="mr-2 h-5 w-5" />
                 Start Free Trial
               </Button>
@@ -792,7 +792,7 @@ export default function LandingPage() {
             <Card className="p-6 text-center bg-white text-gray-900">
               <h3 className="text-xl font-bold mb-3 text-green-600">Already a Customer?</h3>
               <p className="text-gray-600 mb-4">Sign in to your dashboard</p>
-              <Button size="lg" variant="outline" className="w-full mb-3" onClick={() => window.location.href = '/auth'}>
+              <Button size="lg" variant="outline" className="w-full mb-3" onClick={handleLogin}>
                 <LogIn className="mr-2 h-5 w-5" />
                 Sign In to Dashboard
               </Button>
@@ -802,11 +802,11 @@ export default function LandingPage() {
 
           <div className="border-t border-white/20 pt-8">
             <p className="mb-4 opacity-90">Want to see it in action first?</p>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 mr-4">
+            <Button size="lg" variant="outline" onClick={handleBookDemo} className="border-white text-white hover:bg-white hover:text-blue-600 mr-4">
               <Calendar className="mr-2 h-5 w-5" />
               Book Live Demo
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+            <Button size="lg" variant="outline" onClick={handleContactSales} className="border-white text-white hover:bg-white hover:text-blue-600">
               <MessageSquare className="mr-2 h-5 w-5" />
               Chat with Sales
             </Button>
