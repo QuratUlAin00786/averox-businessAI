@@ -94,72 +94,96 @@ export default function LandingPage() {
       category: "CRM Core",
       icon: <Users className="h-6 w-6" />,
       items: [
-        "Lead Management & Scoring",
+        "Lead Management & AI Scoring",
         "Contact & Account Management", 
-        "Opportunity Pipeline",
-        "Sales Forecasting",
-        "Activity Tracking",
-        "Email Integration"
+        "Opportunity Pipeline with AI",
+        "Sales Forecasting & Predictions",
+        "Activity Tracking & Analytics",
+        "Multi-channel Email Integration"
       ]
     },
     {
       category: "Manufacturing (SAP-Level)",
       icon: <Factory className="h-6 w-6" />,
       items: [
-        "Materials Management (MM)",
-        "Bill of Materials (BOM)",
-        "Warehouse Management",
-        "Vendor Management",
-        "MRP Planning",
-        "Quality Control"
+        "Advanced Materials Management",
+        "Multi-level Bill of Materials",
+        "Bin-level Warehouse Management",
+        "Vendor Performance Analytics",
+        "AI-powered MRP Planning",
+        "Real-time Quality Control"
       ]
     },
     {
-      category: "Business AI",
+      category: "Advanced AI Engine",
       icon: <Brain className="h-6 w-6" />,
       items: [
-        "Predictive Analytics",
-        "Lead Scoring AI",
-        "Revenue Forecasting",
-        "Customer Insights",
-        "Automated Workflows",
-        "Smart Recommendations"
+        "24/7 AI Business Assistant",
+        "Predictive Customer Analytics",
+        "Intelligent Lead Scoring",
+        "Revenue Forecasting AI",
+        "Automated Workflow Intelligence",
+        "Smart Business Recommendations"
       ]
     },
     {
-      category: "Communications",
+      category: "Omnichannel Communications",
       icon: <MessageSquare className="h-6 w-6" />,
       items: [
-        "Voice/Telephony Integration",
-        "SMS & WhatsApp",
-        "Email Automation",
+        "Click-to-Call Telephony",
+        "WhatsApp Business Integration",
+        "SMS Marketing Automation",
         "Social Media Management",
-        "Live Chat",
-        "Video Conferencing"
+        "Live Chat with AI Bot",
+        "Video Calls & Screen Sharing"
+      ]
+    },
+    {
+      category: "Marketing Automation",
+      icon: <Zap className="h-6 w-6" />,
+      items: [
+        "Email Campaign Automation",
+        "Social Media Scheduling",
+        "Lead Nurturing Sequences",
+        "Customer Journey Mapping",
+        "A/B Testing & Analytics",
+        "Multi-channel Attribution"
+      ]
+    },
+    {
+      category: "Support & Service",
+      icon: <Phone className="h-6 w-6" />,
+      items: [
+        "AI-powered Support Tickets",
+        "Knowledge Base Management",
+        "Customer Portal",
+        "SLA Management",
+        "Live Chat Support",
+        "Community Forums"
       ]
     },
     {
       category: "Security & Compliance",
       icon: <Shield className="h-6 w-6" />,
       items: [
-        "AES-256 Encryption", 
-        "GDPR Compliance",
-        "Role-Based Access",
-        "Audit Trails",
-        "Data Backup",
-        "SOC2 Ready"
+        "Military-grade AES-256 Encryption", 
+        "GDPR & CCPA Compliance",
+        "Enterprise SSO & 2FA",
+        "Comprehensive Audit Trails",
+        "Automated Data Backup",
+        "SOC2 Type II Certified"
       ]
     },
     {
-      category: "Integrations",
+      category: "Integrations & Migration",
       icon: <Globe className="h-6 w-6" />,
       items: [
-        "One-Click Migration",
-        "API Integrations",
-        "Stripe Payments",
-        "Social Platforms",
-        "Email Services",
-        "Custom Connectors"
+        "One-Click Platform Migration",
+        "REST API & Webhooks",
+        "Stripe & PayPal Payments",
+        "Zapier & Make.com",
+        "Custom App Marketplace",
+        "White-label Solutions"
       ]
     }
   ];
@@ -171,6 +195,108 @@ export default function LandingPage() {
     { name: "Zoho CRM", supported: true, time: "3 hours" },
     { name: "MS Dynamics", supported: true, time: "6 hours" },
     { name: "Custom CSV", supported: true, time: "30 mins" }
+  ];
+
+  const subscriptionPlans = [
+    {
+      name: "Starter",
+      price: "29",
+      period: "month",
+      description: "Perfect for small teams getting started",
+      features: [
+        "Up to 5 users",
+        "500 contacts",
+        "Basic CRM features",
+        "Email integration",
+        "Mobile app access",
+        "Basic reporting",
+        "24/7 chat support"
+      ],
+      highlighted: false,
+      trialDays: 7
+    },
+    {
+      name: "Professional",
+      price: "59",
+      period: "month",
+      description: "Advanced features for growing businesses",
+      features: [
+        "Up to 25 users",
+        "5,000 contacts",
+        "Advanced AI features",
+        "Marketing automation",
+        "Sales forecasting",
+        "Custom workflows",
+        "API access",
+        "Phone support"
+      ],
+      highlighted: true,
+      trialDays: 7,
+      mostPopular: true
+    },
+    {
+      name: "Enterprise",
+      price: "99",
+      period: "month",
+      description: "Complete solution with manufacturing",
+      features: [
+        "Unlimited users",
+        "Unlimited contacts",
+        "Full Manufacturing Suite",
+        "Advanced AI & Analytics",
+        "White-label options",
+        "Custom integrations",
+        "Dedicated account manager",
+        "SLA guarantee"
+      ],
+      highlighted: false,
+      trialDays: 7
+    },
+    {
+      name: "Enterprise Plus",
+      price: "199",
+      period: "month",
+      description: "Ultimate Business AI with everything",
+      features: [
+        "Everything in Enterprise",
+        "Multi-company management",
+        "Advanced compliance tools",
+        "Custom AI training",
+        "On-premise deployment",
+        "24/7 phone support",
+        "Implementation specialist",
+        "Priority feature requests"
+      ],
+      highlighted: false,
+      trialDays: 14
+    }
+  ];
+
+  const aiCapabilities = [
+    {
+      title: "AI Business Assistant",
+      description: "Your 24/7 virtual business consultant that learns your company and provides intelligent insights",
+      icon: <Brain className="h-8 w-8" />,
+      features: ["Natural language queries", "Business insights", "Task automation", "Performance analysis"]
+    },
+    {
+      title: "Predictive Analytics Engine",
+      description: "Advanced machine learning that predicts customer behavior, sales outcomes, and market trends",
+      icon: <TrendingUp className="h-8 w-8" />,
+      features: ["Customer churn prediction", "Sales forecasting", "Market analysis", "Risk assessment"]
+    },
+    {
+      title: "Intelligent Automation",
+      description: "Smart workflows that adapt and optimize themselves based on your business patterns",
+      icon: <Zap className="h-8 w-8" />,
+      features: ["Smart routing", "Auto-prioritization", "Dynamic scheduling", "Adaptive processes"]
+    },
+    {
+      title: "Conversational AI Bot",
+      description: "Advanced chatbot that handles customer inquiries, qualifies leads, and books appointments",
+      icon: <MessageSquare className="h-8 w-8" />,
+      features: ["Natural conversations", "Lead qualification", "Appointment booking", "Multi-language support"]
+    }
   ];
 
   return (
@@ -320,37 +446,114 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* AI Capabilities */}
+      {/* Advanced AI Capabilities */}
       <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Why We Call It <span className="text-blue-600">Business AI</span>
             </h2>
-            <p className="text-xl text-gray-600">Advanced AI that actually works for your business</p>
+            <p className="text-xl text-gray-600">The most advanced AI engine built specifically for business</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+            {aiCapabilities.map((capability, index) => (
+              <Card key={index} className="p-8 hover:shadow-xl transition-shadow border-2 hover:border-blue-200">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg text-blue-600">
+                    {capability.icon}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold mb-2">{capability.title}</h3>
+                    <p className="text-gray-600 mb-4">{capability.description}</p>
+                    <ul className="grid grid-cols-2 gap-2">
+                      {capability.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-center gap-2 text-sm">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8">
+            <h3 className="text-2xl font-bold mb-4">🤖 Meet Your AI Business Assistant</h3>
+            <p className="text-lg text-gray-600 mb-6">
+              "Hello! I'm your AI assistant. I can analyze your sales data, predict customer behavior, 
+              automate your workflows, and answer complex business questions in natural language. 
+              Try asking me: 'What are my top 5 opportunities this month?' or 'Predict next quarter's revenue.'"
+            </p>
+            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+              <MessageSquare className="mr-2 h-5 w-5" />
+              Chat with AI Assistant
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Subscription Plans */}
+      <div className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Choose Your Business AI Plan
+            </h2>
+            <p className="text-xl text-gray-600">Start with 7-day free trial • No credit card required • Cancel anytime</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="text-center p-6">
-              <Brain className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Predictive Analytics</h3>
-              <p className="text-sm text-gray-600">AI predicts customer behavior and sales outcomes</p>
-            </Card>
-            <Card className="text-center p-6">
-              <Target className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Smart Lead Scoring</h3>
-              <p className="text-sm text-gray-600">Automatically scores and prioritizes your best leads</p>
-            </Card>
-            <Card className="text-center p-6">
-              <TrendingUp className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Revenue Forecasting</h3>
-              <p className="text-sm text-gray-600">AI-powered revenue predictions with 95% accuracy</p>
-            </Card>
-            <Card className="text-center p-6">
-              <Zap className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Workflow Automation</h3>
-              <p className="text-sm text-gray-600">AI automates repetitive tasks and processes</p>
-            </Card>
+            {subscriptionPlans.map((plan, index) => (
+              <Card key={index} className={`relative p-6 ${plan.highlighted ? 'border-2 border-blue-500 shadow-xl scale-105' : ''}`}>
+                {plan.mostPopular && (
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                    Most Popular
+                  </Badge>
+                )}
+                
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                  <div className="mb-2">
+                    <span className="text-3xl font-bold">${plan.price}</span>
+                    <span className="text-gray-600">/{plan.period}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">{plan.description}</p>
+                  <Badge className="mt-2 bg-green-100 text-green-800">
+                    {plan.trialDays}-day free trial
+                  </Badge>
+                </div>
+
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button 
+                  className={`w-full ${plan.highlighted 
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white' 
+                    : 'border border-gray-300 hover:bg-gray-50'
+                  }`}
+                  variant={plan.highlighted ? 'default' : 'outline'}
+                >
+                  Start {plan.trialDays}-Day Trial
+                </Button>
+              </Card>
+            ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-gray-600 mb-4">Need a custom solution for your enterprise?</p>
+            <Button variant="outline" size="lg">
+              <Phone className="mr-2 h-5 w-5" />
+              Contact Sales for Custom Pricing
+            </Button>
           </div>
         </div>
       </div>
@@ -385,29 +588,157 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="py-16 bg-gray-900 text-white">
+      {/* Additional Features Showcase */}
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Complete Business Solution
+            </h2>
+            <p className="text-xl text-gray-600">Everything your business needs in one powerful platform</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="p-6 text-center hover:shadow-xl transition-shadow border-2 hover:border-blue-200">
+              <div className="p-3 bg-blue-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Phone className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Voice & Telephony</h3>
+              <ul className="text-sm text-gray-600 space-y-2 text-left">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Click-to-call functionality
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Call recording & transcription
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  IVR system with AI routing
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Conference calling
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  SMS integration
+                </li>
+              </ul>
+            </Card>
+
+            <Card className="p-6 text-center hover:shadow-xl transition-shadow border-2 hover:border-green-200">
+              <div className="p-3 bg-green-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <MessageSquare className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Omnichannel Messaging</h3>
+              <ul className="text-sm text-gray-600 space-y-2 text-left">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  WhatsApp Business API
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Facebook Messenger
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  LinkedIn messaging
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Twitter DMs
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Instagram direct
+                </li>
+              </ul>
+            </Card>
+
+            <Card className="p-6 text-center hover:shadow-xl transition-shadow border-2 hover:border-purple-200">
+              <div className="p-3 bg-purple-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Target className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Support & Service</h3>
+              <ul className="text-sm text-gray-600 space-y-2 text-left">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  AI-powered support tickets
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Knowledge base management
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Customer portal
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  SLA management
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Live chat with AI bot
+                </li>
+              </ul>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Login / Get Started Section */}
+      <div className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to Transform Your Business?
           </h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Join thousands of companies that switched to Averox Business AI
+          <p className="text-xl mb-8 opacity-90">
+            Join thousands of companies who've already made the switch to Averox Business AI
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 py-3 text-lg">
-              Start Free Trial - No Credit Card
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto mb-8">
+            {/* New Customer */}
+            <Card className="p-6 text-center bg-white text-gray-900">
+              <h3 className="text-xl font-bold mb-3 text-blue-600">New to Averox?</h3>
+              <p className="text-gray-600 mb-4">Start your 7-day free trial now</p>
+              <Button size="lg" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white mb-3">
+                <Users className="mr-2 h-5 w-5" />
+                Start Free Trial
+              </Button>
+              <p className="text-xs text-gray-500">No credit card required • Setup in minutes</p>
+            </Card>
+
+            {/* Existing Customer */}
+            <Card className="p-6 text-center bg-white text-gray-900">
+              <h3 className="text-xl font-bold mb-3 text-green-600">Already a Customer?</h3>
+              <p className="text-gray-600 mb-4">Sign in to your dashboard</p>
+              <Button size="lg" variant="outline" className="w-full mb-3" onClick={() => window.location.href = '/auth'}>
+                <LogIn className="mr-2 h-5 w-5" />
+                Sign In to Dashboard
+              </Button>
+              <p className="text-xs text-gray-500">Access your Business AI platform</p>
+            </Card>
+          </div>
+
+          <div className="border-t border-white/20 pt-8">
+            <p className="mb-4 opacity-90">Want to see it in action first?</p>
+            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 mr-4">
+              <Calendar className="mr-2 h-5 w-5" />
+              Book Live Demo
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900 px-8 py-3 text-lg">
-              Book Demo Call
+            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+              <MessageSquare className="mr-2 h-5 w-5" />
+              Chat with Sales
             </Button>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-8 text-gray-400">
-            <span>✓ 30-day free trial</span>
-            <span>✓ Free migration</span>
-            <span>✓ 24/7 support</span>
+          <div className="flex flex-wrap justify-center gap-8 text-gray-200 mt-8">
+            <span>✓ 7-day free trial</span>
+            <span>✓ Free migration assistance</span>
+            <span>✓ 24/7 expert support</span>
             <span>✓ No setup fees</span>
           </div>
         </div>
