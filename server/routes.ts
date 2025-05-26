@@ -28,6 +28,10 @@ import {
   insertActivitySchema,
   insertSubscriptionPackageSchema,
   insertUserSubscriptionSchema,
+  leads,
+  contacts,
+  opportunities,
+  activities,
   insertApiKeySchema,
   insertCommunicationSchema,
   // Accounting and inventory schemas
