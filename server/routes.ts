@@ -7119,6 +7119,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log("✅ Zapier integration routes configured successfully");
 
+  // Multi-Tenant SaaS Platform Routes
+  console.log("🏢 Setting up multi-tenant SaaS platform routes...");
+  
+  // Apply tenant identification middleware to all API routes
+  app.use('/api', identifyTenant);
+  app.use('/api', trackApiUsage);
+  
+  // Public tenant management routes (no auth required)
+  app.post('/api/tenants/register', registerTenant);
+  app.get('/api/tenants/check-subdomain/:subdomain', checkSubdomainAvailability);
+  app.get('/api/tenants/subscription-plans', getSubscriptionPlans);
+  app.post('/api/tenants/invitations/:token/accept', acceptInvitation);
+  
+  // Protected tenant management routes (require authentication and tenant context)
+  app.get('/api/tenants/current', getCurrentTenant);
+  app.put('/api/tenants/settings', updateTenantSettings);
+  app.get('/api/tenants/users', getTenantUsers);
+  app.post('/api/tenants/invitations', inviteUserToTenant);
+  app.post('/api/tenants/subscription', createTenantSubscription);
+  app.get('/api/tenants/analytics', getTenantAnalytics);
+
+  console.log("✅ Multi-tenant SaaS platform routes configured successfully");
+
   // Create HTTP server
   const server = createServer(app);
   
