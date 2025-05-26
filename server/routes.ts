@@ -12,6 +12,7 @@ import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant"
 import manufacturingRouter from "./manufacturing-routes-fixed";
 import telephonyRouter from "./telephony-routes";
 import paymentRouter from "./payment-routes";
+import { setupPredictiveAnalyticsRoutes } from "./analytics/predictive-engine";
 import { db } from "./db";
 import { eq, sql, desc, asc, and, or, isNull, gt, lt } from "drizzle-orm";
 import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryption-middleware";
