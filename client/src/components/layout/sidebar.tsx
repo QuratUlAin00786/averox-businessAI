@@ -111,6 +111,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: "Analytics", path: '/analytics', icon: <LucideIcons.TrendingUp className="w-5 h-5" />, key: null },
     { name: t.navigation.intelligence, path: '/intelligence', icon: <LucideIcons.BrainCircuit className="w-5 h-5" />, key: 'intelligence' as keyof MenuVisibilitySettings },
     { name: t.navigation.workflows, path: '/workflows', icon: <LucideIcons.Workflow className="w-5 h-5" />, key: 'workflows' as keyof MenuVisibilitySettings },
+    { name: "Integrations", path: '/integrations', icon: <LucideIcons.Zap className="w-5 h-5" />, key: null },
     { name: t.navigation.subscriptions, path: '/subscriptions', icon: <LucideIcons.CreditCard className="w-5 h-5" />, key: 'subscriptions' as keyof MenuVisibilitySettings },
     { name: t.navigation.training, path: '/training-help', icon: <LucideIcons.HelpCircle className="w-5 h-5" />, key: 'training' as keyof MenuVisibilitySettings },
     { name: t.navigation.settings, path: '/settings', icon: <LucideIcons.Settings className="w-5 h-5" />, key: null },
@@ -204,7 +205,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
 
   const getAnalyticsItems = () => {
     return finalNavItems.filter(item => 
-      ['/reports', '/intelligence', '/workflows'].includes(item.path)
+      ['/reports', '/analytics', '/intelligence', '/workflows', '/integrations'].includes(item.path)
     );
   };
 
