@@ -20,6 +20,24 @@ import {
   testZapierConnection,
   getZapierActivity 
 } from "./integrations/zapier-integration";
+import {
+  registerTenant,
+  getCurrentTenant,
+  updateTenantSettings,
+  getTenantUsers,
+  inviteUserToTenant,
+  acceptInvitation,
+  getSubscriptionPlans,
+  createTenantSubscription,
+  getTenantAnalytics,
+  checkSubdomainAvailability
+} from "./tenant-routes";
+import { 
+  identifyTenant, 
+  requireTenant, 
+  checkTenantUserPermission,
+  trackApiUsage 
+} from "./middleware/tenant-middleware";
 import { db } from "./db";
 import { eq, sql, desc, asc, and, or, isNull, gt, lt } from "drizzle-orm";
 import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryption-middleware";
