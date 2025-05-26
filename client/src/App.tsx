@@ -68,6 +68,7 @@ import InvoicePayment from "@/pages/InvoicePayment";
 import SecurityPage from "@/pages/security";
 import ProposalsPage from "@/pages/proposals";
 import SetupWizard from "@/pages/setup-wizard";
+import SaaSManagement from "@/pages/saas-management";
 
 function Router() {
   return (
@@ -447,6 +448,12 @@ function Router() {
       <ProtectedRoute path="/proposals" component={() => (
         <Layout>
           <ProposalsPage />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/saas-management" component={() => (
+        <Layout>
+          <SaaSManagement />
         </Layout>
       )} />
       
