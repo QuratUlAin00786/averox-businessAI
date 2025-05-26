@@ -29,6 +29,7 @@ import SettingsDashboard from "@/pages/settings-dashboard";
 import SettingsCustomFields from "@/pages/settings-custom-fields";
 import Intelligence from "@/pages/intelligence";
 import Workflows from "@/pages/workflows";
+import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import Subscriptions from "@/pages/subscriptions";
 import Subscribe from "@/pages/subscribe";
 import AdminSubscriptionPackages from "@/pages/admin-subscription-packages";
@@ -144,6 +145,12 @@ function Router() {
       <ProtectedRoute path="/workflows" component={() => (
         <Layout>
           <Workflows />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/analytics" component={() => (
+        <Layout>
+          <AnalyticsDashboard />
         </Layout>
       )} />
       
