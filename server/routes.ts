@@ -713,6 +713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { name: "E-commerce", path: '/ecommerce', icon: "ShoppingCart", key: "ecommerce", isVisible: userSettings.menuVisibility.ecommerce },
           { name: "Store", path: '/ecommerce-store', icon: "Store", key: "ecommerceStore", isVisible: userSettings.menuVisibility.ecommerceStore },
           { name: "Reports", path: '/reports', icon: "BarChart2", key: "reports", isVisible: userSettings.menuVisibility.reports },
+          { name: "Analytics", path: '/analytics', icon: "TrendingUp", key: null, isVisible: true },
           { name: "Intelligence", path: '/intelligence', icon: "BrainCircuit", key: "intelligence", isVisible: userSettings.menuVisibility.intelligence },
           { name: "Workflows", path: '/workflows', icon: "Workflow", key: "workflows", isVisible: userSettings.menuVisibility.workflows },
           { name: "Subscriptions", path: '/subscriptions', icon: "CreditCard", key: "subscriptions", isVisible: userSettings.menuVisibility.subscriptions },
