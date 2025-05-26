@@ -39,6 +39,7 @@ import CommunicationCenter from "@/pages/communication-center";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
 import Integrations from "@/pages/settings/integrations";
+import ZapierIntegrations from "@/pages/integrations";
 import AuthPage from "@/pages/auth-page";
 import LandingPage from "@/pages/landing";
 import NotFound from "@/pages/not-found";
@@ -146,6 +147,12 @@ function Router() {
       <ProtectedRoute path="/workflows" component={() => (
         <Layout>
           <Workflows />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/integrations" component={() => (
+        <Layout>
+          <ZapierIntegrations />
         </Layout>
       )} />
       
