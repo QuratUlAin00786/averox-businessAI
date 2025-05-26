@@ -44,7 +44,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const { settings } = useSystemSettings();
 
   // Fetch menu items from the database
-  const { data: menuItems = [], isLoading: isMenuLoading } = useQuery({
+  const { data: menuItems = [], isLoading: isMenuLoading, refetch } = useQuery({
     queryKey: ["/api/menu-items"],
     queryFn: async () => {
       try {
@@ -56,7 +56,19 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       }
     },
     enabled: !!user, // Only fetch if user is logged in
+    staleTime: 0, // Force refresh every time
+    cacheTime: 0, // Don't cache results
   });
+
+  // Auto-refresh menu items to show new features
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => {
+        refetch();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, refetch]);
 
   // Convert menu items to nav items
   const navItems: NavItem[] = menuItems.map(item => {

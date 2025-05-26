@@ -674,6 +674,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Force menu refresh endpoint
+  app.post('/api/refresh-menu', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      // Delete existing menu cache
+      await db.delete(systemSettings)
+        .where(eq(systemSettings.settingKey, 'menuItems'));
+      
+      res.json({ success: true, message: 'Menu cache cleared' });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
   // Menu items API - Get all menu items (with visibility settings)
   app.get('/api/menu-items', async (req: Request, res: Response) => {
     try {
