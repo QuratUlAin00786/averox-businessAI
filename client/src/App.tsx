@@ -28,6 +28,7 @@ import SettingsDataMigration from "@/pages/settings-data-migration";
 import SettingsDashboard from "@/pages/settings-dashboard";
 import SettingsCustomFields from "@/pages/settings-custom-fields";
 import Intelligence from "@/pages/intelligence";
+import Analytics from "@/pages/analytics";
 import Workflows from "@/pages/workflows";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import Subscriptions from "@/pages/subscriptions";
@@ -150,7 +151,7 @@ function Router() {
       
       <ProtectedRoute path="/analytics" component={() => (
         <Layout>
-          <AnalyticsDashboard />
+          <Analytics />
         </Layout>
       )} />
       
