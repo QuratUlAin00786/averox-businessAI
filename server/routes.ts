@@ -32,6 +32,7 @@ import {
   getTenantAnalytics,
   checkSubdomainAvailability
 } from "./tenant-routes";
+import { setupSaaSManagementRoutes } from "./saas-management-routes";
 import { 
   identifyTenant, 
   requireTenant, 
@@ -7139,6 +7140,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/tenants/invitations', inviteUserToTenant);
   app.post('/api/tenants/subscription', createTenantSubscription);
   app.get('/api/tenants/analytics', getTenantAnalytics);
+
+  // Setup SaaS Management Dashboard routes
+  setupSaaSManagementRoutes(app);
 
   console.log("✅ Multi-tenant SaaS platform routes configured successfully");
 
