@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { SimpleButton } from "@/components/ui/simple-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
+import AnalyticsSection from "@/components/analytics-section";
 import { useLanguage } from "@/hooks/use-language";
 import { useSystemSettings } from "@/hooks/use-system-settings";
 import { SimpleTour, TourHelpButton, useTour } from "@/components/ui/simple-tour";
@@ -147,8 +148,12 @@ export default function Dashboard() {
       </div>
       
       <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
-        {/* Dashboard Content */}
-        <div className="space-y-6">
+        {/* Real Business Analytics Section */}
+        <AnalyticsSection />
+        
+        <div className="mt-8">
+          {/* Dashboard Content */}
+          <div className="space-y-6">
           {/* Business Metrics Overview */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {/* Revenue Card */}
