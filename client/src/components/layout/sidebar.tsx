@@ -108,6 +108,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     { name: t.navigation.ecommerce, path: '/ecommerce', icon: <LucideIcons.ShoppingCart className="w-5 h-5" />, key: 'ecommerce' as keyof MenuVisibilitySettings },
     { name: t.navigation.ecommerceStore, path: '/ecommerce-store', icon: <LucideIcons.Store className="w-5 h-5" />, key: 'ecommerceStore' as keyof MenuVisibilitySettings },
     { name: t.navigation.reports, path: '/reports', icon: <LucideIcons.BarChart2 className="w-5 h-5" />, key: 'reports' as keyof MenuVisibilitySettings },
+    { name: "Analytics", path: '/analytics', icon: <LucideIcons.TrendingUp className="w-5 h-5" />, key: null },
     { name: t.navigation.intelligence, path: '/intelligence', icon: <LucideIcons.BrainCircuit className="w-5 h-5" />, key: 'intelligence' as keyof MenuVisibilitySettings },
     { name: t.navigation.workflows, path: '/workflows', icon: <LucideIcons.Workflow className="w-5 h-5" />, key: 'workflows' as keyof MenuVisibilitySettings },
     { name: t.navigation.subscriptions, path: '/subscriptions', icon: <LucideIcons.CreditCard className="w-5 h-5" />, key: 'subscriptions' as keyof MenuVisibilitySettings },
