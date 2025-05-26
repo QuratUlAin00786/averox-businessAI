@@ -13,6 +13,13 @@ import manufacturingRouter from "./manufacturing-routes-fixed";
 import telephonyRouter from "./telephony-routes";
 import paymentRouter from "./payment-routes";
 import { setupPredictiveAnalyticsRoutes } from "./analytics/predictive-engine";
+import { 
+  handleZapierWebhook, 
+  getZapierTriggers, 
+  getZapierActions, 
+  testZapierConnection,
+  getZapierActivity 
+} from "./integrations/zapier-integration";
 import { db } from "./db";
 import { eq, sql, desc, asc, and, or, isNull, gt, lt } from "drizzle-orm";
 import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryption-middleware";
@@ -7055,6 +7062,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to generate forecast' });
     }
   });
+
+  // Zapier Integration Routes
+  console.log("🔗 Setting up Zapier integration routes...");
+  
+  // Webhook endpoint for receiving data from Zapier
+  app.post("/api/zapier/webhook", handleZapierWebhook);
+  
+  // Get available triggers for Zapier app setup
+  app.get("/api/zapier/triggers", getZapierTriggers);
+  
+  // Get available actions for Zapier app setup
+  app.get("/api/zapier/actions", getZapierActions);
+  
+  // Test Zapier connection
+  app.get("/api/zapier/test", testZapierConnection);
+  
+  // Get recent Zapier activity/logs
+  app.get("/api/zapier/activity", getZapierActivity);
+
+  console.log("✅ Zapier integration routes configured successfully");
 
   // Create HTTP server
   const server = createServer(app);
