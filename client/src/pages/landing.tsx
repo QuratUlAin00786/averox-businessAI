@@ -1,848 +1,589 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
-  CheckCircle, 
-  ArrowRight, 
-  Star, 
-  Users, 
   Building2, 
-  Zap, 
+  Users, 
   Shield, 
-  Globe, 
-  Brain, 
-  Factory,
-  Download,
-  Target,
-  TrendingUp,
-  Clock,
-  Database,
-  MessageSquare,
+  Zap,
+  Check,
+  Star,
+  ArrowRight,
   Phone,
   Mail,
-  Calendar,
+  Globe,
+  DollarSign,
+  Sparkles,
+  Target,
   BarChart3,
-  Cog,
-  Smartphone,
-  LogIn
+  MessageSquare,
+  Crown
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+
+interface SubscriptionPackage {
+  id: number;
+  name: string;
+  description: string;
+  price: string;
+  features: string[];
+  maxUsers: number;
+  maxContacts: number;
+  maxStorage: number;
+  isActive: boolean;
+}
 
 export default function LandingPage() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPackage | null>(null);
+  const [signupStep, setSignupStep] = useState<'info' | 'payment' | 'complete'>('info');
 
-  const handleLogin = () => {
-    setLocation('/auth');
+  // Fetch subscription packages
+  const { data: subscriptionPackages = [] } = useQuery<SubscriptionPackage[]>({
+    queryKey: ['/api/subscription-packages'],
+  });
+
+  // Signup form state
+  const [signupData, setSignupData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    company: "",
+    phone: "",
+    subdomain: "",
+    password: "",
+    confirmPassword: ""
+  });
+
+  // Registration mutation
+  const registerMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/tenants/register', {
+        ...data,
+        planId: selectedPlan?.id
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setSignupStep('payment');
+      toast({
+        title: "Registration Successful!",
+        description: "Now let's set up your payment details to activate your account.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Registration Failed",
+        description: "Please check your information and try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handlePlanSelect = (pkg: SubscriptionPackage) => {
+    setSelectedPlan(pkg);
+    setIsSignupOpen(true);
+    setSignupStep('info');
   };
 
-  const handleStartTrial = () => {
-    setLocation('/setup');
-  };
-
-  const handleBookDemo = () => {
-    // In a real implementation, this would open a calendar booking widget
-    window.open('mailto:sales@averox.com?subject=Demo Request&body=I would like to schedule a demo of Averox Business AI', '_blank');
-  };
-
-  const handleContactSales = () => {
-    window.open('mailto:sales@averox.com?subject=Sales Inquiry&body=I am interested in Averox Business AI and would like to speak with someone about pricing and features.', '_blank');
-  };
-
-  const competitors = [
-    {
-      name: "Salesforce",
-      logo: "SF",
-      price: "$150/user/month",
-      setup: "6+ months",
-      ai: "Limited",
-      manufacturing: "❌",
-      encryption: "Basic"
-    },
-    {
-      name: "HubSpot",
-      logo: "HS", 
-      price: "$120/user/month",
-      setup: "3-4 months",
-      ai: "Basic",
-      manufacturing: "❌",
-      encryption: "Standard"
-    },
-    {
-      name: "MS Dynamics",
-      logo: "MS",
-      price: "$200/user/month", 
-      setup: "8+ months",
-      ai: "Limited",
-      manufacturing: "Partial",
-      encryption: "Standard"
-    },
-    {
-      name: "Zoho",
-      logo: "ZO",
-      price: "$80/user/month",
-      setup: "4-5 months", 
-      ai: "Basic",
-      manufacturing: "❌",
-      encryption: "Basic"
-    },
-    {
-      name: "SAP",
-      logo: "SAP",
-      price: "$300+/user/month",
-      setup: "12+ months",
-      ai: "Limited",
-      manufacturing: "✓",
-      encryption: "Enterprise"
-    },
-    {
-      name: "Averox Business AI",
-      logo: "AV",
-      price: "$29-99/user/month",
-      setup: "1 day",
-      ai: "Advanced AI",
-      manufacturing: "✓ Superior",
-      encryption: "AES-256",
-      highlight: true
+  const handleSignupSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (signupData.password !== signupData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Please ensure both password fields match.",
+        variant: "destructive",
+      });
+      return;
     }
-  ];
+
+    registerMutation.mutate({
+      firstName: signupData.firstName,
+      lastName: signupData.lastName,
+      email: signupData.email,
+      company: signupData.company,
+      phone: signupData.phone,
+      subdomain: signupData.subdomain,
+      password: signupData.password
+    });
+  };
 
   const features = [
     {
-      category: "CRM Core",
-      icon: <Users className="h-6 w-6" />,
-      items: [
-        "Lead Management & AI Scoring",
-        "Contact & Account Management", 
-        "Opportunity Pipeline with AI",
-        "Sales Forecasting & Predictions",
-        "Activity Tracking & Analytics",
-        "Multi-channel Email Integration"
-      ]
+      icon: <Users className="h-6 w-6 text-blue-500" />,
+      title: "Customer Management",
+      description: "Complete contact and account management with relationship tracking"
     },
     {
-      category: "Manufacturing (SAP-Level)",
-      icon: <Factory className="h-6 w-6" />,
-      items: [
-        "Advanced Materials Management",
-        "Multi-level Bill of Materials",
-        "Bin-level Warehouse Management",
-        "Vendor Performance Analytics",
-        "AI-powered MRP Planning",
-        "Real-time Quality Control"
-      ]
+      icon: <Target className="h-6 w-6 text-green-500" />,
+      title: "Sales Pipeline",
+      description: "Visual sales pipeline with opportunity tracking and forecasting"
     },
     {
-      category: "Advanced AI Engine",
-      icon: <Brain className="h-6 w-6" />,
-      items: [
-        "24/7 AI Business Assistant",
-        "Predictive Customer Analytics",
-        "Intelligent Lead Scoring",
-        "Revenue Forecasting AI",
-        "Automated Workflow Intelligence",
-        "Smart Business Recommendations"
-      ]
+      icon: <BarChart3 className="h-6 w-6 text-purple-500" />,
+      title: "Analytics & Reports",
+      description: "Comprehensive analytics and customizable reporting dashboards"
     },
     {
-      category: "Omnichannel Communications",
-      icon: <MessageSquare className="h-6 w-6" />,
-      items: [
-        "Click-to-Call Telephony",
-        "WhatsApp Business Integration",
-        "SMS Marketing Automation",
-        "Social Media Management",
-        "Live Chat with AI Bot",
-        "Video Calls & Screen Sharing"
-      ]
+      icon: <MessageSquare className="h-6 w-6 text-orange-500" />,
+      title: "Communication Hub",
+      description: "Integrated email, SMS, and call management with automation"
     },
     {
-      category: "Marketing Automation",
-      icon: <Zap className="h-6 w-6" />,
-      items: [
-        "Email Campaign Automation",
-        "Social Media Scheduling",
-        "Lead Nurturing Sequences",
-        "Customer Journey Mapping",
-        "A/B Testing & Analytics",
-        "Multi-channel Attribution"
-      ]
+      icon: <Zap className="h-6 w-6 text-yellow-500" />,
+      title: "Workflow Automation",
+      description: "Automate repetitive tasks and streamline your business processes"
     },
     {
-      category: "Support & Service",
-      icon: <Phone className="h-6 w-6" />,
-      items: [
-        "AI-powered Support Tickets",
-        "Knowledge Base Management",
-        "Customer Portal",
-        "SLA Management",
-        "Live Chat Support",
-        "Community Forums"
-      ]
-    },
-    {
-      category: "Security & Compliance",
-      icon: <Shield className="h-6 w-6" />,
-      items: [
-        "Military-grade AES-256 Encryption", 
-        "GDPR & CCPA Compliance",
-        "Enterprise SSO & 2FA",
-        "Comprehensive Audit Trails",
-        "Automated Data Backup",
-        "SOC2 Type II Certified"
-      ]
-    },
-    {
-      category: "Integrations & Migration",
-      icon: <Globe className="h-6 w-6" />,
-      items: [
-        "One-Click Platform Migration",
-        "REST API & Webhooks",
-        "Stripe & PayPal Payments",
-        "Zapier & Make.com",
-        "Custom App Marketplace",
-        "White-label Solutions"
-      ]
+      icon: <Shield className="h-6 w-6 text-red-500" />,
+      title: "Enterprise Security",
+      description: "Bank-grade security with AES-256 encryption and compliance"
     }
   ];
 
-  const migrationSources = [
-    { name: "HubSpot", supported: true, time: "2 hours" },
-    { name: "Salesforce", supported: true, time: "4 hours" },
-    { name: "Pipedrive", supported: true, time: "1 hour" },
-    { name: "Zoho CRM", supported: true, time: "3 hours" },
-    { name: "MS Dynamics", supported: true, time: "6 hours" },
-    { name: "Custom CSV", supported: true, time: "30 mins" }
-  ];
-
-  const subscriptionPlans = [
+  const testimonials = [
     {
-      name: "Starter",
-      price: "29",
-      period: "month",
-      description: "Perfect for small teams getting started",
-      features: [
-        "Up to 5 users",
-        "500 contacts",
-        "Basic CRM features",
-        "Email integration",
-        "Mobile app access",
-        "Basic reporting",
-        "24/7 chat support"
-      ],
-      highlighted: false,
-      trialDays: 7
+      name: "Sarah Johnson",
+      company: "Tech Innovations Ltd",
+      text: "Averox transformed our sales process. We've seen a 40% increase in conversion rates since implementing the platform.",
+      rating: 5
     },
     {
-      name: "Professional",
-      price: "59",
-      period: "month",
-      description: "Advanced features for growing businesses",
-      features: [
-        "Up to 25 users",
-        "5,000 contacts",
-        "Advanced AI features",
-        "Marketing automation",
-        "Sales forecasting",
-        "Custom workflows",
-        "API access",
-        "Phone support"
-      ],
-      highlighted: true,
-      trialDays: 7,
-      mostPopular: true
+      name: "Michael Chen",
+      company: "Global Solutions Inc",
+      text: "The AI-powered insights have been game-changing for our business intelligence and decision making.",
+      rating: 5
     },
     {
-      name: "Enterprise",
-      price: "99",
-      period: "month",
-      description: "Complete solution with manufacturing",
-      features: [
-        "Unlimited users",
-        "Unlimited contacts",
-        "Full Manufacturing Suite",
-        "Advanced AI & Analytics",
-        "White-label options",
-        "Custom integrations",
-        "Dedicated account manager",
-        "SLA guarantee"
-      ],
-      highlighted: false,
-      trialDays: 7
-    },
-    {
-      name: "Enterprise Plus",
-      price: "199",
-      period: "month",
-      description: "Ultimate Business AI with everything",
-      features: [
-        "Everything in Enterprise",
-        "Multi-company management",
-        "Advanced compliance tools",
-        "Custom AI training",
-        "On-premise deployment",
-        "24/7 phone support",
-        "Implementation specialist",
-        "Priority feature requests"
-      ],
-      highlighted: false,
-      trialDays: 14
-    }
-  ];
-
-  const aiCapabilities = [
-    {
-      title: "AI Business Assistant",
-      description: "Your 24/7 virtual business consultant that learns your company and provides intelligent insights",
-      icon: <Brain className="h-8 w-8" />,
-      features: ["Natural language queries", "Business insights", "Task automation", "Performance analysis"]
-    },
-    {
-      title: "Predictive Analytics Engine",
-      description: "Advanced machine learning that predicts customer behavior, sales outcomes, and market trends",
-      icon: <TrendingUp className="h-8 w-8" />,
-      features: ["Customer churn prediction", "Sales forecasting", "Market analysis", "Risk assessment"]
-    },
-    {
-      title: "Intelligent Automation",
-      description: "Smart workflows that adapt and optimize themselves based on your business patterns",
-      icon: <Zap className="h-8 w-8" />,
-      features: ["Smart routing", "Auto-prioritization", "Dynamic scheduling", "Adaptive processes"]
-    },
-    {
-      title: "Conversational AI Bot",
-      description: "Advanced chatbot that handles customer inquiries, qualifies leads, and books appointments",
-      icon: <MessageSquare className="h-8 w-8" />,
-      features: ["Natural conversations", "Lead qualification", "Appointment booking", "Multi-language support"]
+      name: "Emma Davis",
+      company: "Digital Marketing Pro",
+      text: "Best CRM we've ever used. The automation features save us hours every week.",
+      rating: 5
     }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header Navigation */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <Brain className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">Averox Business AI</span>
-            </div>
-            
-            <nav className="hidden md:flex items-center gap-6">
-              <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
-              <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">Pricing</a>
-              <a href="#comparison" className="text-gray-600 hover:text-blue-600 transition-colors">vs Competitors</a>
-              <a href="#migration" className="text-gray-600 hover:text-blue-600 transition-colors">Migration</a>
-            </nav>
-            
-            <div className="flex items-center gap-3">
-              <Button 
-                variant="ghost" 
-                onClick={handleLogin}
-                className="text-gray-600 hover:text-blue-600"
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Button>
-              <Button 
-                onClick={handleStartTrial}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-              >
-                Start Free Trial
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
-          <div className="text-center">
-            <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0">
-              🚀 Now Available - Revolutionary Business AI
-            </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Averox Business AI
-              </span>
-              <br />
-              <span className="text-3xl md:text-5xl">Beats Every Competitor</span>
+      <header className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-700 text-white">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative container mx-auto px-4 py-20">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="mb-6">
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                <Sparkles className="mr-1 h-3 w-3" />
+                AI-Powered Business Platform
+              </Badge>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+              Transform Your Business with Averox
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto">
-              The only CRM that combines <strong>advanced AI</strong>, <strong>SAP-level manufacturing</strong>, 
-              and <strong>enterprise security</strong> at a fraction of the cost. 
-              <span className="text-blue-600 font-semibold">Setup in 1 day, not 6 months.</span>
+            <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
+              The complete AI-powered platform for customer relationship management, 
+              sales automation, and business intelligence that grows with your success.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                onClick={handleStartTrial}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 text-lg"
+                className="bg-white text-blue-600 hover:bg-blue-50 text-lg px-8 py-6"
+                onClick={() => {
+                  const starterPlan = subscriptionPackages.find(p => p.name === 'Starter');
+                  if (starterPlan) handlePlanSelect(starterPlan);
+                }}
               >
-                Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
+                Start Free Trial
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                onClick={handleBookDemo}
-                className="px-8 py-3 text-lg border-2"
+                className="border-white text-white hover:bg-white hover:text-blue-600 text-lg px-8 py-6"
+                onClick={() => setLocation('/auth')}
               >
-                <Download className="mr-2 h-5 w-5" />
-                Book Demo Call
+                Sign In
               </Button>
             </div>
-
-            {/* Trust Indicators */}
-            <div className="flex flex-wrap justify-center items-center gap-8 text-gray-500">
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-500 fill-current" />
-                <span>4.9/5 Rating</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-green-500" />
-                <span>Enterprise Security</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-500" />
-                <span>1-Day Setup</span>
-              </div>
-            </div>
+            <p className="text-sm text-blue-200 mt-4">
+              14-day free trial • No credit card required • Cancel anytime
+            </p>
           </div>
         </div>
-      </div>
-
-      {/* Comparison Table */}
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Averox Destroys the Competition
-            </h2>
-            <p className="text-xl text-gray-600">See how we stack up against industry leaders</p>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse bg-white rounded-lg shadow-lg overflow-hidden">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="p-4 text-left font-semibold">Platform</th>
-                  <th className="p-4 text-center font-semibold">Price/User/Month</th>
-                  <th className="p-4 text-center font-semibold">Setup Time</th>
-                  <th className="p-4 text-center font-semibold">AI Capabilities</th>
-                  <th className="p-4 text-center font-semibold">Manufacturing</th>
-                  <th className="p-4 text-center font-semibold">Encryption</th>
-                </tr>
-              </thead>
-              <tbody>
-                {competitors.map((competitor, index) => (
-                  <tr 
-                    key={competitor.name}
-                    className={`border-t ${competitor.highlight ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200' : ''}`}
-                  >
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white ${
-                          competitor.highlight ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-gray-400'
-                        }`}>
-                          {competitor.logo}
-                        </div>
-                        <span className="font-medium">{competitor.name}</span>
-                        {competitor.highlight && <Badge className="bg-green-100 text-green-800">Recommended</Badge>}
-                      </div>
-                    </td>
-                    <td className="p-4 text-center">{competitor.price}</td>
-                    <td className="p-4 text-center">{competitor.setup}</td>
-                    <td className="p-4 text-center">{competitor.ai}</td>
-                    <td className="p-4 text-center">{competitor.manufacturing}</td>
-                    <td className="p-4 text-center">{competitor.encryption}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="text-center mt-8">
-            <Button size="lg" className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white">
-              Switch to Averox Today - Save 70%
-            </Button>
-          </div>
-        </div>
-      </div>
+      </header>
 
       {/* Features Section */}
-      <div className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Complete Business Solution
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Everything You Need to Grow Your Business
             </h2>
-            <p className="text-xl text-gray-600">Everything you need from CRM to Manufacturing</p>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              From customer management to advanced analytics, Averox provides all the tools 
+              you need to scale your business efficiently.
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
                 <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
-                      {feature.icon}
-                    </div>
-                    <CardTitle className="text-lg">{feature.category}</CardTitle>
-                  </div>
+                  <div className="mb-4">{feature.icon}</div>
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {feature.items.map((item, itemIndex) => (
-                      <li key={itemIndex} className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                        <span className="text-sm">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-gray-600">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Advanced AI Capabilities */}
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why We Call It <span className="text-blue-600">Business AI</span>
-            </h2>
-            <p className="text-xl text-gray-600">The most advanced AI engine built specifically for business</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-            {aiCapabilities.map((capability, index) => (
-              <Card key={index} className="p-8 hover:shadow-xl transition-shadow border-2 hover:border-blue-200">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg text-blue-600">
-                    {capability.icon}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-2">{capability.title}</h3>
-                    <p className="text-gray-600 mb-4">{capability.description}</p>
-                    <ul className="grid grid-cols-2 gap-2">
-                      {capability.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-center gap-2 text-sm">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8">
-            <h3 className="text-2xl font-bold mb-4">🤖 Meet Your AI Business Assistant</h3>
-            <p className="text-lg text-gray-600 mb-6">
-              "Hello! I'm your AI assistant. I can analyze your sales data, predict customer behavior, 
-              automate your workflows, and answer complex business questions in natural language. 
-              Try asking me: 'What are my top 5 opportunities this month?' or 'Predict next quarter's revenue.'"
-            </p>
-            <Button 
-              onClick={handleStartTrial}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-            >
-              <MessageSquare className="mr-2 h-5 w-5" />
-              Chat with AI Assistant
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Subscription Plans */}
-      <div className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Choose Your Business AI Plan
-            </h2>
-            <p className="text-xl text-gray-600">Start with 7-day free trial • No credit card required • Cancel anytime</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {subscriptionPlans.map((plan, index) => (
-              <Card key={index} className={`relative p-6 ${plan.highlighted ? 'border-2 border-blue-500 shadow-xl scale-105' : ''}`}>
-                {plan.mostPopular && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                    Most Popular
-                  </Badge>
-                )}
-                
-                <div className="text-center mb-6">
-                  <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                  <div className="mb-2">
-                    <span className="text-3xl font-bold">${plan.price}</span>
-                    <span className="text-gray-600">/{plan.period}</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{plan.description}</p>
-                  <Badge className="mt-2 bg-green-100 text-green-800">
-                    {plan.trialDays}-day free trial
-                  </Badge>
-                </div>
-
-                <ul className="space-y-3 mb-6">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Button 
-                  onClick={handleStartTrial}
-                  className={`w-full ${plan.highlighted 
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white' 
-                    : 'border border-gray-300 hover:bg-gray-50'
-                  }`}
-                  variant={plan.highlighted ? 'default' : 'outline'}
-                >
-                  Start {plan.trialDays}-Day Trial
-                </Button>
-              </Card>
-            ))}
-          </div>
-
-          <div className="text-center mt-12">
-            <p className="text-gray-600 mb-4">Need a custom solution for your enterprise?</p>
-            <Button 
-              variant="outline" 
-              size="lg"
-              onClick={handleContactSales}
-            >
-              <Phone className="mr-2 h-5 w-5" />
-              Contact Sales for Custom Pricing
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Migration Section */}
-      <div className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+      {/* Pricing Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              One-Click Migration from Any Platform
+              Simple, Transparent Pricing
             </h2>
-            <p className="text-xl opacity-90">Don't start from scratch. We'll move your data instantly.</p>
+            <p className="text-xl text-gray-600">
+              Choose the plan that fits your business needs. Upgrade or downgrade anytime.
+            </p>
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
-            {migrationSources.map((source, index) => (
-              <Card key={index} className="bg-white/10 border-white/20 text-center p-4">
-                <h3 className="font-semibold mb-2">{source.name}</h3>
-                <Badge className="bg-green-500 text-white">
-                  {source.time}
-                </Badge>
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {subscriptionPackages.map((pkg) => (
+              <Card 
+                key={pkg.id} 
+                className={`relative border-2 hover:shadow-xl transition-all duration-300 ${
+                  pkg.name === 'Professional' ? 'border-blue-500 scale-105' : 'border-gray-200'
+                }`}
+              >
+                {pkg.name === 'Professional' && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <Badge className="bg-blue-500 text-white px-4 py-1">
+                      Most Popular
+                    </Badge>
+                  </div>
+                )}
+                <CardHeader className="text-center">
+                  <div className="mb-2">
+                    {pkg.name === 'Enterprise' && <Crown className="h-8 w-8 text-yellow-500 mx-auto" />}
+                    {pkg.name === 'Professional' && <Zap className="h-8 w-8 text-blue-500 mx-auto" />}
+                    {pkg.name === 'Starter' && <Building2 className="h-8 w-8 text-green-500 mx-auto" />}
+                  </div>
+                  <CardTitle className="text-2xl">{pkg.name}</CardTitle>
+                  <div className="text-4xl font-bold text-blue-600 mb-2">
+                    ${pkg.price}
+                    <span className="text-lg text-gray-500 font-normal">/month</span>
+                  </div>
+                  <p className="text-gray-600">{pkg.description}</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-3">
+                    {pkg.features.slice(0, 5).map((feature, index) => (
+                      <li key={index} className="flex items-center">
+                        <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="pt-4 space-y-2 text-sm text-gray-600">
+                    <div className="flex justify-between">
+                      <span>Users:</span>
+                      <span className="font-semibold">{pkg.maxUsers}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Contacts:</span>
+                      <span className="font-semibold">{pkg.maxContacts.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Storage:</span>
+                      <span className="font-semibold">{pkg.maxStorage}GB</span>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full mt-6" 
+                    variant={pkg.name === 'Professional' ? 'default' : 'outline'}
+                    onClick={() => handlePlanSelect(pkg)}
+                  >
+                    Start Free Trial
+                  </Button>
+                </CardContent>
               </Card>
             ))}
           </div>
-
-          <div className="text-center">
-            <Button 
-              size="lg" 
-              onClick={handleStartTrial}
-              className="bg-white text-blue-600 hover:bg-gray-100"
-            >
-              <Download className="mr-2 h-5 w-5" />
-              Start Migration Now
-            </Button>
-          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Additional Features Showcase */}
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Complete Business Solution
+      {/* Testimonials Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Trusted by Thousands of Businesses
             </h2>
-            <p className="text-xl text-gray-600">Everything your business needs in one powerful platform</p>
+            <p className="text-xl text-gray-600">
+              See what our customers say about transforming their business with Averox.
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="p-6 text-center hover:shadow-xl transition-shadow border-2 hover:border-blue-200">
-              <div className="p-3 bg-blue-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Phone className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Voice & Telephony</h3>
-              <ul className="text-sm text-gray-600 space-y-2 text-left">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Click-to-call functionality
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Call recording & transcription
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  IVR system with AI routing
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Conference calling
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  SMS integration
-                </li>
-              </ul>
-            </Card>
-
-            <Card className="p-6 text-center hover:shadow-xl transition-shadow border-2 hover:border-green-200">
-              <div className="p-3 bg-green-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <MessageSquare className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Omnichannel Messaging</h3>
-              <ul className="text-sm text-gray-600 space-y-2 text-left">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  WhatsApp Business API
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Facebook Messenger
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  LinkedIn messaging
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Twitter DMs
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Instagram direct
-                </li>
-              </ul>
-            </Card>
-
-            <Card className="p-6 text-center hover:shadow-xl transition-shadow border-2 hover:border-purple-200">
-              <div className="p-3 bg-purple-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Target className="h-8 w-8 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Support & Service</h3>
-              <ul className="text-sm text-gray-600 space-y-2 text-left">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  AI-powered support tickets
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Knowledge base management
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Customer portal
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  SLA management
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Live chat with AI bot
-                </li>
-              </ul>
-            </Card>
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {testimonials.map((testimonial, index) => (
+              <Card key={index} className="border-0 shadow-lg">
+                <CardContent className="pt-6">
+                  <div className="flex mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-gray-600 mb-6 italic">"{testimonial.text}"</p>
+                  <div>
+                    <div className="font-semibold">{testimonial.name}</div>
+                    <div className="text-sm text-gray-500">{testimonial.company}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Login / Get Started Section */}
-      <div className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-700 text-white">
+        <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to Transform Your Business?
           </h2>
-          <p className="text-xl mb-8 opacity-90">
-            Join thousands of companies who've already made the switch to Averox Business AI
+          <p className="text-xl mb-8 text-blue-100 max-w-2xl mx-auto">
+            Join thousands of businesses already using Averox to boost their sales, 
+            improve customer relationships, and drive growth.
           </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto mb-8">
-            {/* New Customer */}
-            <Card className="p-6 text-center bg-white text-gray-900">
-              <h3 className="text-xl font-bold mb-3 text-blue-600">New to Averox?</h3>
-              <p className="text-gray-600 mb-4">Start your 7-day free trial now</p>
-              <Button size="lg" onClick={handleStartTrial} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white mb-3">
-                <Users className="mr-2 h-5 w-5" />
-                Start Free Trial
-              </Button>
-              <p className="text-xs text-gray-500">No credit card required • Setup in minutes</p>
-            </Card>
-
-            {/* Existing Customer */}
-            <Card className="p-6 text-center bg-white text-gray-900">
-              <h3 className="text-xl font-bold mb-3 text-green-600">Already a Customer?</h3>
-              <p className="text-gray-600 mb-4">Sign in to your dashboard</p>
-              <Button size="lg" variant="outline" className="w-full mb-3" onClick={handleLogin}>
-                <LogIn className="mr-2 h-5 w-5" />
-                Sign In to Dashboard
-              </Button>
-              <p className="text-xs text-gray-500">Access your Business AI platform</p>
-            </Card>
-          </div>
-
-          <div className="border-t border-white/20 pt-8">
-            <p className="mb-4 opacity-90">Want to see it in action first?</p>
-            <Button size="lg" variant="outline" onClick={handleBookDemo} className="border-white text-white hover:bg-white hover:text-blue-600 mr-4">
-              <Calendar className="mr-2 h-5 w-5" />
-              Book Live Demo
-            </Button>
-            <Button size="lg" variant="outline" onClick={handleContactSales} className="border-white text-white hover:bg-white hover:text-blue-600">
-              <MessageSquare className="mr-2 h-5 w-5" />
-              Chat with Sales
-            </Button>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-8 text-gray-200 mt-8">
-            <span>✓ 7-day free trial</span>
-            <span>✓ Free migration assistance</span>
-            <span>✓ 24/7 expert support</span>
-            <span>✓ No setup fees</span>
-          </div>
+          <Button 
+            size="lg" 
+            className="bg-white text-blue-600 hover:bg-blue-50 text-lg px-8 py-6"
+            onClick={() => {
+              const professionalPlan = subscriptionPackages.find(p => p.name === 'Professional');
+              if (professionalPlan) handlePlanSelect(professionalPlan);
+            }}
+          >
+            Start Your Free Trial Today
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
-      <footer className="bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AV</span>
-              </div>
-              <span className="font-bold text-xl">Averox Business AI</span>
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-xl font-bold mb-4">Averox Business AI</h3>
+              <p className="text-gray-400">
+                The complete AI-powered platform for modern businesses.
+              </p>
             </div>
-            <div className="flex gap-6 text-gray-600">
-              <a href="#" className="hover:text-blue-600">Privacy</a>
-              <a href="#" className="hover:text-blue-600">Terms</a>
-              <a href="#" className="hover:text-blue-600">Support</a>
-              <a href="#" className="hover:text-blue-600">Contact</a>
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>CRM Features</li>
+                <li>Sales Pipeline</li>
+                <li>Analytics</li>
+                <li>Integrations</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>Help Center</li>
+                <li>Documentation</li>
+                <li>Contact Support</li>
+                <li>Training</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Contact</h4>
+              <div className="space-y-2 text-gray-400">
+                <div className="flex items-center">
+                  <Mail className="h-4 w-4 mr-2" />
+                  support@averox.com
+                </div>
+                <div className="flex items-center">
+                  <Phone className="h-4 w-4 mr-2" />
+                  1-800-AVEROX
+                </div>
+                <div className="flex items-center">
+                  <Globe className="h-4 w-4 mr-2" />
+                  www.averox.com
+                </div>
+              </div>
             </div>
           </div>
-          <div className="border-t border-gray-200 mt-8 pt-8 text-center text-gray-500">
-            <p>&copy; 2025 Averox Business AI. All rights reserved. Built with enterprise-grade security.</p>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 Averox Business AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
+
+      {/* Signup Dialog */}
+      <Dialog open={isSignupOpen} onOpenChange={setIsSignupOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {signupStep === 'info' ? `Sign up for ${selectedPlan?.name}` : 
+               signupStep === 'payment' ? 'Payment Details' : 'Welcome to Averox!'}
+            </DialogTitle>
+            <DialogDescription>
+              {signupStep === 'info' ? 'Create your account to get started with your free trial' :
+               signupStep === 'payment' ? 'Secure payment processing with Stripe' :
+               'Your account has been created successfully!'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {signupStep === 'info' && (
+            <form onSubmit={handleSignupSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={signupData.firstName}
+                    onChange={(e) => setSignupData(prev => ({ ...prev, firstName: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={signupData.lastName}
+                    onChange={(e) => setSignupData(prev => ({ ...prev, lastName: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={signupData.email}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="company">Company Name</Label>
+                <Input
+                  id="company"
+                  value={signupData.company}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, company: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="subdomain">Subdomain</Label>
+                <Input
+                  id="subdomain"
+                  value={signupData.subdomain}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, subdomain: e.target.value }))}
+                  placeholder="yourcompany"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Your URL will be: {signupData.subdomain}.averox.com
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={signupData.password}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={signupData.confirmPassword}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
+                {registerMutation.isPending ? "Creating Account..." : "Create Account"}
+              </Button>
+            </form>
+          )}
+
+          {signupStep === 'payment' && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-900">Selected Plan: {selectedPlan?.name}</h4>
+                <p className="text-blue-700">${selectedPlan?.price}/month</p>
+                <p className="text-sm text-blue-600 mt-2">
+                  14-day free trial • Cancel anytime
+                </p>
+              </div>
+              <p className="text-center text-gray-600">
+                Payment integration will be set up here with Stripe.
+                For now, click below to complete your registration.
+              </p>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  setSignupStep('complete');
+                  toast({
+                    title: "Account Created!",
+                    description: "Welcome to Averox! You can now sign in to your account.",
+                  });
+                }}
+              >
+                Complete Registration
+              </Button>
+            </div>
+          )}
+
+          {signupStep === 'complete' && (
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <Check className="h-8 w-8 text-green-600" />
+              </div>
+              <p className="text-gray-600">
+                Your account has been created successfully! You can now sign in and start using Averox.
+              </p>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  setIsSignupOpen(false);
+                  setLocation('/auth');
+                }}
+              >
+                Sign In to Your Account
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
