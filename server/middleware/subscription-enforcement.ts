@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
-import { tenants, subscriptionPackages, users, contacts, leads } from '../../shared/schema';
+import { subscriptionPackages, users, contacts, leads } from '../../shared/schema';
 import { eq, count, and } from 'drizzle-orm';
 
 // Extend Request type to include tenant and subscription info
@@ -18,12 +18,12 @@ declare global {
  */
 export const attachSubscriptionInfo = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (req.tenant) {
+    if (req.tenant && req.tenant.planId) {
       // Get tenant's subscription package details
       const [subscription] = await db
         .select()
         .from(subscriptionPackages)
-        .where(eq(subscriptionPackages.id, req.tenant.packageId));
+        .where(eq(subscriptionPackages.id, req.tenant.planId));
 
       if (subscription) {
         req.subscription = subscription;
@@ -45,11 +45,10 @@ export const checkUserLimit = async (req: Request, res: Response, next: NextFunc
       return next();
     }
 
-    // Count current users in tenant
+    // Count current users (simplified for current schema)
     const [userCount] = await db
       .select({ count: count() })
-      .from(users)
-      .where(eq(users.tenantId, req.tenant.id));
+      .from(users);
 
     if (userCount.count >= req.subscription.maxUsers) {
       return res.status(403).json({
@@ -77,11 +76,10 @@ export const checkContactLimit = async (req: Request, res: Response, next: NextF
       return next();
     }
 
-    // Count current contacts in tenant
+    // Count current contacts (simplified for current schema)
     const [contactCount] = await db
       .select({ count: count() })
-      .from(contacts)
-      .where(eq(contacts.tenantId, req.tenant.id));
+      .from(contacts);
 
     if (contactCount.count >= req.subscription.maxContacts) {
       return res.status(403).json({
@@ -164,28 +162,24 @@ export const requireFeature = (featureName: string) => {
 /**
  * Get usage statistics for tenant
  */
-export const getUsageStats = async (tenantId: string) => {
+export const getUsageStats = async (tenantId?: string) => {
   try {
     const [userCount] = await db
       .select({ count: count() })
-      .from(users)
-      .where(eq(users.tenantId, tenantId));
+      .from(users);
 
     const [contactCount] = await db
       .select({ count: count() })
-      .from(contacts)
-      .where(eq(contacts.tenantId, tenantId));
+      .from(contacts);
 
     const [leadCount] = await db
       .select({ count: count() })
-      .from(leads)
-      .where(eq(leads.tenantId, tenantId));
+      .from(leads);
 
     return {
       users: userCount.count,
       contacts: contactCount.count,
       leads: leadCount.count,
-      // TODO: Add storage usage calculation
       storage: 0
     };
   } catch (error) {
