@@ -236,11 +236,34 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       <div className="flex items-center justify-center h-16 px-4 border-b border-neutral-200">
         <div className="flex flex-col items-center">
           <Link href="/" className="flex flex-col items-center hover:opacity-80 transition-opacity">
-            <img 
-              src="/averox-logo.png" 
-              alt="Averox Logo" 
-              className="h-10 w-auto mb-1"
-            />
+            <svg 
+              width="120" 
+              height="32" 
+              viewBox="0 0 400 80" 
+              className="h-8 w-auto mb-1"
+            >
+              <defs>
+                <linearGradient id="averoxGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#FF69B4" />
+                  <stop offset="20%" stopColor="#DA70D6" />
+                  <stop offset="40%" stopColor="#9370DB" />
+                  <stop offset="60%" stopColor="#6495ED" />
+                  <stop offset="80%" stopColor="#4169E1" />
+                  <stop offset="100%" stopColor="#0000FF" />
+                </linearGradient>
+              </defs>
+              <text 
+                x="10" 
+                y="50" 
+                fontSize="42" 
+                fontWeight="bold" 
+                fontFamily="Arial, sans-serif"
+                fill="url(#averoxGradient)"
+                letterSpacing="2px"
+              >
+                AVEROX
+              </text>
+            </svg>
             <span className="text-xs font-semibold text-gray-700">Business AI</span>
           </Link>
         </div>
