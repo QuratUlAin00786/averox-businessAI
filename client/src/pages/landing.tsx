@@ -220,7 +220,7 @@ export default function LandingPage() {
             <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-10 py-6 text-xl font-semibold">
               Start Free Trial → Migrate in 5 Minutes
             </Button>
-            <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-10 py-6 text-xl">
+            <Button size="lg" variant="outline" className="border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-600 hover:text-white px-10 py-6 text-xl">
               See Live Demo
             </Button>
           </div>

@@ -39,6 +39,13 @@ import {
   checkTenantUserPermission,
   trackApiUsage 
 } from "./middleware/tenant-middleware";
+import {
+  attachSubscriptionInfo,
+  checkUserLimit,
+  checkContactLimit,
+  requireFeature,
+  addUsageInfo
+} from "./middleware/subscription-enforcement";
 import { db } from "./db";
 import { eq, sql, desc, asc, and, or, isNull, gt, lt } from "drizzle-orm";
 import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryption-middleware";
