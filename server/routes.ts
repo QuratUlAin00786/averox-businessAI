@@ -34,18 +34,18 @@ import {
 } from "./tenant-routes";
 import { setupSaaSManagementRoutes } from "./saas-management-routes";
 import { 
+  attachSubscriptionInfo, 
+  checkUserLimit, 
+  checkContactLimit, 
+  requireFeature,
+  addUsageInfo 
+} from "./middleware/subscription-enforcement";
+import { 
   identifyTenant, 
   requireTenant, 
   checkTenantUserPermission,
   trackApiUsage 
 } from "./middleware/tenant-middleware";
-import {
-  attachSubscriptionInfo,
-  checkUserLimit,
-  checkContactLimit,
-  requireFeature,
-  addUsageInfo
-} from "./middleware/subscription-enforcement";
 import { db } from "./db";
 import { eq, sql, desc, asc, and, or, isNull, gt, lt } from "drizzle-orm";
 import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryption-middleware";
@@ -1289,7 +1289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/users', async (req: Request, res: Response) => {
+  app.post('/api/users', attachSubscriptionInfo, checkUserLimit, async (req: Request, res: Response) => {
     try {
       if (req.user?.role !== 'Admin') {
         return res.status(403).json({ error: 'Insufficient permissions' });
