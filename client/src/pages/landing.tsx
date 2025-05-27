@@ -26,51 +26,78 @@ interface SubscriptionPackage {
 const comparisonData = {
   features: [
     {
-      category: "Core CRM Features",
+      category: "Core CRM & Sales",
       items: [
-        { feature: "Contact Management", averox: "✓", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
-        { feature: "Lead Tracking", averox: "✓", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
-        { feature: "Opportunity Management", averox: "✓", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
-        { feature: "Task & Calendar Management", averox: "✓", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
-      ]
-    },
-    {
-      category: "Advanced Features",
-      items: [
-        { feature: "AI-Powered Insights", averox: "✓ Built-in", salesforce: "$ Extra", hubspot: "$ Extra", dynamics: "$ Extra", zoho: "Limited" },
-        { feature: "Advanced Manufacturing", averox: "✓ Full Suite", salesforce: "✗", hubspot: "✗", dynamics: "$ Separate", zoho: "✗" },
-        { feature: "Enterprise Security (AES-256)", averox: "✓ Included", salesforce: "$ Shield Extra", hubspot: "$ Enterprise Only", dynamics: "$ Premium", zoho: "$ Enterprise" },
-        { feature: "Multi-tenant Architecture", averox: "✓ Native", salesforce: "Limited", hubspot: "Limited", dynamics: "Limited", zoho: "Basic" },
-        { feature: "Custom Workflows", averox: "✓ Unlimited", salesforce: "$ Professional+", hubspot: "$ Professional+", dynamics: "$ Professional+", zoho: "$ Professional+" },
-        { feature: "API Access", averox: "✓ Full Access", salesforce: "$ API Calls", hubspot: "$ Rate Limited", dynamics: "$ Rate Limited", zoho: "$ Limited" },
+        { feature: "Contact & Account Management", averox: "✓ Advanced", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
+        { feature: "Lead Tracking & Conversion", averox: "✓ AI-Powered", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
+        { feature: "Opportunity Pipeline", averox: "✓ Predictive", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
+        { feature: "Task & Calendar Management", averox: "✓ Smart", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
+        { feature: "Proposal Generation", averox: "✓ Advanced Builder", salesforce: "$ CPQ Extra", hubspot: "$ Sales Hub", dynamics: "$ Sales Insights", zoho: "$ CRM Plus" },
+        { feature: "Sales Reporting & Analytics", averox: "✓ Real-time AI", salesforce: "$ Analytics+", hubspot: "$ Professional+", dynamics: "$ Premium", zoho: "$ Analytics+" },
       ]
     },
     {
       category: "Manufacturing & Operations",
       items: [
         { feature: "Materials Management (MRP)", averox: "✓ SAP-Level", salesforce: "✗", hubspot: "✗", dynamics: "$ Separate ERP", zoho: "$ Separate" },
-        { feature: "Inventory Management", averox: "✓ Advanced", salesforce: "✗", hubspot: "✗", dynamics: "$ Extra", zoho: "Basic" },
-        { feature: "Production Planning", averox: "✓ Full BOM", salesforce: "✗", hubspot: "✗", dynamics: "$ Manufacturing", zoho: "✗" },
-        { feature: "Quality Control", averox: "✓ Complete", salesforce: "✗", hubspot: "✗", dynamics: "$ Extra", zoho: "✗" },
-        { feature: "Warehouse Management", averox: "✓ Multi-location", salesforce: "✗", hubspot: "✗", dynamics: "$ WMS", zoho: "Basic" },
+        { feature: "Production Planning & BOM", averox: "✓ Complete", salesforce: "✗", hubspot: "✗", dynamics: "$ Manufacturing", zoho: "✗" },
+        { feature: "Inventory & Warehouse Mgmt", averox: "✓ Multi-location", salesforce: "✗", hubspot: "✗", dynamics: "$ Supply Chain", zoho: "$ Inventory+" },
+        { feature: "Quality Control & Compliance", averox: "✓ Full Suite", salesforce: "✗", hubspot: "✗", dynamics: "$ Extra", zoho: "✗" },
+        { feature: "Purchase Orders & Procurement", averox: "✓ Automated", salesforce: "✗", hubspot: "✗", dynamics: "$ Procurement", zoho: "$ Books Integration" },
+        { feature: "Product Lifecycle Management", averox: "✓ Complete", salesforce: "✗", hubspot: "✗", dynamics: "$ PLM Module", zoho: "✗" },
       ]
     },
     {
-      category: "Integration & Migration",
+      category: "E-commerce & Digital Store",
       items: [
-        { feature: "One-Click Migration", averox: "✓ From Any CRM", salesforce: "✗", hubspot: "Manual Only", dynamics: "$ Consulting", zoho: "Manual Only" },
+        { feature: "Built-in E-commerce Store", averox: "✓ Full Platform", salesforce: "✗", hubspot: "$ Commerce Hub", dynamics: "$ Commerce", zoho: "$ Commerce" },
+        { feature: "Shopify Integration", averox: "✓ Native", salesforce: "$ Third-party", hubspot: "$ E-commerce Bridge", dynamics: "$ Connector", zoho: "$ Integration" },
+        { feature: "Product Catalog Management", averox: "✓ Advanced", salesforce: "$ Product Cloud", hubspot: "$ CMS Hub", dynamics: "$ Marketing", zoho: "$ Commerce" },
+        { feature: "Order Management System", averox: "✓ Complete", salesforce: "$ Order Management", hubspot: "$ Operations Hub", dynamics: "$ Sales", zoho: "$ Inventory" },
+        { feature: "Payment Processing", averox: "✓ Multi-gateway", salesforce: "$ Third-party", hubspot: "$ Payments", dynamics: "$ Third-party", zoho: "$ Third-party" },
+        { feature: "Multi-channel Sales", averox: "✓ Unified", salesforce: "$ Commerce Cloud", hubspot: "$ Multi-touch", dynamics: "$ Omnichannel", zoho: "$ Social" },
+      ]
+    },
+    {
+      category: "Communication & Support",
+      items: [
+        { feature: "Multi-channel Communication", averox: "✓ All Channels", salesforce: "$ Service Cloud", hubspot: "$ Service Hub", dynamics: "$ Customer Service", zoho: "$ Desk" },
+        { feature: "Support Ticket Management", averox: "✓ Advanced", salesforce: "$ Service Cloud", hubspot: "$ Service Hub", dynamics: "$ Customer Service", zoho: "$ Desk" },
+        { feature: "Knowledge Base", averox: "✓ Built-in", salesforce: "$ Knowledge", hubspot: "$ Service Hub", dynamics: "$ Portal", zoho: "$ Desk" },
+        { feature: "Live Chat & Messaging", averox: "✓ Native", salesforce: "$ Live Agent", hubspot: "$ Conversations", dynamics: "$ Chat", zoho: "$ SalesIQ" },
+        { feature: "Email Marketing", averox: "✓ Advanced", salesforce: "$ Marketing Cloud", hubspot: "$ Marketing Hub", dynamics: "$ Marketing", zoho: "$ Campaigns" },
+        { feature: "Social Media Management", averox: "✓ Complete", salesforce: "$ Social Studio", hubspot: "$ Marketing Hub", dynamics: "$ Social Engagement", zoho: "$ Social" },
+      ]
+    },
+    {
+      category: "Automation & AI",
+      items: [
+        { feature: "Workflow Automation", averox: "✓ Unlimited", salesforce: "$ Process Builder", hubspot: "$ Professional+", dynamics: "$ Power Automate", zoho: "$ Professional+" },
+        { feature: "AI-Powered Insights", averox: "✓ Built-in", salesforce: "$ Einstein Analytics", hubspot: "$ AI Add-ons", dynamics: "$ AI Builder", zoho: "$ Zia AI" },
+        { feature: "Predictive Analytics", averox: "✓ Advanced", salesforce: "$ Einstein Discovery", hubspot: "$ Predictive Lead Scoring", dynamics: "$ Customer Insights", zoho: "$ Analytics Plus" },
+        { feature: "Custom API Integrations", averox: "✓ Unlimited", salesforce: "$ API Limits", hubspot: "$ Rate Limited", dynamics: "$ API Limits", zoho: "$ Developer" },
         { feature: "Zapier Integration", averox: "✓ Native", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
-        { feature: "Custom Integrations", averox: "✓ Unlimited", salesforce: "$ Per Integration", hubspot: "$ Limited", dynamics: "$ Per Integration", zoho: "$ Limited" },
-        { feature: "Data Export", averox: "✓ Always Free", salesforce: "$ Data Export", hubspot: "$ Restrictions", dynamics: "$ Premium", zoho: "$ Limited" },
+        { feature: "Mobile Apps", averox: "✓ Native iOS/Android", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
+      ]
+    },
+    {
+      category: "Enterprise & Security",
+      items: [
+        { feature: "AES-256 Encryption", averox: "✓ CryptoSphere SDK", salesforce: "$ Shield", hubspot: "$ Enterprise", dynamics: "$ Premium", zoho: "$ Enterprise" },
+        { feature: "Multi-tenant Architecture", averox: "✓ White-label Ready", salesforce: "Limited", hubspot: "Limited", dynamics: "Limited", zoho: "Basic" },
+        { feature: "Role-based Access Control", averox: "✓ Granular", salesforce: "✓", hubspot: "$ Professional+", dynamics: "✓", zoho: "$ Professional+" },
+        { feature: "One-Click CRM Migration", averox: "✓ From Any System", salesforce: "✗", hubspot: "Manual", dynamics: "$ Consulting", zoho: "Manual" },
+        { feature: "Data Export Freedom", averox: "✓ Always Free", salesforce: "$ Data Export", hubspot: "$ Restrictions", dynamics: "$ Premium", zoho: "$ Limited" },
+        { feature: "99.9% Uptime SLA", averox: "✓ Guaranteed", salesforce: "✓", hubspot: "✓", dynamics: "✓", zoho: "✓" },
       ]
     }
   ],
   pricing: {
-    averox: { starter: "$29", professional: "$59", enterprise: "$99" },
-    salesforce: { starter: "$25", professional: "$75", enterprise: "$150+" },
-    hubspot: { starter: "$45", professional: "$800", enterprise: "$3,200+" },
-    dynamics: { starter: "$65", professional: "$95", enterprise: "$135+" },
-    zoho: { starter: "$14", professional: "$23", enterprise: "$40+" }
+    averox: { starter: "$29", professional: "$59", enterprise: "$99", description: "All features included" },
+    salesforce: { starter: "$25", professional: "$75", enterprise: "$150+", description: "Many features cost extra" },
+    hubspot: { starter: "$45", professional: "$800", enterprise: "$3,200+", description: "Expensive add-ons required" },
+    dynamics: { starter: "$65", professional: "$95", enterprise: "$135+", description: "Separate modules needed" },
+    zoho: { starter: "$14", professional: "$23", enterprise: "$40+", description: "Limited features per plan" }
   }
 };
 
@@ -309,20 +336,23 @@ export default function LandingPage() {
           </div>
 
           <Tabs defaultValue="core" className="space-y-8">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="core">Core CRM</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced Features</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="core">CRM & Sales</TabsTrigger>
               <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
-              <TabsTrigger value="integration">Integration</TabsTrigger>
+              <TabsTrigger value="ecommerce">E-commerce</TabsTrigger>
+              <TabsTrigger value="communication">Communication</TabsTrigger>
+              <TabsTrigger value="automation">Automation & AI</TabsTrigger>
+              <TabsTrigger value="enterprise">Enterprise</TabsTrigger>
             </TabsList>
 
+            {/* Core CRM & Sales */}
             <TabsContent value="core" className="space-y-4">
               <div className="bg-white rounded-lg overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="text-left p-4 font-semibold text-gray-900">Core CRM Features</th>
+                        <th className="text-left p-4 font-semibold text-gray-900">Core CRM & Sales</th>
                         <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
                         <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
                         <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
@@ -335,27 +365,41 @@ export default function LandingPage() {
                         <tr key={itemIdx} className="border-t hover:bg-gray-50">
                           <td className="p-4 font-medium text-gray-900">{item.feature}</td>
                           <td className="p-4 text-center">
-                            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.averox.includes('✓') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
                               {item.averox}
                             </span>
                           </td>
                           <td className="p-4 text-center">
-                            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.salesforce.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.salesforce.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
                               {item.salesforce}
                             </span>
                           </td>
                           <td className="p-4 text-center">
-                            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.hubspot.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.hubspot.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
                               {item.hubspot}
                             </span>
                           </td>
                           <td className="p-4 text-center">
-                            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.dynamics.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.dynamics.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
                               {item.dynamics}
                             </span>
                           </td>
                           <td className="p-4 text-center">
-                            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.zoho.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.zoho.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
                               {item.zoho}
                             </span>
                           </td>
@@ -367,13 +411,14 @@ export default function LandingPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="advanced" className="space-y-4">
+            {/* Manufacturing & Operations */}
+            <TabsContent value="manufacturing" className="space-y-4">
               <div className="bg-white rounded-lg overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="text-left p-4 font-semibold text-gray-900">Advanced Features</th>
+                        <th className="text-left p-4 font-semibold text-gray-900">Manufacturing & Operations</th>
                         <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
                         <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
                         <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
@@ -432,13 +477,14 @@ export default function LandingPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="manufacturing" className="space-y-4">
+            {/* E-commerce & Digital Store */}
+            <TabsContent value="ecommerce" className="space-y-4">
               <div className="bg-white rounded-lg overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="text-left p-4 font-semibold text-gray-900">Manufacturing & Operations</th>
+                        <th className="text-left p-4 font-semibold text-gray-900">E-commerce & Digital Store</th>
                         <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
                         <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
                         <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
@@ -497,13 +543,14 @@ export default function LandingPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="integration" className="space-y-4">
+            {/* Communication & Support */}
+            <TabsContent value="communication" className="space-y-4">
               <div className="bg-white rounded-lg overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="text-left p-4 font-semibold text-gray-900">Integration & Migration</th>
+                        <th className="text-left p-4 font-semibold text-gray-900">Communication & Support</th>
                         <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
                         <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
                         <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
@@ -513,6 +560,138 @@ export default function LandingPage() {
                     </thead>
                     <tbody>
                       {comparisonData.features[3].items.map((item, itemIdx) => (
+                        <tr key={itemIdx} className="border-t hover:bg-gray-50">
+                          <td className="p-4 font-medium text-gray-900">{item.feature}</td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.averox.includes('✓') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.averox}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.salesforce.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.salesforce.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.salesforce}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.hubspot.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.hubspot.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.hubspot}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.dynamics.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.dynamics.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.dynamics}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.zoho.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.zoho.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.zoho}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Automation & AI */}
+            <TabsContent value="automation" className="space-y-4">
+              <div className="bg-white rounded-lg overflow-hidden shadow-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left p-4 font-semibold text-gray-900">Automation & AI</th>
+                        <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Dynamics 365</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Zoho</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonData.features[4].items.map((item, itemIdx) => (
+                        <tr key={itemIdx} className="border-t hover:bg-gray-50">
+                          <td className="p-4 font-medium text-gray-900">{item.feature}</td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.averox.includes('✓') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.averox}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.salesforce.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.salesforce.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.salesforce}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.hubspot.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.hubspot.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.hubspot}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.dynamics.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.dynamics.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.dynamics}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.zoho.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.zoho.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.zoho}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Enterprise & Security */}
+            <TabsContent value="enterprise" className="space-y-4">
+              <div className="bg-white rounded-lg overflow-hidden shadow-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left p-4 font-semibold text-gray-900">Enterprise & Security</th>
+                        <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Dynamics 365</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Zoho</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonData.features[5].items.map((item, itemIdx) => (
                         <tr key={itemIdx} className="border-t hover:bg-gray-50">
                           <td className="p-4 font-medium text-gray-900">{item.feature}</td>
                           <td className="p-4 text-center">
@@ -693,60 +872,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Competitor Pricing Comparison */}
-          <div className="bg-gray-50 rounded-lg p-8">
-            <h3 className="text-2xl font-bold text-center mb-8">How We Compare on Price</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b-2">
-                    <th className="text-left p-4">Platform</th>
-                    <th className="text-center p-4">Starter</th>
-                    <th className="text-center p-4">Professional</th>
-                    <th className="text-center p-4">Enterprise</th>
-                    <th className="text-center p-4">Hidden Costs</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b bg-blue-50">
-                    <td className="p-4 font-bold text-blue-600">Averox</td>
-                    <td className="p-4 text-center font-bold">$29</td>
-                    <td className="p-4 text-center font-bold">$59</td>
-                    <td className="p-4 text-center font-bold">$99</td>
-                    <td className="p-4 text-center text-green-600 font-bold">None</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="p-4">Salesforce</td>
-                    <td className="p-4 text-center">$25</td>
-                    <td className="p-4 text-center">$75</td>
-                    <td className="p-4 text-center">$150+</td>
-                    <td className="p-4 text-center text-red-600">API calls, Einstein AI, Shield</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="p-4">HubSpot</td>
-                    <td className="p-4 text-center">$45</td>
-                    <td className="p-4 text-center">$800</td>
-                    <td className="p-4 text-center">$3,200+</td>
-                    <td className="p-4 text-center text-red-600">Contacts, API limits, Add-ons</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="p-4">Dynamics 365</td>
-                    <td className="p-4 text-center">$65</td>
-                    <td className="p-4 text-center">$95</td>
-                    <td className="p-4 text-center">$135+</td>
-                    <td className="p-4 text-center text-red-600">Power Platform, Add-ons</td>
-                  </tr>
-                  <tr>
-                    <td className="p-4">Zoho CRM</td>
-                    <td className="p-4 text-center">$14</td>
-                    <td className="p-4 text-center">$23</td>
-                    <td className="p-4 text-center">$40+</td>
-                    <td className="p-4 text-center text-red-600">Storage, Users, Features</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+
         </div>
       </section>
 
