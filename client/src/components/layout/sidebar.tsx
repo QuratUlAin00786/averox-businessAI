@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import * as LucideIcons from "lucide-react";
 import AveroxLogo from "@/assets/AveroxLogo";
+import averoxLogoImg from "@assets/averox logo origingal file.png";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
 import { useSystemSettings, type MenuVisibilitySettings } from "@/hooks/use-system-settings";
@@ -236,7 +237,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
         <div className="flex flex-col items-center">
           <Link href="/" className="flex flex-col items-center">
             <img 
-              src="/attached_assets/averox logo origingal file.png" 
+              src={averoxLogoImg} 
               alt="Averox Logo" 
               className="h-8 w-auto mb-1"
             />
