@@ -241,42 +241,37 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       </div>
       
       <ScrollArea className="flex-1 pt-3 pb-4">
+        {/* Core Section - Always visible */}
         <div className="px-4 mb-2">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Core</p>
         </div>
-        <div className="px-2 space-y-1">
+        <div className="px-2 space-y-1 min-h-[200px]">
           {renderNavItems(getCoreItems())}
         </div>
         
-        {getCommunicationItems().length > 0 && (
-          <>
-            <hr className="my-4 border-neutral-200" />
-            <div className="px-4 mb-2">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Communication</p>
-            </div>
-            <div className="px-2 space-y-1">
-              {renderNavItems(getCommunicationItems())}
-            </div>
-          </>
-        )}
+        {/* Communication Section - Always reserve space */}
+        <hr className="my-4 border-neutral-200" />
+        <div className="px-4 mb-2">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Communication</p>
+        </div>
+        <div className="px-2 space-y-1 min-h-[80px]">
+          {renderNavItems(getCommunicationItems())}
+        </div>
         
-        {getBusinessItems().length > 0 && (
-          <>
-            <hr className="my-4 border-neutral-200" />
-            <div className="px-4 mb-2">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Business</p>
+        {/* Business Section - Always reserve space */}
+        <hr className="my-4 border-neutral-200" />
+        <div className="px-4 mb-2">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Business</p>
+        </div>
+        <div className="px-2 space-y-1 min-h-[120px]">
+          {renderNavItems(getBusinessItems())}
+          {/* Add Manufacturing submenu items after Manufacturing menu item */}
+          {isActive('/manufacturing') && getManufacturingItems().length > 0 && (
+            <div className="mt-1 border-l-2 border-primary pl-2">
+              {renderNavItems(getManufacturingItems())}
             </div>
-            <div className="px-2 space-y-1">
-              {renderNavItems(getBusinessItems())}
-              {/* Add Manufacturing submenu items after Manufacturing menu item */}
-              {isActive('/manufacturing') && getManufacturingItems().length > 0 && (
-                <div className="mt-1 border-l-2 border-primary pl-2">
-                  {renderNavItems(getManufacturingItems())}
-                </div>
-              )}
-            </div>
-          </>
-        )}
+          )}
+        </div>
         
         {getAnalyticsItems().length > 0 && (
           <>
