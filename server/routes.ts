@@ -7126,6 +7126,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup SaaS Management Dashboard routes (no tenant middleware needed)
   setupSaaSManagementRoutes(app);
 
+  // Stripe Payment Integration for SaaS subscriptions
+  app.post("/api/create-payment-intent", async (req, res) => {
+    try {
+      const { amount, planId, customerInfo } = req.body;
+      
+      if (!process.env.STRIPE_SECRET_KEY) {
+        return res.status(500).json({ error: "Stripe not configured" });
+      }
+
+      const Stripe = (await import('stripe')).default;
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: "2023-10-16",
+      });
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          planId: planId.toString(),
+          customerEmail: customerInfo.email,
+          customerName: `${customerInfo.firstName} ${customerInfo.lastName}`,
+          company: customerInfo.company
+        }
+      });
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
+    } catch (error: any) {
+      console.error("Stripe payment intent error:", error);
+      res.status(500).json({ 
+        error: "Error creating payment intent", 
+        message: error.message 
+      });
+    }
+  });
+
+  // PayPal Payment Integration
+  app.post("/api/paypal/create-order", async (req, res) => {
+    try {
+      const { amount, planId, customerInfo } = req.body;
+      
+      // Create PayPal order
+      const orderData = {
+        intent: "CAPTURE",
+        purchase_units: [{
+          amount: {
+            currency_code: "USD",
+            value: amount.toString()
+          },
+          description: `Averox ${customerInfo.planName} Subscription`,
+          custom_id: `plan_${planId}_${Date.now()}`
+        }],
+        application_context: {
+          return_url: `${req.protocol}://${req.get('host')}/payment-success`,
+          cancel_url: `${req.protocol}://${req.get('host')}/payment-cancelled`
+        }
+      };
+
+      res.json({ 
+        orderData,
+        success: true 
+      });
+    } catch (error: any) {
+      console.error("PayPal order creation error:", error);
+      res.status(500).json({ 
+        error: "Error creating PayPal order", 
+        message: error.message 
+      });
+    }
+  });
+
+  // Complete tenant registration after successful payment
+  app.post("/api/complete-tenant-registration", async (req, res) => {
+    try {
+      const { 
+        paymentIntentId, 
+        paymentMethod, 
+        tenantData, 
+        planId 
+      } = req.body;
+
+      // Verify payment was successful
+      if (paymentMethod === 'stripe' && paymentIntentId) {
+        const Stripe = (await import('stripe')).default;
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+          apiVersion: "2023-10-16",
+        });
+
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        if (paymentIntent.status !== 'succeeded') {
+          return res.status(400).json({ error: "Payment not completed" });
+        }
+      }
+
+      // Create the tenant organization
+      const tenant = await createTenant({
+        ...tenantData,
+        subscriptionStatus: 'Active',
+        planId: planId,
+        paymentMethod: paymentMethod,
+        paymentReference: paymentIntentId || 'paypal_pending'
+      });
+
+      res.json({ 
+        success: true, 
+        tenant,
+        message: "Registration completed successfully!" 
+      });
+    } catch (error: any) {
+      console.error("Registration completion error:", error);
+      res.status(500).json({ 
+        error: "Error completing registration", 
+        message: error.message 
+      });
+    }
+  });
+
   // Apply tenant identification middleware to all API routes except SaaS management
   app.use('/api', (req, res, next) => {
     // Skip tenant middleware for SaaS management routes

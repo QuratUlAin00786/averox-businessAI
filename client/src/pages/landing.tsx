@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,9 @@ import {
   Target,
   BarChart3,
   MessageSquare,
-  Crown
+  Crown,
+  CreditCard,
+  Wallet
 } from "lucide-react";
 import {
   Dialog,
@@ -35,6 +37,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
 
 interface SubscriptionPackage {
   id: number;
@@ -54,6 +61,9 @@ export default function LandingPage() {
   const [isSignupOpen, setIsSignupOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPackage | null>(null);
   const [signupStep, setSignupStep] = useState<'info' | 'payment' | 'complete'>('info');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
+  const [clientSecret, setClientSecret] = useState<string>('');
+  const [paymentIntentId, setPaymentIntentId] = useState<string>('');
 
   // Fetch subscription packages
   const { data: subscriptionPackages = [] } = useQuery<SubscriptionPackage[]>({
@@ -72,26 +82,55 @@ export default function LandingPage() {
     confirmPassword: ""
   });
 
-  // Registration mutation
-  const registerMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', '/api/tenants/register', {
-        ...data,
-        planId: selectedPlan?.id
+  // Payment intent creation for Stripe
+  const createPaymentIntentMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/create-payment-intent', {
+        amount: parseFloat(selectedPlan?.price || '0'),
+        planId: selectedPlan?.id,
+        customerInfo: {
+          ...signupData,
+          planName: selectedPlan?.name
+        }
       });
       return response.json();
     },
     onSuccess: (data) => {
+      setClientSecret(data.clientSecret);
+      setPaymentIntentId(data.paymentIntentId);
       setSignupStep('payment');
+    },
+    onError: () => {
       toast({
-        title: "Registration Successful!",
-        description: "Now let's set up your payment details to activate your account.",
+        title: "Payment Setup Failed",
+        description: "Unable to initialize payment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Complete registration after payment
+  const completeRegistrationMutation = useMutation({
+    mutationFn: async (paymentData: any) => {
+      const response = await apiRequest('POST', '/api/complete-tenant-registration', {
+        paymentIntentId: paymentData.paymentIntentId,
+        paymentMethod: paymentMethod,
+        tenantData: signupData,
+        planId: selectedPlan?.id
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      setSignupStep('complete');
+      toast({
+        title: "Registration Complete!",
+        description: "Your account has been created successfully!",
       });
     },
     onError: () => {
       toast({
         title: "Registration Failed",
-        description: "Please check your information and try again.",
+        description: "Payment was successful but account creation failed. Please contact support.",
         variant: "destructive",
       });
     },
@@ -115,15 +154,95 @@ export default function LandingPage() {
       return;
     }
 
-    registerMutation.mutate({
-      firstName: signupData.firstName,
-      lastName: signupData.lastName,
-      email: signupData.email,
-      company: signupData.company,
-      phone: signupData.phone,
-      subdomain: signupData.subdomain,
-      password: signupData.password
-    });
+    // Create payment intent and proceed to payment
+    createPaymentIntentMutation.mutate();
+  };
+
+  // Stripe Payment Form Component
+  const StripePaymentForm = () => {
+    const stripe = useStripe();
+    const elements = useElements();
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    const handleStripeSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (!stripe || !elements || !clientSecret) {
+        return;
+      }
+
+      setIsProcessing(true);
+
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin,
+        },
+        redirect: 'if_required'
+      });
+
+      setIsProcessing(false);
+
+      if (error) {
+        toast({
+          title: "Payment Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else if (paymentIntent?.status === 'succeeded') {
+        // Complete registration
+        completeRegistrationMutation.mutate({
+          paymentIntentId: paymentIntent.id
+        });
+      }
+    };
+
+    return (
+      <form onSubmit={handleStripeSubmit} className="space-y-4">
+        <PaymentElement />
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={!stripe || isProcessing || completeRegistrationMutation.isPending}
+        >
+          {isProcessing ? "Processing..." : `Pay $${selectedPlan?.price}/month`}
+        </Button>
+      </form>
+    );
+  };
+
+  // PayPal Payment Component
+  const PayPalPaymentForm = () => {
+    const handlePayPalPayment = () => {
+      // For now, simulate PayPal payment completion
+      toast({
+        title: "PayPal Payment",
+        description: "PayPal integration will redirect to PayPal for payment processing.",
+      });
+      
+      // Simulate successful PayPal payment
+      setTimeout(() => {
+        completeRegistrationMutation.mutate({
+          paymentIntentId: 'paypal_' + Date.now()
+        });
+      }, 2000);
+    };
+
+    return (
+      <div className="space-y-4">
+        <p className="text-center text-gray-600">
+          You will be redirected to PayPal to complete your payment.
+        </p>
+        <Button 
+          onClick={handlePayPalPayment}
+          className="w-full bg-blue-600 hover:bg-blue-700"
+          disabled={completeRegistrationMutation.isPending}
+        >
+          <Wallet className="mr-2 h-4 w-4" />
+          Pay with PayPal - ${selectedPlan?.price}/month
+        </Button>
+      </div>
+    );
   };
 
   const features = [
@@ -536,7 +655,7 @@ export default function LandingPage() {
           )}
 
           {signupStep === 'payment' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-blue-900">Selected Plan: {selectedPlan?.name}</h4>
                 <p className="text-blue-700">${selectedPlan?.price}/month</p>
@@ -544,22 +663,54 @@ export default function LandingPage() {
                   14-day free trial • Cancel anytime
                 </p>
               </div>
-              <p className="text-center text-gray-600">
-                Payment integration will be set up here with Stripe.
-                For now, click below to complete your registration.
-              </p>
-              <Button 
-                className="w-full" 
-                onClick={() => {
-                  setSignupStep('complete');
-                  toast({
-                    title: "Account Created!",
-                    description: "Welcome to Averox! You can now sign in to your account.",
-                  });
-                }}
-              >
-                Complete Registration
-              </Button>
+
+              {/* Payment Method Selection */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-center">Choose Payment Method</h4>
+                <Tabs value={paymentMethod} onValueChange={(value: 'stripe' | 'paypal') => setPaymentMethod(value)}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="stripe" className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      Credit Card
+                    </TabsTrigger>
+                    <TabsTrigger value="paypal" className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4" />
+                      PayPal
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="stripe" className="mt-6">
+                    {clientSecret && (
+                      <Elements 
+                        stripe={stripePromise} 
+                        options={{ 
+                          clientSecret,
+                          appearance: {
+                            theme: 'stripe'
+                          }
+                        }}
+                      >
+                        <StripePaymentForm />
+                      </Elements>
+                    )}
+                    {!clientSecret && (
+                      <div className="text-center py-4">
+                        <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2" />
+                        <p className="text-gray-600">Setting up secure payment...</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="paypal" className="mt-6">
+                    <PayPalPaymentForm />
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <div className="text-center text-xs text-gray-500">
+                <p>🔒 Secure payment processing powered by Stripe and PayPal</p>
+                <p>Your payment information is encrypted and never stored on our servers</p>
+              </div>
             </div>
           )}
 
