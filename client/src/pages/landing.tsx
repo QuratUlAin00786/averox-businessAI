@@ -181,10 +181,30 @@ export default function LandingPage() {
               <Badge variant="secondary" className="text-xs">Enterprise Ready</Badge>
             </div>
             <div className="hidden md:flex space-x-8">
-              <a href="#features" className="text-gray-700 hover:text-blue-600">Features</a>
-              <a href="#comparison" className="text-gray-700 hover:text-blue-600">Compare</a>
-              <a href="#migration" className="text-gray-700 hover:text-blue-600">Migration</a>
-              <a href="#pricing" className="text-gray-700 hover:text-blue-600">Pricing</a>
+              <button 
+                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Features
+              </button>
+              <button 
+                onClick={() => document.getElementById('comparison')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Compare
+              </button>
+              <button 
+                onClick={() => document.getElementById('migration')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Migration
+              </button>
+              <button 
+                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Pricing
+              </button>
             </div>
             <div className="flex space-x-4">
               <Button variant="ghost" onClick={() => window.location.href = '/auth'}>
@@ -217,10 +237,19 @@ export default function LandingPage() {
           </p>
           
           <div className="flex flex-col lg:flex-row gap-6 justify-center mb-16">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-10 py-6 text-xl font-semibold">
+            <Button 
+              size="lg" 
+              className="bg-white text-blue-600 hover:bg-gray-100 px-10 py-6 text-xl font-semibold"
+              onClick={() => setSignupStep('plans')}
+            >
               Start Free Trial → Migrate in 5 Minutes
             </Button>
-            <Button size="lg" variant="outline" className="border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-600 hover:text-white px-10 py-6 text-xl">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 px-10 py-6 text-xl"
+              onClick={() => window.location.href = '/dashboard'}
+            >
               See Live Demo
             </Button>
           </div>
