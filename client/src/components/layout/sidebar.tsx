@@ -236,27 +236,11 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       <div className="flex items-center justify-center h-16 px-4 border-b border-neutral-200">
         <div className="flex flex-col items-center">
           <Link href="/" className="flex flex-col items-center hover:opacity-80 transition-opacity">
-            <div className="flex items-center">
-              <img 
-                src="/averox-logo-original.png" 
-                alt="Averox Logo" 
-                className="h-10 w-auto mb-1"
-                onLoad={() => console.log('Logo loaded successfully')}
-                onError={(e) => {
-                  console.error('Failed to load logo from /averox-logo-original.png');
-                  // Hide the broken image and show fallback text
-                  e.currentTarget.style.display = 'none';
-                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                  if (fallback) fallback.style.display = 'block';
-                }}
-              />
-              <div 
-                className="text-xl font-bold text-blue-600 mb-1" 
-                style={{ display: 'none' }}
-              >
-                AVEROX
-              </div>
-            </div>
+            <img 
+              src="/averox-logo.png" 
+              alt="Averox Logo" 
+              className="h-10 w-auto mb-1"
+            />
             <span className="text-xs font-semibold text-gray-700">Business AI</span>
           </Link>
         </div>
