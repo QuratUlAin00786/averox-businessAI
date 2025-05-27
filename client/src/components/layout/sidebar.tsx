@@ -233,9 +233,14 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const sidebarContent = (
     <>
       <div className="flex items-center justify-center h-16 px-4 border-b border-neutral-200">
-        <div className="flex items-center">
-          <Link href="/">
-            <AveroxLogo height={40} />
+        <div className="flex flex-col items-center">
+          <Link href="/" className="flex flex-col items-center">
+            <img 
+              src="/attached_assets/averox logo origingal file.png" 
+              alt="Averox Logo" 
+              className="h-8 w-auto mb-1"
+            />
+            <span className="text-xs font-semibold text-gray-700">Business AI</span>
           </Link>
         </div>
       </div>

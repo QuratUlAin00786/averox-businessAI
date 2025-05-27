@@ -1415,7 +1415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/contacts', async (req: Request, res: Response) => {
+  app.post('/api/contacts', attachSubscriptionInfo, checkContactLimit, async (req: Request, res: Response) => {
     try {
       const contactData = insertContactSchema.parse(req.body);
       const contact = await storage.createContact(contactData);
