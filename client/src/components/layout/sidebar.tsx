@@ -237,9 +237,13 @@ export default function Sidebar({ className = "" }: SidebarProps) {
         <div className="flex flex-col items-center">
           <Link href="/" className="flex flex-col items-center hover:opacity-80 transition-opacity">
             <img 
-              src={averoxLogoImg} 
+              src="/averox-logo-original.png" 
               alt="Averox Logo" 
               className="h-10 w-auto mb-1"
+              onError={(e) => {
+                console.error('Failed to load logo:', e);
+                e.currentTarget.style.display = 'none';
+              }}
             />
             <span className="text-xs font-semibold text-gray-700">Business AI</span>
           </Link>
