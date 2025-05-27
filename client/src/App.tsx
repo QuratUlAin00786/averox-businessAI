@@ -77,7 +77,7 @@ function Router() {
       
       <Route path="/setup" component={SetupWizard} />
       
-      <Route path="/dashboard" component={() => (
+      <ProtectedRoute path="/dashboard" component={() => (
         <Layout>
           <Dashboard />
         </Layout>
