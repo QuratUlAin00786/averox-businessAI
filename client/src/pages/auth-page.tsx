@@ -72,9 +72,9 @@ export default function AuthPage() {
     registerMutation.mutate(registrationData);
   };
   
-  // Redirect to home if already logged in
+  // Redirect to dashboard if already logged in
   if (user) {
-    return <Redirect to="/" />;
+    return <Redirect to="/dashboard" />;
   }
   
   return (
