@@ -294,6 +294,44 @@ export default function AuthPage() {
                           "Sign In"
                         )}
                       </Button>
+                      
+                      <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">
+                            Or continue with
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSocialLogin('google')}
+                          className="w-full"
+                        >
+                          <SiGoogle className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSocialLogin('facebook')}
+                          className="w-full"
+                        >
+                          <SiFacebook className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSocialLogin('linkedin')}
+                          className="w-full"
+                        >
+                          <SiLinkedin className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
@@ -456,6 +494,37 @@ export default function AuthPage() {
                           </FormItem>
                         )}
                       />
+
+                      <FormField
+                        control={registerForm.control}
+                        name="captcha"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Security Verification</FormLabel>
+                            <div className="flex items-center gap-2">
+                              <div className="bg-muted p-3 rounded border font-mono text-sm">
+                                {registerCaptcha.question}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={refreshRegisterCaptcha}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <FormControl>
+                              <Input
+                                placeholder="Enter answer"
+                                {...field}
+                                className="w-20"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       
                       <Button 
                         type="submit" 
@@ -471,6 +540,44 @@ export default function AuthPage() {
                           "Create Account"
                         )}
                       </Button>
+                      
+                      <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">
+                            Or continue with
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSocialLogin('google')}
+                          className="w-full"
+                        >
+                          <SiGoogle className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSocialLogin('facebook')}
+                          className="w-full"
+                        >
+                          <SiFacebook className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSocialLogin('linkedin')}
+                          className="w-full"
+                        >
+                          <SiLinkedin className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
