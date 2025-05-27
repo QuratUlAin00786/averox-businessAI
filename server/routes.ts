@@ -7123,8 +7123,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Multi-Tenant SaaS Platform Routes
   console.log("🏢 Setting up multi-tenant SaaS platform routes...");
   
-  // Apply tenant identification middleware to all API routes
-  app.use('/api', identifyTenant);
+  // Setup SaaS Management Dashboard routes (no tenant middleware needed)
+  setupSaaSManagementRoutes(app);
+
+  // Apply tenant identification middleware to all API routes except SaaS management
+  app.use('/api', (req, res, next) => {
+    // Skip tenant middleware for SaaS management routes
+    if (req.path.startsWith('/api/saas/')) {
+      return next();
+    }
+    return identifyTenant(req, res, next);
+  });
   app.use('/api', trackApiUsage);
   
   // Public tenant management routes (no auth required)
@@ -7140,9 +7149,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/tenants/invitations', inviteUserToTenant);
   app.post('/api/tenants/subscription', createTenantSubscription);
   app.get('/api/tenants/analytics', getTenantAnalytics);
-
-  // Setup SaaS Management Dashboard routes
-  setupSaaSManagementRoutes(app);
 
   console.log("✅ Multi-tenant SaaS platform routes configured successfully");
 
