@@ -308,7 +308,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <Tabs defaultValue="advanced" className="space-y-8">
+          <Tabs defaultValue="core" className="space-y-8">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="core">Core CRM</TabsTrigger>
               <TabsTrigger value="advanced">Advanced Features</TabsTrigger>
@@ -316,76 +316,251 @@ export default function LandingPage() {
               <TabsTrigger value="integration">Integration</TabsTrigger>
             </TabsList>
 
-            {comparisonData.features.map((category, idx) => (
-              <TabsContent 
-                key={idx} 
-                value={category.category.toLowerCase().replace(/[^a-z]/g, '')}
-                className="space-y-4"
-              >
-                <div className="bg-white rounded-lg overflow-hidden shadow-lg">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="text-left p-4 font-semibold text-gray-900">{category.category}</th>
-                          <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
-                          <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
-                          <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
-                          <th className="text-center p-4 font-semibold text-gray-600">Dynamics 365</th>
-                          <th className="text-center p-4 font-semibold text-gray-600">Zoho</th>
+            <TabsContent value="core" className="space-y-4">
+              <div className="bg-white rounded-lg overflow-hidden shadow-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left p-4 font-semibold text-gray-900">Core CRM Features</th>
+                        <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Dynamics 365</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Zoho</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonData.features[0].items.map((item, itemIdx) => (
+                        <tr key={itemIdx} className="border-t hover:bg-gray-50">
+                          <td className="p-4 font-medium text-gray-900">{item.feature}</td>
+                          <td className="p-4 text-center">
+                            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              {item.averox}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              {item.salesforce}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              {item.hubspot}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              {item.dynamics}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              {item.zoho}
+                            </span>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {category.items.map((item, itemIdx) => (
-                          <tr key={itemIdx} className="border-t hover:bg-gray-50">
-                            <td className="p-4 font-medium text-gray-900">{item.feature}</td>
-                            <td className="p-4 text-center">
-                              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                                item.averox.includes('✓') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {item.averox}
-                              </span>
-                            </td>
-                            <td className="p-4 text-center">
-                              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                                item.salesforce.includes('✓') ? 'bg-green-100 text-green-800' : 
-                                item.salesforce.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {item.salesforce}
-                              </span>
-                            </td>
-                            <td className="p-4 text-center">
-                              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                                item.hubspot.includes('✓') ? 'bg-green-100 text-green-800' : 
-                                item.hubspot.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {item.hubspot}
-                              </span>
-                            </td>
-                            <td className="p-4 text-center">
-                              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                                item.dynamics.includes('✓') ? 'bg-green-100 text-green-800' : 
-                                item.dynamics.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {item.dynamics}
-                              </span>
-                            </td>
-                            <td className="p-4 text-center">
-                              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                                item.zoho.includes('✓') ? 'bg-green-100 text-green-800' : 
-                                item.zoho.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {item.zoho}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </TabsContent>
-            ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="advanced" className="space-y-4">
+              <div className="bg-white rounded-lg overflow-hidden shadow-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left p-4 font-semibold text-gray-900">Advanced Features</th>
+                        <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Dynamics 365</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Zoho</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonData.features[1].items.map((item, itemIdx) => (
+                        <tr key={itemIdx} className="border-t hover:bg-gray-50">
+                          <td className="p-4 font-medium text-gray-900">{item.feature}</td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.averox.includes('✓') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.averox}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.salesforce.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.salesforce.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.salesforce}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.hubspot.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.hubspot.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.hubspot}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.dynamics.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.dynamics.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.dynamics}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.zoho.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.zoho.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.zoho}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="manufacturing" className="space-y-4">
+              <div className="bg-white rounded-lg overflow-hidden shadow-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left p-4 font-semibold text-gray-900">Manufacturing & Operations</th>
+                        <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Dynamics 365</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Zoho</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonData.features[2].items.map((item, itemIdx) => (
+                        <tr key={itemIdx} className="border-t hover:bg-gray-50">
+                          <td className="p-4 font-medium text-gray-900">{item.feature}</td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.averox.includes('✓') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.averox}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.salesforce.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.salesforce.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.salesforce}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.hubspot.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.hubspot.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.hubspot}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.dynamics.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.dynamics.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.dynamics}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.zoho.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.zoho.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.zoho}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="integration" className="space-y-4">
+              <div className="bg-white rounded-lg overflow-hidden shadow-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left p-4 font-semibold text-gray-900">Integration & Migration</th>
+                        <th className="text-center p-4 font-semibold text-blue-600">Averox</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Salesforce</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">HubSpot</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Dynamics 365</th>
+                        <th className="text-center p-4 font-semibold text-gray-600">Zoho</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonData.features[3].items.map((item, itemIdx) => (
+                        <tr key={itemIdx} className="border-t hover:bg-gray-50">
+                          <td className="p-4 font-medium text-gray-900">{item.feature}</td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.averox.includes('✓') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.averox}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.salesforce.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.salesforce.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.salesforce}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.hubspot.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.hubspot.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.hubspot}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.dynamics.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.dynamics.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.dynamics}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                              item.zoho.includes('✓') ? 'bg-green-100 text-green-800' : 
+                              item.zoho.includes('$') ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {item.zoho}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </TabsContent>
           </Tabs>
         </div>
       </section>
