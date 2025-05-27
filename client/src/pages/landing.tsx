@@ -648,8 +648,8 @@ export default function LandingPage() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
-                {registerMutation.isPending ? "Creating Account..." : "Create Account"}
+              <Button type="submit" className="w-full" disabled={createPaymentIntentMutation.isPending}>
+                {createPaymentIntentMutation.isPending ? "Setting up..." : "Continue to Payment"}
               </Button>
             </form>
           )}

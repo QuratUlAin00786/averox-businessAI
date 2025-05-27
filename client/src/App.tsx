@@ -77,13 +77,13 @@ function Router() {
       
       <Route path="/setup" component={SetupWizard} />
       
-      <Route path="/landing" component={LandingPage} />
-      
-      <ProtectedRoute path="/" component={() => (
+      <Route path="/dashboard" component={() => (
         <Layout>
           <Dashboard />
         </Layout>
       )} />
+      
+      <Route path="/" component={LandingPage} />
       
       <ProtectedRoute path="/contacts" component={() => (
         <Layout>
