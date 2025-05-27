@@ -133,6 +133,231 @@ export async function registerRoutes(app: Express): Promise<Server> {
     encryption_status: process.env.ENCRYPTION_ENABLED === 'true'
   });
   
+  // Social Authentication Routes
+  app.get('/api/auth/google', (req, res) => {
+    // Redirect to Google OAuth
+    const googleAuthUrl = `https://accounts.google.com/oauth/authorize?` +
+      `client_id=${process.env.GOOGLE_CLIENT_ID}&` +
+      `redirect_uri=${encodeURIComponent(process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/auth/google/callback')}&` +
+      `scope=openid%20email%20profile&` +
+      `response_type=code&` +
+      `state=google`;
+    
+    res.redirect(googleAuthUrl);
+  });
+
+  app.get('/api/auth/facebook', (req, res) => {
+    // Redirect to Facebook OAuth
+    const facebookAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
+      `client_id=${process.env.FACEBOOK_CLIENT_ID}&` +
+      `redirect_uri=${encodeURIComponent(process.env.FACEBOOK_REDIRECT_URI || 'http://localhost:5000/api/auth/facebook/callback')}&` +
+      `scope=email,public_profile&` +
+      `response_type=code&` +
+      `state=facebook`;
+    
+    res.redirect(facebookAuthUrl);
+  });
+
+  app.get('/api/auth/linkedin', (req, res) => {
+    // Redirect to LinkedIn OAuth
+    const linkedinAuthUrl = `https://www.linkedin.com/oauth/v2/authorization?` +
+      `client_id=${process.env.LINKEDIN_CLIENT_ID}&` +
+      `redirect_uri=${encodeURIComponent(process.env.LINKEDIN_REDIRECT_URI || 'http://localhost:5000/api/auth/linkedin/callback')}&` +
+      `scope=r_liteprofile%20r_emailaddress&` +
+      `response_type=code&` +
+      `state=linkedin`;
+    
+    res.redirect(linkedinAuthUrl);
+  });
+
+  // Social Authentication Callback Routes
+  app.get('/api/auth/google/callback', async (req, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (state !== 'google') {
+        return res.status(400).json({ error: 'Invalid state parameter' });
+      }
+
+      // Exchange code for access token
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/auth/google/callback'
+        })
+      });
+
+      const tokenData = await tokenResponse.json();
+      
+      if (!tokenData.access_token) {
+        return res.status(400).json({ error: 'Failed to get access token' });
+      }
+
+      // Get user info from Google
+      const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+      });
+
+      const userData = await userResponse.json();
+      
+      // Create or find user in database
+      let user = await storage.getUserByEmail(userData.email);
+      
+      if (!user) {
+        // Create new user from Google data
+        user = await storage.createUser({
+          username: userData.email,
+          email: userData.email,
+          firstName: userData.given_name || '',
+          lastName: userData.family_name || '',
+          role: 'User' as const,
+          isVerified: true
+        });
+      }
+
+      // Create session
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Login failed' });
+        }
+        return res.redirect('/dashboard');
+      });
+
+    } catch (error) {
+      console.error('Google auth error:', error);
+      res.status(500).json({ error: 'Authentication failed' });
+    }
+  });
+
+  app.get('/api/auth/facebook/callback', async (req, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (state !== 'facebook') {
+        return res.status(400).json({ error: 'Invalid state parameter' });
+      }
+
+      // Exchange code for access token
+      const tokenResponse = await fetch('https://graph.facebook.com/v18.0/oauth/access_token', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const tokenData = await tokenResponse.json();
+      
+      if (!tokenData.access_token) {
+        return res.status(400).json({ error: 'Failed to get access token' });
+      }
+
+      // Get user info from Facebook
+      const userResponse = await fetch(`https://graph.facebook.com/me?fields=id,name,email,first_name,last_name&access_token=${tokenData.access_token}`);
+      const userData = await userResponse.json();
+      
+      // Create or find user in database
+      let user = await storage.getUserByEmail(userData.email);
+      
+      if (!user) {
+        // Create new user from Facebook data
+        user = await storage.createUser({
+          username: userData.email,
+          email: userData.email,
+          firstName: userData.first_name || '',
+          lastName: userData.last_name || '',
+          role: 'User' as const,
+          isVerified: true
+        });
+      }
+
+      // Create session
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Login failed' });
+        }
+        return res.redirect('/dashboard');
+      });
+
+    } catch (error) {
+      console.error('Facebook auth error:', error);
+      res.status(500).json({ error: 'Authentication failed' });
+    }
+  });
+
+  app.get('/api/auth/linkedin/callback', async (req, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (state !== 'linkedin') {
+        return res.status(400).json({ error: 'Invalid state parameter' });
+      }
+
+      // Exchange code for access token
+      const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: code as string,
+          client_id: process.env.LINKEDIN_CLIENT_ID || '',
+          client_secret: process.env.LINKEDIN_CLIENT_SECRET || '',
+          redirect_uri: process.env.LINKEDIN_REDIRECT_URI || 'http://localhost:5000/api/auth/linkedin/callback'
+        })
+      });
+
+      const tokenData = await tokenResponse.json();
+      
+      if (!tokenData.access_token) {
+        return res.status(400).json({ error: 'Failed to get access token' });
+      }
+
+      // Get user info from LinkedIn
+      const [profileResponse, emailResponse] = await Promise.all([
+        fetch('https://api.linkedin.com/v2/people/~', {
+          headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+        }),
+        fetch('https://api.linkedin.com/v2/emailAddresses?q=members&projection=(elements*(handle~))', {
+          headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+        })
+      ]);
+
+      const profileData = await profileResponse.json();
+      const emailData = await emailResponse.json();
+      
+      const email = emailData.elements?.[0]?.['handle~']?.emailAddress;
+      
+      // Create or find user in database
+      let user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        // Create new user from LinkedIn data
+        user = await storage.createUser({
+          username: email,
+          email: email,
+          firstName: profileData.localizedFirstName || '',
+          lastName: profileData.localizedLastName || '',
+          role: 'User' as const,
+          isVerified: true
+        });
+      }
+
+      // Create session
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Login failed' });
+        }
+        return res.redirect('/dashboard');
+      });
+
+    } catch (error) {
+      console.error('LinkedIn auth error:', error);
+      res.status(500).json({ error: 'Authentication failed' });
+    }
+  });
+
   // Test authentication endpoint 
   app.get('/api/auth-test', (req, res) => {
     if (req.isAuthenticated()) {
