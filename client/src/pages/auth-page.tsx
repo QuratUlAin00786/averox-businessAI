@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,19 +10,51 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { Redirect } from "wouter";
+import { SiLinkedin, SiFacebook, SiGoogle } from "react-icons/si";
 import averoxLogo from "../assets/averox-logo.png";
+
+// Simple CAPTCHA component
+const generateCaptcha = () => {
+  const operations = ['+', '-', '*'];
+  const num1 = Math.floor(Math.random() * 10) + 1;
+  const num2 = Math.floor(Math.random() * 10) + 1;
+  const operation = operations[Math.floor(Math.random() * operations.length)];
+  
+  let answer;
+  switch (operation) {
+    case '+':
+      answer = num1 + num2;
+      break;
+    case '-':
+      answer = Math.abs(num1 - num2);
+      break;
+    case '*':
+      answer = num1 * num2;
+      break;
+    default:
+      answer = num1 + num2;
+  }
+  
+  return {
+    question: `${num1} ${operation} ${num2} = ?`,
+    answer: answer.toString()
+  };
+};
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
   rememberMe: z.boolean().optional().default(false),
+  captcha: z.string().min(1, "Please solve the CAPTCHA"),
 });
 
 const registerSchema = insertUserSchema.extend({
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Please confirm your password"),
+  captcha: z.string().min(1, "Please solve the CAPTCHA"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -36,6 +68,8 @@ export default function AuthPage() {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loginCaptcha, setLoginCaptcha] = useState(generateCaptcha());
+  const [registerCaptcha, setRegisterCaptcha] = useState(generateCaptcha());
   const { user, loginMutation, registerMutation } = useAuth();
   
   // Login form
@@ -45,6 +79,7 @@ export default function AuthPage() {
       username: "",
       password: "",
       rememberMe: false,
+      captcha: "",
     },
   });
   
@@ -63,13 +98,48 @@ export default function AuthPage() {
   });
   
   const onLoginSubmit = (values: LoginFormValues) => {
-    loginMutation.mutate(values);
+    // Verify CAPTCHA
+    if (values.captcha !== loginCaptcha.answer) {
+      loginForm.setError("captcha", { message: "Incorrect CAPTCHA answer" });
+      setLoginCaptcha(generateCaptcha());
+      loginForm.setValue("captcha", "");
+      return;
+    }
+    
+    // Remove captcha from submission data
+    const { captcha, ...loginData } = values;
+    loginMutation.mutate(loginData);
   };
   
   const onRegisterSubmit = (values: RegisterFormValues) => {
-    // Remove confirmPassword as it's not in the API schema
-    const { confirmPassword, ...registrationData } = values;
+    // Verify CAPTCHA
+    if (values.captcha !== registerCaptcha.answer) {
+      registerForm.setError("captcha", { message: "Incorrect CAPTCHA answer" });
+      setRegisterCaptcha(generateCaptcha());
+      registerForm.setValue("captcha", "");
+      return;
+    }
+    
+    // Remove confirmPassword and captcha as they're not in the API schema
+    const { confirmPassword, captcha, ...registrationData } = values;
     registerMutation.mutate(registrationData);
+  };
+
+  // Social login handlers
+  const handleSocialLogin = (provider: 'google' | 'facebook' | 'linkedin') => {
+    // Redirect to social auth endpoint
+    window.location.href = `/api/auth/${provider}`;
+  };
+
+  // CAPTCHA refresh handlers
+  const refreshLoginCaptcha = () => {
+    setLoginCaptcha(generateCaptcha());
+    loginForm.setValue("captcha", "");
+  };
+
+  const refreshRegisterCaptcha = () => {
+    setRegisterCaptcha(generateCaptcha());
+    registerForm.setValue("captcha", "");
   };
   
   // Redirect to dashboard if already logged in
@@ -175,6 +245,37 @@ export default function AuthPage() {
                                 Remember me
                               </FormLabel>
                             </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={loginForm.control}
+                        name="captcha"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Security Verification</FormLabel>
+                            <div className="flex items-center gap-2">
+                              <div className="bg-muted p-3 rounded border font-mono text-sm">
+                                {loginCaptcha.question}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={refreshLoginCaptcha}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <FormControl>
+                              <Input
+                                placeholder="Enter answer"
+                                {...field}
+                                className="w-20"
+                              />
+                            </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
