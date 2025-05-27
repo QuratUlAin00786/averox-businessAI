@@ -4,7 +4,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import * as LucideIcons from "lucide-react";
-import AveroxLogo from "@/assets/AveroxLogo";
 import averoxLogoImg from "@assets/averox logo origingal file.png";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
