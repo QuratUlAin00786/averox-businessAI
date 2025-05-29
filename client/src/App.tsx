@@ -71,6 +71,8 @@ import SetupWizard from "@/pages/setup-wizard";
 import SaaSManagement from "@/pages/saas-management";
 
 function Router() {
+  const { user, isLoading } = useAuth();
+
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
@@ -83,7 +85,25 @@ function Router() {
         </Layout>
       )} />
       
-      <Route path="/" component={LandingPage} />
+      <Route path="/" component={() => {
+        if (isLoading) {
+          return (
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          );
+        }
+        
+        if (user) {
+          return (
+            <Layout>
+              <Dashboard />
+            </Layout>
+          );
+        }
+        
+        return <LandingPage />;
+      }} />
       
       <ProtectedRoute path="/contacts" component={() => (
         <Layout>
