@@ -1679,13 +1679,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/contacts/:id', async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       const id = parseInt(req.params.id);
-      const success = await storage.deleteContact(id);
-      if (!success) {
+      console.log(`[Contact Delete] Deleting contact ${id}`);
+      
+      // Get contact for activity logging before deletion
+      const contact = await storage.getContact(id);
+      if (!contact) {
+        console.error(`[Contact Delete] Contact not found with id ${id}`);
         return res.status(404).json({ error: "Contact not found" });
       }
+
+      // Decrypt for logging
+      const decryptedContact = await decryptFromDatabase(contact, 'contacts');
+      
+      const success = await storage.deleteContact(id);
+      if (!success) {
+        return res.status(404).json({ error: "Contact could not be deleted" });
+      }
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Deleted Contact',
+          detail: `Deleted contact: ${decryptedContact.firstName} ${decryptedContact.lastName}`,
+          relatedToType: 'contact',
+          relatedToId: null, // No ID since it's deleted
+          icon: 'trash'
+        });
+      }
+      
       res.status(204).end();
     } catch (error) {
+      console.error('[Contact Delete] Error deleting contact:', error);
       handleError(res, error);
     }
   });
@@ -1784,6 +1814,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/accounts/:id', async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       const id = parseInt(req.params.id);
       console.log(`[Account Delete] Deleting account ${id}`);
       
@@ -2668,6 +2702,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/events/:id', async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       const id = parseInt(req.params.id);
       console.log(`[Event Delete] Deleting event ${id}`);
       
@@ -3035,6 +3073,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/subscription-packages/:id', async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       const id = parseInt(req.params.id);
       const success = await storage.deleteSubscriptionPackage(id);
       if (!success) {
