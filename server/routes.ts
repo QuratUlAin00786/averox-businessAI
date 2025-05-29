@@ -470,19 +470,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const searchQuery = req.query.searchQuery as string;
       const query = searchQuery || req.query.q as string;
+      
+      console.log('[Search Debug] Query params:', req.query);
+      console.log('[Search Debug] Final query:', query);
+      
       if (!query || query.length < 2) {
+        console.log('[Search Debug] Query too short or missing');
         return res.json([]);
       }
 
-      const searchResults = [];
+      const searchResults: any[] = [];
       const searchTerm = query.toLowerCase();
+      
+      console.log('[Search Debug] Searching for term:', searchTerm);
 
       // Search accounts
       try {
         const accounts = await storage.listAccounts();
+        console.log('[Search Debug] Found accounts:', accounts.length);
         accounts.forEach(account => {
+          console.log('[Search Debug] Checking account:', account.name);
           if (account.name.toLowerCase().includes(searchTerm) || 
               (account.email && account.email.toLowerCase().includes(searchTerm))) {
+            console.log('[Search Debug] Account match found:', account.name);
             searchResults.push({
               id: account.id,
               title: account.name,
@@ -493,7 +503,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       } catch (e) {
-        // Skip if accounts not available
+        console.log('[Search Debug] Account search error:', e);
       }
 
       // Search contacts
