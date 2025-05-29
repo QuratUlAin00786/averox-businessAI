@@ -177,16 +177,15 @@ export default function LandingPage() {
       <nav className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center">
               <div className="flex flex-col items-center">
                 <img 
                   src={averoxLogoImg}
                   alt="Averox Logo" 
-                  className="h-8 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                 />
-                <span className="text-xs font-semibold text-gray-700">Business AI</span>
+                <span className="text-sm font-semibold text-gray-700">Business AI</span>
               </div>
-              <Badge variant="secondary" className="text-xs">Enterprise Ready</Badge>
             </div>
             <div className="hidden md:flex space-x-8">
               <button 
