@@ -465,6 +465,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Global Search API
+  app.get('/api/search', async (req, res) => {
+    try {
+      const searchQuery = req.query.searchQuery as string;
+      const query = searchQuery || req.query.q as string;
+      if (!query || query.length < 2) {
+        return res.json([]);
+      }
+
+      const searchResults = [];
+      const searchTerm = query.toLowerCase();
+
+      // Search accounts
+      try {
+        const accounts = [...storage.accounts.values()];
+        accounts.forEach(account => {
+          if (account.name.toLowerCase().includes(searchTerm) || 
+              (account.email && account.email.toLowerCase().includes(searchTerm))) {
+            searchResults.push({
+              id: account.id,
+              title: account.name,
+              description: account.email || account.industry,
+              type: 'account',
+              url: `/accounts/${account.id}`
+            });
+          }
+        });
+      } catch (e) {
+        // Skip if accounts not available
+      }
+
+      // Search contacts
+      try {
+        const contacts = [...storage.contacts.values()];
+        contacts.forEach(contact => {
+          const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
+          if (fullName.includes(searchTerm) || 
+              (contact.email && contact.email.toLowerCase().includes(searchTerm))) {
+            searchResults.push({
+              id: contact.id,
+              title: `${contact.firstName} ${contact.lastName}`,
+              description: contact.email || contact.title,
+              type: 'contact',
+              url: `/contacts/${contact.id}`
+            });
+          }
+        });
+      } catch (e) {
+        // Skip if contacts not available
+      }
+
+      // Search leads
+      try {
+        const leads = [...storage.leads.values()];
+        leads.forEach(lead => {
+          const fullName = `${lead.firstName} ${lead.lastName}`.toLowerCase();
+          if (fullName.includes(searchTerm) || 
+              (lead.email && lead.email.toLowerCase().includes(searchTerm))) {
+            searchResults.push({
+              id: lead.id,
+              title: `${lead.firstName} ${lead.lastName}`,
+              description: lead.email || lead.title,
+              type: 'lead',
+              url: `/leads/${lead.id}`
+            });
+          }
+        });
+      } catch (e) {
+        // Skip if leads not available
+      }
+
+      // Search opportunities
+      try {
+        const opportunities = [...storage.opportunities.values()];
+        opportunities.forEach(opportunity => {
+          if (opportunity.name.toLowerCase().includes(searchTerm)) {
+            searchResults.push({
+              id: opportunity.id,
+              title: opportunity.name,
+              description: `${opportunity.stage} - $${opportunity.amount}`,
+              type: 'opportunity',
+              url: `/opportunities/${opportunity.id}`
+            });
+          }
+        });
+      } catch (e) {
+        // Skip if opportunities not available
+      }
+
+      // Search tasks
+      try {
+        const tasks = [...storage.tasks.values()];
+        tasks.forEach(task => {
+          if (task.title.toLowerCase().includes(searchTerm)) {
+            searchResults.push({
+              id: task.id,
+              title: task.title,
+              description: task.description,
+              type: 'task',
+              url: `/tasks/${task.id}`
+            });
+          }
+        });
+      } catch (e) {
+        // Skip if tasks not available
+      }
+
+      // Sort by relevance and limit results
+      const sortedResults = searchResults
+        .sort((a, b) => {
+          const aExactMatch = a.title.toLowerCase() === searchTerm;
+          const bExactMatch = b.title.toLowerCase() === searchTerm;
+          if (aExactMatch && !bExactMatch) return -1;
+          if (!aExactMatch && bExactMatch) return 1;
+          return a.title.localeCompare(b.title);
+        })
+        .slice(0, 10);
+
+      res.json(sortedResults);
+    } catch (error) {
+      console.error('Search error:', error);
+      res.status(500).json({ error: 'Search failed' });
+    }
+  });
+
   // Notifications and Messages Routes
   app.get('/api/notifications', async (req, res) => {
     try {

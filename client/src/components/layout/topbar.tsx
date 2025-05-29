@@ -32,6 +32,7 @@ import averoxLogoImg from "@/assets/averox-logo-real.png";
 import { useAuth } from "@/hooks/use-auth";
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { MessagesDropdown } from "@/components/notifications/messages-dropdown";
+import { GlobalSearchInput } from "@/components/search/global-search-input";
 
 interface TopBarProps {
   onToggleSidebar: () => void;
