@@ -3624,6 +3624,23 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAccount(id: number): Promise<boolean> {
     try {
+      // First, delete all related records to avoid foreign key constraints
+      
+      // Delete related contacts
+      await db.delete(contacts).where(eq(contacts.accountId, id));
+      
+      // Delete related opportunities
+      await db.delete(opportunities).where(eq(opportunities.accountId, id));
+      
+      // Delete related leads that might reference this account
+      await db.update(leads)
+        .set({ convertedToAccountId: null })
+        .where(eq(leads.convertedToAccountId, id));
+      
+      // Delete related proposals
+      await db.delete(proposals).where(eq(proposals.accountId, id));
+      
+      // Finally delete the account
       const result = await db.delete(accounts)
         .where(eq(accounts.id, id))
         .returning();

@@ -744,10 +744,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let responsePercentage = 0;
       if (recentLeads.length > 0) {
         const responseTimes = recentLeads
-          .filter(lead => lead.lastActivityDate && lead.createdAt)
+          .filter(lead => (lead as any).lastActivityDate && lead.createdAt)
           .map(lead => {
             const created = new Date(lead.createdAt);
-            const activity = new Date(lead.lastActivityDate);
+            const activity = new Date((lead as any).lastActivityDate);
             return (activity.getTime() - created.getTime()) / (1000 * 60 * 60); // hours
           });
         
@@ -2283,8 +2283,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update stage to Closing (which indicates won)
       const updatedOpportunity = await storage.updateOpportunity(id, {
-        stage: 'Closing',
-        closeDate: new Date().toISOString()
+        stage: 'Closing'
+        // closeDate: new Date().toISOString() // Field will be added in schema update
       });
       
       if (!updatedOpportunity) {
@@ -2332,8 +2332,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update stage to indicate lost
       const updatedOpportunity = await storage.updateOpportunity(id, {
-        stage: 'Lead Generation', // Reset to beginning as it's lost
-        closeDate: new Date().toISOString()
+        stage: 'Lead Generation' // Reset to beginning as it's lost
+        // closeDate: new Date().toISOString() // Field will be added in schema update
       });
       
       if (!updatedOpportunity) {
