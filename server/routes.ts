@@ -479,7 +479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Search accounts
       try {
-        const accounts = [...storage.accounts.values()];
+        const accounts = await storage.listAccounts();
         accounts.forEach(account => {
           if (account.name.toLowerCase().includes(searchTerm) || 
               (account.email && account.email.toLowerCase().includes(searchTerm))) {
@@ -498,7 +498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Search contacts
       try {
-        const contacts = [...storage.contacts.values()];
+        const contacts = await storage.listContacts();
         contacts.forEach(contact => {
           const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
           if (fullName.includes(searchTerm) || 
@@ -518,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Search leads
       try {
-        const leads = [...storage.leads.values()];
+        const leads = await storage.listLeads();
         leads.forEach(lead => {
           const fullName = `${lead.firstName} ${lead.lastName}`.toLowerCase();
           if (fullName.includes(searchTerm) || 
@@ -538,7 +538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Search opportunities
       try {
-        const opportunities = [...storage.opportunities.values()];
+        const opportunities = await storage.listOpportunities();
         opportunities.forEach(opportunity => {
           if (opportunity.name.toLowerCase().includes(searchTerm)) {
             searchResults.push({
@@ -556,9 +556,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Search tasks
       try {
-        const tasks = [...storage.tasks.values()];
+        const tasks = await storage.listTasks();
         tasks.forEach(task => {
-          if (task.title.toLowerCase().includes(searchTerm)) {
+          if (task.title && task.title.toLowerCase().includes(searchTerm)) {
             searchResults.push({
               id: task.id,
               title: task.title,
