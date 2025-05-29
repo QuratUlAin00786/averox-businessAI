@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Search, 
   Menu, 
@@ -9,7 +10,11 @@ import {
   LogOut,
   HelpCircle,
   Globe,
-  ShieldCheck
+  ShieldCheck,
+  Building,
+  UserIcon,
+  Target,
+  FileText
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -60,22 +65,7 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
               <span className="text-xs font-semibold text-gray-700">Business AI</span>
             </div>
           </div>
-          <div className="flex items-center w-full max-w-2xl px-2 ml-4 md:ml-0">
-            <div className="w-full">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Search className="w-5 h-5 text-neutral-400" />
-                </div>
-                <Input 
-                  id="search" 
-                  name="search" 
-                  className="block w-full py-2 pl-10 pr-3 text-sm placeholder-neutral-400 bg-neutral-50 border-neutral-200"
-                  placeholder="Search" 
-                  type="search"
-                />
-              </div>
-            </div>
-          </div>
+          <GlobalSearchInput />
         </div>
         
         <div className="flex items-center ml-4 md:ml-6">

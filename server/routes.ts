@@ -465,6 +465,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Notifications and Messages Routes
+  app.get('/api/notifications', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      // TODO: Replace with actual database queries when notification tables are implemented
+      const sampleNotifications = [
+        {
+          id: 1,
+          title: "New Task Assigned",
+          description: "You have been assigned a new task: Review Q3 Report",
+          type: "task",
+          read: false,
+          link: "/tasks",
+          createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          userId: userId
+        },
+        {
+          id: 2,
+          title: "Meeting Reminder",
+          description: "Team standup meeting starts in 15 minutes",
+          type: "meeting",
+          read: false,
+          link: "/calendar",
+          createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+          userId: userId
+        },
+        {
+          id: 3,
+          title: "Opportunity Updated",
+          description: "TechNova Solutions opportunity moved to Negotiation stage",
+          type: "opportunity",
+          read: true,
+          link: "/opportunities",
+          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+          userId: userId
+        }
+      ];
+
+      res.json(sampleNotifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+  });
+
+  app.get('/api/messages', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      // TODO: Replace with actual database queries when message tables are implemented
+      const sampleMessages = [
+        {
+          id: 1,
+          content: "Hi, can we schedule a call to discuss the proposal?",
+          read: false,
+          urgent: false,
+          createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+          sender: {
+            id: 2,
+            name: "John Smith",
+            avatar: null
+          },
+          recipientId: userId
+        },
+        {
+          id: 2,
+          content: "The contract is ready for review. Please check your email.",
+          read: false,
+          urgent: true,
+          createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+          sender: {
+            id: 3,
+            name: "Sarah Johnson",
+            avatar: null
+          },
+          recipientId: userId
+        }
+      ];
+
+      res.json(sampleMessages);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+  });
+
+  app.patch('/api/notifications/:id/read', isAuthenticated, async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      res.json({ success: true, message: 'Notification marked as read' });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      res.status(500).json({ error: 'Failed to mark notification as read' });
+    }
+  });
+
+  app.patch('/api/notifications/mark-all-read', isAuthenticated, async (req, res) => {
+    try {
+      res.json({ success: true, message: 'All notifications marked as read' });
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      res.status(500).json({ error: 'Failed to mark all notifications as read' });
+    }
+  });
+
+  app.patch('/api/messages/:id/read', isAuthenticated, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      res.json({ success: true, message: 'Message marked as read' });
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      res.status(500).json({ error: 'Failed to mark message as read' });
+    }
+  });
+
+  app.patch('/api/messages/mark-all-read', isAuthenticated, async (req, res) => {
+    try {
+      res.json({ success: true, message: 'All messages marked as read' });
+    } catch (error) {
+      console.error('Error marking all messages as read:', error);
+      res.status(500).json({ error: 'Failed to mark all messages as read' });
+    }
+  });
+
   // Dashboard Data API endpoints
   app.get('/api/dashboard/stats', async (req, res) => {
     try {
