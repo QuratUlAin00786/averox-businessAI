@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Loader2, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { Redirect } from "wouter";
 import { SiLinkedin, SiFacebook, SiGoogle } from "react-icons/si";
-import averoxLogo from "../assets/averox-logo.png";
+import averoxLogo from "../assets/averox-logo-real.png";
 
 // Simple CAPTCHA component
 const generateCaptcha = () => {

@@ -23,7 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import AveroxLogo from "@/assets/AveroxLogo";
+import averoxLogoImg from "@/assets/averox-logo-real.png";
 import { useAuth } from "@/hooks/use-auth";
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { MessagesDropdown } from "@/components/notifications/messages-dropdown";
@@ -51,7 +51,14 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
         <div className="flex flex-1 items-center">
           {/* Mobile logo visible in topbar when sidebar is closed */}
           <div className="flex md:hidden mr-3">
-            <AveroxLogo height={36} />
+            <div className="flex flex-col items-center">
+              <img 
+                src={averoxLogoImg}
+                alt="Averox Logo" 
+                className="h-9 w-auto object-contain"
+              />
+              <span className="text-xs font-semibold text-gray-700">Business AI</span>
+            </div>
           </div>
           <div className="flex items-center w-full max-w-2xl px-2 ml-4 md:ml-0">
             <div className="w-full">
