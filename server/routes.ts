@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { setupAuth, hashPassword } from "./auth";
+import { setupAuth, hashPassword, isAuthenticated } from "./auth";
 import { registerPermissionRoutes } from "./permission-routes";
 import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from "./permissions-manager";
 import { migrationRouter } from "./migrations/migration-routes";

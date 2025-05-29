@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 import { LanguageProvider } from "@/hooks/use-language";
 import { SystemSettingsProvider } from "@/hooks/use-system-settings";
-import { NotificationsProvider } from "@/hooks/use-notifications";
+
 import { ProtectedRoute } from "@/lib/protected-route";
 import Layout from "@/components/layout/layout";
 import Dashboard from "@/pages/dashboard";

@@ -187,3 +187,11 @@ export function setupAuth(app: Express) {
     res.json(userWithoutPassword);
   });
 }
+
+// Authentication middleware
+export function isAuthenticated(req: any, res: any, next: any) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  return res.status(401).json({ error: "Authentication required" });
+}
