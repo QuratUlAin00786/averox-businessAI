@@ -511,11 +511,9 @@ function App() {
       <AuthProvider>
         <LanguageProvider>
           <SystemSettingsProvider>
-            <NotificationsProvider>
-              <AutoLogin />
-              <Router />
-              <Toaster />
-            </NotificationsProvider>
+            <AutoLogin />
+            <Router />
+            <Toaster />
           </SystemSettingsProvider>
         </LanguageProvider>
       </AuthProvider>
