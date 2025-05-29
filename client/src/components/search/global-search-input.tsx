@@ -46,6 +46,14 @@ export function GlobalSearchInput() {
   // Search API call with debouncing
   const { data: searchResults = [], isLoading } = useQuery({
     queryKey: ["/api/search", searchQuery],
+    queryFn: async () => {
+      if (searchQuery.length < 2) return [];
+      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error('Search failed');
+      return response.json();
+    },
     enabled: searchQuery.length >= 2,
     staleTime: 1000 * 30, // 30 seconds
   });
