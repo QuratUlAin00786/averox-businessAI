@@ -2189,6 +2189,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/opportunities/:id', async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       const id = parseInt(req.params.id);
       console.log(`[Opportunity Delete] Deleting opportunity ${id}`);
       
@@ -2223,6 +2227,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).end();
     } catch (error) {
       console.error('[Opportunity Delete] Error deleting opportunity:', error);
+      handleError(res, error);
+    }
+  });
+
+  // Mark opportunity as won
+  app.post('/api/opportunities/:id/mark-won', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      const id = parseInt(req.params.id);
+      console.log(`[Opportunity Won] Marking opportunity ${id} as won`);
+      
+      // Get current opportunity
+      const opportunity = await storage.getOpportunity(id);
+      if (!opportunity) {
+        return res.status(404).json({ error: "Opportunity not found" });
+      }
+      
+      // Update stage to Closing (which indicates won)
+      const updatedOpportunity = await storage.updateOpportunity(id, {
+        stage: 'Closing',
+        closeDate: new Date().toISOString()
+      });
+      
+      if (!updatedOpportunity) {
+        return res.status(404).json({ error: "Opportunity not found after update" });
+      }
+      
+      // Decrypt for response
+      const decryptedOpportunity = await decryptFromDatabase(updatedOpportunity, 'opportunities');
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Marked Opportunity as Won',
+          detail: `Won opportunity: ${decryptedOpportunity.name}`,
+          relatedToType: 'opportunity',
+          relatedToId: id,
+          icon: 'trophy'
+        });
+      }
+      
+      res.json(decryptedOpportunity);
+    } catch (error) {
+      console.error('[Opportunity Won] Error marking opportunity as won:', error);
+      handleError(res, error);
+    }
+  });
+
+  // Mark opportunity as lost
+  app.post('/api/opportunities/:id/mark-lost', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      const id = parseInt(req.params.id);
+      const { reason } = req.body;
+      console.log(`[Opportunity Lost] Marking opportunity ${id} as lost`);
+      
+      // Get current opportunity
+      const opportunity = await storage.getOpportunity(id);
+      if (!opportunity) {
+        return res.status(404).json({ error: "Opportunity not found" });
+      }
+      
+      // Update stage to indicate lost
+      const updatedOpportunity = await storage.updateOpportunity(id, {
+        stage: 'Lead Generation', // Reset to beginning as it's lost
+        closeDate: new Date().toISOString()
+      });
+      
+      if (!updatedOpportunity) {
+        return res.status(404).json({ error: "Opportunity not found after update" });
+      }
+      
+      // Decrypt for response
+      const decryptedOpportunity = await decryptFromDatabase(updatedOpportunity, 'opportunities');
+      
+      // Log activity
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Marked Opportunity as Lost',
+          detail: `Lost opportunity: ${decryptedOpportunity.name}${reason ? ` - Reason: ${reason}` : ''}`,
+          relatedToType: 'opportunity',
+          relatedToId: id,
+          icon: 'x'
+        });
+      }
+      
+      res.json(decryptedOpportunity);
+    } catch (error) {
+      console.error('[Opportunity Lost] Error marking opportunity as lost:', error);
       handleError(res, error);
     }
   });
