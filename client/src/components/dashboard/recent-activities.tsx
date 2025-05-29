@@ -70,8 +70,8 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
             variant="outline" 
             className="border-primary text-primary hover:bg-primary hover:text-white"
             onClick={() => {
-              // Navigate to activities page when available
-              window.location.href = '#/activities';
+              // Navigate to workflows which contains activities management
+              window.location.hash = '/workflows';
             }}
           >
             {t.dashboard.viewAll}
