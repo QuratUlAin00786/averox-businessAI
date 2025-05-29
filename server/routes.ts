@@ -1843,6 +1843,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/leads', async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       console.log('[Lead Create] Creating new lead with data:', req.body);
       
       // Validate data
@@ -1949,6 +1953,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/leads/:id', async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       const id = parseInt(req.params.id);
       console.log(`[Lead Delete] Deleting lead ${id}`);
       
@@ -2081,6 +2089,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/opportunities', async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       console.log('[Opportunity Create] Creating new opportunity with data:', req.body);
       
       // Validate data
@@ -2254,6 +2266,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/tasks', async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       console.log('[Task Create] Creating new task with data:', req.body);
       
       // Validate data
@@ -2366,6 +2382,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       const id = parseInt(req.params.id);
       console.log(`[Task Delete] Deleting task ${id}`);
       
