@@ -151,9 +151,15 @@ export async function decryptFromDatabase<T extends Record<string, any>>(data: T
             result[key] = decrypted;
           }
         } catch (err) {
-          console.error(`Error decrypting field ${key}:`, err);
-          // Keep original value if decryption fails
-          result[key] = value;
+          console.error(`Decryption error for field ${key}:`, err);
+          // For corrupted encrypted data, check if it's a recognizable pattern
+          if (typeof value === 'string' && value.includes('encrypted') && value.includes('iv')) {
+            console.warn(`Corrupted encrypted data detected in field ${key}, setting to null`);
+            result[key] = null;
+          } else {
+            // Keep original value if it's not encrypted or corruption is unclear
+            result[key] = value;
+          }
         }
       };
       decryptionPromises.push(decryptPromise());

@@ -6535,10 +6535,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Keep the original endpoint for backward compatibility
   app.delete('/api/proposal-elements/:id', async (req: Request, res: Response) => {
     try {
-      // Temporarily disable authentication check
-      // if (!req.isAuthenticated()) {
-      //   return res.status(401).json({ error: "Unauthorized" });
-      // }
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
       
       const id = parseInt(req.params.id);
       
