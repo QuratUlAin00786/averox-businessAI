@@ -465,7 +465,7 @@ export default function MRPDashboard() {
                   View MRP planning results with purchase recommendations and production scheduling
                 </p>
                 <Button
-                  onClick={() => window.location.href = "/manufacturing/mrp/runs"}
+                  onClick={() => window.location.href = "#/manufacturing/mrp/runs"}
                 >
                   View Planning Details
                 </Button>
