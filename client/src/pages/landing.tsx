@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle, ArrowRight, Star, Users, Building, Shield, Zap, TrendingUp, Factory, Brain, Globe } from "lucide-react";
+import averoxLogoImg from "@/assets/averox-logo-real.png";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -177,7 +178,14 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <div className="text-2xl font-bold text-blue-600">AVEROX</div>
+              <div className="flex flex-col items-center">
+                <img 
+                  src={averoxLogoImg}
+                  alt="Averox Logo" 
+                  className="h-8 w-auto object-contain"
+                />
+                <span className="text-xs font-semibold text-gray-700">Business AI</span>
+              </div>
               <Badge variant="secondary" className="text-xs">Enterprise Ready</Badge>
             </div>
             <div className="hidden md:flex space-x-8">
@@ -1025,7 +1033,14 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="text-2xl font-bold mb-4">AVEROX</div>
+              <div className="flex flex-col items-start mb-4">
+                <img 
+                  src={averoxLogoImg}
+                  alt="Averox Logo" 
+                  className="h-8 w-auto object-contain mb-1"
+                />
+                <span className="text-xs font-semibold text-gray-300">Business AI</span>
+              </div>
               <p className="text-gray-400 text-sm">
                 The enterprise CRM that actually beats Salesforce. Built for modern businesses.
               </p>
