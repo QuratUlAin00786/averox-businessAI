@@ -3,6 +3,14 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, hashPassword, isAuthenticated } from "./auth";
+import { 
+  initializeEmailService, 
+  sendEmail, 
+  sendWelcomeEmail, 
+  sendPasswordResetEmail,
+  sendNotificationEmail,
+  sendAdminAccountNotification 
+} from "./email-service";
 import { registerPermissionRoutes } from "./permission-routes";
 import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from "./permissions-manager";
 import { migrationRouter } from "./migrations/migration-routes";
@@ -597,6 +605,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Search error:', error);
       res.status(500).json({ error: 'Search failed' });
+    }
+  });
+
+  // Email Routes
+  app.post('/api/email/send', isAuthenticated, async (req, res) => {
+    try {
+      const { to, subject, text, html } = req.body;
+      
+      if (!to || !subject || (!text && !html)) {
+        return res.status(400).json({ error: 'Missing required fields: to, subject, and text or html' });
+      }
+
+      const result = await sendEmail({ to, subject, text, html });
+      res.json(result);
+    } catch (error) {
+      console.error('Email send error:', error);
+      res.status(500).json({ error: 'Failed to send email' });
+    }
+  });
+
+  app.post('/api/email/welcome', isAuthenticated, async (req, res) => {
+    try {
+      const { userEmail, userName } = req.body;
+      
+      if (!userEmail || !userName) {
+        return res.status(400).json({ error: 'Missing required fields: userEmail, userName' });
+      }
+
+      const result = await sendWelcomeEmail(userEmail, userName);
+      res.json(result);
+    } catch (error) {
+      console.error('Welcome email error:', error);
+      res.status(500).json({ error: 'Failed to send welcome email' });
+    }
+  });
+
+  app.post('/api/email/password-reset', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+      }
+
+      // Generate reset token (you can implement this properly with crypto)
+      const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      const result = await sendPasswordResetEmail(email, resetToken);
+      res.json(result);
+    } catch (error) {
+      console.error('Password reset email error:', error);
+      res.status(500).json({ error: 'Failed to send password reset email' });
+    }
+  });
+
+  app.post('/api/email/notification', isAuthenticated, async (req, res) => {
+    try {
+      const { userEmail, title, message } = req.body;
+      
+      if (!userEmail || !title || !message) {
+        return res.status(400).json({ error: 'Missing required fields: userEmail, title, message' });
+      }
+
+      const result = await sendNotificationEmail(userEmail, title, message);
+      res.json(result);
+    } catch (error) {
+      console.error('Notification email error:', error);
+      res.status(500).json({ error: 'Failed to send notification email' });
+    }
+  });
+
+  app.get('/api/email/test-connection', isAuthenticated, async (req, res) => {
+    try {
+      const isConnected = await initializeEmailService();
+      res.json({ connected: isConnected });
+    } catch (error) {
+      console.error('Email connection test error:', error);
+      res.status(500).json({ error: 'Failed to test email connection' });
     }
   });
 
