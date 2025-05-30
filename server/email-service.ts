@@ -54,6 +54,8 @@ export async function sendEmail(options: {
 
 // Send welcome email
 export async function sendWelcomeEmail(userEmail: string, userName: string) {
+  console.log(`📧 Preparing welcome email for: ${userEmail} (${userName})`);
+  
   const subject = 'Welcome to Averox CRM!';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -72,11 +74,14 @@ export async function sendWelcomeEmail(userEmail: string, userName: string) {
     </div>
   `;
 
-  return await sendEmail({
+  const result = await sendEmail({
     to: userEmail,
     subject,
     html
   });
+  
+  console.log(`📧 Welcome email result:`, result);
+  return result;
 }
 
 // Send password reset email
