@@ -1894,6 +1894,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: isActive !== undefined ? isActive : true,
         avatar: avatar || null,
       });
+
+      // Send welcome email if email is provided
+      if (email && (firstName || lastName)) {
+        const userName = `${firstName || ''} ${lastName || ''}`.trim() || username;
+        try {
+          await sendWelcomeEmail(email, userName);
+          console.log(`Welcome email sent to ${email}`);
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't fail user creation if email fails
+        }
+      }
       
       res.status(200).json(user);
     } catch (error) {
@@ -8016,6 +8028,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/tenants/analytics', getTenantAnalytics);
 
   console.log("✅ Multi-tenant SaaS platform routes configured successfully");
+
+  // Initialize email service
+  initializeEmailService().then((isConnected) => {
+    if (isConnected) {
+      console.log("📧 Email service initialized successfully");
+    } else {
+      console.log("⚠️ Email service failed to initialize - check configuration");
+    }
+  });
 
   // Create HTTP server
   const server = createServer(app);

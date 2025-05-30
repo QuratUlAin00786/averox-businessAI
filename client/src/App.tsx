@@ -27,6 +27,7 @@ import SettingsTeams from "@/pages/settings-teams";
 import SettingsDataMigration from "@/pages/settings-data-migration";
 import SettingsDashboard from "@/pages/settings-dashboard";
 import SettingsCustomFields from "@/pages/settings-custom-fields";
+import EmailSettings from "@/pages/email-settings";
 import Intelligence from "@/pages/intelligence";
 import Analytics from "@/pages/analytics";
 import Workflows from "@/pages/workflows";
@@ -246,6 +247,12 @@ function Router() {
       <ProtectedRoute path="/settings/custom-fields" component={() => (
         <Layout>
           <SettingsCustomFields />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/settings/email" component={() => (
+        <Layout>
+          <EmailSettings />
         </Layout>
       )} />
       
