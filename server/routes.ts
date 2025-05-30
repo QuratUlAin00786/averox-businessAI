@@ -498,7 +498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               title: account.name,
               description: account.email || account.industry,
               type: 'account',
-              url: `/accounts/${account.id}`
+              url: `/accounts`
             });
           }
         });
@@ -518,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               title: `${contact.firstName} ${contact.lastName}`,
               description: contact.email || contact.title,
               type: 'contact',
-              url: `/contacts/${contact.id}`
+              url: `/contacts`
             });
           }
         });
@@ -538,7 +538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               title: `${lead.firstName} ${lead.lastName}`,
               description: lead.email || lead.title,
               type: 'lead',
-              url: `/leads/${lead.id}`
+              url: `/leads`
             });
           }
         });
@@ -556,7 +556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               title: opportunity.name,
               description: `${opportunity.stage} - $${opportunity.amount}`,
               type: 'opportunity',
-              url: `/opportunities/${opportunity.id}`
+              url: `/opportunities`
             });
           }
         });
@@ -574,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               title: task.title,
               description: task.description,
               type: 'task',
-              url: `/tasks/${task.id}`
+              url: `/tasks`
             });
           }
         });
