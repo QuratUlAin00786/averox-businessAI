@@ -3626,6 +3626,14 @@ export class DatabaseStorage implements IStorage {
     try {
       // First, delete all related records to avoid foreign key constraints
       
+      // Get all contacts for this account first
+      const accountContacts = await db.select().from(contacts).where(eq(contacts.accountId, id));
+      
+      // Delete social messages that reference these contacts
+      for (const contact of accountContacts) {
+        await db.delete(socialMessages).where(eq(socialMessages.contactId, contact.id));
+      }
+      
       // Delete related contacts
       await db.delete(contacts).where(eq(contacts.accountId, id));
       
