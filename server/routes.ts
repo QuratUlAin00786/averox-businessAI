@@ -2041,6 +2041,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/contacts/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      const id = parseInt(req.params.id);
+      console.log(`[Contact Update] Updating contact ${id} with data:`, req.body);
+      
+      // Validate data using the contact schema
+      const contactData = insertContactSchema.partial().parse(req.body);
+      
+      // Encrypt the contact data before storing
+      const encryptedContactData = await encryptForDatabase(contactData, 'contacts');
+      console.log(`[Contact Update] Contact data encrypted for database storage`);
+      
+      // Update the contact in database
+      const updatedContact = await storage.updateContact(id, encryptedContactData);
+      if (!updatedContact) {
+        console.error(`[Contact Update] Contact not found with id ${id}`);
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      
+      // Decrypt for response
+      const decryptedContact = await decryptFromDatabase(updatedContact, 'contacts');
+      
+      // Update activity log
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id,
+          action: 'Updated Contact',
+          detail: `Updated contact: ${decryptedContact.firstName} ${decryptedContact.lastName}`,
+          relatedToType: 'contact',
+          relatedToId: id,
+          icon: 'edit'
+        });
+      }
+      
+      console.log(`[Contact Update] Successfully updated contact ${id}`);
+      res.json(decryptedContact);
+    } catch (error) {
+      console.error('[Contact Update] Error updating contact:', error);
+      handleError(res, error);
+    }
+  });
+
   app.delete('/api/contacts/:id', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
