@@ -2017,12 +2017,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/contacts/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`[Contact Get] Fetching contact ${id}`);
+      
       const contact = await storage.getContact(id);
       if (!contact) {
+        console.error(`[Contact Get] Contact not found with id ${id}`);
         return res.status(404).json({ error: "Contact not found" });
       }
-      res.json(contact);
+      
+      // Decrypt contact data before sending response
+      const decryptedContact = await decryptFromDatabase(contact, 'contacts');
+      console.log(`[Contact Get] Successfully decrypted contact data for contact ${id}`);
+      
+      res.json(decryptedContact);
     } catch (error) {
+      console.error('[Contact Get] Error fetching contact:', error);
       handleError(res, error);
     }
   });
