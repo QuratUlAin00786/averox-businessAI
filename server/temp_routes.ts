@@ -295,14 +295,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Notes must be a string" });
       }
       
-      const updatedContact = await storage.updateContact(id, { notes });
+      // Import encryption functions
+      const { encryptForDatabase, decryptFromDatabase } = await import('./utils/database-encryption');
+      
+      // Encrypt the notes before storing
+      const encryptedData = await encryptForDatabase({ notes }, 'contacts');
+      console.log(`[Contact Notes] Notes encrypted for storage`);
+      
+      const updatedContact = await storage.updateContact(id, encryptedData);
       
       if (!updatedContact) {
         return res.status(404).json({ error: "Contact not found" });
       }
       
-      return res.json(updatedContact);
+      // Decrypt for response
+      const decryptedContact = await decryptFromDatabase(updatedContact, 'contacts');
+      console.log(`[Contact Notes] Successfully updated and decrypted notes for contact ${id}`);
+      
+      return res.json(decryptedContact);
     } catch (error) {
+      console.error('[Contact Notes] Error updating notes:', error);
       return handleError(res, error);
     }
   });
