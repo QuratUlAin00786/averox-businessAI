@@ -8088,10 +8088,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { registerEcommerceRoutes } = await import('./ecommerce-routes');
   const { registerMarketingRoutes } = await import('./marketing-routes');
   const { registerAccountingRoutes } = await import('./accounting-routes');
+  const { registerSupportTicketsRoutes } = await import('./support-tickets-routes');
   
   registerEcommerceRoutes(app);
   registerMarketingRoutes(app);
   registerAccountingRoutes(app);
+  registerSupportTicketsRoutes(app);
   
   console.log('[Routes] All fake components replaced with real database-driven functionality');
 

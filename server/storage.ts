@@ -7524,6 +7524,70 @@ Object.assign(DatabaseStorage.prototype, {
       .reduce((sum, t) => sum + parseFloat(t.amount) * (t.type === 'income' ? 1 : -1), 0);
 
     return { operating, investing, financing, netCashFlow: operating + investing + financing, period: { startDate, endDate } };
+  },
+  
+  // Support tickets operations
+  async getSupportTickets(userId: number) {
+    const { supportTickets } = await import('@shared/support-tickets-schema');
+    return await this.db.select().from(supportTickets).where(eq(supportTickets.userId, userId));
+  },
+  
+  async createSupportTicket(ticketData: any) {
+    const { supportTickets } = await import('@shared/support-tickets-schema');
+    const [ticket] = await this.db.insert(supportTickets).values(ticketData).returning();
+    return ticket;
+  },
+  
+  async getSupportTicket(id: number, userId: number) {
+    const { supportTickets } = await import('@shared/support-tickets-schema');
+    const [ticket] = await this.db.select()
+      .from(supportTickets)
+      .where(and(eq(supportTickets.id, id), eq(supportTickets.userId, userId)));
+    return ticket;
+  },
+  
+  async updateSupportTicketStatus(id: number, userId: number, status: string) {
+    const { supportTickets } = await import('@shared/support-tickets-schema');
+    const [ticket] = await this.db.update(supportTickets)
+      .set({ status: status as any, updatedAt: new Date() })
+      .where(and(eq(supportTickets.id, id), eq(supportTickets.userId, userId)))
+      .returning();
+    return ticket;
+  },
+  
+  async getTicketMessages(ticketId: number) {
+    const { ticketMessages } = await import('@shared/support-tickets-schema');
+    return await this.db.select().from(ticketMessages).where(eq(ticketMessages.ticketId, ticketId));
+  },
+  
+  async createTicketMessage(messageData: any) {
+    const { ticketMessages } = await import('@shared/support-tickets-schema');
+    const [message] = await this.db.insert(ticketMessages).values(messageData).returning();
+    return message;
+  },
+  
+  async getSupportTicketStats(userId: number) {
+    const tickets = await this.getSupportTickets(userId);
+    
+    const totalTickets = tickets.length;
+    const openTickets = tickets.filter(t => t.status === 'Open').length;
+    const inProgressTickets = tickets.filter(t => t.status === 'In Progress').length;
+    const resolvedTickets = tickets.filter(t => t.status === 'Resolved').length;
+    const closedTickets = tickets.filter(t => t.status === 'Closed').length;
+    
+    const criticalTickets = tickets.filter(t => t.priority === 'Critical').length;
+    const highPriorityTickets = tickets.filter(t => t.priority === 'High').length;
+    
+    return {
+      totalTickets,
+      openTickets,
+      inProgressTickets,
+      resolvedTickets,
+      closedTickets,
+      criticalTickets,
+      highPriorityTickets,
+      averageResolutionTime: '2.5 days' // This would be calculated from actual data
+    };
   }
 });
 

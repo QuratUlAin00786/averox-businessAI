@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Card, CardContent, CardDescription, CardFooter, 
   CardHeader, CardTitle 
@@ -23,13 +23,14 @@ import {
 } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   AlertCircle, Clock, Filter, MessageSquare, Search, User, Info, Ticket, 
   CheckCircle2, AlertTriangle, HelpCircle, XCircle, Phone, Mail, 
   MessageCircleQuestion, ExternalLink, Globe
 } from 'lucide-react';
 
-// Mock data structure until API is implemented
+// Real database-driven types
 interface SupportTicket {
   id: number;
   title: string;
@@ -50,103 +51,138 @@ interface SupportTicket {
   }[];
 }
 
-const mockTickets: SupportTicket[] = [
-  {
-    id: 1,
-    title: "Cannot access accounting module",
-    description: "I'm getting an error when trying to access the accounting module. The error says 'Permission denied'.",
-    status: "Open",
-    priority: "High",
-    category: "Technical Issue",
-    createdAt: "2025-04-01T10:30:00Z",
-    updatedAt: "2025-04-01T10:30:00Z",
-    userId: 2,
-    messages: [
-      {
-        id: 1,
-        message: "I'm getting an error when trying to access the accounting module. The error says 'Permission denied'.",
-        createdAt: "2025-04-01T10:30:00Z",
-        isAgent: false
-      },
-      {
-        id: 2,
-        message: "Thank you for reporting this issue. Can you tell me what role you're assigned in the system? I'll check the permissions settings for your account.",
-        createdAt: "2025-04-01T11:15:00Z", 
-        isAgent: true
+// Real database-driven data fetching
+export default function SupportTicketsPage() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [isCreateTicketOpen, setIsCreateTicketOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [newTicket, setNewTicket] = useState({
+    title: '',
+    description: '',
+    category: '',
+    priority: 'Medium' as const
+  });
+  const [newMessage, setNewMessage] = useState('');
+
+  // Fetch tickets from database
+  const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
+    queryKey: ['/api/support-tickets'],
+  });
+
+  // Fetch ticket statistics
+  const { data: stats } = useQuery({
+    queryKey: ['/api/support-tickets/stats'],
+  });
+
+  // Create ticket mutation
+  const createTicketMutation = useMutation({
+    mutationFn: async (ticketData: any) => {
+      return await apiRequest('POST', '/api/support-tickets', ticketData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets/stats'] });
+      setIsCreateTicketOpen(false);
+      setNewTicket({ title: '', description: '', category: '', priority: 'Medium' });
+      toast({
+        title: "Success",
+        description: "Support ticket created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create ticket",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update ticket status mutation
+  const updateTicketStatusMutation = useMutation({
+    mutationFn: async ({ ticketId, status }: { ticketId: number; status: string }) => {
+      return await apiRequest('PATCH', `/api/support-tickets/${ticketId}/status`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets/stats'] });
+      toast({
+        title: "Success",
+        description: "Ticket status updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update ticket status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Add message mutation
+  const addMessageMutation = useMutation({
+    mutationFn: async ({ ticketId, message }: { ticketId: number; message: string }) => {
+      return await apiRequest('POST', `/api/support-tickets/${ticketId}/messages`, {
+        message,
+        isAgent: 0 // User message
+      });
+    },
+    onSuccess: () => {
+      if (selectedTicket) {
+        queryClient.invalidateQueries({ queryKey: [`/api/support-tickets/${selectedTicket.id}`] });
       }
-    ]
-  },
-  {
-    id: 2,
-    title: "Need help setting up Stripe integration",
-    description: "I'm trying to connect my Stripe account but keep getting an authentication error. I've double-checked my API keys.",
-    status: "In Progress",
-    priority: "Medium",
-    category: "Integration",
-    createdAt: "2025-04-02T14:45:00Z",
-    updatedAt: "2025-04-03T09:20:00Z",
-    assignedTo: "Technical Support",
-    userId: 2,
-    messages: [
-      {
-        id: 1,
-        message: "I'm trying to connect my Stripe account but keep getting an authentication error. I've double-checked my API keys.",
-        createdAt: "2025-04-02T14:45:00Z",
-        isAgent: false
-      },
-      {
-        id: 2,
-        message: "Let me help you with this integration issue. Could you please provide a screenshot of the error message you're seeing? Also, please confirm you're using the correct API keys (live vs test).",
-        createdAt: "2025-04-02T15:30:00Z",
-        isAgent: true
-      },
-      {
-        id: 3,
-        message: "I've attached the screenshot. I'm using the live keys as we're ready to process real payments now.",
-        createdAt: "2025-04-03T09:15:00Z",
-        isAgent: false
-      }
-    ]
-  },
-  {
-    id: 3,
-    title: "How to export contacts to CSV",
-    description: "I need to export all my contacts to a CSV file for a marketing campaign. Where can I find this feature?",
-    status: "Resolved",
-    priority: "Low",
-    category: "How-to Question",
-    createdAt: "2025-04-03T16:10:00Z",
-    updatedAt: "2025-04-04T11:05:00Z",
-    assignedTo: "Customer Success",
-    userId: 2,
-    messages: [
-      {
-        id: 1,
-        message: "I need to export all my contacts to a CSV file for a marketing campaign. Where can I find this feature?",
-        createdAt: "2025-04-03T16:10:00Z",
-        isAgent: false
-      },
-      {
-        id: 2,
-        message: "You can export contacts by going to Contacts > select all (or filter as needed) > click the Export button in the top right. Choose CSV as the format. Let me know if you need any further assistance!",
-        createdAt: "2025-04-04T09:30:00Z",
-        isAgent: true
-      },
-      {
-        id: 3,
-        message: "Found it! Thanks for your help.",
-        createdAt: "2025-04-04T11:00:00Z",
-        isAgent: false
-      },
-      {
-        id: 4,
-        message: "Great! I'm glad you found it. Is there anything else you need help with?",
-        createdAt: "2025-04-04T11:05:00Z",
-        isAgent: true
-      }
-    ]
-  }
-];
+      setNewMessage('');
+      toast({
+        title: "Success",
+        description: "Message sent successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateTicket = () => {
+    if (!newTicket.title || !newTicket.description || !newTicket.category) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createTicketMutation.mutate(newTicket);
+  };
+
+  const handleAddMessage = () => {
+    if (!selectedTicket || !newMessage.trim()) return;
+    
+    addMessageMutation.mutate({
+      ticketId: selectedTicket.id,
+      message: newMessage.trim()
+    });
+  };
+
+  const filteredTickets = Array.isArray(tickets) ? tickets.filter((ticket: SupportTicket) => {
+    const matchesSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         ticket.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (activeTab === 'all') return matchesSearch;
+    if (activeTab === 'open') return matchesSearch && ticket.status === 'Open';
+    if (activeTab === 'in-progress') return matchesSearch && ticket.status === 'In Progress';
+    if (activeTab === 'resolved') return matchesSearch && ticket.status === 'Resolved';
+    return matchesSearch;
+  }) : [];
 
 const getStatusColor = (status: string) => {
   switch (status) {
