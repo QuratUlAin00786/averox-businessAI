@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Mail, 
   Users,
-
   PieChart, 
   Link as LinkIcon, 
   Clock, 
@@ -23,526 +23,429 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+
+// Real data interfaces
+interface MarketingCampaign {
+  id: number;
+  name: string;
+  type: 'email' | 'sms' | 'social' | 'automation';
+  status: 'active' | 'paused' | 'completed' | 'draft' | 'scheduled';
+  recipientCount: number;
+  sentCount: number;
+  openedCount: number;
+  clickedCount: number;
+  conversionCount: number;
+  createdAt: string;
+  scheduledAt?: string;
+  completedAt?: string;
+}
+
+interface MarketingAutomation {
+  id: number;
+  name: string;
+  status: 'active' | 'paused' | 'draft';
+  triggerType: 'lead_created' | 'contact_added' | 'opportunity_stage' | 'date_based';
+  contactCount: number;
+  steps: number;
+  conversionRate: number;
+  createdAt: string;
+}
+
+interface MarketingMetrics {
+  totalCampaigns: number;
+  activeCampaigns: number;
+  totalSent: number;
+  averageOpenRate: number;
+  averageClickRate: number;
+  conversionRate: number;
+  recentActivity: Array<{
+    action: string;
+    target: string;
+    timestamp: string;
+  }>;
+}
 
 export default function Marketing() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  // Sample campaign data
-  const campaigns = [
-    {
-      id: 1,
-      name: "Spring Product Launch",
-      type: "email",
-      status: "active",
-      sent: 4829,
-      opened: 2187,
-      clicked: 815,
-      lastSent: "Apr 18, 2025",
-      openRate: "45.3%",
-      clickRate: "16.9%"
+  // Real API queries
+  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery({
+    queryKey: ['/api/marketing/campaigns'],
+    queryFn: () => apiRequest('GET', '/api/marketing/campaigns'),
+  });
+
+  const { data: automations = [], isLoading: isLoadingAutomations } = useQuery({
+    queryKey: ['/api/marketing/automations'],
+    queryFn: () => apiRequest('GET', '/api/marketing/automations'),
+  });
+
+  const { data: metrics, isLoading: isLoadingMetrics } = useQuery({
+    queryKey: ['/api/marketing/metrics'],
+    queryFn: () => apiRequest('GET', '/api/marketing/metrics'),
+  });
+
+  // Mutations
+  const createCampaignMutation = useMutation({
+    mutationFn: (campaignData: Partial<MarketingCampaign>) => 
+      apiRequest('POST', '/api/marketing/campaigns', campaignData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/marketing/campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketing/metrics'] });
+      toast({
+        title: "Campaign Created",
+        description: "Your marketing campaign has been created successfully.",
+      });
     },
-    {
-      id: 2,
-      name: "Customer Feedback Survey",
-      type: "email",
-      status: "scheduled",
-      sent: 0,
-      opened: 0,
-      clicked: 0,
-      lastSent: "Scheduled for Apr 25, 2025",
-      openRate: "0%",
-      clickRate: "0%"
-    },
-    {
-      id: 3,
-      name: "Enterprise Solution Webinar",
-      type: "email",
-      status: "draft",
-      sent: 0,
-      opened: 0,
-      clicked: 0,
-      lastSent: "Not sent yet",
-      openRate: "0%",
-      clickRate: "0%"
-    },
-    {
-      id: 4,
-      name: "Weekly Newsletter",
-      type: "email",
-      status: "active",
-      sent: 5217,
-      opened: 3612,
-      clicked: 1254,
-      lastSent: "Apr 22, 2025",
-      openRate: "69.2%",
-      clickRate: "24.0%"
+    onError: (error: any) => {
+      toast({
+        title: "Creation Failed",
+        description: error.message || "Failed to create campaign.",
+        variant: "destructive",
+      });
     }
-  ];
+  });
 
-  // Sample automations
-  const automations = [
-    {
-      id: 1,
-      name: "Lead Nurturing Sequence",
-      status: "active",
-      contacts: 187,
-      steps: 5,
-      conversionRate: "23%"
+  const createAutomationMutation = useMutation({
+    mutationFn: (automationData: Partial<MarketingAutomation>) => 
+      apiRequest('POST', '/api/marketing/automations', automationData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/marketing/automations'] });
+      toast({
+        title: "Automation Created",
+        description: "Your marketing automation has been created successfully.",
+      });
     },
-    {
-      id: 2,
-      name: "Welcome Series",
-      status: "active",
-      contacts: 310,
-      steps: 3,
-      conversionRate: "19%"
-    },
-    {
-      id: 3,
-      name: "Re-engagement Campaign",
-      status: "draft",
-      contacts: 0,
-      steps: 4,
-      conversionRate: "0%"
+    onError: (error: any) => {
+      toast({
+        title: "Creation Failed",
+        description: error.message || "Failed to create automation.",
+        variant: "destructive",
+      });
     }
-  ];
+  });
 
-  // Stats
-  const stats = {
-    contactsTotal: 8427,
-    contactsGrowth: "+12%",
-    emailsSent: 37542,
-    emailsOpened: 22525,
-    averageOpenRate: "60%",
-    averageClickRate: "18%",
-    engagementScore: 74,
-    engagementChange: "+5%"
-  };
-  
-  // Chart data (simplified for illustration)
-  const chartData = [
-    { name: "Jan", value: 22 },
-    { name: "Feb", value: 28 },
-    { name: "Mar", value: 25 },
-    { name: "Apr", value: 35 }
-  ];
-  
+  if (!user) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p>Please log in to access marketing features.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Marketing</h1>
-          <p className="text-muted-foreground">Manage campaigns, automations, and track performance</p>
+          <h1 className="text-3xl font-bold">Marketing Center</h1>
+          <p className="text-muted-foreground">
+            Manage campaigns, automations, and track performance
+          </p>
         </div>
-        <div className="mt-4 md:mt-0 space-x-2">
-          <Button variant="outline" onClick={() => setLocation("/marketing/automations")}>
-            <Zap className="h-4 w-4 mr-2" />
-            Automations
+        <div className="space-x-2">
+          <Button variant="outline">
+            <HardDriveDownload className="mr-2 h-4 w-4" />
+            Import Contacts
           </Button>
-          <Button onClick={() => setLocation("/marketing/create")}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Campaign
+          <Button onClick={() => {/* Open campaign creation dialog */}}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Campaign
           </Button>
         </div>
       </div>
-      
-      {/* Marketing Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Audience</CardTitle>
-            <CardDescription>Total contacts and growth</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
-              <div className="text-2xl font-bold">{stats.contactsTotal.toLocaleString()}</div>
-              <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
-                {stats.contactsGrowth}
-              </Badge>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <div className="text-muted-foreground">Active</div>
-                <div className="font-medium mt-0.5">6,142</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">New (30d)</div>
-                <div className="font-medium mt-0.5">912</div>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="border-t pt-4">
-            <Button variant="ghost" className="w-full text-xs" onClick={() => setLocation("/contacts")}>
-              <Users className="h-3.5 w-3.5 mr-1" />
-              View All Contacts
-            </Button>
-          </CardFooter>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Email Performance</CardTitle>
-            <CardDescription>Open and click rates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between mb-1 text-sm">
-                  <div>Average Open Rate</div>
-                  <div className="font-medium">{stats.averageOpenRate}</div>
-                </div>
-                <Progress value={60} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between mb-1 text-sm">
-                  <div>Average Click Rate</div>
-                  <div className="font-medium">{stats.averageClickRate}</div>
-                </div>
-                <Progress value={18} className="h-2" />
-              </div>
-              <div className="pt-2 grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="text-muted-foreground">Emails Sent</div>
-                  <div className="font-medium mt-0.5">{stats.emailsSent.toLocaleString()}</div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">Emails Opened</div>
-                  <div className="font-medium mt-0.5">{stats.emailsOpened.toLocaleString()}</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="border-t pt-4">
-            <Button variant="ghost" className="w-full text-xs" onClick={() => setLocation("/marketing/reports")}>
-              <BarChart3 className="h-3.5 w-3.5 mr-1" />
-              View Performance Reports
-            </Button>
-          </CardFooter>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Engagement Score</CardTitle>
-            <CardDescription>Overall audience engagement</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center">
-              <div className="w-24 h-24 rounded-full border-8 border-primary/20 flex items-center justify-center relative">
-                <div className="absolute inset-0 rounded-full border-8 border-primary" style={{ 
-                  clipPath: `polygon(0 0, 100% 0, 100% 100%, 0% 100%)`,
-                  transform: `rotate(${270 + (stats.engagementScore / 100 * 360 * 0.75)}deg)`
-                }}></div>
-                <div className="text-2xl font-bold">{stats.engagementScore}</div>
-              </div>
-            </div>
-            <div className="mt-4 text-center">
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                <ArrowUp className="h-3 w-3 mr-1" />
-                {stats.engagementChange} from last month
-              </Badge>
-            </div>
-          </CardContent>
-          <CardFooter className="border-t pt-4">
-            <Button variant="ghost" className="w-full text-xs" onClick={() => setLocation("/marketing/engagement")}>
-              <PieChart className="h-3.5 w-3.5 mr-1" />
-              Engagement Analytics
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-      
-      {/* Main Content Tabs */}
+
+      {/* Marketing Metrics Dashboard */}
+      {isLoadingMetrics ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+          ))}
+        </div>
+      ) : metrics ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
+              <Megaphone className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.totalCampaigns}</div>
+              <p className="text-xs text-muted-foreground">
+                {metrics.activeCampaigns} active
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Messages Sent</CardTitle>
+              <Mail className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.totalSent?.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                This month
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Open Rate</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{(metrics.averageOpenRate * 100).toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground">
+                Average across campaigns
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+              <ArrowUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{(metrics.conversionRate * 100).toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground">
+                Leads to customers
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-muted-foreground">No metrics available</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <Tabs defaultValue="campaigns" className="space-y-4">
-        <div className="flex justify-between items-center">
-          <TabsList>
-            <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-            <TabsTrigger value="automations">Automations</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-          </TabsList>
-          
-          <div className="flex items-center gap-2">
-            <Input placeholder="Search..." className="w-[200px]" />
-            <Select defaultValue="all">
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Campaigns</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="draft">Drafts</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        {/* Campaigns Tab */}
-        <TabsContent value="campaigns" className="mt-0">
-          <div className="rounded-md border">
-            <div className="bg-slate-50 p-4 text-sm font-medium text-slate-500 grid grid-cols-12 gap-4">
-              <div className="col-span-4">Campaign</div>
-              <div className="col-span-1 text-center">Status</div>
-              <div className="col-span-2 text-center">Sent</div>
-              <div className="col-span-3 text-center">Performance</div>
-              <div className="col-span-2 text-right">Actions</div>
-            </div>
-            
-            {campaigns.map((campaign) => (
-              <div key={campaign.id} className="p-4 border-t grid grid-cols-12 gap-4 items-center hover:bg-slate-50">
-                <div className="col-span-4">
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Mail className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{campaign.name}</div>
-                      <div className="text-sm text-slate-500">
-                        Last activity: {campaign.lastSent}
-                      </div>
-                    </div>
-                  </div>
+        <TabsList>
+          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="automations">Automations</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="campaigns" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Marketing Campaigns</CardTitle>
+              <CardDescription>
+                Manage your email, SMS, and social media campaigns
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingCampaigns ? (
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+                  ))}
                 </div>
-                
-                <div className="col-span-1 text-center">
-                  <Badge 
-                    className={
-                      campaign.status === 'active' 
-                        ? 'bg-green-50 text-green-700 border-green-200' 
-                        : campaign.status === 'scheduled'
-                        ? 'bg-blue-50 text-blue-700 border-blue-200'
-                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                    }
-                  >
-                    {campaign.status === 'active' 
-                      ? 'Active' 
-                      : campaign.status === 'scheduled'
-                      ? 'Scheduled'
-                      : 'Draft'
-                    }
-                  </Badge>
-                </div>
-                
-                <div className="col-span-2 text-center">
-                  <div className="font-medium">{campaign.sent.toLocaleString()}</div>
-                  <div className="text-xs text-slate-500">recipients</div>
-                </div>
-                
-                <div className="col-span-3">
-                  <div className="space-y-2">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Open Rate:</span>
-                        <span className="font-medium">{campaign.openRate}</span>
-                      </div>
-                      <Progress value={parseInt(campaign.openRate) || 0} className="h-1.5" />
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Click Rate:</span>
-                        <span className="font-medium">{campaign.clickRate}</span>
-                      </div>
-                      <Progress value={parseInt(campaign.clickRate) || 0} className="h-1.5" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="col-span-2 flex justify-end space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => setLocation(`/marketing/campaigns/${campaign.id}`)}>
-                    Edit
+              ) : campaigns.length === 0 ? (
+                <div className="text-center py-8">
+                  <Megaphone className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Campaigns Yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create your first marketing campaign to start engaging with your audience.
+                  </p>
+                  <Button onClick={() => {/* Open campaign creation */}}>
+                    Create First Campaign
                   </Button>
-                  <Button variant="outline" size="sm">View Report</Button>
                 </div>
-              </div>
-            ))}
-          </div>
+              ) : (
+                <div className="space-y-4">
+                  {campaigns.map((campaign: MarketingCampaign) => (
+                    <div key={campaign.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-semibold">{campaign.name}</h3>
+                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                            <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
+                              {campaign.status}
+                            </Badge>
+                            <span>{campaign.type}</span>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          View Details
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Sent</p>
+                          <p className="font-medium">{campaign.sentCount?.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Opened</p>
+                          <p className="font-medium">
+                            {campaign.openedCount?.toLocaleString()} 
+                            {campaign.sentCount > 0 && (
+                              <span className="text-green-600 ml-1">
+                                ({((campaign.openedCount / campaign.sentCount) * 100).toFixed(1)}%)
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Clicked</p>
+                          <p className="font-medium">
+                            {campaign.clickedCount?.toLocaleString()}
+                            {campaign.openedCount > 0 && (
+                              <span className="text-blue-600 ml-1">
+                                ({((campaign.clickedCount / campaign.openedCount) * 100).toFixed(1)}%)
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Converted</p>
+                          <p className="font-medium">
+                            {campaign.conversionCount?.toLocaleString()}
+                            {campaign.sentCount > 0 && (
+                              <span className="text-purple-600 ml-1">
+                                ({((campaign.conversionCount / campaign.sentCount) * 100).toFixed(1)}%)
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
-        
-        {/* Automations Tab */}
-        <TabsContent value="automations" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {automations.map((automation) => (
-              <Card key={automation.id} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{automation.name}</CardTitle>
-                    <Badge 
-                      className={automation.status === 'active' 
-                        ? 'bg-green-50 text-green-700 border-green-200' 
-                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }
-                    >
-                      {automation.status === 'active' ? 'Active' : 'Draft'}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div>
-                        <div className="text-slate-500">Steps</div>
-                        <div className="font-medium">{automation.steps}</div>
-                      </div>
-                      <div>
-                        <div className="text-slate-500">Contacts</div>
-                        <div className="font-medium">{automation.contacts}</div>
-                      </div>
-                      <div>
-                        <div className="text-slate-500">Conversion</div>
-                        <div className="font-medium">{automation.conversionRate}</div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="h-7 w-7 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Mail className="h-3.5 w-3.5 text-blue-600" />
-                        </div>
-                        <div>Welcome Email</div>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center">
-                          <Clock className="h-3.5 w-3.5 text-slate-600" />
-                        </div>
-                        <div>Wait 3 Days</div>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="h-7 w-7 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Mail className="h-3.5 w-3.5 text-blue-600" />
-                        </div>
-                        <div>Follow-up Email</div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="border-t pt-3 flex justify-between">
-                  <Button variant="outline" size="sm" onClick={() => setLocation(`/marketing/automations/${automation.id}`)}>
-                    Edit
+
+        <TabsContent value="automations" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Marketing Automations</CardTitle>
+              <CardDescription>
+                Set up automated workflows to nurture leads and engage customers
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingAutomations ? (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-20 bg-muted animate-pulse rounded" />
+                  ))}
+                </div>
+              ) : automations.length === 0 ? (
+                <div className="text-center py-8">
+                  <Zap className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Automations Set Up</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create automated workflows to nurture leads and improve conversions.
+                  </p>
+                  <Button onClick={() => {/* Open automation creation */}}>
+                    Create First Automation
                   </Button>
-                  <Button variant="outline" size="sm">View Report</Button>
-                </CardFooter>
-              </Card>
-            ))}
-            
-            {/* Create new card */}
-            <Card className="border-dashed flex flex-col items-center justify-center p-6">
-              <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                <Plus className="h-6 w-6 text-slate-500" />
-              </div>
-              <h3 className="text-lg font-medium mb-1">Create Workflow</h3>
-              <p className="text-sm text-slate-500 text-center mb-4">Set up automated marketing workflows</p>
-              <Button onClick={() => setLocation("/marketing/automations/new")}>
-                New Workflow
-              </Button>
-            </Card>
-          </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {automations.map((automation: MarketingAutomation) => (
+                    <div key={automation.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-semibold">{automation.name}</h3>
+                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                            <Badge variant={automation.status === 'active' ? 'default' : 'secondary'}>
+                              {automation.status}
+                            </Badge>
+                            <span>{automation.steps} steps</span>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          Edit Workflow
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Active Contacts</p>
+                          <p className="font-medium">{automation.contactCount?.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Conversion Rate</p>
+                          <p className="font-medium text-green-600">
+                            {(automation.conversionRate * 100).toFixed(1)}%
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Trigger</p>
+                          <p className="font-medium capitalize">
+                            {automation.triggerType.replace('_', ' ')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
-        
-        {/* Templates Tab */}
-        <TabsContent value="templates" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="overflow-hidden">
-              <div className="h-40 bg-slate-100 flex items-center justify-center">
-                <div className="w-full max-w-xs mx-auto bg-white p-4 rounded shadow-sm">
-                  <div className="h-4 bg-slate-200 rounded mb-2 w-3/4"></div>
-                  <div className="h-3 bg-slate-200 rounded mb-1 w-full"></div>
-                  <div className="h-3 bg-slate-200 rounded mb-3 w-5/6"></div>
-                  <div className="h-8 bg-primary rounded w-1/3"></div>
-                </div>
-              </div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Welcome Email</CardTitle>
-                <CardDescription>New user onboarding</CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm text-slate-500">
-                Introduce your product and guide new users on getting started.
-              </CardContent>
-              <CardFooter className="border-t pt-3">
-                <Button className="w-full" onClick={() => setLocation("/marketing/create?template=welcome")}>
-                  Use Template
+
+        <TabsContent value="templates" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Templates</CardTitle>
+              <CardDescription>
+                Create and manage reusable email templates for your campaigns
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Mail className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Template Library</h3>
+                <p className="text-muted-foreground mb-4">
+                  Email template management will be available soon.
+                </p>
+                <Button variant="outline">
+                  Coming Soon
                 </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="overflow-hidden">
-              <div className="h-40 bg-slate-100 flex items-center justify-center">
-                <div className="w-full max-w-xs mx-auto bg-white p-4 rounded shadow-sm">
-                  <div className="h-4 bg-slate-200 rounded mb-2 w-3/4"></div>
-                  <div className="h-3 bg-slate-200 rounded mb-1 w-full"></div>
-                  <div className="h-3 bg-slate-200 rounded mb-3 w-5/6"></div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="h-20 bg-slate-200 rounded"></div>
-                    <div className="h-20 bg-slate-200 rounded"></div>
-                  </div>
-                </div>
               </div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Newsletter</CardTitle>
-                <CardDescription>Regular updates</CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm text-slate-500">
-                Share news, updates, and valuable content with your audience.
-              </CardContent>
-              <CardFooter className="border-t pt-3">
-                <Button className="w-full" onClick={() => setLocation("/marketing/create?template=newsletter")}>
-                  Use Template
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Marketing Analytics</CardTitle>
+              <CardDescription>
+                Detailed performance metrics and insights for your marketing efforts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <PieChart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Advanced Analytics</h3>
+                <p className="text-muted-foreground mb-4">
+                  Detailed analytics and reporting features will be available soon.
+                </p>
+                <Button variant="outline">
+                  Coming Soon
                 </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="overflow-hidden">
-              <div className="h-40 bg-slate-100 flex items-center justify-center">
-                <div className="w-full max-w-xs mx-auto bg-white p-4 rounded shadow-sm">
-                  <div className="h-4 bg-slate-200 rounded mb-2 w-3/4"></div>
-                  <div className="h-3 bg-slate-200 rounded mb-2 w-full"></div>
-                  <div className="h-16 bg-slate-200 rounded mb-3"></div>
-                  <div className="h-6 bg-primary rounded w-1/2"></div>
-                </div>
               </div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Product Announcement</CardTitle>
-                <CardDescription>Launch updates</CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm text-slate-500">
-                Announce new products, features, or services to your audience.
-              </CardContent>
-              <CardFooter className="border-t pt-3">
-                <Button className="w-full" onClick={() => setLocation("/marketing/create?template=product-announcement")}>
-                  Use Template
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-          
-          <div className="mt-4 flex justify-center">
-            <Button variant="outline" onClick={() => setLocation("/marketing/templates")}>
-              View All Templates
-            </Button>
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
-      
-      {/* Quick Actions */}
-      <div className="mt-8">
-        <h2 className="text-lg font-medium mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Button variant="outline" className="h-auto py-6 flex flex-col gap-2" onClick={() => setLocation("/marketing/create")}>
-            <Mail className="h-6 w-6" />
-            <span>Create Email</span>
-          </Button>
-          <Button variant="outline" className="h-auto py-6 flex flex-col gap-2" onClick={() => setLocation("/marketing/automations/new")}>
-            <Zap className="h-6 w-6" />
-            <span>Create Automation</span>
-          </Button>
-          <Button variant="outline" className="h-auto py-6 flex flex-col gap-2" onClick={() => setLocation("/marketing/schedule")}>
-            <Calendar className="h-6 w-6" />
-            <span>Calendar View</span>
-          </Button>
-          <Button variant="outline" className="h-auto py-6 flex flex-col gap-2" onClick={() => setLocation("/marketing/import")}>
-            <HardDriveDownload className="h-6 w-6" />
-            <span>Import Contacts</span>
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
