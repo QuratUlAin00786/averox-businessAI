@@ -7321,6 +7321,212 @@ DatabaseStorage.prototype.removeTeamMember = async function(id: number): Promise
   }
 };
 
+// Add required database-driven storage methods to DatabaseStorage
+Object.assign(DatabaseStorage.prototype, {
+  // E-commerce operations
+  async getEcommerceStores(userId: number) {
+    const { ecommerceStores } = await import('@shared/ecommerce-schema');
+    return await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.userId, userId));
+  },
+  
+  async createEcommerceStore(storeData: any) {
+    const { ecommerceStores } = await import('@shared/ecommerce-schema');
+    const [store] = await this.db.insert(ecommerceStores).values(storeData).returning();
+    return store;
+  },
+  
+  async getEcommerceStore(id: number) {
+    const { ecommerceStores } = await import('@shared/ecommerce-schema');
+    const [store] = await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.id, id));
+    return store;
+  },
+  
+  async updateEcommerceStore(id: number, data: any) {
+    const { ecommerceStores } = await import('@shared/ecommerce-schema');
+    const [store] = await this.db.update(ecommerceStores).set(data).where(eq(ecommerceStores.id, id)).returning();
+    return store;
+  },
+  
+  async getEcommerceProducts(storeId?: number) {
+    const { ecommerceProducts } = await import('@shared/ecommerce-schema');
+    if (storeId) {
+      return await this.db.select().from(ecommerceProducts).where(eq(ecommerceProducts.storeId, storeId));
+    }
+    return await this.db.select().from(ecommerceProducts);
+  },
+  
+  async createEcommerceProduct(productData: any) {
+    const { ecommerceProducts } = await import('@shared/ecommerce-schema');
+    const [product] = await this.db.insert(ecommerceProducts).values(productData).returning();
+    return product;
+  },
+  
+  async getEcommerceOrders(storeId?: number) {
+    const { ecommerceOrders } = await import('@shared/ecommerce-schema');
+    if (storeId) {
+      return await this.db.select().from(ecommerceOrders).where(eq(ecommerceOrders.storeId, storeId));
+    }
+    return await this.db.select().from(ecommerceOrders);
+  },
+  
+  async createEcommerceOrder(orderData: any) {
+    const { ecommerceOrders } = await import('@shared/ecommerce-schema');
+    const [order] = await this.db.insert(ecommerceOrders).values(orderData).returning();
+    return order;
+  },
+  
+  async getEcommerceAnalytics(storeId?: number) {
+    const orders = await this.getEcommerceOrders(storeId);
+    const products = await this.getEcommerceProducts(storeId);
+    
+    const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
+    const totalOrders = orders.length;
+    const activeProducts = products.filter(p => p.isActive).length;
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    return { totalRevenue, totalOrders, activeProducts, averageOrderValue };
+  },
+  
+  // Marketing operations
+  async getMarketingCampaigns(userId: number) {
+    const { marketingCampaigns } = await import('@shared/marketing-schema');
+    return await this.db.select().from(marketingCampaigns).where(eq(marketingCampaigns.userId, userId));
+  },
+  
+  async createMarketingCampaign(campaignData: any) {
+    const { marketingCampaigns } = await import('@shared/marketing-schema');
+    const [campaign] = await this.db.insert(marketingCampaigns).values(campaignData).returning();
+    return campaign;
+  },
+  
+  async getMarketingAutomations(userId: number) {
+    const { marketingAutomations } = await import('@shared/marketing-schema');
+    return await this.db.select().from(marketingAutomations).where(eq(marketingAutomations.userId, userId));
+  },
+  
+  async createMarketingAutomation(automationData: any) {
+    const { marketingAutomations } = await import('@shared/marketing-schema');
+    const [automation] = await this.db.insert(marketingAutomations).values(automationData).returning();
+    return automation;
+  },
+  
+  async getMarketingMetrics(userId: number) {
+    const campaigns = await this.getMarketingCampaigns(userId);
+    const automations = await this.getMarketingAutomations(userId);
+    
+    const totalCampaigns = campaigns.length;
+    const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
+    const totalSent = campaigns.reduce((sum, c) => sum + (c.sentCount || 0), 0);
+    const totalOpened = campaigns.reduce((sum, c) => sum + (c.openedCount || 0), 0);
+    const totalClicked = campaigns.reduce((sum, c) => sum + (c.clickedCount || 0), 0);
+    
+    const averageOpenRate = totalSent > 0 ? (totalOpened / totalSent) * 100 : 0;
+    const conversionRate = totalSent > 0 ? (totalClicked / totalSent) * 100 : 0;
+
+    return { totalCampaigns, activeCampaigns, totalSent, averageOpenRate, conversionRate };
+  },
+  
+  // Accounting operations
+  async getAccountingTransactions(userId: number) {
+    const { accountingTransactions } = await import('@shared/accounting-schema');
+    return await this.db.select().from(accountingTransactions).where(eq(accountingTransactions.userId, userId));
+  },
+  
+  async createAccountingTransaction(transactionData: any) {
+    const { accountingTransactions } = await import('@shared/accounting-schema');
+    const [transaction] = await this.db.insert(accountingTransactions).values(transactionData).returning();
+    return transaction;
+  },
+  
+  async getAccountingTransaction(id: number) {
+    const { accountingTransactions } = await import('@shared/accounting-schema');
+    const [transaction] = await this.db.select().from(accountingTransactions).where(eq(accountingTransactions.id, id));
+    return transaction;
+  },
+  
+  async getAccountingAccounts(userId: number) {
+    const { accountingAccounts } = await import('@shared/accounting-schema');
+    return await this.db.select().from(accountingAccounts).where(eq(accountingAccounts.userId, userId));
+  },
+  
+  async createAccountingAccount(accountData: any) {
+    const { accountingAccounts } = await import('@shared/accounting-schema');
+    const [account] = await this.db.insert(accountingAccounts).values(accountData).returning();
+    return account;
+  },
+  
+  async getAccountingCategories(userId: number) {
+    const { accountingCategories } = await import('@shared/accounting-schema');
+    return await this.db.select().from(accountingCategories).where(eq(accountingCategories.userId, userId));
+  },
+  
+  async createAccountingCategory(categoryData: any) {
+    const { accountingCategories } = await import('@shared/accounting-schema');
+    const [category] = await this.db.insert(accountingCategories).values(categoryData).returning();
+    return category;
+  },
+  
+  async getAccountingProfitLossReport(userId: number, startDate: Date, endDate: Date) {
+    const { accountingTransactions } = await import('@shared/accounting-schema');
+    const transactions = await this.db.select()
+      .from(accountingTransactions)
+      .where(
+        and(
+          eq(accountingTransactions.userId, userId),
+          gte(accountingTransactions.date, startDate),
+          lte(accountingTransactions.date, endDate)
+        )
+      );
+
+    const income = transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    const expenses = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+    return { income, expenses, netProfit: income - expenses, period: { startDate, endDate } };
+  },
+  
+  async getAccountingBalanceSheet(userId: number) {
+    const accounts = await this.getAccountingAccounts(userId);
+    
+    const assets = accounts.filter(a => a.type === 'asset').reduce((sum, a) => sum + parseFloat(a.balance || 0), 0);
+    const liabilities = accounts.filter(a => a.type === 'liability').reduce((sum, a) => sum + parseFloat(a.balance || 0), 0);
+    const equity = accounts.filter(a => a.type === 'equity').reduce((sum, a) => sum + parseFloat(a.balance || 0), 0);
+
+    return { assets, liabilities, equity, totalEquity: assets - liabilities };
+  },
+  
+  async getAccountingCashFlowStatement(userId: number, startDate: Date, endDate: Date) {
+    const { accountingTransactions } = await import('@shared/accounting-schema');
+    const transactions = await this.db.select()
+      .from(accountingTransactions)
+      .where(
+        and(
+          eq(accountingTransactions.userId, userId),
+          gte(accountingTransactions.date, startDate),
+          lte(accountingTransactions.date, endDate)
+        )
+      );
+
+    const operating = transactions
+      .filter(t => t.category === 'operating')
+      .reduce((sum, t) => sum + parseFloat(t.amount) * (t.type === 'income' ? 1 : -1), 0);
+    
+    const investing = transactions
+      .filter(t => t.category === 'investing')
+      .reduce((sum, t) => sum + parseFloat(t.amount) * (t.type === 'income' ? 1 : -1), 0);
+    
+    const financing = transactions
+      .filter(t => t.category === 'financing')
+      .reduce((sum, t) => sum + parseFloat(t.amount) * (t.type === 'income' ? 1 : -1), 0);
+
+    return { operating, investing, financing, netCashFlow: operating + investing + financing, period: { startDate, endDate } };
+  }
+});
+
 // Create the appropriate storage implementation
 // For development, you can switch between MemStorage and DatabaseStorage
 const useDatabase = true; // Set to true to use PostgreSQL database storage
