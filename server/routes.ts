@@ -14,7 +14,7 @@ import {
 import { registerPermissionRoutes } from "./permission-routes";
 import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from "./permissions-manager";
 import { migrationRouter } from "./migrations/migration-routes";
-import { setupMarketingRoutes } from "./marketing-routes";
+// Removed old marketing routes import
 import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
 import manufacturingRouter from "./manufacturing-routes-fixed";
