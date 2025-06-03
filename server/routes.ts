@@ -1210,7 +1210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerPermissionRoutes(app);
   
   // Set up marketing routes
-  setupMarketingRoutes(app);
+  // Marketing routes now handled by new database-driven implementation
   
   // Set up company setup wizard routes
   setupRoutes(app);
@@ -8083,6 +8083,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/tenants/analytics', getTenantAnalytics);
 
   console.log("✅ Multi-tenant SaaS platform routes configured successfully");
+
+  // Register new database-driven routes to replace fake components
+  const { registerEcommerceRoutes } = await import('./ecommerce-routes');
+  const { registerMarketingRoutes } = await import('./marketing-routes');
+  const { registerAccountingRoutes } = await import('./accounting-routes');
+  
+  registerEcommerceRoutes(app);
+  registerMarketingRoutes(app);
+  registerAccountingRoutes(app);
+  
+  console.log('[Routes] All fake components replaced with real database-driven functionality');
 
   // Initialize email service
   initializeEmailService().then((isConnected) => {
