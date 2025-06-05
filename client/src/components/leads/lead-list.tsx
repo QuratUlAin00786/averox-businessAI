@@ -226,7 +226,7 @@ export function LeadList({
         </div>
       ) : (
         <div className="rounded-md border overflow-x-auto">
-          <Table className="w-[680px]">
+          <Table className="min-w-full">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[140px]">Name</TableHead>
