@@ -229,13 +229,13 @@ export function LeadList({
           <Table className="min-w-full">
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead className="w-[120px] min-w-[120px] text-right">Actions</TableHead>
+                <TableHead className="w-[200px]">Name</TableHead>
+                <TableHead className="w-[150px]">Company</TableHead>
+                <TableHead className="w-[100px]">Status</TableHead>
+                <TableHead className="w-[180px]">Email</TableHead>
+                <TableHead className="w-[120px]">Phone</TableHead>
+                <TableHead className="w-[100px]">Source</TableHead>
+                <TableHead className="w-[80px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
