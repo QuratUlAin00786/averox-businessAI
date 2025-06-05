@@ -136,7 +136,39 @@ export function LeadList({
                         </CardDescription>
                       </div>
                     </div>
-                    <Badge className={getStatusColor(lead.status)}>{lead.status || "New"}</Badge>
+                    <div className="flex items-center space-x-2">
+                      <Badge className={getStatusColor(lead.status)}>{lead.status || "New"}</Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => onView(lead)}>
+                            <Eye className="h-4 w-4 mr-2" /> View details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEdit(lead)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {!lead.isConverted && (
+                            <DropdownMenuItem onClick={() => onConvert(lead)}>
+                              <Check className="h-4 w-4 mr-2" /> Convert lead
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-600 hover:bg-red-50 focus:bg-red-50"
+                            onClick={() => onDelete(lead)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete Lead
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 pb-2 text-sm">
