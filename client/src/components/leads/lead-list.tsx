@@ -225,8 +225,8 @@ export function LeadList({
           )}
         </div>
       ) : (
-        <div className="rounded-md border">
-          <Table>
+        <div className="rounded-md border overflow-x-auto">
+          <Table className="min-w-full">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
@@ -235,7 +235,7 @@ export function LeadList({
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Source</TableHead>
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
+                <TableHead className="w-[120px] min-w-[120px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -272,12 +272,12 @@ export function LeadList({
                     <TableCell>{typeof lead.email === 'object' ? "—" : lead.email || "—"}</TableCell>
                     <TableCell>{typeof lead.phone === 'object' ? "—" : lead.phone || "—"}</TableCell>
                     <TableCell>{lead.source || "—"}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right w-[120px] min-w-[120px]">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
+                          <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 border border-gray-200">
                             <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreHorizontal className="h-4 w-4 text-gray-600" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
