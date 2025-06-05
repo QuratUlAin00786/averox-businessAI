@@ -1,20 +1,16 @@
-import { db } from "../server/db";
-import { users, accounts, contacts, leads, opportunities, tasks, events, activities } from "../shared/schema";
-import { hashPassword } from "../server/auth";
-// Removed faker.js to enforce authentic data only
-
 /**
- * DEPRECATED: This script contains faker.js generated data
- * System now enforces 100% authentic data only
- * Use real user registration and authentic data sources instead
+ * DEPRECATED: Script disabled to enforce 100% authentic data
+ * System now requires real user registration and authentic data sources
+ * No fake or synthetic data generation permitted
+ * 
+ * For testing purposes, create accounts through the UI with real data
  */
-async function createDemoAccounts() {
-  console.log("WARNING: Demo account creation disabled - system requires authentic data only");
-  return { success: false, message: "Fake data generation disabled" };
 
-  // Check if demo accounts already exist
-  const existingAdmin = await db.select().from(users).where({ username: 'demoadmin' });
-  const existingUser = await db.select().from(users).where({ username: 'demouser' });
+async function createDemoAccounts() {
+  console.log("Demo accounts disabled - system requires authentic data only");
+  console.log("Please use real user registration and data sources");
+  process.exit(0);
+}
 
   if (existingAdmin.length > 0 && existingUser.length > 0) {
     console.log("Demo accounts already exist. No action needed.");

@@ -115,42 +115,17 @@ const personalizationTokens = [
 const loadTemplatesFromDatabase = async () => {
   // Return empty array until database integration is complete
   return [];
-    name: "Newsletter",
-    thumbnail: "https://placehold.co/300x180/22C55E/FFFFFF?text=Newsletter",
-    description: "Share regular updates with your subscribers"
-  },
-  {
-    id: "product_update",
-    name: "Product Update",
-    thumbnail: "https://placehold.co/300x180/EAB308/FFFFFF?text=Product+Update",
-    description: "Announce new features or changes"
-  },
-  {
-    id: "promotional",
-    name: "Promotional",
-    thumbnail: "https://placehold.co/300x180/EC4899/FFFFFF?text=Promo",
-    description: "Showcase deals, discounts, and offers"
-  }
-];
+};
 
-// Placeholder for email preview data
-const previewPlaceholders = {
-  "{{contact.firstName}}": "John",
-  "{{contact.lastName}}": "Smith",
-  "{{contact.email}}": "john.smith@example.com",
-  "{{contact.company}}": "ACME Corp",
-  "{{contact.phone}}": "+1 (555) 123-4567",
-  "{{account.name}}": "ACME Corporation",
-  "{{account.type}}": "Enterprise",
-  "{{account.industry}}": "Technology",
-  "{{system.date}}": "April 23, 2025",
-  "{{unsubscribe}}": "<a href='#'>Unsubscribe from emails</a>",
-  "{{viewInBrowser}}": "<a href='#'>View in browser</a>"
+// Preview data must come from database - no hardcoded placeholders permitted
+const loadPreviewDataFromDatabase = async () => {
+  // Return empty object until database integration is complete
+  return {};
 };
 
 export default function EmailTemplateEditor() {
   const [, setLocation] = useLocation();
-  const [template, setTemplate] = useState(sampleTemplate);
+  const [template, setTemplate] = useState(createEmptyTemplate());
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [mode, setMode] = useState<'visual' | 'code'>('visual');
@@ -701,17 +676,21 @@ export default function EmailTemplateEditor() {
                   }}
                   onClick={(e) => e.preventDefault()}
                 >
-                  <img 
-                    src={`https://placehold.co/${parseInt(element.settings.iconSize)}/${
-                      network.name === 'facebook' ? '1877F2' : 
-                      network.name === 'twitter' ? '1DA1F2' : 
-                      network.name === 'linkedin' ? '0A66C2' : 
-                      network.name === 'instagram' ? 'E4405F' : '000000'
-                    }/FFFFFF?text=${network.name}`} 
-                    alt={network.name} 
-                    width={element.settings.iconSize}
-                    height={element.settings.iconSize}
-                  />
+                  <div 
+                    style={{
+                      width: element.settings.iconSize,
+                      height: element.settings.iconSize,
+                      backgroundColor: '#e5e7eb',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      color: '#6b7280'
+                    }}
+                  >
+                    {network.name}
+                  </div>
                 </a>
               ))}
             </div>
