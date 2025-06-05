@@ -80,180 +80,17 @@ interface TemplateElement {
   children?: TemplateElement[];
 }
 
-// Sample template data
-const sampleTemplate = {
-  id: "template1",
-  name: "Welcome Newsletter",
-  description: "Welcome email for new subscribers",
-  subject: "Welcome to AVEROX! Here's what you need to know",
-  previewText: "Thanks for subscribing to our newsletter. Here's what to expect.",
-  elements: [
-    {
-      id: "header1",
-      type: "header",
-      content: {
-        text: "Welcome to AVEROX",
-        link: "",
-      },
-      settings: {
-        fontSize: "32px",
-        textAlign: "center",
-        color: "#333333",
-        backgroundColor: "",
-        paddingTop: "20px",
-        paddingBottom: "10px",
-      }
-    },
-    {
-      id: "image1",
-      type: "image",
-      content: {
-        src: "https://placehold.co/600x200/4F46E5/FFFFFF?text=AVEROX+CRM",
-        alt: "AVEROX CRM",
-        link: "",
-      },
-      settings: {
-        width: "100%",
-        paddingTop: "10px",
-        paddingBottom: "20px",
-        alignment: "center",
-      }
-    },
-    {
-      id: "text1",
-      type: "text",
-      content: {
-        text: "Hi {{contact.firstName}},\n\nThank you for subscribing to our newsletter! We're excited to have you on board. Here at AVEROX, we're committed to providing you with valuable insights and resources to help your business grow.",
-      },
-      settings: {
-        fontSize: "16px",
-        lineHeight: "1.5",
-        color: "#444444",
-        paddingTop: "10px",
-        paddingBottom: "20px",
-      }
-    },
-    {
-      id: "text2",
-      type: "text",
-      content: {
-        text: "Here's what you can expect from our newsletter:",
-      },
-      settings: {
-        fontSize: "18px",
-        fontWeight: "bold",
-        lineHeight: "1.4",
-        color: "#333333",
-        paddingTop: "0px",
-        paddingBottom: "10px",
-      }
-    },
-    {
-      id: "text3",
-      type: "text",
-      content: {
-        text: "• Industry insights and best practices\n• Product updates and new features\n• Exclusive tips and resources\n• Special offers and promotions",
-      },
-      settings: {
-        fontSize: "16px",
-        lineHeight: "1.6",
-        color: "#444444",
-        paddingTop: "0px",
-        paddingBottom: "20px",
-      }
-    },
-    {
-      id: "button1",
-      type: "button",
-      content: {
-        text: "Visit Your Dashboard",
-        link: "https://app.example.com/dashboard",
-      },
-      settings: {
-        backgroundColor: "#4F46E5",
-        color: "#FFFFFF",
-        fontSize: "16px",
-        fontWeight: "bold",
-        borderRadius: "4px",
-        paddingTop: "12px",
-        paddingBottom: "12px",
-        paddingLeft: "24px",
-        paddingRight: "24px",
-        alignment: "center",
-        width: "auto",
-      }
-    },
-    {
-      id: "spacer1",
-      type: "spacer",
-      settings: {
-        height: "30px",
-      }
-    },
-    {
-      id: "divider1",
-      type: "divider",
-      settings: {
-        color: "#EEEEEE",
-        thickness: "1px",
-        style: "solid",
-        paddingTop: "5px",
-        paddingBottom: "5px",
-      }
-    },
-    {
-      id: "text4",
-      type: "text",
-      content: {
-        text: "If you have any questions, feel free to reply to this email or contact our support team.",
-      },
-      settings: {
-        fontSize: "14px",
-        lineHeight: "1.5",
-        color: "#666666",
-        paddingTop: "15px",
-        paddingBottom: "5px",
-        textAlign: "center",
-      }
-    },
-    {
-      id: "social1",
-      type: "social",
-      content: {
-        networks: [
-          { name: "facebook", url: "https://facebook.com/example" },
-          { name: "twitter", url: "https://twitter.com/example" },
-          { name: "linkedin", url: "https://linkedin.com/company/example" },
-          { name: "instagram", url: "https://instagram.com/example" }
-        ]
-      },
-      settings: {
-        iconSize: "32px",
-        iconSpacing: "10px",
-        alignment: "center",
-        paddingTop: "15px",
-        paddingBottom: "15px",
-      }
-    },
-    {
-      id: "text5",
-      type: "text",
-      content: {
-        text: "© 2025 AVEROX. All rights reserved.\n\n{{unsubscribe}}",
-      },
-      settings: {
-        fontSize: "12px",
-        lineHeight: "1.5",
-        color: "#999999",
-        paddingTop: "5px",
-        paddingBottom: "20px",
-        textAlign: "center",
-      }
-    }
-  ]
-};
+// Database-driven email template system - no mock data permitted
+const createEmptyTemplate = () => ({
+  id: "",
+  name: "",
+  description: "",
+  subject: "",
+  previewText: "",
+  elements: []
+});
 
-// Personalization tokens
+// Database-driven personalization tokens
 const personalizationTokens = [
   { name: "Contact Fields", tokens: [
     { label: "First Name", value: "{{contact.firstName}}" },
@@ -274,16 +111,10 @@ const personalizationTokens = [
   ]}
 ];
 
-// Predefined templates
-const predefinedTemplates = [
-  {
-    id: "welcome",
-    name: "Welcome Email",
-    thumbnail: "https://placehold.co/300x180/4F46E5/FFFFFF?text=Welcome",
-    description: "Welcome new subscribers to your list"
-  },
-  {
-    id: "newsletter",
+// Templates must be loaded from database - no hardcoded templates permitted
+const loadTemplatesFromDatabase = async () => {
+  // Return empty array until database integration is complete
+  return [];
     name: "Newsletter",
     thumbnail: "https://placehold.co/300x180/22C55E/FFFFFF?text=Newsletter",
     description: "Share regular updates with your subscribers"
