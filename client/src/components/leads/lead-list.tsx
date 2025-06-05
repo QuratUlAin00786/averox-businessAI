@@ -170,6 +170,14 @@ export function LeadList({
                   >
                     <Pencil className="h-4 w-4 mr-1" /> Edit
                   </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => onDelete(lead)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" /> Delete
+                  </Button>
                   {!lead.isConverted && (
                     <Button 
                       size="sm" 
