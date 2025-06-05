@@ -104,8 +104,12 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
   // Check if we have a saved debug phone in localStorage
   const savedDebugPhone = localStorage.getItem('debug_account_phone');
   
+  // Safely handle phone parameter - check if it's an encrypted object
+  const safePhone = typeof phone === 'string' ? phone : '';
+  const safeEmail = typeof email === 'string' ? email : '';
+  
   // Use the phone parameter or the debug phone from localStorage
-  const phoneToUse = phone || savedDebugPhone || '';
+  const phoneToUse = safePhone || savedDebugPhone || '';
   
   // Convert phone to string for use in communication options
   const phoneStr = String(phoneToUse || '');
@@ -115,14 +119,14 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
     contactId, 
     contactType, 
     contactName, 
-    email, 
-    phone,
-    hasPhone: !!phone,  // Explicitly show if phone is truthy
+    email: safeEmail, 
+    phone: safePhone,
+    hasPhone: !!safePhone,  // Explicitly show if phone is truthy
     phoneType: typeof phone,  // Log the type of the phone parameter
-    phoneValue: phone, // Log the exact value
+    phoneValue: safePhone, // Log the safe value
     phoneString: phoneStr, // Log the string version we'll use
     savedDebugPhone, // Show what's in localStorage
-    usingDebugPhone: !phone && !!savedDebugPhone, // Are we using the debug value?
+    usingDebugPhone: !safePhone && !!savedDebugPhone, // Are we using the debug value?
     finalPhoneUsed: phoneToUse // The final value used after fallbacks
   });
   
@@ -724,7 +728,7 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
             
             <div className="text-center">
               <h3 className="text-xl font-medium">{contactName || 'Unknown Contact'}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{phoneStr}</p>
+              <p className="text-sm text-muted-foreground mt-1">{typeof phoneStr === 'string' ? phoneStr : '—'}</p>
               
               {callStatus === 'ongoing' && (
                 <p className="text-sm text-green-600 mt-2 animate-pulse">
