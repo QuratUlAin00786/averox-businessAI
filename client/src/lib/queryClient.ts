@@ -288,7 +288,9 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: true,
+      refetchOnWindowFocus: false, // Disable to prevent network change detection
+      refetchOnReconnect: false, // Disable automatic refetch on reconnect
+      networkMode: 'offlineFirst', // Use offlineFirst to prevent network change errors
       staleTime: 60000, // 1 minute
       retry: (failureCount, error) => {
         // Don't retry on 4xx errors except 408 (timeout) and 429 (rate limit)
@@ -326,6 +328,7 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       retry: false,
+      networkMode: 'offlineFirst', // Apply same network mode to mutations
     },
   },
 });

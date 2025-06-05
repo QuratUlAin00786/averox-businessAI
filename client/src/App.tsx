@@ -2,6 +2,7 @@ import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
+import { NetworkStatus } from "@/components/ui/network-status";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 import { LanguageProvider } from "@/hooks/use-language";
@@ -534,6 +535,7 @@ function App() {
           <SystemSettingsProvider>
             <AutoLogin />
             <Router />
+            <NetworkStatus />
             <Toaster />
           </SystemSettingsProvider>
         </LanguageProvider>
