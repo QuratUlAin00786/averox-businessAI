@@ -229,13 +229,13 @@ export function LeadList({
           <Table className="min-w-full">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">Name</TableHead>
-                <TableHead className="w-[150px]">Company</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[180px]">Email</TableHead>
-                <TableHead className="w-[120px]">Phone</TableHead>
-                <TableHead className="w-[100px]">Source</TableHead>
-                <TableHead className="w-[80px] text-right">Actions</TableHead>
+                <TableHead className="w-[160px]">Name</TableHead>
+                <TableHead className="w-[120px]">Company</TableHead>
+                <TableHead className="w-[90px]">Status</TableHead>
+                <TableHead className="w-[140px]">Email</TableHead>
+                <TableHead className="w-[100px]">Phone</TableHead>
+                <TableHead className="w-[80px]">Source</TableHead>
+                <TableHead className="w-[70px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -296,7 +296,7 @@ export function LeadList({
                             )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              className="text-red-600 hover:bg-red-50 focus:bg-red-50"
+                              className="text-red-600 hover:bg-red-50 hover:text-red-700 focus:bg-red-50 focus:text-red-700"
                               onClick={() => onDelete(lead)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" /> Delete Lead
