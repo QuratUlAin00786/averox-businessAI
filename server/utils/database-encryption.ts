@@ -89,7 +89,7 @@ export async function encryptForDatabase<T extends Record<string, any>>(data: T,
   const result = { ...data } as Record<string, any>;
   const encryptionPromises: Promise<void>[] = [];
   
-  // Encrypt each field if it should be encrypted
+  // Encrypt each field if it should be encrypted, preserve others as-is
   for (const [key, value] of Object.entries(data)) {
     if (value && typeof value === 'string' && shouldEncryptField(key, entityType)) {
       const encryptPromise = async () => {
@@ -98,9 +98,14 @@ export async function encryptForDatabase<T extends Record<string, any>>(data: T,
           result[key] = JSON.stringify(encryptedData);
         } catch (err) {
           console.error(`Error encrypting field ${key}:`, err);
+          // Keep original value if encryption fails
+          result[key] = value;
         }
       };
       encryptionPromises.push(encryptPromise());
+    } else {
+      // Preserve non-sensitive fields as-is
+      result[key] = value;
     }
   }
   
