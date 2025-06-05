@@ -212,12 +212,12 @@ export default function Leads() {
     <div className="py-4">
       <div className="px-4 mx-auto max-w-4xl sm:px-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0">
             <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
               Leads
             </h2>
           </div>
-          <div className="flex mt-4 md:mt-0 md:ml-4 space-x-2">
+          <div className="flex mt-4 md:mt-0 space-x-2">
             <Button variant="outline" onClick={() => setShowBulkDeleteDialog(true)}>
               <Trash2 className="-ml-1 mr-2 h-5 w-5" />
               Delete Leads
