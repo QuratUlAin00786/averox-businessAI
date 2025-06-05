@@ -137,28 +137,8 @@ async function createDemoAccounts() {
   const seededContacts = await db.insert(contacts).values(demoContactsData).returning();
   console.log(`Created ${seededContacts.length} demo contacts`);
 
-  // Seed leads
-  const demoLeadsData = [];
-  for (let i = 0; i < 8; i++) {
-    demoLeadsData.push({
-      firstName: faker.person.firstName(),
-      lastName: faker.person.lastName(),
-      email: faker.internet.email(),
-      phone: faker.phone.number(),
-      company: faker.company.name(),
-      title: faker.person.jobTitle(),
-      status: faker.helpers.arrayElement(['New', 'Contacted', 'Qualified', 'Unqualified']),
-      source: faker.helpers.arrayElement(['Website', 'Referral', 'LinkedIn', 'Conference', 'Cold Call']),
-      ownerId: i < 5 ? demoAdminId : demoUserId, // Assign 5 leads to admin, 3 to user
-      createdAt: faker.date.recent({ days: 45 }),
-      notes: faker.lorem.paragraph(),
-      estimatedValue: Number(faker.finance.amount(1000, 100000, 2)),
-      isConverted: i < 2, // First 2 leads are converted
-    });
-  }
-  
-  const seededLeads = await db.insert(leads).values(demoLeadsData).returning();
-  console.log(`Created ${seededLeads.length} demo leads`);
+  // No demo leads created to maintain data integrity
+  console.log('Demo lead creation skipped - maintaining data integrity policy');
 
   // Seed opportunities
   const demoOpportunitiesData = [];

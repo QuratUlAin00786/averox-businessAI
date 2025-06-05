@@ -1160,8 +1160,8 @@ export class MigrationController {
           // Simulate time for importing into AVEROX
           await new Promise(resolve => setTimeout(resolve, 2000));
           
-          // Update complete count (simulated)
-          const itemCount = this.getRandomItemCount(100, 500);
+          // Update complete count - use only authentic data
+          const itemCount = 0; // No fake data allowed
           if (!job.completed.byEntity[entityType]) {
             job.completed.byEntity[entityType] = 0;
           }
@@ -1214,117 +1214,14 @@ export class MigrationController {
     }
   }
   
-  private getRandomItemCount(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-  
   /**
-   * Generate mock data for a specific entity type
-   * This is used as a fallback when actual data retrieval fails
+   * Data integrity enforcement - no mock data generation allowed
+   * This method is removed to maintain 100% authentic data requirements
    */
   private generateMockDataForEntityType(entityType: string, count: number): any[] {
-    const result = [];
-    
-    // Generate mock data based on entity type
-    for (let i = 1; i <= count; i++) {
-      switch (entityType.toLowerCase()) {
-        case 'contacts':
-        case 'res.partner':
-        case 'contact':
-          result.push({
-            id: i,
-            firstName: `FirstName${i}`,
-            lastName: `LastName${i}`,
-            email: `contact${i}@example.com`,
-            phone: `555-${1000 + i}`,
-            title: i % 3 === 0 ? 'Manager' : (i % 2 === 0 ? 'Director' : 'Specialist'),
-            company: `Company ${i % 10}`
-          });
-          break;
-          
-        case 'accounts':
-        case 'account':
-          result.push({
-            id: i,
-            name: `Account ${i}`,
-            industry: ['Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Retail'][i % 5],
-            website: `www.account${i}.example.com`,
-            phone: `555-${2000 + i}`,
-            billingAddress: `${1000 + i} Main St`,
-            billingCity: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'][i % 5],
-            billingState: ['NY', 'CA', 'IL', 'TX', 'AZ'][i % 5],
-            billingZip: `${10000 + i}`,
-            billingCountry: 'USA'
-          });
-          break;
-          
-        case 'leads':
-        case 'crm.lead':
-        case 'lead':
-          result.push({
-            id: i,
-            firstName: `Lead${i}`,
-            lastName: `Contact${i}`,
-            email: `lead${i}@example.com`,
-            phone: `555-${3000 + i}`,
-            company: `Prospect ${i % 15}`,
-            status: ['New', 'Qualified', 'Contacted', 'Not Interested', 'Converted'][i % 5],
-            source: ['Website', 'Referral', 'Event', 'Social Media', 'Advertisement'][i % 5]
-          });
-          break;
-          
-        case 'opportunities':
-        case 'sale.order':
-        case 'opportunity':
-          result.push({
-            id: i,
-            name: `Opportunity ${i}`,
-            accountId: i % 10 + 1,
-            stage: ['Lead Generation', 'Qualification', 'Proposal', 'Negotiation', 'Closing'][i % 5],
-            amount: (Math.floor(Math.random() * 100) + 1) * 1000,
-            closeDate: new Date(Date.now() + ((Math.floor(Math.random() * 90) + 30) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-            probability: [10, 25, 50, 75, 90][i % 5]
-          });
-          break;
-          
-        case 'products':
-        case 'product.product':
-        case 'product':
-          result.push({
-            id: i,
-            name: `Product ${i}`,
-            description: `Description for product ${i}`,
-            price: (Math.floor(Math.random() * 1000) + 1) * 10,
-            category: ['Hardware', 'Software', 'Services', 'Consulting', 'Support'][i % 5],
-            sku: `SKU-${1000 + i}`
-          });
-          break;
-          
-        case 'invoices':
-        case 'account.move':
-        case 'invoice':
-          result.push({
-            id: i,
-            invoiceNumber: `INV-${10000 + i}`,
-            accountId: i % 10 + 1,
-            issueDate: new Date(Date.now() - ((Math.floor(Math.random() * 30)) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-            dueDate: new Date(Date.now() + ((Math.floor(Math.random() * 30) + 15) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-            totalAmount: (Math.floor(Math.random() * 1000) + 1) * 100,
-            status: ['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled'][i % 5]
-          });
-          break;
-          
-        default:
-          // Generic object with an ID
-          result.push({
-            id: i,
-            name: `${entityType} ${i}`,
-            createdAt: new Date().toISOString()
-          });
-      }
-    }
-    
-    return result;
+    // Return empty array to maintain data integrity - no fake data allowed
+    console.warn(`Mock data generation attempted for ${entityType}. Returning empty array to maintain data integrity.`);
+    return [];
   }
 }
 
