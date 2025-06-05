@@ -2607,11 +2607,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate input data
       const opportunityData = insertOpportunitySchema.partial().parse(req.body);
-      console.log('[Debug] Original opportunity data:', opportunityData);
       
       // Encrypt sensitive fields before database update
       const encryptedData = await encryptForDatabase(opportunityData, 'opportunities');
-      console.log('[Debug] Encrypted data result:', encryptedData);
       console.log('[Encryption] Opportunity data fields encrypted for database update');
       
       // Update opportunity with encrypted data
