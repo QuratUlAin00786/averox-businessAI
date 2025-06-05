@@ -53,15 +53,14 @@ export class OdooMigrationHandler implements MigrationHandler {
    * Get available entity types from Odoo
    */
   async getAvailableEntities(): Promise<MigrationEntityMap[]> {
-    const entities: MigrationEntityMap[] = [
-      { id: 'res.partner', name: 'Contacts/Customers', count: '~1500', targetEntity: 'contacts' },
-      { id: 'crm.lead', name: 'Leads/Opportunities', count: '~750', targetEntity: 'leads' },
-      { id: 'sale.order', name: 'Sales Orders', count: '~500', targetEntity: 'opportunities' },
-      { id: 'account.move', name: 'Invoices', count: '~650', targetEntity: 'invoices' },
-      { id: 'product.product', name: 'Products', count: '~350', targetEntity: 'products' },
-    ];
+    if (!this.baseUrl || !this.apiKey || !this.database) {
+      console.warn('Odoo connection not established. Cannot fetch authentic entity data.');
+      return [];
+    }
     
-    return entities;
+    // Only return authentic data from connected Odoo instances
+    // Real implementation would query Odoo API for actual entity counts
+    return [];
   }
 
   /**
