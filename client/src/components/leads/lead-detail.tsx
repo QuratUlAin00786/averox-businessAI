@@ -231,8 +231,8 @@ export function LeadDetail({
                   contactId={lead.id}
                   contactType="lead"
                   contactName={`${lead.firstName} ${lead.lastName}`}
-                  email={lead.email || ""}
-                  phone={lead.phone || ""}
+                  email={typeof lead.email === 'string' ? lead.email : ""}
+                  phone={typeof lead.phone === 'string' ? lead.phone : ""}
                 />
               </TabsContent>
 
