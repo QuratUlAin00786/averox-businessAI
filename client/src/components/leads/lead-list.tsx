@@ -126,8 +126,8 @@ export function LeadList({
         </div>
       </div>
 
-      {isMobile ? (
-        <div className="grid grid-cols-1 gap-4 mt-4">
+      {/* Mobile view - cards */}
+      <div className="grid grid-cols-1 gap-4 mt-4 md:hidden">
           {filteredLeads.length === 0 ? (
             <div className="text-center p-4 border rounded-lg">
               <p className="text-sm text-neutral-500">No leads found</p>
@@ -239,19 +239,20 @@ export function LeadList({
               </Card>
             ))
           )}
-        </div>
-      ) : (
-        <div className="rounded-md border overflow-x-auto">
-          <Table className="min-w-full">
+      </div>
+      
+      {/* Desktop view - table */}
+        <div className="border rounded-md hidden md:block">
+          <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[140px]">Name</TableHead>
-                <TableHead className="w-[110px]">Company</TableHead>
-                <TableHead className="w-[80px]">Status</TableHead>
-                <TableHead className="w-[130px]">Email</TableHead>
-                <TableHead className="w-[90px]">Phone</TableHead>
-                <TableHead className="w-[70px]">Source</TableHead>
-                <TableHead className="w-[60px] text-right">Actions</TableHead>
+                <TableHead className="w-[250px]">Lead Name</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -327,7 +328,6 @@ export function LeadList({
             </TableBody>
           </Table>
         </div>
-      )}
     </div>
   );
 }
