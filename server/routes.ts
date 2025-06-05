@@ -7695,6 +7695,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register payment routes
   app.use('/api/payments', paymentRouter);
 
+  // Register manufacturing routes - Database-driven functionality
+  registerManufacturingRoutes(app);
+
   // Real Analytics Routes - Working with actual database
   app.get('/api/analytics/lead-scores', async (req: Request, res: Response) => {
     try {
