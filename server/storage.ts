@@ -3865,10 +3865,7 @@ export class DatabaseStorage implements IStorage {
   async updateOpportunity(id: number, opportunity: Partial<InsertOpportunity>): Promise<Opportunity | undefined> {
     try {
       const [updatedOpportunity] = await db.update(opportunities)
-        .set({
-          ...opportunity,
-          updatedAt: new Date()
-        })
+        .set(opportunity)
         .where(eq(opportunities.id, id))
         .returning();
       return updatedOpportunity;
