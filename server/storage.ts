@@ -3880,9 +3880,8 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOpportunity(id: number): Promise<boolean> {
     try {
-      // First, update any proposals that reference this opportunity
-      await db.update(proposals)
-        .set({ opportunityId: null })
+      // First, delete any proposals that reference this opportunity
+      await db.delete(proposals)
         .where(eq(proposals.opportunityId, id));
       
       // Then delete the opportunity
