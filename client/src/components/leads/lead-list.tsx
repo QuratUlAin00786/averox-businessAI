@@ -235,7 +235,7 @@ export function LeadList({
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Source</TableHead>
-                <TableHead className="w-[80px]">Actions</TableHead>
+                <TableHead className="w-[100px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -272,7 +272,7 @@ export function LeadList({
                     <TableCell>{typeof lead.email === 'object' ? "—" : lead.email || "—"}</TableCell>
                     <TableCell>{typeof lead.phone === 'object' ? "—" : lead.phone || "—"}</TableCell>
                     <TableCell>{lead.source || "—"}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
