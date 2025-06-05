@@ -548,7 +548,7 @@ export default function Dashboard() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base font-normal">Migration Status</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setLocation("/settings")}>
+                  <Button variant="ghost" size="sm" onClick={() => setLocation("/migrations")}>
                     View All <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 </CardHeader>

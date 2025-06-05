@@ -71,6 +71,7 @@ import ProposalsPage from "@/pages/proposals";
 import SetupWizard from "@/pages/setup-wizard";
 import SaaSManagement from "@/pages/saas-management";
 import Activities from "@/pages/activities";
+import Migrations from "@/pages/migrations";
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -158,6 +159,12 @@ function Router() {
       <ProtectedRoute path="/activities" component={() => (
         <Layout>
           <Activities />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/migrations" component={() => (
+        <Layout>
+          <Migrations />
         </Layout>
       )} />
       
