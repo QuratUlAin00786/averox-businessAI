@@ -31,24 +31,71 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Network status tracking
+let isOnline = navigator.onLine;
+let networkChangeDetected = false;
+
+// Function to check if error is network-related
+function isNetworkError(error: Error): boolean {
+  const networkErrorMessages = [
+    'fetch',
+    'network',
+    'Failed to fetch',
+    'NetworkError',
+    'ERR_NETWORK',
+    'ERR_INTERNET_DISCONNECTED',
+    'ERR_CONNECTION_REFUSED'
+  ];
+  
+  return networkErrorMessages.some(msg => 
+    error.message.toLowerCase().includes(msg.toLowerCase())
+  ) || !isOnline;
+}
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
   console.log(`API Request: ${method} ${url}`, data);
+  
+  // Check network status
+  if (!isOnline) {
+    throw new Error('Network connection lost. Please check your internet connection.');
+  }
+  
   try {
+    // Create an AbortController for timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
     const res = await fetch(url, {
       method,
       headers: data ? { "Content-Type": "application/json" } : {},
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
     console.log(`API Response: ${method} ${url} - Status: ${res.status}`);
     await throwIfResNotOk(res);
     return res;
   } catch (error) {
+    if (error instanceof Error) {
+      // Handle timeout errors
+      if (error.name === 'AbortError') {
+        console.error(`API Timeout: ${method} ${url}`);
+        throw new Error('Request timeout. Please try again.');
+      }
+      
+      // Handle network errors
+      if (isNetworkError(error)) {
+        console.error(`Network Error: ${method} ${url}`, error);
+        throw new Error('Network error detected. Please check your connection and try again.');
+      }
+    }
+    
     console.error(`API Error: ${method} ${url}`, error);
     throw error;
   }
@@ -241,9 +288,27 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
       staleTime: 60000, // 1 minute
-      retry: false,
+      retry: (failureCount, error) => {
+        // Don't retry on 4xx errors except 408 (timeout) and 429 (rate limit)
+        if (error instanceof Error && error.message.includes('401')) return false;
+        if (error instanceof Error && error.message.includes('403')) return false;
+        if (error instanceof Error && error.message.includes('404')) return false;
+        
+        // Always retry on network errors up to 3 times
+        if (error instanceof Error && isNetworkError(error)) {
+          return failureCount < 3;
+        }
+        
+        // Retry on 5xx errors
+        if (error instanceof Error && error.message.match(/50\d/)) {
+          return failureCount < 2;
+        }
+        
+        return false;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       
       // Custom query key matching function to handle different caching strategies
       queryKeyHashFn: (queryKey) => {
@@ -263,4 +328,19 @@ export const queryClient = new QueryClient({
       retry: false,
     },
   },
+});
+
+// Set up network event listeners after query client is created
+window.addEventListener('online', () => {
+  isOnline = true;
+  networkChangeDetected = true;
+  console.log('Network connection restored');
+  // Refetch all queries when coming back online
+  queryClient.refetchQueries();
+});
+
+window.addEventListener('offline', () => {
+  isOnline = false;
+  networkChangeDetected = true;
+  console.log('Network connection lost');
 });
