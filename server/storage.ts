@@ -3880,11 +3880,35 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOpportunity(id: number): Promise<boolean> {
     try {
-      // First, delete any proposals that reference this opportunity
+      // First, get all proposals that reference this opportunity
+      const relatedProposals = await db.select({ id: proposals.id })
+        .from(proposals)
+        .where(eq(proposals.opportunityId, id));
+      
+      // Delete all related data in the correct order
+      for (const proposal of relatedProposals) {
+        // Delete proposal elements first
+        await db.delete(proposalElements)
+          .where(eq(proposalElements.proposalId, proposal.id));
+        
+        // Delete proposal activities
+        await db.delete(proposalActivities)
+          .where(eq(proposalActivities.proposalId, proposal.id));
+        
+        // Delete proposal collaborators
+        await db.delete(proposalCollaborators)
+          .where(eq(proposalCollaborators.proposalId, proposal.id));
+        
+        // Delete proposal comments
+        await db.delete(proposalComments)
+          .where(eq(proposalComments.proposalId, proposal.id));
+      }
+      
+      // Delete the proposals
       await db.delete(proposals)
         .where(eq(proposals.opportunityId, id));
       
-      // Then delete the opportunity
+      // Finally delete the opportunity
       const result = await db.delete(opportunities)
         .where(eq(opportunities.id, id))
         .returning();
