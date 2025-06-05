@@ -226,16 +226,16 @@ export function LeadList({
         </div>
       ) : (
         <div className="rounded-md border overflow-x-auto">
-          <Table className="min-w-full">
+          <Table className="w-[680px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[160px]">Name</TableHead>
-                <TableHead className="w-[120px]">Company</TableHead>
-                <TableHead className="w-[90px]">Status</TableHead>
-                <TableHead className="w-[140px]">Email</TableHead>
-                <TableHead className="w-[100px]">Phone</TableHead>
-                <TableHead className="w-[80px]">Source</TableHead>
-                <TableHead className="w-[70px] text-right">Actions</TableHead>
+                <TableHead className="w-[140px]">Name</TableHead>
+                <TableHead className="w-[110px]">Company</TableHead>
+                <TableHead className="w-[80px]">Status</TableHead>
+                <TableHead className="w-[130px]">Email</TableHead>
+                <TableHead className="w-[90px]">Phone</TableHead>
+                <TableHead className="w-[70px]">Source</TableHead>
+                <TableHead className="w-[60px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
