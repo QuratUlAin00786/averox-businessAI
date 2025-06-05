@@ -26,8 +26,7 @@ export default function QualityInspectionsList() {
     }
   });
 
-  // We'll use an empty array if no data is available
-  const sampleQualityInspections = [
+  // Use only authentic database data - no fake fallback data
     {
       id: 1,
       inspection_number: 'QI-2025-0001',
