@@ -9,7 +9,7 @@ import { LeadForm } from "@/components/leads/lead-form";
 import { LeadDetail } from "@/components/leads/lead-detail";
 import { LeadConvertForm } from "@/components/leads/lead-convert-form";
 import { apiRequestJson } from "@/lib/queryClient";
-import { Loader2, Plus, RefreshCw } from "lucide-react";
+import { Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 export default function Leads() {
   const { toast } = useToast();
@@ -21,6 +21,7 @@ export default function Leads() {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   
   // Fetch leads
@@ -30,14 +31,16 @@ export default function Leads() {
     error,
   } = useQuery<Lead[]>({
     queryKey: ["/api/leads"],
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: `Failed to load leads: ${error.message}`,
-        variant: "destructive",
-      });
-    },
   });
+
+  // Handle query error
+  if (error) {
+    toast({
+      title: "Error",
+      description: `Failed to load leads: ${error.message}`,
+      variant: "destructive",
+    });
+  }
 
   // Create lead mutation
   const createLeadMutation = useMutation({
@@ -174,6 +177,17 @@ export default function Leads() {
     }
   };
 
+  const handleBulkDelete = () => {
+    // For simplicity, delete all leads visible on current page
+    if (leads.length > 0) {
+      // Delete all leads one by one
+      leads.forEach(lead => {
+        deleteLeadMutation.mutate(lead.id);
+      });
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
   // Error state
   if (error) {
     return (
@@ -202,7 +216,11 @@ export default function Leads() {
               Leads
             </h2>
           </div>
-          <div className="flex mt-4 md:mt-0 md:ml-4">
+          <div className="flex mt-4 md:mt-0 md:ml-4 space-x-2">
+            <Button variant="outline" onClick={() => setShowBulkDeleteDialog(true)}>
+              <Trash2 className="-ml-1 mr-2 h-5 w-5" />
+              Delete Leads
+            </Button>
             <Button onClick={handleAddLead}>
               <Plus className="-ml-1 mr-2 h-5 w-5" />
               Add Lead
@@ -273,6 +291,31 @@ export default function Leads() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Dialog */}
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete All Leads</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all {leads.length} leads currently displayed.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteLeadMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
