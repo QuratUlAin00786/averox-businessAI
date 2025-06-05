@@ -613,77 +613,21 @@ export class MigrationController {
    * Get available entity types for the specified CRM
    */
   private async getEntitiesForCrm(crmType: string): Promise<any[]> {
-    // This would have specific implementations for each CRM
-    const commonEntities = [
-      { id: 'contacts', name: 'Contacts', count: '~2500' },
-      { id: 'accounts', name: 'Accounts', count: '~1200' },
-      { id: 'leads', name: 'Leads', count: '~3000' },
-      { id: 'opportunities', name: 'Opportunities', count: '~800' }
-    ];
-    
-    // For our new CRM types, use the migration handler if available
+    // Only return data from authenticated CRM connections
     if (this.migrationHandlers.has(crmType.toLowerCase())) {
       const handler = this.migrationHandlers.get(crmType.toLowerCase());
       try {
-        // Properly await the Promise from getAvailableEntities
         if (handler) {
           const entities = await handler.getAvailableEntities();
           return entities;
         }
-        return commonEntities;
       } catch (error) {
         console.error(`Error getting entities for ${crmType}:`, error);
-        return commonEntities;
       }
     }
     
-    switch (crmType.toLowerCase()) {
-      case 'salesforce':
-        return [
-          ...commonEntities,
-          { id: 'cases', name: 'Cases', count: '~1800' },
-          { id: 'campaigns', name: 'Campaigns', count: '~100' }
-        ];
-      case 'hubspot':
-        return [
-          ...commonEntities,
-          { id: 'deals', name: 'Deals', count: '~1500' },
-          { id: 'tickets', name: 'Tickets', count: '~920' }
-        ];
-      case 'zoho':
-        return [
-          ...commonEntities,
-          { id: 'deals', name: 'Deals', count: '~700' },
-          { id: 'tasks', name: 'Tasks', count: '~1200' }
-        ];
-      case 'dynamics':
-        return [
-          ...commonEntities,
-          { id: 'incidents', name: 'Cases', count: '~500' },
-          { id: 'activities', name: 'Activities', count: '~2800' }
-        ];
-      case 'odoo':
-        return [
-          { id: 'res.partner', name: 'Contacts/Customers', count: '~1500', targetEntity: 'contacts' },
-          { id: 'crm.lead', name: 'Leads/Opportunities', count: '~750', targetEntity: 'leads' },
-          { id: 'sale.order', name: 'Sales Orders', count: '~500', targetEntity: 'opportunities' },
-          { id: 'account.move', name: 'Invoices', count: '~650', targetEntity: 'invoices' },
-          { id: 'product.product', name: 'Products', count: '~350', targetEntity: 'products' },
-        ];
-      case 'oracle':
-        return [
-          { id: 'Contact', name: 'Contacts', count: '~2800', targetEntity: 'contacts' },
-          { id: 'Account', name: 'Accounts', count: '~1200', targetEntity: 'accounts' },
-          { id: 'Lead', name: 'Leads', count: '~3500', targetEntity: 'leads' },
-          { id: 'Opportunity', name: 'Opportunities', count: '~900', targetEntity: 'opportunities' },
-          { id: 'Campaign', name: 'Campaigns', count: '~120', targetEntity: 'campaigns' },
-          { id: 'Task', name: 'Tasks', count: '~4500', targetEntity: 'tasks' },
-          { id: 'Activity', name: 'Activities', count: '~6200', targetEntity: 'activities' },
-          { id: 'Product', name: 'Products', count: '~450', targetEntity: 'products' },
-        ];
-      default:
-        return commonEntities;
-    }
+    // Return empty array when no authentic connection is available
+    return [];
   }
   
   /**
