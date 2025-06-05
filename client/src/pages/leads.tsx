@@ -152,6 +152,7 @@ export default function Leads() {
   };
 
   const handleDeleteLead = (lead: Lead) => {
+    console.log('Delete lead clicked:', lead);
     setSelectedLead(lead);
     setIsDeleteOpen(true);
   };
@@ -286,8 +287,8 @@ export default function Leads() {
             <AlertDialogAction
               onClick={() => {
                 if (selectedLead) {
+                  console.log('Executing delete for lead:', selectedLead.id);
                   deleteLeadMutation.mutate(selectedLead.id);
-                  setIsDeleteOpen(false);
                 }
               }}
               className="bg-red-600 hover:bg-red-700"
