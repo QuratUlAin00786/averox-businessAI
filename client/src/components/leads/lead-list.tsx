@@ -172,9 +172,9 @@ export function LeadList({
                   </Button>
                   <Button 
                     size="sm" 
-                    variant="outline"
+                    variant="destructive"
                     onClick={() => onDelete(lead)}
-                    className="text-red-600 hover:text-red-700"
+                    className="hover:bg-red-700"
                   >
                     <Trash2 className="h-4 w-4 mr-1" /> Delete
                   </Button>
@@ -262,11 +262,12 @@ export function LeadList({
                               <Check className="h-4 w-4 mr-2" /> Convert lead
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="text-red-600"
+                            className="text-red-600 hover:bg-red-50 focus:bg-red-50"
                             onClick={() => onDelete(lead)}
                           >
-                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete Lead
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
