@@ -18,6 +18,7 @@ import { migrationRouter } from "./migrations/migration-routes";
 import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
 import manufacturingRouter from "./manufacturing-routes-fixed";
+import { registerManufacturingRoutes } from "./manufacturing-routes";
 import telephonyRouter from "./telephony-routes";
 import paymentRouter from "./payment-routes";
 import { setupPredictiveAnalyticsRoutes } from "./analytics/predictive-engine";
