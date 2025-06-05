@@ -284,7 +284,12 @@ export default function Leads() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => selectedLead && deleteLeadMutation.mutate(selectedLead.id)}
+              onClick={() => {
+                if (selectedLead) {
+                  deleteLeadMutation.mutate(selectedLead.id);
+                  setIsDeleteOpen(false);
+                }
+              }}
               className="bg-red-600 hover:bg-red-700"
             >
               {deleteLeadMutation.isPending && (
