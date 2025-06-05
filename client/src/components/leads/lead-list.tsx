@@ -60,15 +60,18 @@ export function LeadList({
 
   // Filter leads based on search term
   const filteredLeads = data.filter((lead) => {
-    const searchString = `${lead.firstName} ${lead.lastName} ${lead.email || ""} ${
-      lead.phone || ""
-    } ${lead.title || ""} ${lead.company || ""}`.toLowerCase();
+    const safeEmail = typeof lead.email === 'string' ? lead.email : '';
+    const safePhone = typeof lead.phone === 'string' ? lead.phone : '';
+    const safeTitle = typeof lead.title === 'string' ? lead.title : '';
+    const safeCompany = typeof lead.company === 'string' ? lead.company : '';
+    const searchString = `${lead.firstName} ${lead.lastName} ${safeEmail} ${safePhone} ${safeTitle} ${safeCompany}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
 
   // Getting status badge color
-  const getStatusColor = (status: string | null) => {
-    switch (status) {
+  const getStatusColor = (status: string | null | any) => {
+    const safeStatus = typeof status === 'string' ? status : null;
+    switch (safeStatus) {
       case "New":
         return "bg-blue-100 text-blue-800";
       case "Qualified":
@@ -153,7 +156,7 @@ export function LeadList({
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge className={getStatusColor(lead.status)}>{lead.status || "New"}</Badge>
+                      <Badge className={getStatusColor(lead.status)}>{typeof lead.status === 'string' ? lead.status || "New" : "New"}</Badge>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -283,7 +286,7 @@ export function LeadList({
                     <TableCell>{typeof lead.company === 'string' ? lead.company || "—" : "—"}</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(lead.status)}>
-                        {lead.status || "New"}
+                        {typeof lead.status === 'string' ? lead.status || "New" : "New"}
                       </Badge>
                     </TableCell>
                     <TableCell>{typeof lead.email === 'object' ? "—" : lead.email || "—"}</TableCell>
