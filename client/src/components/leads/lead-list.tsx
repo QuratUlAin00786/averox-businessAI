@@ -276,7 +276,7 @@ export function LeadList({
                       <div className="flex justify-end">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0 hover:bg-gray-50 focus:bg-gray-50">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
