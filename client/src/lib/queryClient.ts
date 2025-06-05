@@ -118,6 +118,12 @@ export async function apiRequestJson<T = any>(
   data?: unknown,
 ): Promise<T> {
   const res = await apiRequest(method, url, data);
+  
+  // Handle 204 No Content responses (successful but no data)
+  if (res.status === 204) {
+    return {} as T;
+  }
+  
   const result = await res.json();
   
   // Handle both standardized and legacy response formats
