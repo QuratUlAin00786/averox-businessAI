@@ -90,21 +90,21 @@ export function LeadDetail({
                 </Avatar>
                 <div>
                   <DialogTitle className="text-xl mb-1">
-                    {lead.firstName} {lead.lastName}
+                    {typeof lead.firstName === 'string' ? lead.firstName : ''} {typeof lead.lastName === 'string' ? lead.lastName : ''}
                   </DialogTitle>
                   <div className="flex gap-2 items-center text-sm text-neutral-500">
-                    {lead.title && (
+                    {(typeof lead.title === 'string' && lead.title) && (
                       <>
                         <span>{lead.title}</span>
-                        {lead.company && <span>•</span>}
+                        {(typeof lead.company === 'string' && lead.company) && <span>•</span>}
                       </>
                     )}
-                    {lead.company && <span>{lead.company}</span>}
+                    {(typeof lead.company === 'string' && lead.company) && <span>{lead.company}</span>}
                   </div>
                 </div>
               </div>
-              <Badge className={getStatusColor(lead.status)}>
-                {lead.status || "New"}
+              <Badge className={getStatusColor(typeof lead.status === 'string' ? lead.status : "New")}>
+                {typeof lead.status === 'string' ? lead.status || "New" : "New"}
               </Badge>
             </div>
           </DialogHeader>
@@ -120,15 +120,15 @@ export function LeadDetail({
                 <CardContent className="text-sm space-y-2">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-neutral-500" />
-                    <span>{lead.email || "No email provided"}</span>
+                    <span>{typeof lead.email === 'string' ? lead.email || "No email provided" : "No email provided"}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-neutral-500" />
-                    <span>{lead.phone || "No phone provided"}</span>
+                    <span>{typeof lead.phone === 'string' ? lead.phone || "No phone provided" : "No phone provided"}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-neutral-500" />
-                    <span>{lead.company || "No company provided"}</span>
+                    <span>{typeof lead.company === 'string' ? lead.company || "No company provided" : "No company provided"}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -142,11 +142,11 @@ export function LeadDetail({
                 <CardContent className="text-sm space-y-2">
                   <div className="grid grid-cols-2">
                     <div className="text-neutral-500">Status</div>
-                    <div>{lead.status || "New"}</div>
+                    <div>{typeof lead.status === 'string' ? lead.status || "New" : "New"}</div>
                   </div>
                   <div className="grid grid-cols-2">
                     <div className="text-neutral-500">Source</div>
-                    <div>{lead.source || "Unknown"}</div>
+                    <div>{typeof lead.source === 'string' ? lead.source || "Unknown" : "Unknown"}</div>
                   </div>
                   <div className="grid grid-cols-2">
                     <div className="text-neutral-500">Created</div>
@@ -221,7 +221,7 @@ export function LeadDetail({
                     <CardTitle className="text-sm">Notes</CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 text-sm min-h-[100px]">
-                    {lead.notes || "No notes available for this lead."}
+                    {typeof lead.notes === 'string' ? lead.notes || "No notes available for this lead." : "No notes available for this lead."}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -230,7 +230,7 @@ export function LeadDetail({
                 <CommunicationPanel 
                   contactId={lead.id}
                   contactType="lead"
-                  contactName={`${lead.firstName} ${lead.lastName}`}
+                  contactName={`${typeof lead.firstName === 'string' ? lead.firstName : ''} ${typeof lead.lastName === 'string' ? lead.lastName : ''}`}
                   email={typeof lead.email === 'string' ? lead.email : ""}
                   phone={typeof lead.phone === 'string' ? lead.phone : ""}
                 />
@@ -245,7 +245,7 @@ export function LeadDetail({
                     <AssignmentManager 
                       entityId={lead.id}
                       entityType="lead"
-                      entityName={`${lead.firstName} ${lead.lastName}`}
+                      entityName={`${typeof lead.firstName === 'string' ? lead.firstName : ''} ${typeof lead.lastName === 'string' ? lead.lastName : ''}`}
                     />
                   </CardContent>
                 </Card>
