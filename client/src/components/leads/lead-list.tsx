@@ -289,8 +289,8 @@ export function LeadList({
                         {typeof lead.status === 'string' ? lead.status || "New" : "New"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{typeof lead.email === 'object' ? "—" : lead.email || "—"}</TableCell>
-                    <TableCell>{typeof lead.phone === 'object' ? "—" : lead.phone || "—"}</TableCell>
+                    <TableCell>{typeof lead.email === 'string' ? lead.email || "—" : "—"}</TableCell>
+                    <TableCell>{typeof lead.phone === 'string' ? lead.phone || "—" : "—"}</TableCell>
                     <TableCell>{typeof lead.source === 'string' ? lead.source || "—" : "—"}</TableCell>
                     <TableCell className="text-right w-[120px] min-w-[120px]">
                       <div className="flex justify-end">
