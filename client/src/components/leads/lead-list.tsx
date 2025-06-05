@@ -148,7 +148,7 @@ export function LeadList({
                           {lead.firstName} {lead.lastName}
                         </CardTitle>
                         <CardDescription className="text-xs">
-                          {lead.title || "No Title"} {lead.company ? `at ${lead.company}` : ""}
+                          {typeof lead.title === 'string' ? lead.title || "No Title" : "No Title"} {(typeof lead.company === 'string' && lead.company) ? `at ${lead.company}` : ""}
                         </CardDescription>
                       </div>
                     </div>
@@ -199,7 +199,7 @@ export function LeadList({
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Source</p>
-                      <p>{lead.source || "—"}</p>
+                      <p>{typeof lead.source === 'string' ? lead.source || "—" : "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Created</p>
@@ -276,11 +276,11 @@ export function LeadList({
                           <div className="font-medium">
                             {lead.firstName} {lead.lastName}
                           </div>
-                          <div className="text-sm text-neutral-500">{lead.title || ""}</div>
+                          <div className="text-sm text-neutral-500">{typeof lead.title === 'string' ? lead.title || "" : ""}</div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{lead.company || "—"}</TableCell>
+                    <TableCell>{typeof lead.company === 'string' ? lead.company || "—" : "—"}</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(lead.status)}>
                         {lead.status || "New"}
@@ -288,7 +288,7 @@ export function LeadList({
                     </TableCell>
                     <TableCell>{typeof lead.email === 'object' ? "—" : lead.email || "—"}</TableCell>
                     <TableCell>{typeof lead.phone === 'object' ? "—" : lead.phone || "—"}</TableCell>
-                    <TableCell>{lead.source || "—"}</TableCell>
+                    <TableCell>{typeof lead.source === 'string' ? lead.source || "—" : "—"}</TableCell>
                     <TableCell className="text-right w-[120px] min-w-[120px]">
                       <div className="flex justify-end">
                         <DropdownMenu>
