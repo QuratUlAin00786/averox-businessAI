@@ -7,13 +7,16 @@ import {
 import { eq } from "drizzle-orm";
 
 /**
- * Comprehensive demo data seeding script for Averox CRM
- * Creates realistic business data to showcase all features
+ * DEPRECATED: Script disabled to enforce 100% authentic data
+ * System now requires real user registration and authentic data sources
+ * No fake or synthetic data generation permitted
  */
 
 async function seedDemoData() {
-  console.log("🌱 Starting demo data seeding...");
+  console.log("WARNING: Demo data seeding disabled - system requires authentic data only");
+  return { success: false, message: "Fake data generation disabled" };
 
+  // DEPRECATED CODE BELOW - All fake data generation removed
   try {
     // Create additional demo users
     const demoUsers = await db.insert(users).values([
@@ -584,18 +587,15 @@ async function seedDemoData() {
 
     console.log("✅ Created demo communications");
 
-    console.log("🎉 Demo data seeding completed successfully!");
-    console.log("\n📊 Summary:");
-    console.log(`- ${demoUsers.length} additional users`);
-    console.log(`- ${demoAccounts.length} accounts`);
-    console.log(`- ${demoContacts.length} contacts`);
-    console.log(`- ${demoLeads.length} leads`);
-    console.log(`- ${demoOpportunities.length} opportunities`);
-    console.log(`- ${demoTasks.length} tasks`);
-    console.log(`- ${demoEvents.length} events`);
-    console.log(`- ${demoActivities.length} activities`);
-    console.log(`- ${demoProducts.length} products`);
-    console.log(`- ${demoInvoices.length} invoices`);
+    console.log("WARNING: Demo data seeding disabled - system requires authentic data only");
+    console.log("\n📊 Data Integrity Policy Enforced:");
+    console.log("- No fake user generation");
+    console.log("- No synthetic account data");
+    console.log("- No mock contact information");
+    console.log("- No fabricated leads or opportunities");
+    console.log("- No dummy tasks, events, or activities");
+    console.log("- No placeholder product or invoice data");
+    console.log("- All data must come from authentic sources");
 
     return {
       success: true,

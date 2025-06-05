@@ -1,19 +1,16 @@
 import { db } from "../server/db";
 import { users, accounts, contacts, leads, opportunities, tasks, events, activities } from "../shared/schema";
 import { hashPassword } from "../server/auth";
-import { faker } from "@faker-js/faker";
+// Removed faker.js to enforce authentic data only
 
 /**
- * Creates demo accounts with all necessary data for a complete demo experience
- * This script:
- * 1. Creates a demo admin account
- * 2. Creates a demo user account
- * 3. Populates both accounts with sample data
- * 
- * To run this script: npx tsx scripts/create-demo-accounts.ts
+ * DEPRECATED: This script contains faker.js generated data
+ * System now enforces 100% authentic data only
+ * Use real user registration and authentic data sources instead
  */
 async function createDemoAccounts() {
-  console.log("Creating demo accounts for the AVEROX CRM system...");
+  console.log("WARNING: Demo account creation disabled - system requires authentic data only");
+  return { success: false, message: "Fake data generation disabled" };
 
   // Check if demo accounts already exist
   const existingAdmin = await db.select().from(users).where({ username: 'demoadmin' });

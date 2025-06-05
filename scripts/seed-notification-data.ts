@@ -3,8 +3,10 @@ import { messages, notifications, users } from "../shared/schema";
 import { eq } from "drizzle-orm";
 
 async function seedNotificationData() {
-  console.log("Seeding notification and message data...");
+  console.log("WARNING: Notification seeding disabled - system requires authentic data only");
+  return { success: false, message: "Fake data generation disabled" };
   
+  // DEPRECATED CODE BELOW - All fake data generation removed
   try {
     // First check if we have users
     const allUsers = await db.select().from(users);
