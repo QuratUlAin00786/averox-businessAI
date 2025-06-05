@@ -273,36 +273,37 @@ export function LeadList({
                     <TableCell>{typeof lead.phone === 'object' ? "—" : lead.phone || "—"}</TableCell>
                     <TableCell>{lead.source || "—"}</TableCell>
                     <TableCell className="text-right w-[120px] min-w-[120px]">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 border border-gray-200">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4 text-gray-600" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => onView(lead)}>
-                            <Eye className="h-4 w-4 mr-2" /> View details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onEdit(lead)}>
-                            <Pencil className="h-4 w-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {!lead.isConverted && (
-                            <DropdownMenuItem onClick={() => onConvert(lead)}>
-                              <Check className="h-4 w-4 mr-2" /> Convert lead
+                      <div className="flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => onView(lead)}>
+                              <Eye className="h-4 w-4 mr-2" /> View details
                             </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600 hover:bg-red-50 focus:bg-red-50"
-                            onClick={() => onDelete(lead)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" /> Delete Lead
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            <DropdownMenuItem onClick={() => onEdit(lead)}>
+                              <Pencil className="h-4 w-4 mr-2" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {!lead.isConverted && (
+                              <DropdownMenuItem onClick={() => onConvert(lead)}>
+                                <Check className="h-4 w-4 mr-2" /> Convert lead
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600 hover:bg-red-50 focus:bg-red-50"
+                              onClick={() => onDelete(lead)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete Lead
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
