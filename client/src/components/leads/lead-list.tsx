@@ -31,7 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Search, MoreHorizontal, Pencil, Trash2, Eye, Check, RefreshCw } from "lucide-react";
+import { Search, MoreHorizontal, Pencil, Trash2, Eye, Check, RefreshCw, Plus } from "lucide-react";
 
 interface LeadListProps {
   data: Lead[];
@@ -40,6 +40,8 @@ interface LeadListProps {
   onView: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
   onConvert: (lead: Lead) => void;
+  onAdd: () => void;
+  onBulkDelete: () => void;
 }
 
 export function LeadList({
@@ -49,6 +51,8 @@ export function LeadList({
   onView,
   onDelete,
   onConvert,
+  onAdd,
+  onBulkDelete,
 }: LeadListProps) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -97,16 +101,28 @@ export function LeadList({
   }
 
   return (
-    <div className="space-y-4 w-full">
-      <div className="flex justify-between items-center">
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-500" />
-          <Input
-            placeholder="Search leads..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="relative w-64">
+            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+            <Input
+              placeholder="Search leads..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onBulkDelete}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Leads
+          </Button>
+          <Button onClick={onAdd}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Lead
+          </Button>
         </div>
       </div>
 

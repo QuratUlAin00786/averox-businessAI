@@ -211,34 +211,27 @@ export default function Leads() {
   return (
     <div className="py-6">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
-              Leads
-            </h2>
-          </div>
-          <div className="flex mt-4 md:mt-0 space-x-2">
-            <Button variant="outline" onClick={() => setShowBulkDeleteDialog(true)}>
-              <Trash2 className="-ml-1 mr-2 h-5 w-5" />
-              Delete Leads
-            </Button>
-            <Button onClick={handleAddLead}>
-              <Plus className="-ml-1 mr-2 h-5 w-5" />
-              Add Lead
-            </Button>
-          </div>
+        <div className="mb-6 pb-5 border-b border-neutral-200">
+          <h1 className="text-2xl font-bold text-neutral-700">Leads</h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            Manage your business leads and client relationships.
+          </p>
         </div>
       </div>
       
-      <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
-        <LeadList
-          data={leads}
-          isLoading={isLoading}
-          onEdit={handleEditLead}
-          onView={handleViewLead}
-          onDelete={handleDeleteLead}
-          onConvert={handleConvertLead}
-        />
+      <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-100">
+          <LeadList
+            data={leads}
+            isLoading={isLoading}
+            onEdit={handleEditLead}
+            onView={handleViewLead}
+            onDelete={handleDeleteLead}
+            onConvert={handleConvertLead}
+            onAdd={handleAddLead}
+            onBulkDelete={() => setShowBulkDeleteDialog(true)}
+          />
+        </div>
       </div>
 
       {/* Add/Edit Lead Dialog */}
