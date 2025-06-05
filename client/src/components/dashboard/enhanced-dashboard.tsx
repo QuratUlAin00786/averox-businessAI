@@ -44,98 +44,17 @@ export default function EnhancedDashboard() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
 
-  // Mock data for the dashboard
+  // Real database-driven dashboard data
   const { data, isLoading } = useQuery({
     queryKey: ['/api/enhanced-dashboard'],
-    queryFn: async () => {
-      // Normally we'd fetch data from the server, but for now we'll return mock data
-      return {
-        activities: [
-          {
-            id: 1,
-            userId: 1,
-            user: {
-              id: 1,
-              name: "Jane Cooper",
-              avatar: "https://randomuser.me/api/portraits/women/11.jpg",
-            },
-            action: "Created new opportunity",
-            detail: "Enterprise SaaS Solution",
-            timestamp: new Date(Date.now() - 25 * 60000).toISOString(),
-          },
-          {
-            id: 2,
-            userId: 2,
-            user: {
-              id: 2,
-              name: "Alex Rodriguez",
-              avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-            },
-            action: "Converted lead",
-            detail: "ACME Corp",
-            timestamp: new Date(Date.now() - 120 * 60000).toISOString(),
-          },
-          {
-            id: 3,
-            userId: 3,
-            user: {
-              id: 3,
-              name: "Sarah Taylor",
-              avatar: "https://randomuser.me/api/portraits/women/2.jpg",
-            },
-            action: "Completed migration",
-            detail: "Odoo -> AVEROX CRM",
-            timestamp: new Date(Date.now() - 240 * 60000).toISOString(),
-          },
-          {
-            id: 4,
-            userId: 1,
-            user: {
-              id: 1,
-              name: "Jane Cooper",
-              avatar: "https://randomuser.me/api/portraits/women/11.jpg",
-            },
-            action: "Sent proposal",
-            detail: "Q2 Marketing Campaign",
-            timestamp: new Date(Date.now() - 300 * 60000).toISOString(),
-          }
-        ],
-        migrations: [
-          {
-            id: 1,
-            source: "Odoo CRM",
-            status: "success",
-            recordsProcessed: 1245,
-            totalRecords: 1245,
-            startedAt: new Date(Date.now() - 2 * 24 * 60 * 60000).toISOString(),
-            completedAt: new Date(Date.now() - 1.9 * 24 * 60 * 60000).toISOString(),
-            errorCount: 0,
-            duration: "23 minutes"
-          },
-          {
-            id: 2,
-            source: "Oracle CRM",
-            status: "in_progress",
-            recordsProcessed: 3450,
-            totalRecords: 5200,
-            startedAt: new Date(Date.now() - 2 * 60 * 60000).toISOString(),
-            errorCount: 15,
-          },
-          {
-            id: 3,
-            source: "Salesforce",
-            status: "failed",
-            recordsProcessed: 120,
-            totalRecords: 3200,
-            startedAt: new Date(Date.now() - 5 * 24 * 60 * 60000).toISOString(),
-            errorCount: 36,
-            duration: "12 minutes"
-          }
-        ]
-      };
-    },
-    staleTime: 60000, // 1 minute
+    retry: false,
   });
+
+  // Use only real database data - no fallback fake data
+  const dashboardData = data || {
+    activities: [],
+    migrations: []
+  };
 
   if (isLoading) {
     return (
@@ -196,45 +115,34 @@ export default function EnhancedDashboard() {
     );
   }
 
-  // Define stats for each section
-  const overviewStats: DashboardStat[] = [
-    {
-      label: "Total Revenue",
-      value: "$48,700",
-      change: {
-        value: "12%",
-        trend: "up",
-      },
-      icon: CreditCard,
-    },
+  // Get real stats from existing dashboard API endpoints
+  const { data: dashboardStats } = useQuery({
+    queryKey: ['/api/dashboard/stats'],
+    retry: false,
+  });
+
+  const overviewStats: DashboardStat[] = dashboardStats ? [
     {
       label: "New Leads",
-      value: "38",
-      change: {
-        value: "4%",
-        trend: "up",
-      },
+      value: dashboardStats.newLeads?.toString() || "0",
       icon: Users,
     },
     {
       label: "Conversion Rate",
-      value: "28%",
-      change: {
-        value: "1.5%",
-        trend: "down",
-      },
+      value: dashboardStats.conversionRate || "0%",
       icon: Activity,
     },
     {
+      label: "Revenue",
+      value: dashboardStats.revenue || "$0",
+      icon: CreditCard,
+    },
+    {
       label: "Active Deals",
-      value: "17",
-      change: {
-        value: "$246,300",
-        trend: "neutral",
-      },
+      value: dashboardStats.activeDeals?.toString() || "0",
       icon: Layers,
     },
-  ];
+  ] : [];
 
   return (
     <div className="space-y-6">
