@@ -22,8 +22,6 @@ const SENSITIVE_FIELD_PATTERNS = [
   /^phone$/i,
   /^address$/i,
   /^notes$/i,
-  /^first_name$/i,
-  /^last_name$/i,
   /^billing_address$/i,
   /^shipping_address$/i,
 ];
@@ -31,19 +29,19 @@ const SENSITIVE_FIELD_PATTERNS = [
 // Map of entities and their sensitive fields
 const ENTITY_SENSITIVE_FIELDS: Record<string, string[]> = {
   accounts: ['billing_address', 'notes', 'email', 'phone', 'address'],
-  contacts: ['email', 'phone', 'address', 'notes', 'first_name', 'last_name'],
-  leads: ['email', 'phone', 'address', 'notes', 'first_name', 'last_name'],
+  contacts: ['email', 'phone', 'address', 'notes'],
+  leads: ['email', 'phone', 'address', 'notes'],
   opportunities: ['notes', 'description'],
-  users: ['email', 'first_name', 'last_name'],
+  users: ['email'],
   invoices: ['billing_address', 'shipping_address', 'notes'],
   proposals: ['content', 'notes', 'description'],
   
   // Camel case variants for API compatibility
   account: ['billingAddress', 'notes', 'email', 'phone', 'address'],
-  contact: ['email', 'phone', 'address', 'notes', 'firstName', 'lastName'],
-  lead: ['email', 'phone', 'address', 'notes', 'firstName', 'lastName'],
+  contact: ['email', 'phone', 'address', 'notes'],
+  lead: ['email', 'phone', 'address', 'notes'],
   opportunity: ['notes', 'description'],
-  user: ['email', 'firstName', 'lastName'],
+  user: ['email'],
   invoice: ['billingAddress', 'shippingAddress', 'notes'],
   proposal: ['content', 'notes', 'description'],
 };
