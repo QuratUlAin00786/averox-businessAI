@@ -217,7 +217,7 @@ async function createDemoAccounts() {
       relatedToType: entity.type,
       relatedToId: entity.id,
       createdAt: faker.date.recent({ days: 10 }),
-      completedAt: isCompleted ? faker.date.recent({ days: 3 }) : null,
+      completedAt: isCompleted ? new Date() : null,
     });
   }
   

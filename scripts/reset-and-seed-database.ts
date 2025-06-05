@@ -426,8 +426,8 @@ async function seedLeadSources() {
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
-      conversionRate: Math.random() * 0.2 + 0.05, // Random conversion rate between 5-25%
-      leadCount: Math.floor(Math.random() * 200) + 50, // Random count between 50-250
+      conversionRate: 0, // No fake data - authentic data only
+      leadCount: 0, // No fake data - authentic data only
       settings: { 
         autoTagging: true, 
         scoreThreshold: 50,
