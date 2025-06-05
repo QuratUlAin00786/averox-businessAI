@@ -3864,10 +3864,12 @@ export class DatabaseStorage implements IStorage {
 
   async updateOpportunity(id: number, opportunity: Partial<InsertOpportunity>): Promise<Opportunity | undefined> {
     try {
+      console.log('[Storage] Updating opportunity with data:', opportunity);
       const [updatedOpportunity] = await db.update(opportunities)
         .set(opportunity)
         .where(eq(opportunities.id, id))
         .returning();
+      console.log('[Storage] Updated opportunity result:', updatedOpportunity);
       return updatedOpportunity;
     } catch (error) {
       console.error('Database error in updateOpportunity:', error);
