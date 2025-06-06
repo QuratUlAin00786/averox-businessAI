@@ -15,38 +15,32 @@ export const getDefaultContent = (type: string) => {
         return { url: '', alt: 'Image', caption: '' };
       case 'Table':
         return { 
-          headers: ['Column 1', 'Column 2', 'Column 3'], 
-          rows: [
-            ['Cell 1-1', 'Cell 1-2', 'Cell 1-3'],
-            ['Cell 2-1', 'Cell 2-2', 'Cell 2-3'],
-          ] 
+          headers: [], 
+          rows: [] 
         };
       case 'List':
         return { 
-          items: ['Item 1', 'Item 2', 'Item 3'],
+          items: [],
           ordered: false 
         };
       case 'Quote':
         return { 
-          text: 'Enter a quotation here',
-          author: 'Author Name' 
+          text: '',
+          author: '' 
         };
       case 'ProductList':
         return { 
-          products: [
-            { name: 'Product 1', quantity: 1, price: 100 },
-            { name: 'Product 2', quantity: 2, price: 200 }
-          ],
-          subtotal: 500,
-          tax: 50,
+          products: [],
+          subtotal: 0,
+          tax: 0,
           discount: 0,
-          total: 550 
+          total: 0 
         };
       case 'Signature':
         return { 
-          label: 'Signature',
-          name: 'Name',
-          role: 'Title',
+          label: '',
+          name: '',
+          role: '',
           date: true 
         };
       case 'PageBreak':
