@@ -14,49 +14,42 @@ export function getElementDefaultContent(type: ProposalElementType) {
   switch (type) {
     case 'Header':
       return {
-        text: 'New Header',
+        text: '',
         level: 2,
         alignment: 'left'
       };
     
     case 'Text':
       return {
-        text: 'Enter your text here. This is a paragraph that can contain detailed information about your products or services.',
+        text: '',
         alignment: 'left'
       };
     
     case 'List':
       return {
-        items: [
-          'First item',
-          'Second item',
-          'Third item'
-        ],
+        items: [],
         type: 'bullet' // or 'numbered'
       };
     
     case 'Table':
       return {
-        headers: ['Column 1', 'Column 2', 'Column 3'],
-        rows: [
-          ['Row 1, Cell 1', 'Row 1, Cell 2', 'Row 1, Cell 3'],
-          ['Row 2, Cell 1', 'Row 2, Cell 2', 'Row 2, Cell 3']
-        ]
+        headers: [],
+        rows: []
       };
     
     case 'Image':
       return {
         url: '',
-        alt: 'Image description',
+        alt: '',
         caption: '',
         width: '100%'
       };
     
     case 'Quote':
       return {
-        text: 'This is a quotation or testimonial from a client.',
-        author: 'Client Name',
-        company: 'Company Name'
+        text: '',
+        author: '',
+        company: ''
       };
     
     case 'ProductList':
@@ -79,7 +72,7 @@ export function getElementDefaultContent(type: ProposalElementType) {
     
     case 'Custom':
       return {
-        html: '<div>Custom HTML content goes here</div>'
+        html: ''
       };
     
     default:

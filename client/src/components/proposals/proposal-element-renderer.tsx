@@ -46,7 +46,7 @@ export const getDefaultContent = (type: string) => {
       case 'PageBreak':
         return {};
       case 'Custom':
-        return { html: '<div>Custom HTML content</div>' };
+        return { html: '' };
       default:
         return {};
     }
