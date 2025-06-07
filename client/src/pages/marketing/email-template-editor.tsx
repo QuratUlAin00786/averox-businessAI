@@ -75,8 +75,21 @@ import {
 interface TemplateElement {
   id: string;
   type: 'header' | 'text' | 'image' | 'button' | 'divider' | 'spacer' | 'social' | 'column';
-  content?: any;
-  settings?: any;
+  content?: {
+    text?: string;
+    url?: string;
+    alt?: string;
+    html?: string;
+  };
+  settings?: {
+    fontSize?: string;
+    color?: string;
+    backgroundColor?: string;
+    padding?: string;
+    alignment?: string;
+    width?: string;
+    height?: string;
+  };
   children?: TemplateElement[];
 }
 
