@@ -1724,29 +1724,23 @@ export default function EmailTemplateEditor() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
-                    {predefinedTemplates.map((preTemplate, index) => (
-                      <div key={index} className="border rounded-md overflow-hidden">
-                        <div className="aspect-video bg-slate-100 overflow-hidden">
-                          <img 
-                            src={preTemplate.thumbnail} 
-                            alt={preTemplate.name} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="p-3">
-                          <h3 className="font-medium text-sm">{preTemplate.name}</h3>
-                          <p className="text-xs text-slate-500 mt-1">{preTemplate.description}</p>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="w-full mt-2"
-                            onClick={() => alert(`Load template: ${preTemplate.name}`)}
-                          >
-                            Use Template
-                          </Button>
-                        </div>
+                    <div className="border rounded-md overflow-hidden">
+                      <div className="aspect-video bg-slate-100 overflow-hidden flex items-center justify-center">
+                        <FileText className="h-8 w-8 text-slate-400" />
                       </div>
-                    ))}
+                      <div className="p-3">
+                        <h3 className="font-medium text-sm">Connect Email Platform</h3>
+                        <p className="text-xs text-slate-500 mt-1">Connect your email service to load templates</p>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="w-full mt-2"
+                          disabled
+                        >
+                          No Templates Available
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="mt-6">

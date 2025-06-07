@@ -115,24 +115,7 @@ export default function ManufacturingIndex() {
           </Link>
         ))}
         
-        {/* Debug card for viewing raw data */}
-        <Link href="/manufacturing/test-data">
-          <Card className="h-full cursor-pointer transition-colors border-red-300 border-2 hover:bg-slate-50">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <FileText className="h-12 w-12 text-red-500" />
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <CardTitle className="mt-4">Data Viewer</CardTitle>
-              <CardDescription>View raw manufacturing data from API (debugging tool)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full border-red-300">
-                View Raw Data
-              </Button>
-            </CardContent>
-          </Card>
-        </Link>
+
       </div>
     </div>
   );
