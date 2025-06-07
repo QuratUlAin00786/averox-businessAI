@@ -67,7 +67,7 @@ import {
   Users
 } from 'lucide-react';
 
-// Mock data structures
+// Database-driven data structures
 interface Product {
   id: string;
   name: string;
@@ -167,94 +167,7 @@ interface StoreStats {
   };
 }
 
-// Mock data
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Enterprise CRM Software License',
-    description: 'Full featured CRM solution for enterprise businesses with unlimited users.',
-    price: 1299.99,
-    inventory: 999,
-    status: 'active',
-    category: 'Software',
-    tags: ['enterprise', 'crm', 'business'],
-    images: ['https://placehold.co/400x300'],
-    featured: true,
-    dateCreated: '2025-03-01T10:00:00Z',
-    dateModified: '2025-04-01T14:30:00Z'
-  },
-  {
-    id: '2',
-    name: 'Professional CRM Software License',
-    description: 'Advanced CRM solution for mid-sized businesses with up to 25 users.',
-    price: 699.99,
-    discountedPrice: 599.99,
-    inventory: 999,
-    status: 'active',
-    category: 'Software',
-    tags: ['professional', 'crm', 'business'],
-    images: ['https://placehold.co/400x300'],
-    featured: true,
-    dateCreated: '2025-03-01T10:05:00Z',
-    dateModified: '2025-04-01T14:35:00Z'
-  },
-  {
-    id: '3',
-    name: 'Basic CRM Software License',
-    description: 'Essential CRM features for small businesses with up to 5 users.',
-    price: 299.99,
-    inventory: 999,
-    status: 'active',
-    category: 'Software',
-    tags: ['basic', 'crm', 'small business'],
-    images: ['https://placehold.co/400x300'],
-    featured: false,
-    dateCreated: '2025-03-01T10:10:00Z',
-    dateModified: '2025-04-01T14:40:00Z'
-  },
-  {
-    id: '4',
-    name: 'Premium Support Package - Annual',
-    description: '24/7 priority support with dedicated account manager.',
-    price: 499.99,
-    inventory: 999,
-    status: 'active',
-    category: 'Services',
-    tags: ['support', 'premium', 'service'],
-    images: ['https://placehold.co/400x300'],
-    featured: false,
-    dateCreated: '2025-03-02T09:00:00Z',
-    dateModified: '2025-04-01T14:45:00Z'
-  },
-  {
-    id: '5',
-    name: 'CRM Implementation Services',
-    description: 'Professional implementation and setup of your CRM system.',
-    price: 2999.99,
-    inventory: 100,
-    status: 'active',
-    category: 'Services',
-    tags: ['implementation', 'setup', 'consulting'],
-    images: ['https://placehold.co/400x300'],
-    featured: true,
-    dateCreated: '2025-03-03T11:00:00Z',
-    dateModified: '2025-04-01T14:55:00Z'
-  },
-  {
-    id: '6',
-    name: 'CRM Training Course - Basic',
-    description: 'Online training course for new CRM users.',
-    price: 199.99,
-    inventory: 999,
-    status: 'draft',
-    category: 'Training',
-    tags: ['training', 'online', 'basic'],
-    images: ['https://placehold.co/400x300'],
-    featured: false,
-    dateCreated: '2025-03-05T13:00:00Z',
-    dateModified: '2025-04-01T15:00:00Z'
-  }
-];
+// All product data loaded from database
 
 const mockCategories: Category[] = [
   {

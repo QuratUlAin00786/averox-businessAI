@@ -475,17 +475,16 @@ export async function getDashboardData(): Promise<DashboardData> {
       console.warn('Failed to fetch migration status data:', e);
     }
     
-    // Transform stats data for the UI
+    // Use actual stats data without hardcoded change percentages
     const stats = [
       {
         id: 1,
         title: "New Leads",
         value: statsData.newLeads.toString(),
         change: {
-          value: "+12.5%",
-          trend: "up" as const,
-          text: "from last month",
-          percentage: 12.5,
+          value: "",
+          trend: "neutral" as const,
+          text: "",
         },
       },
       {
@@ -493,10 +492,9 @@ export async function getDashboardData(): Promise<DashboardData> {
         title: "Conversion Rate",
         value: statsData.conversionRate,
         change: {
-          value: "-3.2%",
-          trend: "down" as const,
-          text: "from last month",
-          percentage: -3.2,
+          value: "",
+          trend: "neutral" as const,
+          text: "",
         },
       },
       {
@@ -504,10 +502,9 @@ export async function getDashboardData(): Promise<DashboardData> {
         title: "Revenue",
         value: statsData.revenue,
         change: {
-          value: "+8.7%",
-          trend: "up" as const,
-          text: "from last month",
-          percentage: 8.7,
+          value: "",
+          trend: "neutral" as const,
+          text: "",
         },
       },
       {
@@ -515,9 +512,9 @@ export async function getDashboardData(): Promise<DashboardData> {
         title: "Open Deals",
         value: statsData.openDeals.toString(),
         change: {
-          value: "No change",
+          value: "",
           trend: "neutral" as const,
-          text: "from last month",
+          text: "",
         },
       },
     ];

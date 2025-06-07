@@ -234,7 +234,7 @@ export default function EmailTemplateEditor() {
         newElement = {
           id: newId,
           type: 'header',
-          content: { text: 'New Header', link: '' },
+          content: { text: '', link: '' },
           settings: {
             fontSize: '24px',
             textAlign: 'center',
@@ -250,7 +250,7 @@ export default function EmailTemplateEditor() {
         newElement = {
           id: newId,
           type: 'text',
-          content: { text: 'Enter your text here' },
+          content: { text: '' },
           settings: {
             fontSize: '16px',
             lineHeight: '1.5',
@@ -266,8 +266,8 @@ export default function EmailTemplateEditor() {
           id: newId,
           type: 'image',
           content: {
-            src: 'https://placehold.co/600x200/4F46E5/FFFFFF?text=Image',
-            alt: 'Image description',
+            src: '',
+            alt: '',
             link: '',
           },
           settings: {
@@ -284,8 +284,8 @@ export default function EmailTemplateEditor() {
           id: newId,
           type: 'button',
           content: {
-            text: 'Click Here',
-            link: 'https://example.com',
+            text: '',
+            link: '',
           },
           settings: {
             backgroundColor: '#4F46E5',
@@ -332,11 +332,7 @@ export default function EmailTemplateEditor() {
           id: newId,
           type: 'social',
           content: {
-            networks: [
-              { name: 'facebook', url: 'https://facebook.com/example' },
-              { name: 'twitter', url: 'https://twitter.com/example' },
-              { name: 'linkedin', url: 'https://linkedin.com/company/example' }
-            ]
+            networks: []
           },
           settings: {
             iconSize: '32px',
