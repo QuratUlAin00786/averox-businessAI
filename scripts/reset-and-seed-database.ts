@@ -881,30 +881,20 @@ async function seedApiKeys() {
 
 export async function resetAndSeedDatabase() {
   try {
-    // Reset all database tables
+    console.log('🔄 Starting database reset process...');
+    console.log('⚠️  NOTICE: Seeding with synthetic data has been DISABLED to enforce authentic data integrity');
+    console.log('⚠️  Only database reset will be performed - no fake data will be generated');
+    
+    // Reset the database only - NO SEEDING WITH FAKE DATA
     await resetDatabase();
     
-    // Seed each entity type
-    await seedAccounts();
-    await seedContacts();
-    await seedLeads();
-    await seedOpportunities();
-    await seedTasks();
-    await seedEvents();
-    await seedActivities();
-    await seedSocialIntegrations();
-    await seedLeadSources();
-    await seedSocialCampaigns();
-    await seedSocialMessages();
-    await seedWorkflows(); // Now uncommented to enable workflow seeding
-    await seedApiKeys();
+    console.log('✅ Database reset completed successfully!');
+    console.log('ℹ️  To add data, please use the application UI with authentic information');
     
-    console.log('Database reset and seed completed successfully!');
-    
-    return { success: true, message: 'Database reset and seed completed successfully!' };
+    return { success: true, message: 'Database reset completed - no synthetic data generated' };
   } catch (error) {
-    console.error('Error during database reset and seed:', error);
-    return { success: false, message: `Database reset and seed failed: ${error.message}` };
+    console.error('❌ Error during database reset:', error);
+    return { success: false, message: `Database reset failed: ${error.message}` };
   }
 }
 
