@@ -315,7 +315,7 @@ const FilterDialog = ({
   onFiltersChange: (filters: { status: string; priority: string; category: string }) => void;
 }) => {
   const handleClearFilters = () => {
-    onFiltersChange({ status: '', priority: '', category: '' });
+    onFiltersChange({ status: 'all', priority: 'all', category: 'all' });
   };
 
   const handleApplyFilters = () => {
@@ -343,7 +343,7 @@ const FilterDialog = ({
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Status</SelectLabel>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="Open">Open</SelectItem>
                   <SelectItem value="In Progress">In Progress</SelectItem>
                   <SelectItem value="Resolved">Resolved</SelectItem>
@@ -363,7 +363,7 @@ const FilterDialog = ({
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Priority</SelectLabel>
-                  <SelectItem value="">All priorities</SelectItem>
+                  <SelectItem value="all">All priorities</SelectItem>
                   <SelectItem value="Low">Low</SelectItem>
                   <SelectItem value="Medium">Medium</SelectItem>
                   <SelectItem value="High">High</SelectItem>
@@ -383,7 +383,7 @@ const FilterDialog = ({
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Category</SelectLabel>
-                  <SelectItem value="">All categories</SelectItem>
+                  <SelectItem value="all">All categories</SelectItem>
                   <SelectItem value="Technical Issue">Technical Issue</SelectItem>
                   <SelectItem value="Integration">Integration</SelectItem>
                   <SelectItem value="Billing & Subscription">Billing & Subscription</SelectItem>
