@@ -50,6 +50,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -403,6 +417,12 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   
+  // Filter state management
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [priceRangeFilter, setPriceRangeFilter] = useState("all");
+  
   // Retrieve single product details if ID is provided
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'detail' | 'edit' | 'history'>('list');
@@ -483,13 +503,41 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
   }
 
   const filteredProducts = products?.filter(product => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      product.name.toLowerCase().includes(query) ||
-      product.sku.toLowerCase().includes(query) ||
-      (product.description && product.description.toLowerCase().includes(query))
-    );
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = (
+        product.name.toLowerCase().includes(query) ||
+        product.sku.toLowerCase().includes(query) ||
+        (product.description && product.description.toLowerCase().includes(query))
+      );
+      if (!matchesSearch) return false;
+    }
+
+    // Status filter
+    if (statusFilter !== "all") {
+      if (statusFilter === "active" && !product.isActive) return false;
+      if (statusFilter === "inactive" && product.isActive) return false;
+    }
+
+    // Stock filter
+    if (stockFilter !== "all") {
+      const stockQuantity = product.stockQuantity || 0;
+      if (stockFilter === "in-stock" && stockQuantity <= 0) return false;
+      if (stockFilter === "low-stock" && (stockQuantity > product.reorderLevel || stockQuantity <= 0)) return false;
+      if (stockFilter === "out-of-stock" && stockQuantity > 0) return false;
+    }
+
+    // Price range filter
+    if (priceRangeFilter !== "all") {
+      const price = parseFloat(product.price);
+      if (priceRangeFilter === "under-50" && price >= 50) return false;
+      if (priceRangeFilter === "50-100" && (price < 50 || price >= 100)) return false;
+      if (priceRangeFilter === "100-500" && (price < 100 || price >= 500)) return false;
+      if (priceRangeFilter === "over-500" && price < 500) return false;
+    }
+
+    return true;
   });
 
   return (
@@ -515,7 +563,11 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                 />
               </div>
             )}
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setIsFilterDialogOpen(true)}
+            >
               <Filter size={16} /> Filter
             </Button>
             <Button variant="outline" className="flex items-center gap-2">
@@ -1110,6 +1162,95 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Filter Dialog */}
+        <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Filter Products</DialogTitle>
+              <DialogDescription>
+                Apply filters to narrow down your product list
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Status Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Products</SelectItem>
+                    <SelectItem value="active">Active Only</SelectItem>
+                    <SelectItem value="inactive">Inactive Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Stock Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Stock Level</label>
+                <Select value={stockFilter} onValueChange={setStockFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select stock level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Stock Levels</SelectItem>
+                    <SelectItem value="in-stock">In Stock</SelectItem>
+                    <SelectItem value="low-stock">Low Stock</SelectItem>
+                    <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Price Range Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Price Range</label>
+                <Select value={priceRangeFilter} onValueChange={setPriceRangeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select price range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Price Ranges</SelectItem>
+                    <SelectItem value="under-50">Under $50</SelectItem>
+                    <SelectItem value="50-100">$50 - $100</SelectItem>
+                    <SelectItem value="100-500">$100 - $500</SelectItem>
+                    <SelectItem value="over-500">Over $500</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setStatusFilter("all");
+                    setStockFilter("all");
+                    setPriceRangeFilter("all");
+                    toast({
+                      title: "Filters Cleared",
+                      description: "All filters have been reset",
+                    });
+                  }}
+                >
+                  Clear All
+                </Button>
+                <Button onClick={() => {
+                  setIsFilterDialogOpen(false);
+                  toast({
+                    title: "Filters Applied",
+                    description: "Product list has been filtered successfully",
+                  });
+                }}>
+                  Apply Filters
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
   );
 }
