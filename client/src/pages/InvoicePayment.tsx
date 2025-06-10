@@ -38,16 +38,12 @@ export default function InvoicePayment() {
 
   // Create payment intent when invoice is loaded
   useEffect(() => {
-    if (invoice) {
+    if (invoice && invoice.totalAmount !== undefined && !isLoadingInvoice) {
       const amount = parseFloat(invoice.totalAmount);
       
       // Check if amount is valid for payment processing
-      if (amount <= 0) {
-        toast({
-          title: 'Payment Not Required',
-          description: 'This invoice has no amount due.',
-          variant: 'default',
-        });
+      if (isNaN(amount) || amount <= 0) {
+        console.log('Invoice amount is zero or invalid, skipping payment setup');
         return;
       }
 
@@ -83,7 +79,7 @@ export default function InvoicePayment() {
 
       createPaymentIntent();
     }
-  }, [invoice, toast]);
+  }, [invoice, isLoadingInvoice, toast]);
 
   const handlePaymentSuccess = () => {
     toast({
