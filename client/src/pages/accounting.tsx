@@ -56,6 +56,7 @@ import { format } from "date-fns";
 
 import { formatCurrency, formatDate } from "@/lib/utils";
 import InvoiceDetail from "./accounting/invoices/detail";
+import PurchaseOrderDetail from "./accounting/purchase-orders/detail";
 
 type AccountingPageProps = {
   subPath?: string;
@@ -300,10 +301,9 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
       // Pass the invoiceId to the InvoiceDetail component
       return <InvoiceDetail />;
     }
-    // TODO: Add PurchaseOrderDetail component when implemented
-    // if (activeTab === 'purchase-orders') {
-    //  return <PurchaseOrderDetail />;
-    // }
+    if (activeTab === 'purchase-orders') {
+      return <PurchaseOrderDetail purchaseOrderId={entityId} />;
+    }
   }
 
   // Otherwise, render the main accounting page with lists
