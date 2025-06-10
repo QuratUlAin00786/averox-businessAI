@@ -303,6 +303,111 @@ const TicketDetails = ({ ticket, onClose }: { ticket: SupportTicket | null, onCl
   );
 };
 
+const FilterDialog = ({ 
+  open, 
+  onOpenChange, 
+  filters, 
+  onFiltersChange 
+}: { 
+  open: boolean; 
+  onOpenChange: (open: boolean) => void;
+  filters: { status: string; priority: string; category: string };
+  onFiltersChange: (filters: { status: string; priority: string; category: string }) => void;
+}) => {
+  const handleClearFilters = () => {
+    onFiltersChange({ status: '', priority: '', category: '' });
+  };
+
+  const handleApplyFilters = () => {
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Filter Tickets</DialogTitle>
+          <DialogDescription>
+            Apply filters to narrow down your support tickets view.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="filter-status" className="text-right">
+              Status
+            </Label>
+            <Select value={filters.status} onValueChange={(value) => onFiltersChange({ ...filters, status: value })}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Status</SelectLabel>
+                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="Open">Open</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Resolved">Resolved</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="filter-priority" className="text-right">
+              Priority
+            </Label>
+            <Select value={filters.priority} onValueChange={(value) => onFiltersChange({ ...filters, priority: value })}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="All priorities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Priority</SelectLabel>
+                  <SelectItem value="">All priorities</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Critical">Critical</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="filter-category" className="text-right">
+              Category
+            </Label>
+            <Select value={filters.category} onValueChange={(value) => onFiltersChange({ ...filters, category: value })}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="All categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Category</SelectLabel>
+                  <SelectItem value="">All categories</SelectItem>
+                  <SelectItem value="Technical Issue">Technical Issue</SelectItem>
+                  <SelectItem value="Integration">Integration</SelectItem>
+                  <SelectItem value="Billing & Subscription">Billing & Subscription</SelectItem>
+                  <SelectItem value="Feature Request">Feature Request</SelectItem>
+                  <SelectItem value="How-to Question">How-to Question</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={handleClearFilters}>
+            Clear Filters
+          </Button>
+          <Button type="button" onClick={handleApplyFilters}>
+            Apply Filters
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const NewTicketDialog = ({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) => {
   const [ticketTitle, setTicketTitle] = useState('');
   const [ticketDescription, setTicketDescription] = useState('');
@@ -428,6 +533,12 @@ export default function SupportTicketsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [isNewTicketDialogOpen, setIsNewTicketDialogOpen] = useState(false);
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    status: '',
+    priority: '',
+    category: ''
+  });
   const { user } = useAuth();
   
   // This would be replaced with a real API query
@@ -446,12 +557,18 @@ export default function SupportTicketsPage() {
       ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.description.toLowerCase().includes(searchQuery.toLowerCase());
     
+    // Filter by advanced filters
+    const matchesStatus = filters.status === '' || ticket.status === filters.status;
+    const matchesPriority = filters.priority === '' || ticket.priority === filters.priority;
+    const matchesCategory = filters.category === '' || ticket.category === filters.category;
+    
     // Filter by tab
-    if (selectedTab === 'all') return matchesSearch;
-    if (selectedTab === 'open') return ticket.status === 'Open' && matchesSearch;
-    if (selectedTab === 'in-progress') return ticket.status === 'In Progress' && matchesSearch;
-    if (selectedTab === 'resolved') return ticket.status === 'Resolved' && matchesSearch;
-    return matchesSearch;
+    let matchesTab = true;
+    if (selectedTab === 'open') matchesTab = ticket.status === 'Open';
+    else if (selectedTab === 'in-progress') matchesTab = ticket.status === 'In Progress';
+    else if (selectedTab === 'resolved') matchesTab = ticket.status === 'Resolved';
+    
+    return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesTab;
   });
   
   return (
@@ -507,7 +624,7 @@ export default function SupportTicketsPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" onClick={() => setIsFilterDialogOpen(true)}>
                 <Filter className="h-4 w-4" />
               </Button>
             </div>
@@ -734,6 +851,13 @@ export default function SupportTicketsPage() {
       <NewTicketDialog
         open={isNewTicketDialogOpen}
         onOpenChange={setIsNewTicketDialogOpen}
+      />
+      
+      <FilterDialog
+        open={isFilterDialogOpen}
+        onOpenChange={setIsFilterDialogOpen}
+        filters={filters}
+        onFiltersChange={setFilters}
       />
     </div>
   );
