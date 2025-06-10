@@ -377,11 +377,17 @@ export default function Marketing() {
 
         <TabsContent value="automations" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Marketing Automations</CardTitle>
-              <CardDescription>
-                Set up automated workflows to nurture leads and engage customers
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="space-y-1">
+                <CardTitle>Marketing Automations</CardTitle>
+                <CardDescription>
+                  Set up automated workflows to nurture leads and engage customers
+                </CardDescription>
+              </div>
+              <Button onClick={() => setIsCreateAutomationOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Automation
+              </Button>
             </CardHeader>
             <CardContent>
               {isLoadingAutomations ? (

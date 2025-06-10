@@ -20,9 +20,13 @@ const createAutomationSchema = z.object({
   name: z.string().min(1, "Automation name is required"),
   status: z.enum(['active', 'paused', 'draft']).default('draft'),
   triggerType: z.enum(['lead_created', 'contact_added', 'opportunity_stage', 'date_based']),
+  description: z.string().optional(),
+  actions: z.array(z.string()).optional(),
   contactCount: z.number().min(0).default(0),
   steps: z.number().min(1).default(1),
   conversionRate: z.number().min(0).max(1).default(0),
+  executionCount: z.number().min(0).default(0),
+  createdAt: z.string().optional(),
 });
 
 export function registerMarketingRoutes(app: Express) {
