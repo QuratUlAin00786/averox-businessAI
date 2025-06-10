@@ -30,7 +30,288 @@ export default function RevenueReport() {
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log("Print Report button clicked");
+            
+            try {
+              // Create a print-friendly version of the report
+              const printWindow = window.open('', '_blank');
+              if (!printWindow) {
+                alert('Please allow popups to print the report');
+                return;
+              }
+              
+              const printContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <title>AVEROX CRM - Revenue Report</title>
+                  <style>
+                    body {
+                      font-family: Arial, sans-serif;
+                      margin: 20px;
+                      color: #333;
+                    }
+                    .header {
+                      text-align: center;
+                      margin-bottom: 30px;
+                      border-bottom: 2px solid #0066cc;
+                      padding-bottom: 20px;
+                    }
+                    .logo {
+                      font-size: 24px;
+                      font-weight: bold;
+                      color: #0066cc;
+                    }
+                    .report-title {
+                      font-size: 20px;
+                      margin: 10px 0;
+                    }
+                    .report-subtitle {
+                      color: #666;
+                      margin-bottom: 10px;
+                    }
+                    .summary-section {
+                      margin: 30px 0;
+                    }
+                    .section-title {
+                      font-size: 18px;
+                      font-weight: bold;
+                      color: #0066cc;
+                      margin-bottom: 15px;
+                      border-bottom: 1px solid #ddd;
+                      padding-bottom: 5px;
+                    }
+                    .data-grid {
+                      display: grid;
+                      grid-template-columns: 1fr 1fr;
+                      gap: 30px;
+                      margin: 20px 0;
+                    }
+                    .data-item {
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 8px 0;
+                      border-bottom: 1px solid #eee;
+                    }
+                    .data-label {
+                      font-weight: 500;
+                    }
+                    .data-value {
+                      font-weight: bold;
+                    }
+                    .total-revenue {
+                      font-size: 20px;
+                      text-align: center;
+                      padding: 20px;
+                      background-color: #f8f9fa;
+                      border: 2px solid #0066cc;
+                      margin: 20px 0;
+                    }
+                    .monthly-section {
+                      margin-top: 30px;
+                    }
+                    .monthly-item {
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      padding: 12px;
+                      border: 1px solid #ddd;
+                      margin-bottom: 10px;
+                    }
+                    .month-info h4 {
+                      margin: 0;
+                      font-size: 16px;
+                    }
+                    .month-info p {
+                      margin: 5px 0 0 0;
+                      color: #666;
+                      font-size: 14px;
+                    }
+                    .month-revenue {
+                      text-align: right;
+                    }
+                    .month-revenue .amount {
+                      font-size: 18px;
+                      font-weight: bold;
+                    }
+                    .month-revenue .invoices {
+                      font-size: 12px;
+                      color: #666;
+                    }
+                    .footer {
+                      margin-top: 40px;
+                      text-align: center;
+                      color: #666;
+                      font-size: 12px;
+                      border-top: 1px solid #ddd;
+                      padding-top: 20px;
+                    }
+                    @media print {
+                      body { margin: 0; }
+                      .no-print { display: none; }
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div class="header">
+                    <div class="logo">AVEROX</div>
+                    <div class="report-title">Revenue Report</div>
+                    <div class="report-subtitle">Detailed revenue breakdown for current period</div>
+                    <div class="report-subtitle">Generated on: ${new Date().toLocaleString()}</div>
+                  </div>
+                  
+                  <div class="total-revenue">
+                    <div>Total Revenue: <strong>$24,500</strong></div>
+                  </div>
+                  
+                  <div class="summary-section">
+                    <div class="section-title">Revenue Summary</div>
+                    <div class="data-grid">
+                      <div>
+                        <div class="section-title" style="font-size: 16px;">Revenue by Category</div>
+                        <div class="data-item">
+                          <span class="data-label">Product Sales</span>
+                          <span class="data-value">$16,800</span>
+                        </div>
+                        <div class="data-item">
+                          <span class="data-label">Services</span>
+                          <span class="data-value">$5,200</span>
+                        </div>
+                        <div class="data-item">
+                          <span class="data-label">Subscriptions</span>
+                          <span class="data-value">$2,500</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div class="section-title" style="font-size: 16px;">Revenue by Status</div>
+                        <div class="data-item">
+                          <span class="data-label">Collected</span>
+                          <span class="data-value" style="color: #28a745;">$18,180</span>
+                        </div>
+                        <div class="data-item">
+                          <span class="data-label">Outstanding</span>
+                          <span class="data-value" style="color: #ffc107;">$5,070</span>
+                        </div>
+                        <div class="data-item">
+                          <span class="data-label">Overdue</span>
+                          <span class="data-value" style="color: #dc3545;">$1,250</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="monthly-section">
+                    <div class="section-title">Monthly Revenue Breakdown</div>
+                    
+                    <div class="monthly-item">
+                      <div class="month-info">
+                        <h4>January 2025</h4>
+                        <p>Closed</p>
+                      </div>
+                      <div class="month-revenue">
+                        <div class="amount">$4,200</div>
+                        <div class="invoices">15 invoices</div>
+                      </div>
+                    </div>
+                    
+                    <div class="monthly-item">
+                      <div class="month-info">
+                        <h4>February 2025</h4>
+                        <p>Closed</p>
+                      </div>
+                      <div class="month-revenue">
+                        <div class="amount">$4,850</div>
+                        <div class="invoices">18 invoices</div>
+                      </div>
+                    </div>
+                    
+                    <div class="monthly-item">
+                      <div class="month-info">
+                        <h4>March 2025</h4>
+                        <p>Closed</p>
+                      </div>
+                      <div class="month-revenue">
+                        <div class="amount">$5,100</div>
+                        <div class="invoices">19 invoices</div>
+                      </div>
+                    </div>
+                    
+                    <div class="monthly-item">
+                      <div class="month-info">
+                        <h4>April 2025</h4>
+                        <p>Current</p>
+                      </div>
+                      <div class="month-revenue">
+                        <div class="amount">$5,670</div>
+                        <div class="invoices">21 invoices</div>
+                      </div>
+                    </div>
+                    
+                    <div class="monthly-item">
+                      <div class="month-info">
+                        <h4>May 2025</h4>
+                        <p>Projected</p>
+                      </div>
+                      <div class="month-revenue">
+                        <div class="amount">$4,680</div>
+                        <div class="invoices">Estimated</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="footer">
+                    <p>AVEROX CRM - Business Intelligence Platform</p>
+                    <p>This report contains confidential business information</p>
+                  </div>
+                  
+                  <script>
+                    window.onload = function() {
+                      window.print();
+                      window.onafterprint = function() {
+                        window.close();
+                      };
+                    };
+                  </script>
+                </body>
+                </html>
+              `;
+              
+              printWindow.document.write(printContent);
+              printWindow.document.close();
+              
+              console.log("Print dialog opened successfully");
+              
+              // Show success message if toast is available
+              if (toast) {
+                toast({
+                  title: "Print Ready",
+                  description: "Print dialog has been opened",
+                });
+              }
+            } catch (error) {
+              console.error("Print failed:", error);
+              
+              // Show error message if toast is available
+              if (toast) {
+                toast({
+                  title: "Print Failed", 
+                  description: "Failed to open print dialog. Please try again.",
+                  variant: "destructive",
+                });
+              } else {
+                alert("Print failed: " + error.message);
+              }
+            }
+          }}
+        >
           <Printer size={16} /> Print Report
         </Button>
         <Button 
