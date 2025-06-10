@@ -14,6 +14,7 @@ import {
   insertWorkflowEnrollmentSchema,
   insertCampaignEngagementSchema,
 } from "@shared/marketing";
+import { activities } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { encryptForDatabase, decryptFromDatabase, decryptArrayFromDatabase } from "./utils/database-encryption";
