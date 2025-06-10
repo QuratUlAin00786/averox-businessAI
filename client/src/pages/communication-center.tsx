@@ -216,7 +216,8 @@ const CommunicationCenter = () => {
     data: communications = [],
     isLoading,
     error,
-    refetch
+    refetch,
+    isFetching
   } = useQuery<Communication[]>({
     queryKey: ['/api/communications'],
     queryFn: async () => {
@@ -435,9 +436,14 @@ const CommunicationCenter = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button onClick={() => refetch()} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+          <Button 
+            onClick={() => refetch()} 
+            variant="outline" 
+            size="sm"
+            disabled={isFetching}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            {isFetching ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
       </div>
