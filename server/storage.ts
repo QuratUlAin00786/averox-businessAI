@@ -3298,7 +3298,7 @@ export class MemStorage implements IStorage {
 
   // Marketing Methods
   async getMarketingCampaigns(): Promise<any[]> {
-    // Get all stored campaigns
+    // Get all stored campaigns from the map
     const campaigns = Array.from(this.marketingCampaigns.values());
     console.log('[Marketing Storage] Retrieving campaigns:', {
       storedCount: campaigns.length,
@@ -3306,40 +3306,8 @@ export class MemStorage implements IStorage {
       campaigns: campaigns
     });
     
-    // Default campaigns that are always included
-    const defaultCampaigns = [
-      {
-        id: 1,
-        name: "Spring Product Launch",
-        type: "email",
-        status: "active",
-        recipientCount: 2500,
-        sentCount: 2500,
-        openedCount: 1850,
-        clickedCount: 425,
-        conversionCount: 85,
-        createdAt: new Date('2025-03-01'),
-        scheduledAt: null
-      },
-      {
-        id: 2,
-        name: "Customer Retention Campaign",
-        type: "automation",
-        status: "active",
-        recipientCount: 1200,
-        sentCount: 1200,
-        openedCount: 960,
-        clickedCount: 288,
-        conversionCount: 72,
-        createdAt: new Date('2025-03-15'),
-        scheduledAt: null
-      }
-    ];
-    
-    // Return both default campaigns and any newly created campaigns
-    const allCampaigns = [...defaultCampaigns, ...campaigns];
-    console.log('[Marketing Storage] Returning total campaigns:', allCampaigns.length);
-    return allCampaigns;
+    console.log('[Marketing Storage] Returning stored campaigns:', campaigns.length);
+    return campaigns;
   }
 
   async createMarketingCampaign(campaignData: any): Promise<any> {
