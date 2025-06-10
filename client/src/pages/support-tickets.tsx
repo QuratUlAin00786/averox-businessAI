@@ -656,32 +656,41 @@ export default function SupportTicketsPage() {
   });
   const { user } = useAuth();
   
-  // This would be replaced with a real API query
-  // const { data: tickets = [], isLoading } = useQuery({
-  //   queryKey: ['/api/support-tickets'],
-  //   queryFn: () => fetch('/api/support-tickets').then(res => res.json()),
-  // });
-  
-  // Using mock data for now
-  const tickets = mockTickets;
-  const isLoading = false;
+  // Real API query for support tickets
+  const { data: tickets = [], isLoading } = useQuery({
+    queryKey: ['/api/support-tickets'],
+    queryFn: () => fetch('/api/support-tickets').then(res => res.json()),
+  });
   
   const filteredTickets = tickets.filter(ticket => {
     // Filter by search query
     const matchesSearch = searchQuery === '' || 
-      ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.description.toLowerCase().includes(searchQuery.toLowerCase());
     
+    // Convert database values to display format for filtering
+    const displayStatus = ticket.status === 'open' ? 'Open' : 
+                         ticket.status === 'in_progress' ? 'In Progress' :
+                         ticket.status === 'resolved' ? 'Resolved' :
+                         ticket.status === 'closed' ? 'Closed' : ticket.status;
+    
+    const displayPriority = ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1);
+    
+    const displayCategory = ticket.type === 'technical' ? 'Technical' :
+                           ticket.type === 'billing' ? 'Billing' :
+                           ticket.type === 'feature_request' ? 'Feature' :
+                           ticket.type === 'general_inquiry' ? 'General' : ticket.type;
+    
     // Filter by advanced filters
-    const matchesStatus = filters.status === 'all' || ticket.status === filters.status;
-    const matchesPriority = filters.priority === 'all' || ticket.priority === filters.priority;
-    const matchesCategory = filters.category === 'all' || ticket.category === filters.category;
+    const matchesStatus = filters.status === 'all' || displayStatus === filters.status;
+    const matchesPriority = filters.priority === 'all' || displayPriority === filters.priority;
+    const matchesCategory = filters.category === 'all' || displayCategory === filters.category;
     
     // Filter by tab
     let matchesTab = true;
-    if (selectedTab === 'open') matchesTab = ticket.status === 'Open';
-    else if (selectedTab === 'in-progress') matchesTab = ticket.status === 'In Progress';
-    else if (selectedTab === 'resolved') matchesTab = ticket.status === 'Resolved';
+    if (selectedTab === 'open') matchesTab = ticket.status === 'open';
+    else if (selectedTab === 'in-progress') matchesTab = ticket.status === 'in_progress';
+    else if (selectedTab === 'resolved') matchesTab = ticket.status === 'resolved';
     
     return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesTab;
   });
@@ -771,41 +780,56 @@ export default function SupportTicketsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTickets.map((ticket) => (
-                    <TableRow key={ticket.id} className="cursor-pointer hover:bg-gray-50" onClick={() => setSelectedTicket(ticket)}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{ticket.title}</p>
-                          <p className="text-sm text-gray-500 truncate max-w-xs">
-                            {ticket.description}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={getStatusColor(ticket.status)}>
-                          {getStatusIcon(ticket.status)} {ticket.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={getPriorityColor(ticket.priority)}>
-                          {getPriorityIcon(ticket.priority)} {ticket.priority}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{ticket.category}</TableCell>
-                      <TableCell>
-                        <span className="text-sm text-gray-500">
-                          {new Date(ticket.updatedAt).toLocaleDateString()}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-1">
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                            <MessageSquare className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  filteredTickets.map((ticket) => {
+                    // Format values for display
+                    const displayStatus = ticket.status === 'open' ? 'Open' : 
+                                         ticket.status === 'in_progress' ? 'In Progress' :
+                                         ticket.status === 'resolved' ? 'Resolved' :
+                                         ticket.status === 'closed' ? 'Closed' : ticket.status;
+                    
+                    const displayPriority = ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1);
+                    
+                    const displayCategory = ticket.type === 'technical' ? 'Technical' :
+                                           ticket.type === 'billing' ? 'Billing' :
+                                           ticket.type === 'feature_request' ? 'Feature' :
+                                           ticket.type === 'general_inquiry' ? 'General' : ticket.type;
+                    
+                    return (
+                      <TableRow key={ticket.id} className="cursor-pointer hover:bg-gray-50" onClick={() => setSelectedTicket(ticket)}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{ticket.subject}</p>
+                            <p className="text-sm text-gray-500 truncate max-w-xs">
+                              {ticket.description}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getStatusColor(displayStatus)}>
+                            {getStatusIcon(displayStatus)} {displayStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getPriorityColor(displayPriority)}>
+                            {getPriorityIcon(displayPriority)} {displayPriority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{displayCategory}</TableCell>
+                        <TableCell>
+                          <span className="text-sm text-gray-500">
+                            {new Date(ticket.updatedAt || ticket.createdAt).toLocaleDateString()}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                              <MessageSquare className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
