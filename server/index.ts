@@ -96,4 +96,30 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
   });
+
+  // Add global error handlers to prevent crashes
+  process.on('uncaughtException', (error) => {
+    console.error('[Process] Uncaught Exception:', error);
+    // Don't exit the process, just log the error
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[Process] Unhandled Rejection at:', promise, 'reason:', reason);
+    // Don't exit the process, just log the error
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('[Process] SIGTERM received, shutting down gracefully');
+    server.close(() => {
+      console.log('[Process] Process terminated');
+    });
+  });
+
+  process.on('SIGINT', () => {
+    console.log('[Process] SIGINT received, shutting down gracefully');
+    server.close(() => {
+      console.log('[Process] Process terminated');
+    });
+  });
 })();

@@ -4,8 +4,10 @@ import ws from "ws";
 import * as schema from "@shared/schema";
 import { decryptConnectionString } from './utils/encryption';
 
-// Configure Neon WebSocket
+// Configure Neon WebSocket with error handling
 neonConfig.webSocketConstructor = ws;
+neonConfig.pipelineConnect = false;
+neonConfig.useSecureWebSocket = true;
 
 // Check for database URL
 if (!process.env.DATABASE_URL) {
@@ -87,12 +89,26 @@ export async function initDatabase() {
   }
 }
 
-// Perform initial database connection
+// Perform initial database connection with improved settings
 console.log('[Database] Setting up initial database connection...');
 pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' // Enable SSL in production 
+  ssl: process.env.NODE_ENV === 'production', // Enable SSL in production
+  max: 10, // Maximum pool connections
+  idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
+  connectionTimeoutMillis: 10000, // Connection timeout
+  maxUses: 7500, // Reuse connections up to 7500 times
 });
+
+// Add error handling for pool
+pool.on('error', (err) => {
+  console.error('[Database] Pool error:', err);
+});
+
+pool.on('connect', () => {
+  console.log('[Database] New client connected');
+});
+
 db = drizzle({ client: pool, schema });
 
 // Optional: Initialize the secure connection immediately if enabled
