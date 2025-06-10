@@ -210,6 +210,7 @@ const CommunicationCenter = () => {
   const [composeChannel, setComposeChannel] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [viewMessageDialog, setViewMessageDialog] = useState<Communication | null>(null);
   
   // Fetch communications data
   const {
@@ -654,6 +655,14 @@ const CommunicationCenter = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => setViewMessageDialog(comm)}
+                                  title="View full message"
+                                >
+                                  <MessageSquare className="h-4 w-4" />
+                                </Button>
                                 <Button 
                                   variant="ghost" 
                                   size="icon"
@@ -1365,6 +1374,120 @@ const CommunicationCenter = () => {
                   Send Message
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Message Dialog */}
+      <Dialog open={!!viewMessageDialog} onOpenChange={() => setViewMessageDialog(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Message Details</DialogTitle>
+            <DialogDescription>
+              Full message content and details
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewMessageDialog && (
+            <div className="space-y-4">
+              {/* Contact Information */}
+              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                <Avatar>
+                  <AvatarImage src={viewMessageDialog.contactDetails.avatarUrl} />
+                  <AvatarFallback>
+                    {viewMessageDialog.contactDetails.firstName?.charAt(0) || ''}
+                    {viewMessageDialog.contactDetails.lastName?.charAt(0) || ''}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="font-medium">
+                    {viewMessageDialog.contactDetails.firstName} {viewMessageDialog.contactDetails.lastName}
+                  </div>
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <ChannelIcon channel={viewMessageDialog.channel} />
+                    <span className="capitalize">{viewMessageDialog.channel}</span>
+                    <span>•</span>
+                    <span>{viewMessageDialog.contactType === 'lead' ? 'Lead' : 'Customer'}</span>
+                    {viewMessageDialog.contactDetails.company && (
+                      <>
+                        <span>•</span>
+                        <span>{viewMessageDialog.contactDetails.company}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium">
+                    {viewMessageDialog.direction === 'inbound' ? (
+                      <div className="flex items-center text-green-600">
+                        <ArrowDown className="h-4 w-4 mr-1" />
+                        Received
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-blue-600">
+                        <ArrowUp className="h-4 w-4 mr-1" />
+                        Sent
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {formatDate(new Date(viewMessageDialog.sentAt))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Message Content */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Message Content</h4>
+                  {getStatusBadge(viewMessageDialog.status)}
+                </div>
+                <div className="p-4 bg-white border rounded-lg min-h-[120px] whitespace-pre-wrap">
+                  {viewMessageDialog.content}
+                </div>
+              </div>
+
+              {/* Attachments if any */}
+              {viewMessageDialog.attachments && viewMessageDialog.attachments.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium">Attachments</h4>
+                  <div className="space-y-2">
+                    {viewMessageDialog.attachments.map((attachment, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                        <span className="text-sm">{attachment.name}</span>
+                        <Button variant="ghost" size="sm" asChild>
+                          <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                            Download
+                          </a>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="flex space-x-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setViewMessageDialog(null)}
+            >
+              Close
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (viewMessageDialog) {
+                  handleReply(viewMessageDialog);
+                  setViewMessageDialog(null);
+                }
+              }}
+            >
+              <MessageCircle className="mr-2 h-4 w-4" />
+              Reply
             </Button>
           </DialogFooter>
         </DialogContent>
