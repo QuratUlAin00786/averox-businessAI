@@ -992,6 +992,8 @@ export const insertLeadSchema = createInsertSchema(leads).omit({
 export const insertOpportunitySchema = createInsertSchema(opportunities).omit({
   id: true,
   createdAt: true,
+  isClosed: true,
+  isWon: true,
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({

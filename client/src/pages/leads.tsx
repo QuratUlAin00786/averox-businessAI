@@ -9,7 +9,7 @@ import { LeadForm } from "@/components/leads/lead-form";
 import { LeadDetail } from "@/components/leads/lead-detail";
 import { LeadConvertForm } from "@/components/leads/lead-convert-form";
 import { apiRequestJson } from "@/lib/queryClient";
-import { Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Loader2, Plus, RefreshCw } from "lucide-react";
 
 export default function Leads() {
   const { toast } = useToast();
@@ -21,7 +21,6 @@ export default function Leads() {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
-  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   
   // Fetch leads
@@ -31,16 +30,14 @@ export default function Leads() {
     error,
   } = useQuery<Lead[]>({
     queryKey: ["/api/leads"],
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to load leads: ${error.message}`,
+        variant: "destructive",
+      });
+    },
   });
-
-  // Handle query error
-  if (error) {
-    toast({
-      title: "Error",
-      description: `Failed to load leads: ${error.message}`,
-      variant: "destructive",
-    });
-  }
 
   // Create lead mutation
   const createLeadMutation = useMutation({
@@ -152,7 +149,6 @@ export default function Leads() {
   };
 
   const handleDeleteLead = (lead: Lead) => {
-    console.log('Delete lead clicked:', lead);
     setSelectedLead(lead);
     setIsDeleteOpen(true);
   };
@@ -178,17 +174,6 @@ export default function Leads() {
     }
   };
 
-  const handleBulkDelete = () => {
-    // For simplicity, delete all leads visible on current page
-    if (leads.length > 0) {
-      // Delete all leads one by one
-      leads.forEach(lead => {
-        deleteLeadMutation.mutate(lead.id);
-      });
-      setShowBulkDeleteDialog(false);
-    }
-  };
-
   // Error state
   if (error) {
     return (
@@ -211,27 +196,30 @@ export default function Leads() {
   return (
     <div className="py-6">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-        <div className="mb-6 pb-5 border-b border-neutral-200">
-          <h1 className="text-2xl font-bold text-neutral-700">Leads</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            Manage your business leads and client relationships.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
+              Leads
+            </h2>
+          </div>
+          <div className="flex mt-4 md:mt-0 md:ml-4">
+            <Button onClick={handleAddLead}>
+              <Plus className="-ml-1 mr-2 h-5 w-5" />
+              Add Lead
+            </Button>
+          </div>
         </div>
       </div>
       
-      <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-100">
-          <LeadList
-            data={leads}
-            isLoading={isLoading}
-            onEdit={handleEditLead}
-            onView={handleViewLead}
-            onDelete={handleDeleteLead}
-            onConvert={handleConvertLead}
-            onAdd={handleAddLead}
-            onBulkDelete={() => setShowBulkDeleteDialog(true)}
-          />
-        </div>
+      <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
+        <LeadList
+          data={leads}
+          isLoading={isLoading}
+          onEdit={handleEditLead}
+          onView={handleViewLead}
+          onDelete={handleDeleteLead}
+          onConvert={handleConvertLead}
+        />
       </div>
 
       {/* Add/Edit Lead Dialog */}
@@ -278,43 +266,13 @@ export default function Leads() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                if (selectedLead) {
-                  console.log('Executing delete for lead:', selectedLead.id);
-                  deleteLeadMutation.mutate(selectedLead.id);
-                }
-              }}
+              onClick={() => selectedLead && deleteLeadMutation.mutate(selectedLead.id)}
               className="bg-red-600 hover:bg-red-700"
             >
               {deleteLeadMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Bulk Delete Dialog */}
-      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete All Leads</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete all {leads.length} leads currently displayed.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {deleteLeadMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Delete All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

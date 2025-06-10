@@ -265,7 +265,6 @@ export const opportunities = pgTable("opportunities", {
         notes: text(),
         isClosed: boolean("is_closed").default(false),
         isWon: boolean("is_won").default(false),
-        closeDate: timestamp("close_date", { mode: 'string' }),
 }, (table) => [
         foreignKey({
                         columns: [table.accountId],
@@ -296,7 +295,6 @@ export const leads = pgTable("leads", {
         convertedToContactId: integer("converted_to_contact_id"),
         convertedToAccountId: integer("converted_to_account_id"),
         convertedToOpportunityId: integer("converted_to_opportunity_id"),
-        lastActivityDate: timestamp("last_activity_date", { mode: 'string' }),
 }, (table) => [
         foreignKey({
                         columns: [table.ownerId],

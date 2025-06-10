@@ -67,7 +67,7 @@ import {
   Users
 } from 'lucide-react';
 
-// Database-driven data structures
+// Mock data structures
 interface Product {
   id: string;
   name: string;
@@ -167,13 +167,285 @@ interface StoreStats {
   };
 }
 
-// All product data loaded from database
+// Mock data
+const mockProducts: Product[] = [
+  {
+    id: '1',
+    name: 'Enterprise CRM Software License',
+    description: 'Full featured CRM solution for enterprise businesses with unlimited users.',
+    price: 1299.99,
+    inventory: 999,
+    status: 'active',
+    category: 'Software',
+    tags: ['enterprise', 'crm', 'business'],
+    images: ['https://placehold.co/400x300'],
+    featured: true,
+    dateCreated: '2025-03-01T10:00:00Z',
+    dateModified: '2025-04-01T14:30:00Z'
+  },
+  {
+    id: '2',
+    name: 'Professional CRM Software License',
+    description: 'Advanced CRM solution for mid-sized businesses with up to 25 users.',
+    price: 699.99,
+    discountedPrice: 599.99,
+    inventory: 999,
+    status: 'active',
+    category: 'Software',
+    tags: ['professional', 'crm', 'business'],
+    images: ['https://placehold.co/400x300'],
+    featured: true,
+    dateCreated: '2025-03-01T10:05:00Z',
+    dateModified: '2025-04-01T14:35:00Z'
+  },
+  {
+    id: '3',
+    name: 'Basic CRM Software License',
+    description: 'Essential CRM features for small businesses with up to 5 users.',
+    price: 299.99,
+    inventory: 999,
+    status: 'active',
+    category: 'Software',
+    tags: ['basic', 'crm', 'small business'],
+    images: ['https://placehold.co/400x300'],
+    featured: false,
+    dateCreated: '2025-03-01T10:10:00Z',
+    dateModified: '2025-04-01T14:40:00Z'
+  },
+  {
+    id: '4',
+    name: 'Premium Support Package - Annual',
+    description: '24/7 priority support with dedicated account manager.',
+    price: 499.99,
+    inventory: 999,
+    status: 'active',
+    category: 'Services',
+    tags: ['support', 'premium', 'service'],
+    images: ['https://placehold.co/400x300'],
+    featured: false,
+    dateCreated: '2025-03-02T09:00:00Z',
+    dateModified: '2025-04-01T14:45:00Z'
+  },
+  {
+    id: '5',
+    name: 'CRM Implementation Services',
+    description: 'Professional implementation and setup of your CRM system.',
+    price: 2999.99,
+    inventory: 100,
+    status: 'active',
+    category: 'Services',
+    tags: ['implementation', 'setup', 'consulting'],
+    images: ['https://placehold.co/400x300'],
+    featured: true,
+    dateCreated: '2025-03-03T11:00:00Z',
+    dateModified: '2025-04-01T14:55:00Z'
+  },
+  {
+    id: '6',
+    name: 'CRM Training Course - Basic',
+    description: 'Online training course for new CRM users.',
+    price: 199.99,
+    inventory: 999,
+    status: 'draft',
+    category: 'Training',
+    tags: ['training', 'online', 'basic'],
+    images: ['https://placehold.co/400x300'],
+    featured: false,
+    dateCreated: '2025-03-05T13:00:00Z',
+    dateModified: '2025-04-01T15:00:00Z'
+  }
+];
 
-// All category data loaded from database
+const mockCategories: Category[] = [
+  {
+    id: '1',
+    name: 'Software',
+    description: 'CRM software licenses and subscriptions',
+    slug: 'software',
+    productCount: 3
+  },
+  {
+    id: '2',
+    name: 'Services',
+    description: 'Professional services for CRM implementation and support',
+    slug: 'services',
+    productCount: 2
+  },
+  {
+    id: '3',
+    name: 'Training',
+    description: 'Training courses and materials for CRM users',
+    slug: 'training',
+    productCount: 1
+  },
+  {
+    id: '4',
+    name: 'Add-ons',
+    description: 'Additional modules and extensions for CRM',
+    slug: 'add-ons',
+    productCount: 0
+  }
+];
 
-// All order data loaded from database
+const mockOrders: Order[] = [
+  {
+    id: '1',
+    orderNumber: '#10045',
+    customer: {
+      id: '101',
+      name: 'Acme Corporation',
+      email: 'purchasing@acme.com',
+      phone: '+1-555-123-4567'
+    },
+    status: 'completed',
+    paymentStatus: 'paid',
+    shippingStatus: 'delivered',
+    total: 1299.99,
+    items: [
+      {
+        id: '1-1',
+        productId: '1',
+        productName: 'Enterprise CRM Software License',
+        quantity: 1,
+        price: 1299.99,
+        total: 1299.99
+      }
+    ],
+    createdAt: '2025-04-01T10:30:00Z',
+    shippingAddress: {
+      street: '123 Business Ave',
+      city: 'Metropolis',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'USA'
+    },
+    billingAddress: {
+      street: '123 Business Ave',
+      city: 'Metropolis',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'USA'
+    },
+    paymentMethod: 'Credit Card',
+    shippingMethod: 'Digital Delivery',
+    notes: 'Please send license key to IT department.'
+  },
+  {
+    id: '2',
+    orderNumber: '#10046',
+    customer: {
+      id: '102',
+      name: 'Global Industries Ltd',
+      email: 'tech@globalind.com'
+    },
+    status: 'processing',
+    paymentStatus: 'paid',
+    shippingStatus: 'pending',
+    total: 3299.97,
+    items: [
+      {
+        id: '2-1',
+        productId: '2',
+        productName: 'Professional CRM Software License',
+        quantity: 1,
+        price: 699.99,
+        total: 699.99
+      },
+      {
+        id: '2-2',
+        productId: '4',
+        productName: 'Premium Support Package - Annual',
+        quantity: 1,
+        price: 499.99,
+        total: 499.99
+      },
+      {
+        id: '2-3',
+        productId: '5',
+        productName: 'CRM Implementation Services',
+        quantity: 1,
+        price: 2099.99,
+        total: 2099.99
+      }
+    ],
+    createdAt: '2025-04-02T14:45:00Z',
+    shippingAddress: {
+      street: '456 Corporate Drive',
+      city: 'Business Park',
+      state: 'CA',
+      zipCode: '90210',
+      country: 'USA'
+    },
+    paymentMethod: 'Bank Transfer',
+    shippingMethod: 'Digital Delivery',
+  },
+  {
+    id: '3',
+    orderNumber: '#10047',
+    customer: {
+      id: '103',
+      name: 'Tech Solutions Inc',
+      email: 'orders@techsolutions.com'
+    },
+    status: 'pending',
+    paymentStatus: 'pending',
+    shippingStatus: 'pending',
+    total: 599.99,
+    items: [
+      {
+        id: '3-1',
+        productId: '2',
+        productName: 'Professional CRM Software License',
+        quantity: 1,
+        price: 599.99,
+        total: 599.99,
+        options: {
+          'edition': 'Cloud'
+        }
+      }
+    ],
+    createdAt: '2025-04-03T09:15:00Z',
+    shippingAddress: {
+      street: '789 Tech Blvd',
+      city: 'Silicon Valley',
+      state: 'CA',
+      zipCode: '94024',
+      country: 'USA'
+    },
+    paymentMethod: 'PayPal',
+    shippingMethod: 'Digital Delivery',
+  }
+];
 
-// All statistics loaded from database
+const mockStoreStats: StoreStats = {
+  revenue: {
+    today: 599.99,
+    yesterday: 1299.99,
+    week: 5199.95,
+    month: 18750.85,
+    year: 67500.50
+  },
+  orders: {
+    today: 1,
+    yesterday: 1,
+    week: 8,
+    month: 32,
+    pending: 3
+  },
+  customers: {
+    total: 124,
+    new: {
+      today: 2,
+      week: 15,
+      month: 42
+    }
+  },
+  products: {
+    total: 6,
+    outOfStock: 0,
+    lowStock: 0
+  }
+};
 
 // Helper functions
 const formatCurrency = (amount: number): string => {

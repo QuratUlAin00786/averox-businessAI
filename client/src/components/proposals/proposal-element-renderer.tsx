@@ -15,38 +15,44 @@ export const getDefaultContent = (type: string) => {
         return { url: '', alt: 'Image', caption: '' };
       case 'Table':
         return { 
-          headers: [], 
-          rows: [] 
+          headers: ['Column 1', 'Column 2', 'Column 3'], 
+          rows: [
+            ['Cell 1-1', 'Cell 1-2', 'Cell 1-3'],
+            ['Cell 2-1', 'Cell 2-2', 'Cell 2-3'],
+          ] 
         };
       case 'List':
         return { 
-          items: [],
+          items: ['Item 1', 'Item 2', 'Item 3'],
           ordered: false 
         };
       case 'Quote':
         return { 
-          text: '',
-          author: '' 
+          text: 'Enter a quotation here',
+          author: 'Author Name' 
         };
       case 'ProductList':
         return { 
-          products: [],
-          subtotal: 0,
-          tax: 0,
+          products: [
+            { name: 'Product 1', quantity: 1, price: 100 },
+            { name: 'Product 2', quantity: 2, price: 200 }
+          ],
+          subtotal: 500,
+          tax: 50,
           discount: 0,
-          total: 0 
+          total: 550 
         };
       case 'Signature':
         return { 
-          label: '',
-          name: '',
-          role: '',
+          label: 'Signature',
+          name: 'Name',
+          role: 'Title',
           date: true 
         };
       case 'PageBreak':
         return {};
       case 'Custom':
-        return { html: '' };
+        return { html: '<div>Custom HTML content</div>' };
       default:
         return {};
     }

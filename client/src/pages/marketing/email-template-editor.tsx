@@ -75,35 +75,185 @@ import {
 interface TemplateElement {
   id: string;
   type: 'header' | 'text' | 'image' | 'button' | 'divider' | 'spacer' | 'social' | 'column';
-  content?: {
-    text?: string;
-    url?: string;
-    alt?: string;
-    html?: string;
-  };
-  settings?: {
-    fontSize?: string;
-    color?: string;
-    backgroundColor?: string;
-    padding?: string;
-    alignment?: string;
-    width?: string;
-    height?: string;
-  };
+  content?: any;
+  settings?: any;
   children?: TemplateElement[];
 }
 
-// Database-driven email template system - no mock data permitted
-const createEmptyTemplate = () => ({
-  id: "",
-  name: "",
-  description: "",
-  subject: "",
-  previewText: "",
-  elements: []
-});
+// Sample template data
+const sampleTemplate = {
+  id: "template1",
+  name: "Welcome Newsletter",
+  description: "Welcome email for new subscribers",
+  subject: "Welcome to AVEROX! Here's what you need to know",
+  previewText: "Thanks for subscribing to our newsletter. Here's what to expect.",
+  elements: [
+    {
+      id: "header1",
+      type: "header",
+      content: {
+        text: "Welcome to AVEROX",
+        link: "",
+      },
+      settings: {
+        fontSize: "32px",
+        textAlign: "center",
+        color: "#333333",
+        backgroundColor: "",
+        paddingTop: "20px",
+        paddingBottom: "10px",
+      }
+    },
+    {
+      id: "image1",
+      type: "image",
+      content: {
+        src: "https://placehold.co/600x200/4F46E5/FFFFFF?text=AVEROX+CRM",
+        alt: "AVEROX CRM",
+        link: "",
+      },
+      settings: {
+        width: "100%",
+        paddingTop: "10px",
+        paddingBottom: "20px",
+        alignment: "center",
+      }
+    },
+    {
+      id: "text1",
+      type: "text",
+      content: {
+        text: "Hi {{contact.firstName}},\n\nThank you for subscribing to our newsletter! We're excited to have you on board. Here at AVEROX, we're committed to providing you with valuable insights and resources to help your business grow.",
+      },
+      settings: {
+        fontSize: "16px",
+        lineHeight: "1.5",
+        color: "#444444",
+        paddingTop: "10px",
+        paddingBottom: "20px",
+      }
+    },
+    {
+      id: "text2",
+      type: "text",
+      content: {
+        text: "Here's what you can expect from our newsletter:",
+      },
+      settings: {
+        fontSize: "18px",
+        fontWeight: "bold",
+        lineHeight: "1.4",
+        color: "#333333",
+        paddingTop: "0px",
+        paddingBottom: "10px",
+      }
+    },
+    {
+      id: "text3",
+      type: "text",
+      content: {
+        text: "• Industry insights and best practices\n• Product updates and new features\n• Exclusive tips and resources\n• Special offers and promotions",
+      },
+      settings: {
+        fontSize: "16px",
+        lineHeight: "1.6",
+        color: "#444444",
+        paddingTop: "0px",
+        paddingBottom: "20px",
+      }
+    },
+    {
+      id: "button1",
+      type: "button",
+      content: {
+        text: "Visit Your Dashboard",
+        link: "https://app.example.com/dashboard",
+      },
+      settings: {
+        backgroundColor: "#4F46E5",
+        color: "#FFFFFF",
+        fontSize: "16px",
+        fontWeight: "bold",
+        borderRadius: "4px",
+        paddingTop: "12px",
+        paddingBottom: "12px",
+        paddingLeft: "24px",
+        paddingRight: "24px",
+        alignment: "center",
+        width: "auto",
+      }
+    },
+    {
+      id: "spacer1",
+      type: "spacer",
+      settings: {
+        height: "30px",
+      }
+    },
+    {
+      id: "divider1",
+      type: "divider",
+      settings: {
+        color: "#EEEEEE",
+        thickness: "1px",
+        style: "solid",
+        paddingTop: "5px",
+        paddingBottom: "5px",
+      }
+    },
+    {
+      id: "text4",
+      type: "text",
+      content: {
+        text: "If you have any questions, feel free to reply to this email or contact our support team.",
+      },
+      settings: {
+        fontSize: "14px",
+        lineHeight: "1.5",
+        color: "#666666",
+        paddingTop: "15px",
+        paddingBottom: "5px",
+        textAlign: "center",
+      }
+    },
+    {
+      id: "social1",
+      type: "social",
+      content: {
+        networks: [
+          { name: "facebook", url: "https://facebook.com/example" },
+          { name: "twitter", url: "https://twitter.com/example" },
+          { name: "linkedin", url: "https://linkedin.com/company/example" },
+          { name: "instagram", url: "https://instagram.com/example" }
+        ]
+      },
+      settings: {
+        iconSize: "32px",
+        iconSpacing: "10px",
+        alignment: "center",
+        paddingTop: "15px",
+        paddingBottom: "15px",
+      }
+    },
+    {
+      id: "text5",
+      type: "text",
+      content: {
+        text: "© 2025 AVEROX. All rights reserved.\n\n{{unsubscribe}}",
+      },
+      settings: {
+        fontSize: "12px",
+        lineHeight: "1.5",
+        color: "#999999",
+        paddingTop: "5px",
+        paddingBottom: "20px",
+        textAlign: "center",
+      }
+    }
+  ]
+};
 
-// Database-driven personalization tokens
+// Personalization tokens
 const personalizationTokens = [
   { name: "Contact Fields", tokens: [
     { label: "First Name", value: "{{contact.firstName}}" },
@@ -124,21 +274,52 @@ const personalizationTokens = [
   ]}
 ];
 
-// Templates must be loaded from database - no hardcoded templates permitted
-const loadTemplatesFromDatabase = async () => {
-  // Return empty array until database integration is complete
-  return [];
-};
+// Predefined templates
+const predefinedTemplates = [
+  {
+    id: "welcome",
+    name: "Welcome Email",
+    thumbnail: "https://placehold.co/300x180/4F46E5/FFFFFF?text=Welcome",
+    description: "Welcome new subscribers to your list"
+  },
+  {
+    id: "newsletter",
+    name: "Newsletter",
+    thumbnail: "https://placehold.co/300x180/22C55E/FFFFFF?text=Newsletter",
+    description: "Share regular updates with your subscribers"
+  },
+  {
+    id: "product_update",
+    name: "Product Update",
+    thumbnail: "https://placehold.co/300x180/EAB308/FFFFFF?text=Product+Update",
+    description: "Announce new features or changes"
+  },
+  {
+    id: "promotional",
+    name: "Promotional",
+    thumbnail: "https://placehold.co/300x180/EC4899/FFFFFF?text=Promo",
+    description: "Showcase deals, discounts, and offers"
+  }
+];
 
-// Preview data must come from database - no hardcoded placeholders permitted
-const loadPreviewDataFromDatabase = async () => {
-  // Return empty object until database integration is complete
-  return {};
+// Placeholder for email preview data
+const previewPlaceholders = {
+  "{{contact.firstName}}": "John",
+  "{{contact.lastName}}": "Smith",
+  "{{contact.email}}": "john.smith@example.com",
+  "{{contact.company}}": "ACME Corp",
+  "{{contact.phone}}": "+1 (555) 123-4567",
+  "{{account.name}}": "ACME Corporation",
+  "{{account.type}}": "Enterprise",
+  "{{account.industry}}": "Technology",
+  "{{system.date}}": "April 23, 2025",
+  "{{unsubscribe}}": "<a href='#'>Unsubscribe from emails</a>",
+  "{{viewInBrowser}}": "<a href='#'>View in browser</a>"
 };
 
 export default function EmailTemplateEditor() {
   const [, setLocation] = useLocation();
-  const [template, setTemplate] = useState(createEmptyTemplate());
+  const [template, setTemplate] = useState(sampleTemplate);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [mode, setMode] = useState<'visual' | 'code'>('visual');
@@ -247,7 +428,7 @@ export default function EmailTemplateEditor() {
         newElement = {
           id: newId,
           type: 'header',
-          content: { text: '', link: '' },
+          content: { text: 'New Header', link: '' },
           settings: {
             fontSize: '24px',
             textAlign: 'center',
@@ -263,7 +444,7 @@ export default function EmailTemplateEditor() {
         newElement = {
           id: newId,
           type: 'text',
-          content: { text: '' },
+          content: { text: 'Enter your text here' },
           settings: {
             fontSize: '16px',
             lineHeight: '1.5',
@@ -279,8 +460,8 @@ export default function EmailTemplateEditor() {
           id: newId,
           type: 'image',
           content: {
-            src: '',
-            alt: '',
+            src: 'https://placehold.co/600x200/4F46E5/FFFFFF?text=Image',
+            alt: 'Image description',
             link: '',
           },
           settings: {
@@ -297,8 +478,8 @@ export default function EmailTemplateEditor() {
           id: newId,
           type: 'button',
           content: {
-            text: '',
-            link: '',
+            text: 'Click Here',
+            link: 'https://example.com',
           },
           settings: {
             backgroundColor: '#4F46E5',
@@ -345,7 +526,11 @@ export default function EmailTemplateEditor() {
           id: newId,
           type: 'social',
           content: {
-            networks: []
+            networks: [
+              { name: 'facebook', url: 'https://facebook.com/example' },
+              { name: 'twitter', url: 'https://twitter.com/example' },
+              { name: 'linkedin', url: 'https://linkedin.com/company/example' }
+            ]
           },
           settings: {
             iconSize: '32px',
@@ -685,21 +870,17 @@ export default function EmailTemplateEditor() {
                   }}
                   onClick={(e) => e.preventDefault()}
                 >
-                  <div 
-                    style={{
-                      width: element.settings.iconSize,
-                      height: element.settings.iconSize,
-                      backgroundColor: '#e5e7eb',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12px',
-                      color: '#6b7280'
-                    }}
-                  >
-                    {network.name}
-                  </div>
+                  <img 
+                    src={`https://placehold.co/${parseInt(element.settings.iconSize)}/${
+                      network.name === 'facebook' ? '1877F2' : 
+                      network.name === 'twitter' ? '1DA1F2' : 
+                      network.name === 'linkedin' ? '0A66C2' : 
+                      network.name === 'instagram' ? 'E4405F' : '000000'
+                    }/FFFFFF?text=${network.name}`} 
+                    alt={network.name} 
+                    width={element.settings.iconSize}
+                    height={element.settings.iconSize}
+                  />
                 </a>
               ))}
             </div>
@@ -1737,23 +1918,29 @@ export default function EmailTemplateEditor() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="border rounded-md overflow-hidden">
-                      <div className="aspect-video bg-slate-100 overflow-hidden flex items-center justify-center">
-                        <FileText className="h-8 w-8 text-slate-400" />
+                    {predefinedTemplates.map((preTemplate, index) => (
+                      <div key={index} className="border rounded-md overflow-hidden">
+                        <div className="aspect-video bg-slate-100 overflow-hidden">
+                          <img 
+                            src={preTemplate.thumbnail} 
+                            alt={preTemplate.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="p-3">
+                          <h3 className="font-medium text-sm">{preTemplate.name}</h3>
+                          <p className="text-xs text-slate-500 mt-1">{preTemplate.description}</p>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="w-full mt-2"
+                            onClick={() => alert(`Load template: ${preTemplate.name}`)}
+                          >
+                            Use Template
+                          </Button>
+                        </div>
                       </div>
-                      <div className="p-3">
-                        <h3 className="font-medium text-sm">Connect Email Platform</h3>
-                        <p className="text-xs text-slate-500 mt-1">Connect your email service to load templates</p>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="w-full mt-2"
-                          disabled
-                        >
-                          No Templates Available
-                        </Button>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                   
                   <div className="mt-6">

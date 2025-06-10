@@ -31,7 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Search, MoreHorizontal, Pencil, Trash2, Eye, Check, RefreshCw, Plus } from "lucide-react";
+import { Search, MoreHorizontal, Pencil, Trash2, Eye, Check, RefreshCw } from "lucide-react";
 
 interface LeadListProps {
   data: Lead[];
@@ -40,8 +40,6 @@ interface LeadListProps {
   onView: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
   onConvert: (lead: Lead) => void;
-  onAdd: () => void;
-  onBulkDelete: () => void;
 }
 
 export function LeadList({
@@ -51,8 +49,6 @@ export function LeadList({
   onView,
   onDelete,
   onConvert,
-  onAdd,
-  onBulkDelete,
 }: LeadListProps) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -60,18 +56,15 @@ export function LeadList({
 
   // Filter leads based on search term
   const filteredLeads = data.filter((lead) => {
-    const safeEmail = typeof lead.email === 'string' ? lead.email : '';
-    const safePhone = typeof lead.phone === 'string' ? lead.phone : '';
-    const safeTitle = typeof lead.title === 'string' ? lead.title : '';
-    const safeCompany = typeof lead.company === 'string' ? lead.company : '';
-    const searchString = `${lead.firstName} ${lead.lastName} ${safeEmail} ${safePhone} ${safeTitle} ${safeCompany}`.toLowerCase();
+    const searchString = `${lead.firstName} ${lead.lastName} ${lead.email || ""} ${
+      lead.phone || ""
+    } ${lead.title || ""} ${lead.company || ""}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
 
   // Getting status badge color
-  const getStatusColor = (status: string | null | any) => {
-    const safeStatus = typeof status === 'string' ? status : null;
-    switch (safeStatus) {
+  const getStatusColor = (status: string | null) => {
+    switch (status) {
       case "New":
         return "bg-blue-100 text-blue-800";
       case "Qualified":
@@ -104,33 +97,21 @@ export function LeadList({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="relative w-64">
-            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
-            <Input
-              placeholder="Search leads..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onBulkDelete}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Leads
-          </Button>
-          <Button onClick={onAdd}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Lead
-          </Button>
+    <div className="space-y-4 w-full">
+      <div className="flex justify-between items-center">
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-500" />
+          <Input
+            placeholder="Search leads..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
-      {/* Mobile view - cards */}
-      <div className="grid grid-cols-1 gap-4 mt-4 md:hidden">
+      {isMobile ? (
+        <div className="grid grid-cols-1 gap-4 mt-4">
           {filteredLeads.length === 0 ? (
             <div className="text-center p-4 border rounded-lg">
               <p className="text-sm text-neutral-500">No leads found</p>
@@ -151,58 +132,26 @@ export function LeadList({
                           {lead.firstName} {lead.lastName}
                         </CardTitle>
                         <CardDescription className="text-xs">
-                          {typeof lead.title === 'string' ? lead.title || "No Title" : "No Title"} {(typeof lead.company === 'string' && lead.company) ? `at ${lead.company}` : ""}
+                          {lead.title || "No Title"} {lead.company ? `at ${lead.company}` : ""}
                         </CardDescription>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className={getStatusColor(lead.status)}>{typeof lead.status === 'string' ? lead.status || "New" : "New"}</Badge>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => onView(lead)}>
-                            <Eye className="h-4 w-4 mr-2" /> View details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onEdit(lead)}>
-                            <Pencil className="h-4 w-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {!lead.isConverted && (
-                            <DropdownMenuItem onClick={() => onConvert(lead)}>
-                              <Check className="h-4 w-4 mr-2" /> Convert lead
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600 hover:bg-red-50 focus:bg-red-50"
-                            onClick={() => onDelete(lead)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" /> Delete Lead
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    <Badge className={getStatusColor(lead.status)}>{lead.status || "New"}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 pb-2 text-sm">
                   <div className="grid grid-cols-2 gap-2 text-neutral-600">
                     <div>
                       <p className="text-xs text-neutral-500">Email</p>
-                      <p className="truncate">{typeof lead.email === 'string' ? lead.email : "—"}</p>
+                      <p className="truncate">{lead.email || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Phone</p>
-                      <p>{typeof lead.phone === 'string' ? lead.phone : "—"}</p>
+                      <p>{lead.phone || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Source</p>
-                      <p>{typeof lead.source === 'string' ? lead.source || "—" : "—"}</p>
+                      <p>{lead.source || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Created</p>
@@ -221,14 +170,6 @@ export function LeadList({
                   >
                     <Pencil className="h-4 w-4 mr-1" /> Edit
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="destructive"
-                    onClick={() => onDelete(lead)}
-                    className="hover:bg-red-700"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" /> Delete
-                  </Button>
                   {!lead.isConverted && (
                     <Button 
                       size="sm" 
@@ -242,20 +183,19 @@ export function LeadList({
               </Card>
             ))
           )}
-      </div>
-      
-      {/* Desktop view - table */}
-        <div className="border rounded-md hidden md:block">
+        </div>
+      ) : (
+        <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[250px]">Lead Name</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Source</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-[80px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -279,51 +219,49 @@ export function LeadList({
                           <div className="font-medium">
                             {lead.firstName} {lead.lastName}
                           </div>
-                          <div className="text-sm text-neutral-500">{typeof lead.title === 'string' ? lead.title || "" : ""}</div>
+                          <div className="text-sm text-neutral-500">{lead.title || ""}</div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{typeof lead.company === 'string' ? lead.company || "—" : "—"}</TableCell>
+                    <TableCell>{lead.company || "—"}</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(lead.status)}>
-                        {typeof lead.status === 'string' ? lead.status || "New" : "New"}
+                        {lead.status || "New"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{typeof lead.email === 'string' ? lead.email || "—" : "—"}</TableCell>
-                    <TableCell>{typeof lead.phone === 'string' ? lead.phone || "—" : "—"}</TableCell>
-                    <TableCell>{typeof lead.source === 'string' ? lead.source || "—" : "—"}</TableCell>
-                    <TableCell className="text-right w-[120px] min-w-[120px]">
-                      <div className="flex justify-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0 hover:bg-gray-50 focus:bg-gray-50">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => onView(lead)}>
-                              <Eye className="h-4 w-4 mr-2" /> View details
+                    <TableCell>{typeof lead.email === 'object' ? "—" : lead.email || "—"}</TableCell>
+                    <TableCell>{typeof lead.phone === 'object' ? "—" : lead.phone || "—"}</TableCell>
+                    <TableCell>{lead.source || "—"}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => onView(lead)}>
+                            <Eye className="h-4 w-4 mr-2" /> View details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEdit(lead)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {!lead.isConverted && (
+                            <DropdownMenuItem onClick={() => onConvert(lead)}>
+                              <Check className="h-4 w-4 mr-2" /> Convert lead
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onEdit(lead)}>
-                              <Pencil className="h-4 w-4 mr-2" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {!lead.isConverted && (
-                              <DropdownMenuItem onClick={() => onConvert(lead)}>
-                                <Check className="h-4 w-4 mr-2" /> Convert lead
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-red-600 hover:bg-red-50 hover:text-red-700 focus:bg-red-50 focus:text-red-700"
-                              onClick={() => onDelete(lead)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete Lead
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                          )}
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => onDelete(lead)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
@@ -331,6 +269,7 @@ export function LeadList({
             </TableBody>
           </Table>
         </div>
+      )}
     </div>
   );
 }

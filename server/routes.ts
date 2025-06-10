@@ -2,59 +2,16 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { setupAuth, hashPassword, isAuthenticated } from "./auth";
-import { 
-  initializeEmailService, 
-  sendEmail, 
-  sendWelcomeEmail, 
-  sendPasswordResetEmail,
-  sendNotificationEmail,
-  sendAdminAccountNotification 
-} from "./email-service";
+import { setupAuth, hashPassword } from "./auth";
 import { registerPermissionRoutes } from "./permission-routes";
 import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from "./permissions-manager";
 import { migrationRouter } from "./migrations/migration-routes";
-// Removed old marketing routes import
+import { setupMarketingRoutes } from "./marketing-routes";
 import { setupRoutes } from "./setup-routes";
 import { generateBusinessInsights, getPersonalizedAdvice } from "./ai-assistant";
 import manufacturingRouter from "./manufacturing-routes-fixed";
-import { registerManufacturingRoutes } from "./manufacturing-routes";
 import telephonyRouter from "./telephony-routes";
 import paymentRouter from "./payment-routes";
-import { setupPredictiveAnalyticsRoutes } from "./analytics/predictive-engine";
-import { 
-  handleZapierWebhook, 
-  getZapierTriggers, 
-  getZapierActions, 
-  testZapierConnection,
-  getZapierActivity 
-} from "./integrations/zapier-integration";
-import {
-  registerTenant,
-  getCurrentTenant,
-  updateTenantSettings,
-  getTenantUsers,
-  inviteUserToTenant,
-  acceptInvitation,
-  getSubscriptionPlans,
-  createTenantSubscription,
-  getTenantAnalytics,
-  checkSubdomainAvailability
-} from "./tenant-routes";
-import { setupSaaSManagementRoutes } from "./saas-management-routes";
-import { 
-  attachSubscriptionInfo, 
-  checkUserLimit, 
-  checkContactLimit, 
-  requireFeature,
-  addUsageInfo 
-} from "./middleware/subscription-enforcement";
-import { 
-  identifyTenant, 
-  requireTenant, 
-  checkTenantUserPermission,
-  trackApiUsage 
-} from "./middleware/tenant-middleware";
 import { db } from "./db";
 import { eq, sql, desc, asc, and, or, isNull, gt, lt } from "drizzle-orm";
 import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryption-middleware";
@@ -70,10 +27,6 @@ import {
   insertActivitySchema,
   insertSubscriptionPackageSchema,
   insertUserSubscriptionSchema,
-  leads,
-  contacts,
-  opportunities,
-  activities,
   insertApiKeySchema,
   insertCommunicationSchema,
   // Accounting and inventory schemas
@@ -142,231 +95,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     encryption_status: process.env.ENCRYPTION_ENABLED === 'true'
   });
   
-  // Social Authentication Routes
-  app.get('/api/auth/google', (req, res) => {
-    // Redirect to Google OAuth
-    const googleAuthUrl = `https://accounts.google.com/oauth/authorize?` +
-      `client_id=${process.env.GOOGLE_CLIENT_ID}&` +
-      `redirect_uri=${encodeURIComponent(process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/auth/google/callback')}&` +
-      `scope=openid%20email%20profile&` +
-      `response_type=code&` +
-      `state=google`;
-    
-    res.redirect(googleAuthUrl);
-  });
-
-  app.get('/api/auth/facebook', (req, res) => {
-    // Redirect to Facebook OAuth
-    const facebookAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
-      `client_id=${process.env.FACEBOOK_CLIENT_ID}&` +
-      `redirect_uri=${encodeURIComponent(process.env.FACEBOOK_REDIRECT_URI || 'http://localhost:5000/api/auth/facebook/callback')}&` +
-      `scope=email,public_profile&` +
-      `response_type=code&` +
-      `state=facebook`;
-    
-    res.redirect(facebookAuthUrl);
-  });
-
-  app.get('/api/auth/linkedin', (req, res) => {
-    // Redirect to LinkedIn OAuth
-    const linkedinAuthUrl = `https://www.linkedin.com/oauth/v2/authorization?` +
-      `client_id=${process.env.LINKEDIN_CLIENT_ID}&` +
-      `redirect_uri=${encodeURIComponent(process.env.LINKEDIN_REDIRECT_URI || 'http://localhost:5000/api/auth/linkedin/callback')}&` +
-      `scope=r_liteprofile%20r_emailaddress&` +
-      `response_type=code&` +
-      `state=linkedin`;
-    
-    res.redirect(linkedinAuthUrl);
-  });
-
-  // Social Authentication Callback Routes
-  app.get('/api/auth/google/callback', async (req, res) => {
-    try {
-      const { code, state } = req.query;
-      
-      if (state !== 'google') {
-        return res.status(400).json({ error: 'Invalid state parameter' });
-      }
-
-      // Exchange code for access token
-      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: process.env.GOOGLE_CLIENT_ID,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET,
-          code,
-          grant_type: 'authorization_code',
-          redirect_uri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/auth/google/callback'
-        })
-      });
-
-      const tokenData = await tokenResponse.json();
-      
-      if (!tokenData.access_token) {
-        return res.status(400).json({ error: 'Failed to get access token' });
-      }
-
-      // Get user info from Google
-      const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
-      });
-
-      const userData = await userResponse.json();
-      
-      // Create or find user in database
-      let user = await storage.getUserByEmail(userData.email);
-      
-      if (!user) {
-        // Create new user from Google data
-        user = await storage.createUser({
-          username: userData.email,
-          email: userData.email,
-          firstName: userData.given_name || '',
-          lastName: userData.family_name || '',
-          role: 'User' as const,
-          isVerified: true
-        });
-      }
-
-      // Create session
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ error: 'Login failed' });
-        }
-        return res.redirect('/dashboard');
-      });
-
-    } catch (error) {
-      console.error('Google auth error:', error);
-      res.status(500).json({ error: 'Authentication failed' });
-    }
-  });
-
-  app.get('/api/auth/facebook/callback', async (req, res) => {
-    try {
-      const { code, state } = req.query;
-      
-      if (state !== 'facebook') {
-        return res.status(400).json({ error: 'Invalid state parameter' });
-      }
-
-      // Exchange code for access token
-      const tokenResponse = await fetch('https://graph.facebook.com/v18.0/oauth/access_token', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const tokenData = await tokenResponse.json();
-      
-      if (!tokenData.access_token) {
-        return res.status(400).json({ error: 'Failed to get access token' });
-      }
-
-      // Get user info from Facebook
-      const userResponse = await fetch(`https://graph.facebook.com/me?fields=id,name,email,first_name,last_name&access_token=${tokenData.access_token}`);
-      const userData = await userResponse.json();
-      
-      // Create or find user in database
-      let user = await storage.getUserByEmail(userData.email);
-      
-      if (!user) {
-        // Create new user from Facebook data
-        user = await storage.createUser({
-          username: userData.email,
-          email: userData.email,
-          firstName: userData.first_name || '',
-          lastName: userData.last_name || '',
-          role: 'User' as const,
-          isVerified: true
-        });
-      }
-
-      // Create session
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ error: 'Login failed' });
-        }
-        return res.redirect('/dashboard');
-      });
-
-    } catch (error) {
-      console.error('Facebook auth error:', error);
-      res.status(500).json({ error: 'Authentication failed' });
-    }
-  });
-
-  app.get('/api/auth/linkedin/callback', async (req, res) => {
-    try {
-      const { code, state } = req.query;
-      
-      if (state !== 'linkedin') {
-        return res.status(400).json({ error: 'Invalid state parameter' });
-      }
-
-      // Exchange code for access token
-      const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          code: code as string,
-          client_id: process.env.LINKEDIN_CLIENT_ID || '',
-          client_secret: process.env.LINKEDIN_CLIENT_SECRET || '',
-          redirect_uri: process.env.LINKEDIN_REDIRECT_URI || 'http://localhost:5000/api/auth/linkedin/callback'
-        })
-      });
-
-      const tokenData = await tokenResponse.json();
-      
-      if (!tokenData.access_token) {
-        return res.status(400).json({ error: 'Failed to get access token' });
-      }
-
-      // Get user info from LinkedIn
-      const [profileResponse, emailResponse] = await Promise.all([
-        fetch('https://api.linkedin.com/v2/people/~', {
-          headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
-        }),
-        fetch('https://api.linkedin.com/v2/emailAddresses?q=members&projection=(elements*(handle~))', {
-          headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
-        })
-      ]);
-
-      const profileData = await profileResponse.json();
-      const emailData = await emailResponse.json();
-      
-      const email = emailData.elements?.[0]?.['handle~']?.emailAddress;
-      
-      // Create or find user in database
-      let user = await storage.getUserByEmail(email);
-      
-      if (!user) {
-        // Create new user from LinkedIn data
-        user = await storage.createUser({
-          username: email,
-          email: email,
-          firstName: profileData.localizedFirstName || '',
-          lastName: profileData.localizedLastName || '',
-          role: 'User' as const,
-          isVerified: true
-        });
-      }
-
-      // Create session
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ error: 'Login failed' });
-        }
-        return res.redirect('/dashboard');
-      });
-
-    } catch (error) {
-      console.error('LinkedIn auth error:', error);
-      res.status(500).json({ error: 'Authentication failed' });
-    }
-  });
-
   // Test authentication endpoint 
   app.get('/api/auth-test', (req, res) => {
     if (req.isAuthenticated()) {
@@ -474,350 +202,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Global Search API
-  app.get('/api/search', async (req, res) => {
-    try {
-      const searchQuery = req.query.searchQuery as string;
-      const query = searchQuery || req.query.q as string;
-      
-      console.log('[Search Debug] Query params:', req.query);
-      console.log('[Search Debug] Final query:', query);
-      
-      if (!query || query.length < 2) {
-        console.log('[Search Debug] Query too short or missing');
-        return res.json([]);
-      }
-
-      const searchResults: any[] = [];
-      const searchTerm = query.toLowerCase();
-      
-      console.log('[Search Debug] Searching for term:', searchTerm);
-
-      // Search accounts
-      try {
-        const accounts = await storage.listAccounts();
-        console.log('[Search Debug] Found accounts:', accounts.length);
-        accounts.forEach(account => {
-          console.log('[Search Debug] Checking account:', account.name);
-          if (account.name.toLowerCase().includes(searchTerm) || 
-              (account.email && account.email.toLowerCase().includes(searchTerm))) {
-            console.log('[Search Debug] Account match found:', account.name);
-            searchResults.push({
-              id: account.id,
-              title: account.name,
-              description: account.email || account.industry,
-              type: 'account',
-              url: `/accounts`
-            });
-          }
-        });
-      } catch (e) {
-        console.log('[Search Debug] Account search error:', e);
-      }
-
-      // Search contacts
-      try {
-        const contacts = await storage.listContacts();
-        contacts.forEach(contact => {
-          const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
-          if (fullName.includes(searchTerm) || 
-              (contact.email && contact.email.toLowerCase().includes(searchTerm))) {
-            searchResults.push({
-              id: contact.id,
-              title: `${contact.firstName} ${contact.lastName}`,
-              description: contact.email || contact.title,
-              type: 'contact',
-              url: `/contacts`
-            });
-          }
-        });
-      } catch (e) {
-        // Skip if contacts not available
-      }
-
-      // Search leads
-      try {
-        const leads = await storage.listLeads();
-        leads.forEach(lead => {
-          const fullName = `${lead.firstName} ${lead.lastName}`.toLowerCase();
-          if (fullName.includes(searchTerm) || 
-              (lead.email && lead.email.toLowerCase().includes(searchTerm))) {
-            searchResults.push({
-              id: lead.id,
-              title: `${lead.firstName} ${lead.lastName}`,
-              description: lead.email || lead.title,
-              type: 'lead',
-              url: `/leads`
-            });
-          }
-        });
-      } catch (e) {
-        // Skip if leads not available
-      }
-
-      // Search opportunities
-      try {
-        const opportunities = await storage.listOpportunities();
-        opportunities.forEach(opportunity => {
-          if (opportunity.name.toLowerCase().includes(searchTerm)) {
-            searchResults.push({
-              id: opportunity.id,
-              title: opportunity.name,
-              description: `${opportunity.stage} - $${opportunity.amount}`,
-              type: 'opportunity',
-              url: `/opportunities`
-            });
-          }
-        });
-      } catch (e) {
-        // Skip if opportunities not available
-      }
-
-      // Search tasks
-      try {
-        const tasks = await storage.listTasks();
-        tasks.forEach(task => {
-          if (task.title && task.title.toLowerCase().includes(searchTerm)) {
-            searchResults.push({
-              id: task.id,
-              title: task.title,
-              description: task.description,
-              type: 'task',
-              url: `/tasks`
-            });
-          }
-        });
-      } catch (e) {
-        // Skip if tasks not available
-      }
-
-      // Sort by relevance and limit results
-      const sortedResults = searchResults
-        .sort((a, b) => {
-          const aExactMatch = a.title.toLowerCase() === searchTerm;
-          const bExactMatch = b.title.toLowerCase() === searchTerm;
-          if (aExactMatch && !bExactMatch) return -1;
-          if (!aExactMatch && bExactMatch) return 1;
-          return a.title.localeCompare(b.title);
-        })
-        .slice(0, 10);
-
-      res.json(sortedResults);
-    } catch (error) {
-      console.error('Search error:', error);
-      res.status(500).json({ error: 'Search failed' });
-    }
-  });
-
-  // Email Routes
-  app.post('/api/email/send', isAuthenticated, async (req, res) => {
-    try {
-      const { to, subject, text, html } = req.body;
-      
-      if (!to || !subject || (!text && !html)) {
-        return res.status(400).json({ error: 'Missing required fields: to, subject, and text or html' });
-      }
-
-      const result = await sendEmail({ to, subject, text, html });
-      res.json(result);
-    } catch (error) {
-      console.error('Email send error:', error);
-      res.status(500).json({ error: 'Failed to send email' });
-    }
-  });
-
-  app.post('/api/email/welcome', isAuthenticated, async (req, res) => {
-    try {
-      const { userEmail, userName } = req.body;
-      
-      if (!userEmail || !userName) {
-        return res.status(400).json({ error: 'Missing required fields: userEmail, userName' });
-      }
-
-      const result = await sendWelcomeEmail(userEmail, userName);
-      res.json(result);
-    } catch (error) {
-      console.error('Welcome email error:', error);
-      res.status(500).json({ error: 'Failed to send welcome email' });
-    }
-  });
-
-  app.post('/api/email/password-reset', async (req, res) => {
-    try {
-      const { email } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ error: 'Email is required' });
-      }
-
-      // Generate reset token (you can implement this properly with crypto)
-      const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      
-      const result = await sendPasswordResetEmail(email, resetToken);
-      res.json(result);
-    } catch (error) {
-      console.error('Password reset email error:', error);
-      res.status(500).json({ error: 'Failed to send password reset email' });
-    }
-  });
-
-  app.post('/api/email/notification', isAuthenticated, async (req, res) => {
-    try {
-      const { userEmail, title, message } = req.body;
-      
-      if (!userEmail || !title || !message) {
-        return res.status(400).json({ error: 'Missing required fields: userEmail, title, message' });
-      }
-
-      const result = await sendNotificationEmail(userEmail, title, message);
-      res.json(result);
-    } catch (error) {
-      console.error('Notification email error:', error);
-      res.status(500).json({ error: 'Failed to send notification email' });
-    }
-  });
-
-  app.get('/api/email/test-connection', isAuthenticated, async (req, res) => {
-    try {
-      const isConnected = await initializeEmailService();
-      res.json({ connected: isConnected });
-    } catch (error) {
-      console.error('Email connection test error:', error);
-      res.status(500).json({ error: 'Failed to test email connection' });
-    }
-  });
-
-  // Notifications and Messages Routes
-  app.get('/api/notifications', async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: "User not authenticated" });
-      }
-
-      // TODO: Replace with actual database queries when notification tables are implemented
-      const sampleNotifications = [
-        {
-          id: 1,
-          title: "New Task Assigned",
-          description: "You have been assigned a new task: Review Q3 Report",
-          type: "task",
-          read: false,
-          link: "/tasks",
-          createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          userId: userId
-        },
-        {
-          id: 2,
-          title: "Meeting Reminder",
-          description: "Team standup meeting starts in 15 minutes",
-          type: "meeting",
-          read: false,
-          link: "/calendar",
-          createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-          userId: userId
-        },
-        {
-          id: 3,
-          title: "Opportunity Updated",
-          description: "TechNova Solutions opportunity moved to Negotiation stage",
-          type: "opportunity",
-          read: true,
-          link: "/opportunities",
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-          userId: userId
-        }
-      ];
-
-      res.json(sampleNotifications);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      res.status(500).json({ error: 'Failed to fetch notifications' });
-    }
-  });
-
-  app.get('/api/messages', isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: "User not authenticated" });
-      }
-
-      // TODO: Replace with actual database queries when message tables are implemented
-      const sampleMessages = [
-        {
-          id: 1,
-          content: "Hi, can we schedule a call to discuss the proposal?",
-          read: false,
-          urgent: false,
-          createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-          sender: {
-            id: 2,
-            name: "John Smith",
-            avatar: null
-          },
-          recipientId: userId
-        },
-        {
-          id: 2,
-          content: "The contract is ready for review. Please check your email.",
-          read: false,
-          urgent: true,
-          createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-          sender: {
-            id: 3,
-            name: "Sarah Johnson",
-            avatar: null
-          },
-          recipientId: userId
-        }
-      ];
-
-      res.json(sampleMessages);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      res.status(500).json({ error: 'Failed to fetch messages' });
-    }
-  });
-
-  app.patch('/api/notifications/:id/read', isAuthenticated, async (req, res) => {
-    try {
-      const notificationId = parseInt(req.params.id);
-      res.json({ success: true, message: 'Notification marked as read' });
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-      res.status(500).json({ error: 'Failed to mark notification as read' });
-    }
-  });
-
-  app.patch('/api/notifications/mark-all-read', isAuthenticated, async (req, res) => {
-    try {
-      res.json({ success: true, message: 'All notifications marked as read' });
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      res.status(500).json({ error: 'Failed to mark all notifications as read' });
-    }
-  });
-
-  app.patch('/api/messages/:id/read', isAuthenticated, async (req, res) => {
-    try {
-      const messageId = parseInt(req.params.id);
-      res.json({ success: true, message: 'Message marked as read' });
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-      res.status(500).json({ error: 'Failed to mark message as read' });
-    }
-  });
-
-  app.patch('/api/messages/mark-all-read', isAuthenticated, async (req, res) => {
-    try {
-      res.json({ success: true, message: 'All messages marked as read' });
-    } catch (error) {
-      console.error('Error marking all messages as read:', error);
-      res.status(500).json({ error: 'Failed to mark all messages as read' });
-    }
-  });
-
   // Dashboard Data API endpoints
   app.get('/api/dashboard/stats', async (req, res) => {
     try {
@@ -1097,10 +481,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let responsePercentage = 0;
       if (recentLeads.length > 0) {
         const responseTimes = recentLeads
-          .filter(lead => (lead as any).lastActivityDate && lead.createdAt)
+          .filter(lead => lead.lastActivityDate && lead.createdAt)
           .map(lead => {
             const created = new Date(lead.createdAt);
-            const activity = new Date((lead as any).lastActivityDate);
+            const activity = new Date(lead.lastActivityDate);
             return (activity.getTime() - created.getTime()) / (1000 * 60 * 60); // hours
           });
         
@@ -1211,7 +595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerPermissionRoutes(app);
   
   // Set up marketing routes
-  // Marketing routes now handled by new database-driven implementation
+  setupMarketingRoutes(app);
   
   // Set up company setup wizard routes
   setupRoutes(app);
@@ -1278,23 +662,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Force menu refresh endpoint
-  app.post('/api/refresh-menu', async (req: Request, res: Response) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
-      // Delete existing menu cache
-      await db.delete(systemSettings)
-        .where(eq(systemSettings.settingKey, 'menuItems'));
-      
-      res.json({ success: true, message: 'Menu cache cleared' });
-    } catch (error) {
-      handleError(res, error);
-    }
-  });
-
   // Menu items API - Get all menu items (with visibility settings)
   app.get('/api/menu-items', async (req: Request, res: Response) => {
     try {
@@ -1306,27 +673,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get user's visibility settings from system settings
       const userSettings = await storage.getSystemSettings(userId);
-      
-      // Ensure menuVisibility exists with fallback defaults
-      const menuVisibility = userSettings?.menuVisibility || {
-        contacts: true,
-        accounts: true,
-        leads: true,
-        opportunities: true,
-        calendar: true,
-        tasks: true,
-        communicationCenter: true,
-        accounting: true,
-        inventory: true,
-        supportTickets: true,
-        ecommerce: true,
-        ecommerceStore: true,
-        reports: true,
-        intelligence: true,
-        workflows: true,
-        subscriptions: true,
-        training: true
-      };
       
       // Fetch global menu items from database
       const menuItemsQuery = await db.select()
@@ -1344,34 +690,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         menuItems = menuItems.map(item => ({
           ...item,
           isVisible: item.key ? 
-            (menuVisibility[item.key] ?? true) : 
+            (userSettings.menuVisibility[item.key] ?? true) : 
             true // Items without a key are always visible
         }));
       } else {
         // If no menu items defined yet, create default ones
         const defaultMenuItems = [
           { name: "Dashboard", path: '/', icon: "LayoutDashboard", key: null, isVisible: true },
-          { name: "Contacts", path: '/contacts', icon: "Users", key: "contacts", isVisible: menuVisibility.contacts ?? true },
-          { name: "Accounts", path: '/accounts', icon: "Briefcase", key: "accounts", isVisible: menuVisibility.accounts ?? true },
-          { name: "Leads", path: '/leads', icon: "UserPlus", key: "leads", isVisible: menuVisibility.leads ?? true },
-          { name: "Opportunities", path: '/opportunities', icon: "TrendingUp", key: "opportunities", isVisible: menuVisibility.opportunities ?? true },
-          { name: "Calendar", path: '/calendar', icon: "Calendar", key: "calendar", isVisible: menuVisibility.calendar ?? true },
-          { name: "Tasks", path: '/tasks', icon: "CheckSquare", key: "tasks", isVisible: menuVisibility.tasks ?? true },
+          { name: "Contacts", path: '/contacts', icon: "Users", key: "contacts", isVisible: userSettings.menuVisibility.contacts },
+          { name: "Accounts", path: '/accounts', icon: "Briefcase", key: "accounts", isVisible: userSettings.menuVisibility.accounts },
+          { name: "Leads", path: '/leads', icon: "UserPlus", key: "leads", isVisible: userSettings.menuVisibility.leads },
+          { name: "Opportunities", path: '/opportunities', icon: "TrendingUp", key: "opportunities", isVisible: userSettings.menuVisibility.opportunities },
+          { name: "Calendar", path: '/calendar', icon: "Calendar", key: "calendar", isVisible: userSettings.menuVisibility.calendar },
+          { name: "Tasks", path: '/tasks', icon: "CheckSquare", key: "tasks", isVisible: userSettings.menuVisibility.tasks },
           { name: "Marketing", path: '/marketing', icon: "Megaphone", key: null, isVisible: true },
-          { name: "Communication Center", path: '/communication-center', icon: "MessageSquare", key: "communicationCenter", isVisible: menuVisibility.communicationCenter ?? true },
-          { name: "Accounting", path: '/accounting', icon: "Calculator", key: "accounting", isVisible: menuVisibility.accounting ?? true },
+          { name: "Communication Center", path: '/communication-center', icon: "MessageSquare", key: "communicationCenter", isVisible: userSettings.menuVisibility.communicationCenter },
+          { name: "Accounting", path: '/accounting', icon: "Calculator", key: "accounting", isVisible: userSettings.menuVisibility.accounting },
           { name: "Manufacturing", path: '/manufacturing', icon: "Factory", key: null, isVisible: true },
-          { name: "Inventory", path: '/inventory', icon: "PackageOpen", key: "inventory", isVisible: menuVisibility.inventory ?? true },
-          { name: "Support Tickets", path: '/support-tickets', icon: "TicketCheck", key: "supportTickets", isVisible: menuVisibility.supportTickets ?? true },
-          { name: "E-commerce", path: '/ecommerce', icon: "ShoppingCart", key: "ecommerce", isVisible: menuVisibility.ecommerce ?? true },
-          { name: "Store", path: '/ecommerce-store', icon: "Store", key: "ecommerceStore", isVisible: menuVisibility.ecommerceStore ?? true },
-          { name: "Reports", path: '/reports', icon: "BarChart2", key: "reports", isVisible: menuVisibility.reports ?? true },
-          { name: "Analytics", path: '/analytics', icon: "TrendingUp", key: null, isVisible: true },
-          { name: "Intelligence", path: '/intelligence', icon: "BrainCircuit", key: "intelligence", isVisible: menuVisibility.intelligence ?? true },
-          { name: "Workflows", path: '/workflows', icon: "Workflow", key: "workflows", isVisible: menuVisibility.workflows ?? true },
-          { name: "Integrations", path: '/integrations', icon: "Zap", key: null, isVisible: true },
-          { name: "Subscriptions", path: '/subscriptions', icon: "CreditCard", key: "subscriptions", isVisible: menuVisibility.subscriptions ?? true },
-          { name: "Training", path: '/training-help', icon: "HelpCircle", key: "training", isVisible: menuVisibility.training ?? true },
+          { name: "Inventory", path: '/inventory', icon: "PackageOpen", key: "inventory", isVisible: userSettings.menuVisibility.inventory },
+          { name: "Support Tickets", path: '/support-tickets', icon: "TicketCheck", key: "supportTickets", isVisible: userSettings.menuVisibility.supportTickets },
+          { name: "E-commerce", path: '/ecommerce', icon: "ShoppingCart", key: "ecommerce", isVisible: userSettings.menuVisibility.ecommerce },
+          { name: "Store", path: '/ecommerce-store', icon: "Store", key: "ecommerceStore", isVisible: userSettings.menuVisibility.ecommerceStore },
+          { name: "Reports", path: '/reports', icon: "BarChart2", key: "reports", isVisible: userSettings.menuVisibility.reports },
+          { name: "Intelligence", path: '/intelligence', icon: "BrainCircuit", key: "intelligence", isVisible: userSettings.menuVisibility.intelligence },
+          { name: "Workflows", path: '/workflows', icon: "Workflow", key: "workflows", isVisible: userSettings.menuVisibility.workflows },
+          { name: "Subscriptions", path: '/subscriptions', icon: "CreditCard", key: "subscriptions", isVisible: userSettings.menuVisibility.subscriptions },
+          { name: "Training", path: '/training-help', icon: "HelpCircle", key: "training", isVisible: userSettings.menuVisibility.training },
           { name: "Settings", path: '/settings', icon: "Settings", key: null, isVisible: true }
         ];
         
@@ -1888,7 +1232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/users', attachSubscriptionInfo, checkUserLimit, async (req: Request, res: Response) => {
+  app.post('/api/users', async (req: Request, res: Response) => {
     try {
       if (req.user?.role !== 'Admin') {
         return res.status(403).json({ error: 'Insufficient permissions' });
@@ -1916,18 +1260,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: isActive !== undefined ? isActive : true,
         avatar: avatar || null,
       });
-
-      // Send welcome email if email is provided
-      if (email && (firstName || lastName)) {
-        const userName = `${firstName || ''} ${lastName || ''}`.trim() || username;
-        try {
-          await sendWelcomeEmail(email, userName);
-          console.log(`Welcome email sent to ${email}`);
-        } catch (emailError) {
-          console.error('Failed to send welcome email:', emailError);
-          // Don't fail user creation if email fails
-        }
-      }
       
       res.status(200).json(user);
     } catch (error) {
@@ -2026,7 +1358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/contacts', attachSubscriptionInfo, checkContactLimit, async (req: Request, res: Response) => {
+  app.post('/api/contacts', async (req: Request, res: Response) => {
     try {
       const contactData = insertContactSchema.parse(req.body);
       const contact = await storage.createContact(contactData);
@@ -2039,21 +1371,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/contacts/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      console.log(`[Contact Get] Fetching contact ${id}`);
-      
       const contact = await storage.getContact(id);
       if (!contact) {
-        console.error(`[Contact Get] Contact not found with id ${id}`);
         return res.status(404).json({ error: "Contact not found" });
       }
-      
-      // Decrypt contact data before sending response
-      const decryptedContact = await decryptFromDatabase(contact, 'contacts');
-      console.log(`[Contact Get] Successfully decrypted contact data for contact ${id}`);
-      
-      res.json(decryptedContact);
+      res.json(contact);
     } catch (error) {
-      console.error('[Contact Get] Error fetching contact:', error);
       handleError(res, error);
     }
   });
@@ -2072,91 +1395,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/contacts/:id', async (req: Request, res: Response) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
-      const id = parseInt(req.params.id);
-      console.log(`[Contact Update] Updating contact ${id} with data:`, req.body);
-      
-      // Validate data using the contact schema
-      const contactData = insertContactSchema.partial().parse(req.body);
-      
-      // Encrypt the contact data before storing
-      const encryptedContactData = await encryptForDatabase(contactData, 'contacts');
-      console.log(`[Contact Update] Contact data encrypted for database storage`);
-      
-      // Update the contact in database
-      const updatedContact = await storage.updateContact(id, encryptedContactData);
-      if (!updatedContact) {
-        console.error(`[Contact Update] Contact not found with id ${id}`);
-        return res.status(404).json({ error: "Contact not found" });
-      }
-      
-      // Decrypt for response
-      const decryptedContact = await decryptFromDatabase(updatedContact, 'contacts');
-      
-      // Update activity log
-      if (req.user) {
-        await storage.createActivity({
-          userId: req.user.id,
-          action: 'Updated Contact',
-          detail: `Updated contact: ${decryptedContact.firstName} ${decryptedContact.lastName}`,
-          relatedToType: 'contact',
-          relatedToId: id,
-          icon: 'edit'
-        });
-      }
-      
-      console.log(`[Contact Update] Successfully updated contact ${id}`);
-      res.json(decryptedContact);
-    } catch (error) {
-      console.error('[Contact Update] Error updating contact:', error);
-      handleError(res, error);
-    }
-  });
-
   app.delete('/api/contacts/:id', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
       const id = parseInt(req.params.id);
-      console.log(`[Contact Delete] Deleting contact ${id}`);
-      
-      // Get contact for activity logging before deletion
-      const contact = await storage.getContact(id);
-      if (!contact) {
-        console.error(`[Contact Delete] Contact not found with id ${id}`);
-        return res.status(404).json({ error: "Contact not found" });
-      }
-
-      // Decrypt for logging
-      const decryptedContact = await decryptFromDatabase(contact, 'contacts');
-      
       const success = await storage.deleteContact(id);
       if (!success) {
-        return res.status(404).json({ error: "Contact could not be deleted" });
+        return res.status(404).json({ error: "Contact not found" });
       }
-      
-      // Log activity
-      if (req.user) {
-        await storage.createActivity({
-          userId: req.user.id,
-          action: 'Deleted Contact',
-          detail: `Deleted contact: ${decryptedContact.firstName} ${decryptedContact.lastName}`,
-          relatedToType: 'contact',
-          relatedToId: null, // No ID since it's deleted
-          icon: 'trash'
-        });
-      }
-      
       res.status(204).end();
     } catch (error) {
-      console.error('[Contact Delete] Error deleting contact:', error);
       handleError(res, error);
     }
   });
@@ -2255,10 +1502,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/accounts/:id', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
       const id = parseInt(req.params.id);
       console.log(`[Account Delete] Deleting account ${id}`);
       
@@ -2318,10 +1561,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/leads', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
       console.log('[Lead Create] Creating new lead with data:', req.body);
       
       // Validate data
@@ -2428,10 +1667,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/leads/:id', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
       const id = parseInt(req.params.id);
       console.log(`[Lead Delete] Deleting lead ${id}`);
       
@@ -2564,10 +1799,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/opportunities', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
       console.log('[Opportunity Create] Creating new opportunity with data:', req.body);
       
       // Validate data
@@ -2664,10 +1895,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/opportunities/:id', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
       const id = parseInt(req.params.id);
       console.log(`[Opportunity Delete] Deleting opportunity ${id}`);
       
@@ -2702,103 +1929,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).end();
     } catch (error) {
       console.error('[Opportunity Delete] Error deleting opportunity:', error);
-      handleError(res, error);
-    }
-  });
-
-  // Mark opportunity as won
-  app.post('/api/opportunities/:id/mark-won', async (req: Request, res: Response) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
-      const id = parseInt(req.params.id);
-      console.log(`[Opportunity Won] Marking opportunity ${id} as won`);
-      
-      // Get current opportunity
-      const opportunity = await storage.getOpportunity(id);
-      if (!opportunity) {
-        return res.status(404).json({ error: "Opportunity not found" });
-      }
-      
-      // Update stage to Closing (which indicates won)
-      const updatedOpportunity = await storage.updateOpportunity(id, {
-        stage: 'Closing'
-        // closeDate: new Date().toISOString() // Field will be added in schema update
-      });
-      
-      if (!updatedOpportunity) {
-        return res.status(404).json({ error: "Opportunity not found after update" });
-      }
-      
-      // Decrypt for response
-      const decryptedOpportunity = await decryptFromDatabase(updatedOpportunity, 'opportunities');
-      
-      // Log activity
-      if (req.user) {
-        await storage.createActivity({
-          userId: req.user.id,
-          action: 'Marked Opportunity as Won',
-          detail: `Won opportunity: ${decryptedOpportunity.name}`,
-          relatedToType: 'opportunity',
-          relatedToId: id,
-          icon: 'trophy'
-        });
-      }
-      
-      res.json(decryptedOpportunity);
-    } catch (error) {
-      console.error('[Opportunity Won] Error marking opportunity as won:', error);
-      handleError(res, error);
-    }
-  });
-
-  // Mark opportunity as lost
-  app.post('/api/opportunities/:id/mark-lost', async (req: Request, res: Response) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
-      const id = parseInt(req.params.id);
-      const { reason } = req.body;
-      console.log(`[Opportunity Lost] Marking opportunity ${id} as lost`);
-      
-      // Get current opportunity
-      const opportunity = await storage.getOpportunity(id);
-      if (!opportunity) {
-        return res.status(404).json({ error: "Opportunity not found" });
-      }
-      
-      // Update stage to indicate lost
-      const updatedOpportunity = await storage.updateOpportunity(id, {
-        stage: 'Lead Generation' // Reset to beginning as it's lost
-        // closeDate: new Date().toISOString() // Field will be added in schema update
-      });
-      
-      if (!updatedOpportunity) {
-        return res.status(404).json({ error: "Opportunity not found after update" });
-      }
-      
-      // Decrypt for response
-      const decryptedOpportunity = await decryptFromDatabase(updatedOpportunity, 'opportunities');
-      
-      // Log activity
-      if (req.user) {
-        await storage.createActivity({
-          userId: req.user.id,
-          action: 'Marked Opportunity as Lost',
-          detail: `Lost opportunity: ${decryptedOpportunity.name}${reason ? ` - Reason: ${reason}` : ''}`,
-          relatedToType: 'opportunity',
-          relatedToId: id,
-          icon: 'x'
-        });
-      }
-      
-      res.json(decryptedOpportunity);
-    } catch (error) {
-      console.error('[Opportunity Lost] Error marking opportunity as lost:', error);
       handleError(res, error);
     }
   });
@@ -2842,10 +1972,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/tasks', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
       console.log('[Task Create] Creating new task with data:', req.body);
       
       // Validate data
@@ -2958,10 +2084,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
       const id = parseInt(req.params.id);
       console.log(`[Task Delete] Deleting task ${id}`);
       
@@ -3143,10 +2265,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/events/:id', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
       const id = parseInt(req.params.id);
       console.log(`[Event Delete] Deleting event ${id}`);
       
@@ -3514,10 +2632,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/subscription-packages/:id', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-      
       const id = parseInt(req.params.id);
       const success = await storage.deleteSubscriptionPackage(id);
       if (!success) {
@@ -6976,9 +6090,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Keep the original endpoint for backward compatibility
   app.delete('/api/proposal-elements/:id', async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
+      // Temporarily disable authentication check
+      // if (!req.isAuthenticated()) {
+      //   return res.status(401).json({ error: "Unauthorized" });
+      // }
       
       const id = parseInt(req.params.id);
       
@@ -7715,421 +6830,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register payment routes
   app.use('/api/payments', paymentRouter);
-
-  // Register manufacturing routes - Database-driven functionality
-  registerManufacturingRoutes(app);
-
-  // Real Analytics Routes - Working with actual database
-  app.get('/api/analytics/lead-scores', async (req: Request, res: Response) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      console.log('[Analytics] Calculating lead scores from real database...');
-      
-      // Get actual leads from database
-      const leadsData = await db.select().from(leads).limit(50);
-      
-      const scoredLeads = [];
-      for (const lead of leadsData) {
-        // Get actual activities for this lead
-        const leadActivities = await db.select().from(activities)
-          .where(sql`${activities.relatedToId} = ${lead.id} AND ${activities.relatedToType} = 'lead'`)
-          .limit(10);
-
-        // Calculate real score based on actual data
-        let score = 50; // Base score
-        
-        // Activity scoring
-        if (leadActivities.length >= 5) score += 30;
-        else if (leadActivities.length >= 3) score += 20;
-        else if (leadActivities.length >= 1) score += 10;
-        
-        // Email domain scoring
-        if (lead.email) {
-          const domain = lead.email.split('@')[1] || '';
-          const freeDomains = ['gmail.com', 'yahoo.com', 'hotmail.com'];
-          if (!freeDomains.includes(domain)) score += 15;
-        }
-        
-        // Company scoring
-        if (lead.company) {
-          const enterprise = ['corp', 'corporation', 'inc', 'ltd', 'llc'];
-          const hasEnterprise = enterprise.some(indicator => 
-            lead.company.toLowerCase().includes(indicator)
-          );
-          if (hasEnterprise) score += 20;
-        }
-        
-        // Recency scoring
-        const daysSince = Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / (1000 * 60 * 60 * 24));
-        if (daysSince <= 7) score += 15;
-        else if (daysSince <= 30) score += 10;
-        
-        const finalScore = Math.min(100, Math.max(0, score));
-        
-        scoredLeads.push({
-          leadId: lead.id,
-          score: finalScore,
-          confidence: 85,
-          priority: finalScore >= 75 ? 'high' : finalScore >= 50 ? 'medium' : 'low',
-          recommendation: finalScore >= 80 ? 'Immediate follow-up recommended' : 
-                        finalScore >= 60 ? 'Schedule follow-up within 24 hours' : 
-                        'Add to nurturing campaign',
-          factors: [
-            { factor: 'Activity Level', weight: 0.3, value: leadActivities.length >= 3 ? 'High' : 'Low' },
-            { factor: 'Company', weight: 0.2, value: lead.company || 'Unknown' },
-            { factor: 'Email Domain', weight: 0.15, value: lead.email?.split('@')[1] || 'Unknown' }
-          ]
-        });
-      }
-      
-      scoredLeads.sort((a, b) => b.score - a.score);
-      console.log(`[Analytics] Calculated scores for ${scoredLeads.length} real leads`);
-      
-      res.json({ leadScores: scoredLeads });
-    } catch (error) {
-      console.error('[Analytics] Lead scores error:', error);
-      res.status(500).json({ error: 'Failed to get lead scores' });
-    }
-  });
-
-  // Real Churn Prediction using actual customer data
-  app.get('/api/analytics/churn-predictions', async (req: Request, res: Response) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      console.log('[Analytics] Predicting churn from real database...');
-      
-      // Get actual customers from database
-      const customers = await db.select().from(contacts).limit(30);
-      
-      const churnPredictions = [];
-      for (const customer of customers) {
-        // Check for recent activities
-        const recentActivities = await db.select().from(activities)
-          .where(sql`${activities.relatedToId} = ${customer.id}`)
-          .limit(1);
-
-        // Check for opportunities
-        const customerOpportunities = await db.select().from(opportunities)
-          .where(sql`${opportunities.accountId} = ${customer.id}`)
-          .limit(1);
-
-        let riskScore = 0;
-        const riskFactors = [];
-        
-        // Activity analysis
-        const daysSinceCreated = Math.floor((Date.now() - new Date(customer.createdAt).getTime()) / (1000 * 60 * 60 * 24));
-        if (recentActivities.length === 0 && daysSinceCreated > 30) {
-          riskFactors.push('No recent activity (30+ days)');
-          riskScore += 40;
-        }
-        
-        // Opportunity analysis
-        if (customerOpportunities.length === 0) {
-          riskFactors.push('No active opportunities');
-          riskScore += 30;
-        }
-        
-        // Email quality check
-        if (!customer.email || customer.email.includes('temp') || customer.email.includes('test')) {
-          riskFactors.push('Poor contact information');
-          riskScore += 20;
-        }
-        
-        const churnProbability = Math.min(95, riskScore);
-        const riskLevel = churnProbability >= 60 ? 'high' : churnProbability >= 30 ? 'medium' : 'low';
-        const valueAtRisk = customerOpportunities.length > 0 ? 
-          parseFloat(customerOpportunities[0].amount) || 10000 : 5000;
-        
-        churnPredictions.push({
-          customerId: customer.id,
-          customerName: `${customer.firstName} ${customer.lastName}`,
-          riskLevel,
-          churnProbability,
-          riskFactors,
-          valueAtRisk,
-          lastActivity: new Date(customer.createdAt),
-          recommendations: riskLevel === 'high' ? 
-            ['Schedule retention call', 'Offer loyalty discount', 'Assign account manager'] :
-            ['Monitor engagement', 'Send check-in email']
-        });
-      }
-      
-      churnPredictions.sort((a, b) => {
-        const riskOrder = { high: 3, medium: 2, low: 1 };
-        return riskOrder[b.riskLevel] - riskOrder[a.riskLevel];
-      });
-      
-      console.log(`[Analytics] Analyzed ${churnPredictions.length} real customers`);
-      res.json({ churnPredictions });
-    } catch (error) {
-      console.error('[Analytics] Churn prediction error:', error);
-      res.status(500).json({ error: 'Failed to predict churn' });
-    }
-  });
-
-  // Real Revenue Forecast using actual opportunities
-  app.get('/api/analytics/revenue-forecast', async (req: Request, res: Response) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      console.log('[Analytics] Generating revenue forecast from real data...');
-      
-      // Get actual opportunities from database
-      const opportunitiesData = await db.select().from(opportunities).limit(100);
-      
-      let totalPredicted = 0;
-      const breakdown = [];
-      
-      const stages = ['Lead Generation', 'Qualification', 'Proposal', 'Negotiation', 'Closing'];
-      
-      for (const stage of stages) {
-        const stageOpps = opportunitiesData.filter(opp => opp.stage === stage);
-        const stageValue = stageOpps.reduce((sum, opp) => {
-          const amount = parseFloat(opp.amount) || 0;
-          const probability = (opp.probability || 50) / 100;
-          return sum + (amount * probability);
-        }, 0);
-        
-        breakdown.push({
-          category: stage,
-          amount: Math.round(stageValue),
-          probability: stage === 'Closing' ? 90 : stage === 'Negotiation' ? 75 : 
-                     stage === 'Proposal' ? 50 : stage === 'Qualification' ? 25 : 10
-        });
-        
-        totalPredicted += stageValue;
-      }
-
-      // Calculate trend based on recent vs older opportunities
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const recentOpps = opportunitiesData.filter(opp => new Date(opp.createdAt) > thirtyDaysAgo);
-      
-      const recentValue = recentOpps.reduce((sum, opp) => sum + parseFloat(opp.amount || 0), 0);
-      const olderValue = totalPredicted - recentValue;
-      const growthPercentage = olderValue > 0 ? ((recentValue - olderValue) / olderValue) * 100 : 0;
-      
-      const forecast = {
-        period: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
-        predictedRevenue: Math.round(totalPredicted),
-        confidence: 85,
-        breakdown,
-        trends: {
-          direction: growthPercentage > 5 ? 'up' : growthPercentage < -5 ? 'down' : 'stable',
-          percentage: Math.abs(growthPercentage),
-          description: growthPercentage > 15 ? 'Strong growth trajectory' :
-                      growthPercentage > 5 ? 'Moderate growth' :
-                      growthPercentage > -5 ? 'Stable performance' : 'Decline requiring attention'
-        }
-      };
-      
-      console.log(`[Analytics] Revenue forecast: $${totalPredicted.toLocaleString()}`);
-      res.json({ forecast });
-    } catch (error) {
-      console.error('[Analytics] Revenue forecast error:', error);
-      res.status(500).json({ error: 'Failed to generate forecast' });
-    }
-  });
-
-  // Zapier Integration Routes
-  console.log("🔗 Setting up Zapier integration routes...");
-  
-  // Webhook endpoint for receiving data from Zapier
-  app.post("/api/zapier/webhook", handleZapierWebhook);
-  
-  // Get available triggers for Zapier app setup
-  app.get("/api/zapier/triggers", getZapierTriggers);
-  
-  // Get available actions for Zapier app setup
-  app.get("/api/zapier/actions", getZapierActions);
-  
-  // Test Zapier connection
-  app.get("/api/zapier/test", testZapierConnection);
-  
-  // Get recent Zapier activity/logs
-  app.get("/api/zapier/activity", getZapierActivity);
-
-  console.log("✅ Zapier integration routes configured successfully");
-
-  // Multi-Tenant SaaS Platform Routes
-  console.log("🏢 Setting up multi-tenant SaaS platform routes...");
-  
-  // Setup SaaS Management Dashboard routes (no tenant middleware needed)
-  setupSaaSManagementRoutes(app);
-
-  // Stripe Payment Integration for SaaS subscriptions
-  app.post("/api/create-payment-intent", async (req, res) => {
-    try {
-      const { amount, planId, customerInfo } = req.body;
-      
-      if (!process.env.STRIPE_SECRET_KEY) {
-        return res.status(500).json({ error: "Stripe not configured" });
-      }
-
-      const Stripe = (await import('stripe')).default;
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: "2023-10-16",
-      });
-
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: "usd",
-        metadata: {
-          planId: planId.toString(),
-          customerEmail: customerInfo.email,
-          customerName: `${customerInfo.firstName} ${customerInfo.lastName}`,
-          company: customerInfo.company
-        }
-      });
-
-      res.json({ 
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id
-      });
-    } catch (error: any) {
-      console.error("Stripe payment intent error:", error);
-      res.status(500).json({ 
-        error: "Error creating payment intent", 
-        message: error.message 
-      });
-    }
-  });
-
-  // PayPal Payment Integration
-  app.post("/api/paypal/create-order", async (req, res) => {
-    try {
-      const { amount, planId, customerInfo } = req.body;
-      
-      // Create PayPal order
-      const orderData = {
-        intent: "CAPTURE",
-        purchase_units: [{
-          amount: {
-            currency_code: "USD",
-            value: amount.toString()
-          },
-          description: `Averox ${customerInfo.planName} Subscription`,
-          custom_id: `plan_${planId}_${Date.now()}`
-        }],
-        application_context: {
-          return_url: `${req.protocol}://${req.get('host')}/payment-success`,
-          cancel_url: `${req.protocol}://${req.get('host')}/payment-cancelled`
-        }
-      };
-
-      res.json({ 
-        orderData,
-        success: true 
-      });
-    } catch (error: any) {
-      console.error("PayPal order creation error:", error);
-      res.status(500).json({ 
-        error: "Error creating PayPal order", 
-        message: error.message 
-      });
-    }
-  });
-
-  // Complete tenant registration after successful payment
-  app.post("/api/complete-tenant-registration", async (req, res) => {
-    try {
-      const { 
-        paymentIntentId, 
-        paymentMethod, 
-        tenantData, 
-        planId 
-      } = req.body;
-
-      // Verify payment was successful
-      if (paymentMethod === 'stripe' && paymentIntentId) {
-        const Stripe = (await import('stripe')).default;
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-          apiVersion: "2023-10-16",
-        });
-
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-        if (paymentIntent.status !== 'succeeded') {
-          return res.status(400).json({ error: "Payment not completed" });
-        }
-      }
-
-      // Create the tenant organization
-      const tenant = await createTenant({
-        ...tenantData,
-        subscriptionStatus: 'Active',
-        planId: planId,
-        paymentMethod: paymentMethod,
-        paymentReference: paymentIntentId || 'paypal_pending'
-      });
-
-      res.json({ 
-        success: true, 
-        tenant,
-        message: "Registration completed successfully!" 
-      });
-    } catch (error: any) {
-      console.error("Registration completion error:", error);
-      res.status(500).json({ 
-        error: "Error completing registration", 
-        message: error.message 
-      });
-    }
-  });
-
-  // Apply tenant identification middleware to all API routes except SaaS management
-  app.use('/api', (req, res, next) => {
-    // Skip tenant middleware for SaaS management routes
-    if (req.path.startsWith('/api/saas/')) {
-      return next();
-    }
-    return identifyTenant(req, res, next);
-  });
-  app.use('/api', trackApiUsage);
-  
-  // Public tenant management routes (no auth required)
-  app.post('/api/tenants/register', registerTenant);
-  app.get('/api/tenants/check-subdomain/:subdomain', checkSubdomainAvailability);
-  app.get('/api/tenants/subscription-plans', getSubscriptionPlans);
-  app.post('/api/tenants/invitations/:token/accept', acceptInvitation);
-  
-  // Protected tenant management routes (require authentication and tenant context)
-  app.get('/api/tenants/current', getCurrentTenant);
-  app.put('/api/tenants/settings', updateTenantSettings);
-  app.get('/api/tenants/users', getTenantUsers);
-  app.post('/api/tenants/invitations', inviteUserToTenant);
-  app.post('/api/tenants/subscription', createTenantSubscription);
-  app.get('/api/tenants/analytics', getTenantAnalytics);
-
-  console.log("✅ Multi-tenant SaaS platform routes configured successfully");
-
-  // Register new database-driven routes to replace fake components
-  const { registerEcommerceRoutes } = await import('./ecommerce-routes');
-  const { registerMarketingRoutes } = await import('./marketing-routes');
-  const { registerAccountingRoutes } = await import('./accounting-routes');
-  const { registerSupportTicketsRoutes } = await import('./support-tickets-routes');
-  
-  registerEcommerceRoutes(app);
-  registerMarketingRoutes(app);
-  registerAccountingRoutes(app);
-  registerSupportTicketsRoutes(app);
-  
-  console.log('[Routes] All fake components replaced with real database-driven functionality');
-
-  // Initialize email service
-  initializeEmailService().then((isConnected) => {
-    if (isConnected) {
-      console.log("📧 Email service initialized successfully");
-    } else {
-      console.log("⚠️ Email service failed to initialize - check configuration");
-    }
-  });
 
   // Create HTTP server
   const server = createServer(app);

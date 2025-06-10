@@ -69,10 +69,7 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
           <SimpleButton 
             variant="outline" 
             className="border-primary text-primary hover:bg-primary hover:text-white"
-            onClick={() => {
-              // Navigate to activities page
-              window.location.hash = '/activities';
-            }}
+            onClick={() => window.alert("Opening all activities history...")}
           >
             {t.dashboard.viewAll}
           </SimpleButton>

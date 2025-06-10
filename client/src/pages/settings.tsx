@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save, Users, Package2, Settings as SettingsIcon, User, Shield, UserCog, FileUp, Database, LayoutDashboard, Sliders, Mail } from "lucide-react";
+import { Save, Users, Package2, Settings as SettingsIcon, User, Shield, UserCog, FileUp, Database, LayoutDashboard, Sliders } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
@@ -255,30 +255,6 @@ export default function Settings() {
               <Link href="/settings/custom-fields">
                 <Button variant="outline" className="w-full flex items-center justify-center">
                   <Sliders className="mr-2 h-4 w-4" /> Manage Fields
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Mail className="w-5 h-5 mr-2" />
-                Email Settings
-              </CardTitle>
-              <CardDescription>
-                Configure email server and test functionality
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Test email connection, send test emails, and manage email templates
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Link href="/settings/email">
-                <Button variant="outline" className="w-full flex items-center justify-center">
-                  <Mail className="mr-2 h-4 w-4" /> Email Settings
                 </Button>
               </Link>
             </CardFooter>

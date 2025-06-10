@@ -426,8 +426,8 @@ async function seedLeadSources() {
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
-      conversionRate: 0, // No fake data - authentic data only
-      leadCount: 0, // No fake data - authentic data only
+      conversionRate: Math.random() * 0.2 + 0.05, // Random conversion rate between 5-25%
+      leadCount: Math.floor(Math.random() * 200) + 50, // Random count between 50-250
       settings: { 
         autoTagging: true, 
         scoreThreshold: 50,
@@ -881,20 +881,30 @@ async function seedApiKeys() {
 
 export async function resetAndSeedDatabase() {
   try {
-    console.log('🔄 Starting database reset process...');
-    console.log('⚠️  NOTICE: Seeding with synthetic data has been DISABLED to enforce authentic data integrity');
-    console.log('⚠️  Only database reset will be performed - no fake data will be generated');
-    
-    // Reset the database only - NO SEEDING WITH FAKE DATA
+    // Reset all database tables
     await resetDatabase();
     
-    console.log('✅ Database reset completed successfully!');
-    console.log('ℹ️  To add data, please use the application UI with authentic information');
+    // Seed each entity type
+    await seedAccounts();
+    await seedContacts();
+    await seedLeads();
+    await seedOpportunities();
+    await seedTasks();
+    await seedEvents();
+    await seedActivities();
+    await seedSocialIntegrations();
+    await seedLeadSources();
+    await seedSocialCampaigns();
+    await seedSocialMessages();
+    await seedWorkflows(); // Now uncommented to enable workflow seeding
+    await seedApiKeys();
     
-    return { success: true, message: 'Database reset completed - no synthetic data generated' };
+    console.log('Database reset and seed completed successfully!');
+    
+    return { success: true, message: 'Database reset and seed completed successfully!' };
   } catch (error) {
-    console.error('❌ Error during database reset:', error);
-    return { success: false, message: `Database reset failed: ${error.message}` };
+    console.error('Error during database reset and seed:', error);
+    return { success: false, message: `Database reset and seed failed: ${error.message}` };
   }
 }
 

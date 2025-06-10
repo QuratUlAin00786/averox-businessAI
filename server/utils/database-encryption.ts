@@ -22,6 +22,8 @@ const SENSITIVE_FIELD_PATTERNS = [
   /^phone$/i,
   /^address$/i,
   /^notes$/i,
+  /^first_name$/i,
+  /^last_name$/i,
   /^billing_address$/i,
   /^shipping_address$/i,
 ];
@@ -29,19 +31,19 @@ const SENSITIVE_FIELD_PATTERNS = [
 // Map of entities and their sensitive fields
 const ENTITY_SENSITIVE_FIELDS: Record<string, string[]> = {
   accounts: ['billing_address', 'notes', 'email', 'phone', 'address'],
-  contacts: ['email', 'phone', 'address', 'notes'],
-  leads: ['email', 'phone', 'address', 'notes'],
+  contacts: ['email', 'phone', 'address', 'notes', 'first_name', 'last_name'],
+  leads: ['email', 'phone', 'address', 'notes', 'first_name', 'last_name'],
   opportunities: ['notes', 'description'],
-  users: ['email'],
+  users: ['email', 'first_name', 'last_name'],
   invoices: ['billing_address', 'shipping_address', 'notes'],
   proposals: ['content', 'notes', 'description'],
   
   // Camel case variants for API compatibility
   account: ['billingAddress', 'notes', 'email', 'phone', 'address'],
-  contact: ['email', 'phone', 'address', 'notes'],
-  lead: ['email', 'phone', 'address', 'notes'],
+  contact: ['email', 'phone', 'address', 'notes', 'firstName', 'lastName'],
+  lead: ['email', 'phone', 'address', 'notes', 'firstName', 'lastName'],
   opportunity: ['notes', 'description'],
-  user: ['email'],
+  user: ['email', 'firstName', 'lastName'],
   invoice: ['billingAddress', 'shippingAddress', 'notes'],
   proposal: ['content', 'notes', 'description'],
 };
@@ -89,7 +91,7 @@ export async function encryptForDatabase<T extends Record<string, any>>(data: T,
   const result = { ...data } as Record<string, any>;
   const encryptionPromises: Promise<void>[] = [];
   
-  // Encrypt each field if it should be encrypted, preserve others as-is
+  // Encrypt each field if it should be encrypted
   for (const [key, value] of Object.entries(data)) {
     if (value && typeof value === 'string' && shouldEncryptField(key, entityType)) {
       const encryptPromise = async () => {
@@ -98,14 +100,9 @@ export async function encryptForDatabase<T extends Record<string, any>>(data: T,
           result[key] = JSON.stringify(encryptedData);
         } catch (err) {
           console.error(`Error encrypting field ${key}:`, err);
-          // Keep original value if encryption fails
-          result[key] = value;
         }
       };
       encryptionPromises.push(encryptPromise());
-    } else {
-      // Preserve non-sensitive fields as-is
-      result[key] = value;
     }
   }
   
@@ -154,15 +151,9 @@ export async function decryptFromDatabase<T extends Record<string, any>>(data: T
             result[key] = decrypted;
           }
         } catch (err) {
-          console.error(`Decryption error for field ${key}:`, err);
-          // For corrupted encrypted data, check if it's a recognizable pattern
-          if (typeof value === 'string' && value.includes('encrypted') && value.includes('iv')) {
-            console.warn(`Corrupted encrypted data detected in field ${key}, setting to null`);
-            result[key] = null;
-          } else {
-            // Keep original value if it's not encrypted or corruption is unclear
-            result[key] = value;
-          }
+          console.error(`Error decrypting field ${key}:`, err);
+          // Keep original value if decryption fails
+          result[key] = value;
         }
       };
       decryptionPromises.push(decryptPromise());

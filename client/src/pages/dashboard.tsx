@@ -28,7 +28,6 @@ import { Button } from "@/components/ui/button";
 import { SimpleButton } from "@/components/ui/simple-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
-import AnalyticsSection from "@/components/analytics-section";
 import { useLanguage } from "@/hooks/use-language";
 import { useSystemSettings } from "@/hooks/use-system-settings";
 import { SimpleTour, TourHelpButton, useTour } from "@/components/ui/simple-tour";
@@ -148,12 +147,8 @@ export default function Dashboard() {
       </div>
       
       <div className="px-4 mx-auto mt-6 max-w-7xl sm:px-6 md:px-8">
-        {/* Real Business Analytics Section */}
-        <AnalyticsSection />
-        
-        <div className="mt-8">
-          {/* Dashboard Content */}
-          <div className="space-y-6">
+        {/* Dashboard Content */}
+        <div className="space-y-6">
           {/* Business Metrics Overview */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {/* Revenue Card */}
@@ -548,7 +543,7 @@ export default function Dashboard() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base font-normal">Migration Status</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setLocation("/migrations")}>
+                  <Button variant="ghost" size="sm" onClick={() => setLocation("/settings")}>
                     View All <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 </CardHeader>
@@ -837,7 +832,6 @@ export default function Dashboard() {
               </Card>
             </div>
           </div>
-        </div>
         </div>
       </div>
     </div>

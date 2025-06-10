@@ -1,6 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
 import { 
   Search, 
   Menu, 
@@ -10,11 +9,7 @@ import {
   LogOut,
   HelpCircle,
   Globe,
-  ShieldCheck,
-  Building,
-  UserIcon,
-  Target,
-  FileText
+  ShieldCheck
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,11 +23,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import averoxLogoImg from "@/assets/averox-logo-real.png";
+import AveroxLogo from "@/assets/AveroxLogo";
 import { useAuth } from "@/hooks/use-auth";
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { MessagesDropdown } from "@/components/notifications/messages-dropdown";
-import { GlobalSearchInput } from "@/components/search/global-search-input";
 
 interface TopBarProps {
   onToggleSidebar: () => void;
@@ -57,16 +51,24 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
         <div className="flex flex-1 items-center">
           {/* Mobile logo visible in topbar when sidebar is closed */}
           <div className="flex md:hidden mr-3">
-            <div className="flex flex-col items-center">
-              <img 
-                src={averoxLogoImg}
-                alt="Averox Logo" 
-                className="h-9 w-auto object-contain"
-              />
-              <span className="text-xs font-semibold text-gray-700">Business AI</span>
+            <AveroxLogo height={36} />
+          </div>
+          <div className="flex items-center w-full max-w-2xl px-2 ml-4 md:ml-0">
+            <div className="w-full">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Search className="w-5 h-5 text-neutral-400" />
+                </div>
+                <Input 
+                  id="search" 
+                  name="search" 
+                  className="block w-full py-2 pl-10 pr-3 text-sm placeholder-neutral-400 bg-neutral-50 border-neutral-200"
+                  placeholder="Search" 
+                  type="search"
+                />
+              </div>
             </div>
           </div>
-          <GlobalSearchInput />
         </div>
         
         <div className="flex items-center ml-4 md:ml-6">

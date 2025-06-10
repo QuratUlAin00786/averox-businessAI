@@ -124,11 +124,11 @@ export function AccountList({
   
   // Handle bulk delete action
   const handleBulkDelete = () => {
-    // For bulk operations, we'll use a simple approach for now
-    // In a production app, you might want to create a separate bulk delete dialog
-    selectedAccounts.forEach(id => onDelete(id));
-    setSelectedAccounts([]);
-    setSelectAll(false);
+    if (window.confirm(`Are you sure you want to delete ${selectedAccounts.length} accounts?`)) {
+      selectedAccounts.forEach(id => onDelete(id));
+      setSelectedAccounts([]);
+      setSelectAll(false);
+    }
   };
   
   // Handle bulk set status action

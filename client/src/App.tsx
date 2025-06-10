@@ -2,12 +2,11 @@ import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
-import { NetworkStatus } from "@/components/ui/network-status";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 import { LanguageProvider } from "@/hooks/use-language";
 import { SystemSettingsProvider } from "@/hooks/use-system-settings";
-
+import { NotificationsProvider } from "@/hooks/use-notifications";
 import { ProtectedRoute } from "@/lib/protected-route";
 import Layout from "@/components/layout/layout";
 import Dashboard from "@/pages/dashboard";
@@ -28,11 +27,8 @@ import SettingsTeams from "@/pages/settings-teams";
 import SettingsDataMigration from "@/pages/settings-data-migration";
 import SettingsDashboard from "@/pages/settings-dashboard";
 import SettingsCustomFields from "@/pages/settings-custom-fields";
-import EmailSettings from "@/pages/email-settings";
 import Intelligence from "@/pages/intelligence";
-import Analytics from "@/pages/analytics";
 import Workflows from "@/pages/workflows";
-import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import Subscriptions from "@/pages/subscriptions";
 import Subscribe from "@/pages/subscribe";
 import AdminSubscriptionPackages from "@/pages/admin-subscription-packages";
@@ -41,7 +37,6 @@ import CommunicationCenter from "@/pages/communication-center";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
 import Integrations from "@/pages/settings/integrations";
-import ZapierIntegrations from "@/pages/integrations";
 import AuthPage from "@/pages/auth-page";
 import LandingPage from "@/pages/landing";
 import NotFound from "@/pages/not-found";
@@ -70,44 +65,21 @@ import InvoicePayment from "@/pages/InvoicePayment";
 import SecurityPage from "@/pages/security";
 import ProposalsPage from "@/pages/proposals";
 import SetupWizard from "@/pages/setup-wizard";
-import SaaSManagement from "@/pages/saas-management";
-import Activities from "@/pages/activities";
-import Migrations from "@/pages/migrations";
 
 function Router() {
-  const { user, isLoading } = useAuth();
-
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
       
       <Route path="/setup" component={SetupWizard} />
       
-      <ProtectedRoute path="/dashboard" component={() => (
+      <Route path="/landing" component={LandingPage} />
+      
+      <ProtectedRoute path="/" component={() => (
         <Layout>
           <Dashboard />
         </Layout>
       )} />
-      
-      <Route path="/" component={() => {
-        if (isLoading) {
-          return (
-            <div className="flex items-center justify-center min-h-screen">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-            </div>
-          );
-        }
-        
-        if (user) {
-          return (
-            <Layout>
-              <Dashboard />
-            </Layout>
-          );
-        }
-        
-        return <LandingPage />;
-      }} />
       
       <ProtectedRoute path="/contacts" component={() => (
         <Layout>
@@ -157,18 +129,6 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/activities" component={() => (
-        <Layout>
-          <Activities />
-        </Layout>
-      )} />
-      
-      <ProtectedRoute path="/migrations" component={() => (
-        <Layout>
-          <Migrations />
-        </Layout>
-      )} />
-      
       <ProtectedRoute path="/reports" component={() => (
         <Layout>
           <Reports />
@@ -184,18 +144,6 @@ function Router() {
       <ProtectedRoute path="/workflows" component={() => (
         <Layout>
           <Workflows />
-        </Layout>
-      )} />
-      
-      <ProtectedRoute path="/integrations" component={() => (
-        <Layout>
-          <ZapierIntegrations />
-        </Layout>
-      )} />
-      
-      <ProtectedRoute path="/analytics" component={() => (
-        <Layout>
-          <Analytics />
         </Layout>
       )} />
       
@@ -262,12 +210,6 @@ function Router() {
       <ProtectedRoute path="/settings/custom-fields" component={() => (
         <Layout>
           <SettingsCustomFields />
-        </Layout>
-      )} />
-      
-      <ProtectedRoute path="/settings/email" component={() => (
-        <Layout>
-          <EmailSettings />
         </Layout>
       )} />
       
@@ -493,12 +435,6 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/saas-management" component={() => (
-        <Layout>
-          <SaaSManagement />
-        </Layout>
-      )} />
-      
       <Route component={NotFound} />
     </Switch>
   );
@@ -533,10 +469,11 @@ function App() {
       <AuthProvider>
         <LanguageProvider>
           <SystemSettingsProvider>
-            <AutoLogin />
-            <Router />
-            <NetworkStatus />
-            <Toaster />
+            <NotificationsProvider>
+              <AutoLogin />
+              <Router />
+              <Toaster />
+            </NotificationsProvider>
           </SystemSettingsProvider>
         </LanguageProvider>
       </AuthProvider>

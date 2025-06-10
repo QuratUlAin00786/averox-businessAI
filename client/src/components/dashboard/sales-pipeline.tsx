@@ -64,24 +64,24 @@ export function SalesPipeline({ stages }: SalesPipelineProps) {
   return (
     <div className="overflow-hidden bg-white rounded-lg shadow">
       <div className="px-4 py-5 border-b border-neutral-200 sm:px-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <div className="flex items-center">
-            <h3 className="text-lg font-medium leading-6 text-neutral-700">{t.dashboard.salesPipeline}</h3>
+            <h3 className="text-xl sm:text-lg font-medium leading-6 text-neutral-700 mb-2 sm:mb-0">{t.dashboard.salesPipeline}</h3>
             <TooltipHelper 
               content={t.tooltips.dashboard.salesPipeline} 
               side="top" 
               className="ml-2"
-              iconSize={16}
+              iconSize={18}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-neutral-500">{t.dashboard.last30days}</span>
+          <div className="flex items-center">
+            <span className="text-base sm:text-sm text-neutral-500">{t.dashboard.last30days}</span>
             <SimpleButton 
               variant="outline" 
-              className="border-primary text-primary hover:bg-primary hover:text-white p-2"
+              className="ml-2 border-primary text-primary hover:bg-primary hover:text-white p-2 sm:p-2"
               onClick={() => window.alert("Opening pipeline settings...")}
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-7 h-7 sm:w-5 sm:h-5" />
             </SimpleButton>
           </div>
         </div>

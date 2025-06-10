@@ -66,7 +66,6 @@ export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   listUsers(): Promise<User[]>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
@@ -495,16 +494,6 @@ export interface IStorage {
   // Proposal Activities
   createProposalActivity(activity: InsertProposalActivity): Promise<ProposalActivity>;
   getProposalActivities(proposalId: number): Promise<(ProposalActivity & { user?: User })[]>;
-  
-  // Marketing Methods
-  getMarketingCampaigns(): Promise<any[]>;
-  createMarketingCampaign(campaignData: any): Promise<any>;
-  getMarketingAutomations(): Promise<any[]>;
-  createMarketingAutomation(automationData: any): Promise<any>;
-  getMarketingMetrics(): Promise<any>;
-  
-  // System Settings
-  getSystemSettings(userId: number): Promise<SystemSettings>;
 }
 
 export class MemStorage implements IStorage {
@@ -529,8 +518,6 @@ export class MemStorage implements IStorage {
   private socialMessages: Map<number, SocialMessage>;
   private leadSources: Map<number, LeadSource>;
   private socialCampaigns: Map<number, SocialCampaign>;
-  private marketingCampaigns: Map<number, any>;
-  private marketingAutomations: Map<number, any>;
   private apiKeys: Map<number, ApiKey>;
   private workflows: Map<number, Workflow>;
   // Communications map already initialized
@@ -625,8 +612,6 @@ export class MemStorage implements IStorage {
     this.socialMessages = new Map();
     this.leadSources = new Map();
     this.socialCampaigns = new Map();
-    this.marketingCampaigns = new Map();
-    this.marketingAutomations = new Map();
     this.apiKeys = new Map();
     this.workflows = new Map();
     this.systemSettingsMap = new Map();
@@ -705,67 +690,7 @@ export class MemStorage implements IStorage {
     this.initializeData();
   }
 
-  private initializeSampleCampaigns() {
-    // Create authentic marketing campaigns with real business scenarios
-    const campaigns = [
-      {
-        id: 1,
-        name: "Spring Product Launch 2025",
-        type: "email",
-        status: "active",
-        startDate: "2025-03-01",
-        endDate: "2025-04-30",
-        targetAudience: "Enterprise customers",
-        budget: 25000,
-        sentCount: 15420,
-        openedCount: 4738,
-        clickedCount: 892,
-        conversionCount: 156,
-        description: "Comprehensive campaign for new enterprise software launch",
-        createdAt: new Date('2025-03-01')
-      },
-      {
-        id: 2,
-        name: "Customer Retention Q2",
-        type: "multi-channel",
-        status: "completed",
-        startDate: "2025-04-01",
-        endDate: "2025-06-30",
-        targetAudience: "Existing customers",
-        budget: 18000,
-        sentCount: 8750,
-        openedCount: 3325,
-        clickedCount: 665,
-        conversionCount: 89,
-        description: "Retention campaign focusing on existing customer engagement",
-        createdAt: new Date('2025-04-01')
-      },
-      {
-        id: 3,
-        name: "Lead Generation Summer",
-        type: "social",
-        status: "draft",
-        startDate: "2025-06-15",
-        endDate: "2025-08-15",
-        targetAudience: "SMB prospects",
-        budget: 32000,
-        sentCount: 0,
-        openedCount: 0,
-        clickedCount: 0,
-        conversionCount: 0,
-        description: "Social media lead generation campaign for summer season",
-        createdAt: new Date('2025-05-15')
-      }
-    ];
-
-    campaigns.forEach(campaign => {
-      this.marketingCampaigns.set(campaign.id, campaign);
-    });
-  }
-
   private initializeData() {
-    // Initialize sample marketing campaigns
-    this.initializeSampleCampaigns();
     // Create a default admin user
     this.createUser({
       username: "admin",
@@ -858,7 +783,10 @@ export class MemStorage implements IStorage {
       isActive: true
     });
     
-    // Permissions will be initialized through the addPermissionsToMemStorage function
+    // Initialize permissions
+    this.initializePermissions().catch(error => {
+      console.error("Failed to initialize permissions:", error);
+    });
   }
 
   // User Methods
@@ -3355,114 +3283,6 @@ export class MemStorage implements IStorage {
   async deleteWorkflow(id: number): Promise<boolean> {
     return this.workflows.delete(id);
   }
-
-  // Marketing Methods
-  async getMarketingCampaigns(): Promise<any[]> {
-    // Get all stored campaigns from the map
-    const campaigns = Array.from(this.marketingCampaigns.values());
-    console.log('[Marketing Storage] Retrieving campaigns:', {
-      storedCount: campaigns.length,
-      mapSize: this.marketingCampaigns.size,
-      campaigns: campaigns
-    });
-    
-    console.log('[Marketing Storage] Returning stored campaigns:', campaigns.length);
-    return campaigns;
-  }
-
-  async createMarketingCampaign(campaignData: any): Promise<any> {
-    const campaign = {
-      id: Date.now(),
-      ...campaignData,
-      createdAt: new Date()
-    };
-    
-    console.log('[Marketing Storage] Creating campaign:', {
-      campaignId: campaign.id,
-      campaignData: campaign,
-      mapSizeBefore: this.marketingCampaigns.size
-    });
-    
-    // Store the campaign in the map
-    this.marketingCampaigns.set(campaign.id, campaign);
-    
-    console.log('[Marketing Storage] Campaign stored:', {
-      mapSizeAfter: this.marketingCampaigns.size,
-      storedCampaign: this.marketingCampaigns.get(campaign.id)
-    });
-    
-    return campaign;
-  }
-
-  async getMarketingAutomations(): Promise<any[]> {
-    return [
-      {
-        id: 1,
-        name: "Welcome Series",
-        status: "active",
-        triggerType: "contact_added",
-        contactCount: 450,
-        steps: 5,
-        conversionRate: 0.23,
-        createdAt: new Date('2025-02-15')
-      },
-      {
-        id: 2,
-        name: "Lead Nurturing Sequence",
-        status: "active",
-        triggerType: "lead_created",
-        contactCount: 320,
-        steps: 3,
-        conversionRate: 0.18,
-        createdAt: new Date('2025-03-01')
-      }
-    ];
-  }
-
-  async createMarketingAutomation(automationData: any): Promise<any> {
-    return {
-      id: Date.now(),
-      ...automationData,
-      createdAt: new Date()
-    };
-  }
-
-  async getMarketingMetrics(): Promise<any> {
-    const campaigns = await this.getMarketingCampaigns();
-    const automations = await this.getMarketingAutomations();
-    
-    const totalCampaigns = campaigns.length;
-    const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
-    const totalSent = campaigns.reduce((sum, c) => sum + (c.sentCount || 0), 0);
-    const totalOpened = campaigns.reduce((sum, c) => sum + (c.openedCount || 0), 0);
-    const totalClicked = campaigns.reduce((sum, c) => sum + (c.clickedCount || 0), 0);
-    const totalConverted = campaigns.reduce((sum, c) => sum + (c.conversionCount || 0), 0);
-    
-    const averageOpenRate = totalSent > 0 ? (totalOpened / totalSent) : 0;
-    const averageClickRate = totalOpened > 0 ? (totalClicked / totalOpened) : 0;
-    const conversionRate = totalSent > 0 ? (totalConverted / totalSent) : 0;
-    
-    return {
-      totalCampaigns,
-      activeCampaigns,
-      totalSent,
-      averageOpenRate,
-      averageClickRate,
-      conversionRate,
-      recentActivity: [
-        {
-          action: "Campaign sent",
-          target: "Spring Product Launch",
-          timestamp: new Date().toISOString()
-        },
-        {
-          action: "Automation triggered",
-          target: "Welcome Series",
-          timestamp: new Date(Date.now() - 3600000).toISOString()
-        }
-      ]
-    };
-  }
 }
 
 // Initialize default subscription packages
@@ -3803,31 +3623,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAccount(id: number): Promise<boolean> {
     try {
-      // First, delete all related records to avoid foreign key constraints
-      
-      // Get all contacts for this account first
-      const accountContacts = await db.select().from(contacts).where(eq(contacts.accountId, id));
-      
-      // Delete social messages that reference these contacts
-      for (const contact of accountContacts) {
-        await db.delete(socialMessages).where(eq(socialMessages.contactId, contact.id));
-      }
-      
-      // Delete related contacts
-      await db.delete(contacts).where(eq(contacts.accountId, id));
-      
-      // Delete related opportunities
-      await db.delete(opportunities).where(eq(opportunities.accountId, id));
-      
-      // Delete related leads that might reference this account
-      await db.update(leads)
-        .set({ convertedToAccountId: null })
-        .where(eq(leads.convertedToAccountId, id));
-      
-      // Delete related proposals
-      await db.delete(proposals).where(eq(proposals.accountId, id));
-      
-      // Finally delete the account
       const result = await db.delete(accounts)
         .where(eq(accounts.id, id))
         .returning();
@@ -4043,12 +3838,13 @@ export class DatabaseStorage implements IStorage {
 
   async updateOpportunity(id: number, opportunity: Partial<InsertOpportunity>): Promise<Opportunity | undefined> {
     try {
-      console.log('[Storage] Updating opportunity with data:', opportunity);
       const [updatedOpportunity] = await db.update(opportunities)
-        .set(opportunity)
+        .set({
+          ...opportunity,
+          updatedAt: new Date()
+        })
         .where(eq(opportunities.id, id))
         .returning();
-      console.log('[Storage] Updated opportunity result:', updatedOpportunity);
       return updatedOpportunity;
     } catch (error) {
       console.error('Database error in updateOpportunity:', error);
@@ -4058,35 +3854,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOpportunity(id: number): Promise<boolean> {
     try {
-      // First, get all proposals that reference this opportunity
-      const relatedProposals = await db.select({ id: proposals.id })
-        .from(proposals)
-        .where(eq(proposals.opportunityId, id));
-      
-      // Delete all related data in the correct order
-      for (const proposal of relatedProposals) {
-        // Delete proposal elements first
-        await db.delete(proposalElements)
-          .where(eq(proposalElements.proposalId, proposal.id));
-        
-        // Delete proposal activities
-        await db.delete(proposalActivities)
-          .where(eq(proposalActivities.proposalId, proposal.id));
-        
-        // Delete proposal collaborators
-        await db.delete(proposalCollaborators)
-          .where(eq(proposalCollaborators.proposalId, proposal.id));
-        
-        // Delete proposal comments
-        await db.delete(proposalComments)
-          .where(eq(proposalComments.proposalId, proposal.id));
-      }
-      
-      // Delete the proposals
-      await db.delete(proposals)
-        .where(eq(proposals.opportunityId, id));
-      
-      // Finally delete the opportunity
       const result = await db.delete(opportunities)
         .where(eq(opportunities.id, id))
         .returning();
@@ -7528,121 +7295,46 @@ DatabaseStorage.prototype.removeTeamMember = async function(id: number): Promise
   }
 };
 
-// Add E-commerce operations to DatabaseStorage
-DatabaseStorage.prototype.getEcommerceStores = async function(userId: number) {
-  const { ecommerceStores } = await import('@shared/ecommerce-schema');
-  return await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.userId, userId));
-};
+// Create the appropriate storage implementation
+// For development, you can switch between MemStorage and DatabaseStorage
+const useDatabase = true; // Set to true to use PostgreSQL database storage
 
-DatabaseStorage.prototype.createEcommerceStore = async function(storeData: any) {
-  const { ecommerceStores } = await import('@shared/ecommerce-schema');
-  const [store] = await this.db.insert(ecommerceStores).values(storeData).returning();
-  return store;
-};
+export let storage: IStorage;
 
-DatabaseStorage.prototype.getEcommerceStore = async function(id: number) {
-  const { ecommerceStores } = await import('@shared/ecommerce-schema');
-  const [store] = await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.id, id));
-  return store;
-};
-
-DatabaseStorage.prototype.updateEcommerceStore = async function(id: number, data: any) {
-  const { ecommerceStores } = await import('@shared/ecommerce-schema');
-  const [store] = await this.db.update(ecommerceStores).set(data).where(eq(ecommerceStores.id, id)).returning();
-  return store;
-};
-
-DatabaseStorage.prototype.getEcommerceProducts = async function(storeId?: number) {
-  const { ecommerceProducts } = await import('@shared/ecommerce-schema');
-  if (storeId) {
-    return await this.db.select().from(ecommerceProducts).where(eq(ecommerceProducts.storeId, storeId));
-  }
-  return await this.db.select().from(ecommerceProducts);
-};
-
-DatabaseStorage.prototype.createEcommerceProduct = async function(productData: any) {
-  const { ecommerceProducts } = await import('@shared/ecommerce-schema');
-  const [product] = await this.db.insert(ecommerceProducts).values(productData).returning();
-  return product;
-};
-
-DatabaseStorage.prototype.getEcommerceOrders = async function(storeId?: number) {
-  const { ecommerceOrders } = await import('@shared/ecommerce-schema');
-  if (storeId) {
-    return await this.db.select().from(ecommerceOrders).where(eq(ecommerceOrders.storeId, storeId));
-  }
-  return await this.db.select().from(ecommerceOrders);
-};
-
-DatabaseStorage.prototype.createEcommerceOrder = async function(orderData: any) {
-  const { ecommerceOrders } = await import('@shared/ecommerce-schema');
-  const [order] = await this.db.insert(ecommerceOrders).values(orderData).returning();
-  return order;
-};
-
-DatabaseStorage.prototype.getEcommerceAnalytics = async function(storeId?: number) {
-  const orders = await this.getEcommerceOrders(storeId);
-  const products = await this.getEcommerceProducts(storeId);
+if (useDatabase) {
+  // Use PostgreSQL for persistent data
+  const dbStorage = new DatabaseStorage();
+  // Add social media integration methods to database storage
+  addSocialIntegrationsToDatabaseStorage(dbStorage);
+  // Add API key management methods to database storage
+  addApiKeysToDatabaseStorage(dbStorage);
+  // Add communication methods to database storage
+  addCommunicationsToDatabase(dbStorage);
+  // Add permission methods to database storage
+  addPermissionsToDatabaseStorage(dbStorage);
   
-  const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
-  const totalOrders = orders.length;
-  const activeProducts = products.filter(p => p.isActive).length;
-  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  // Add method aliases to make DatabaseStorage methods match the IStorage interface
+  DatabaseStorage.prototype.listTeamMembers = DatabaseStorage.prototype.getTeamMembers;
+  DatabaseStorage.prototype.createTeamMember = DatabaseStorage.prototype.addTeamMember;
+  DatabaseStorage.prototype.deleteTeamMember = DatabaseStorage.prototype.removeTeamMember;
+  DatabaseStorage.prototype.listAssignments = DatabaseStorage.prototype.getAssignmentsByEntity;
+  
+  storage = dbStorage;
+} else {
+  // Use in-memory storage for development/testing
+  const memStorage = new MemStorage();
+  // Add social media integration methods to memory storage
+  addSocialIntegrationsToMemStorage(memStorage);
+  // Add API key management methods to memory storage
+  addApiKeysToMemStorage(memStorage);
+  // Add communication methods to memory storage
+  addCommunicationsToMemStorage(memStorage);
+  // Add permission methods to memory storage
+  addPermissionsToMemStorage(memStorage);
+  storage = memStorage;
+  // Initialize sample subscription packages for in-memory storage
+  initializeSubscriptionPackages(storage);
+}
 
-  return { totalRevenue, totalOrders, activeProducts, averageOrderValue };
-};
-
-// Initialize storage
-const storage = new MemStorage();
-
-// Add sample marketing campaigns to test the Campaign Records functionality
-const sampleCampaigns = [
-  {
-    id: 1,
-    name: "Spring Product Launch",
-    type: "email",
-    status: "active",
-    subject: "Introducing Our New Spring Collection",
-    content: "Discover our latest products for the spring season...",
-    sentCount: 1250,
-    openedCount: 425,
-    clickedCount: 89,
-    conversionCount: 23,
-    createdAt: new Date('2025-03-01')
-  },
-  {
-    id: 2,
-    name: "Customer Retention Q2",
-    type: "email", 
-    status: "completed",
-    subject: "We Miss You - Special Offer Inside",
-    content: "Come back and enjoy 20% off your next purchase...",
-    sentCount: 890,
-    openedCount: 312,
-    clickedCount: 67,
-    conversionCount: 18,
-    createdAt: new Date('2025-04-15')
-  },
-  {
-    id: 3,
-    name: "Summer Sale Preview",
-    type: "sms",
-    status: "draft",
-    subject: "Early Access: Summer Sale Starts Tomorrow",
-    content: "Get ready for our biggest sale of the year...",
-    sentCount: 0,
-    openedCount: 0,
-    clickedCount: 0,
-    conversionCount: 0,
-    createdAt: new Date('2025-05-20')
-  }
-];
-
-// Add campaigns to storage
-sampleCampaigns.forEach(campaign => {
-  storage.marketingCampaigns.set(campaign.id, campaign);
-});
-
-console.log('[Storage] Initialized with', storage.marketingCampaigns.size, 'sample campaigns');
-
-export { storage, type IStorage };
+// For database storage, subscription packages would be created via admin UI
+// or initialized separately, not needed here

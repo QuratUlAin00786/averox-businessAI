@@ -199,7 +199,97 @@ export function addCommunicationsToMemStorage(storage: MemStorage) {
     return communication;
   };
 
-  // Communication data comes only from authentic database sources
+  // Add communication mock data for initial testing if needed
+  storage.initializeCommunicationMockData = function() {
+    if (this.communications.size === 0 && this.leads.size > 0 && this.contacts.size > 0) {
+      const leadIds = Array.from(this.leads.keys());
+      const contactIds = Array.from(this.contacts.keys());
+      
+      // Sample data for testing
+      const channels = ['email', 'whatsapp', 'sms', 'phone', 'messenger', 'twitter', 'linkedin', 'instagram'];
+      const directions = ['inbound', 'outbound'];
+      const statuses = ['unread', 'read', 'replied', 'archived'];
+      
+      // Add some mock communications for leads
+      if (leadIds.length > 0) {
+        const leadId = leadIds[0];
+        const lead = this.leads.get(leadId);
+        
+        if (lead) {
+          this.createCommunication({
+            contactId: leadId,
+            contactType: 'lead',
+            channel: 'email',
+            direction: 'inbound',
+            content: 'I\'m interested in your services. Can you tell me more?',
+            status: 'unread',
+            sentAt: new Date(Date.now() - 2 * 3600 * 1000), // 2 hours ago
+            receivedAt: new Date(Date.now() - 2 * 3600 * 1000)
+          });
+          
+          this.createCommunication({
+            contactId: leadId,
+            contactType: 'lead',
+            channel: 'whatsapp',
+            direction: 'inbound',
+            content: 'Hello, following up on our conversation. When can we schedule a demo?',
+            status: 'read',
+            sentAt: new Date(Date.now() - 24 * 3600 * 1000), // 1 day ago
+            receivedAt: new Date(Date.now() - 24 * 3600 * 1000)
+          });
+          
+          this.createCommunication({
+            contactId: leadId,
+            contactType: 'lead',
+            channel: 'email',
+            direction: 'outbound',
+            content: 'Thank you for your interest. I\'ve attached our product brochure for more information.',
+            status: 'replied',
+            sentAt: new Date(Date.now() - 23 * 3600 * 1000), // 23 hours ago
+          });
+        }
+      }
+      
+      // Add some mock communications for contacts (customers)
+      if (contactIds.length > 0) {
+        const contactId = contactIds[0];
+        const contact = this.contacts.get(contactId);
+        
+        if (contact) {
+          this.createCommunication({
+            contactId: contactId,
+            contactType: 'customer',
+            channel: 'phone',
+            direction: 'outbound',
+            content: 'Called to follow up on recent purchase and discuss satisfaction levels. Left voicemail.',
+            status: 'read',
+            sentAt: new Date(Date.now() - 6 * 3600 * 1000), // 6 hours ago
+          });
+          
+          this.createCommunication({
+            contactId: contactId,
+            contactType: 'customer',
+            channel: 'messenger',
+            direction: 'inbound',
+            content: 'I\'m having trouble with the latest update. Can you help me troubleshoot?',
+            status: 'replied',
+            sentAt: new Date(Date.now() - 8 * 3600 * 1000), // 8 hours ago
+            receivedAt: new Date(Date.now() - 8 * 3600 * 1000)
+          });
+          
+          this.createCommunication({
+            contactId: contactId,
+            contactType: 'customer',
+            channel: 'messenger',
+            direction: 'outbound',
+            content: "I'll be happy to help. Can you please describe the specific issue you're experiencing?",
+            status: 'read',
+            sentAt: new Date(Date.now() - 7 * 3600 * 1000), // 7 hours ago
+          });
+        }
+      }
+    }
+  };
 }
 
 // Function to add communication-related methods to the DatabaseStorage class
