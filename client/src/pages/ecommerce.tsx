@@ -550,6 +550,8 @@ export default function EcommercePage() {
   const [selectedStore, setSelectedStore] = useState<ShopifyStore | null>(null);
   const [isConnectStoreDialogOpen, setIsConnectStoreDialogOpen] = useState(false);
   const [isSyncSettingsDialogOpen, setIsSyncSettingsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStoreFilter, setSelectedStoreFilter] = useState('all-stores');
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -582,6 +584,18 @@ export default function EcommercePage() {
   const isLoadingSales = false;
   
   const activeStores = stores.filter(store => store.status === 'active');
+  
+  // Filter products based on search query and selected store
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = searchQuery === '' || 
+      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.sku.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStore = selectedStoreFilter === 'all-stores' || 
+      product.store === stores.find(store => store.id === selectedStoreFilter)?.name;
+    
+    return matchesSearch && matchesStore;
+  });
   
   const handleSyncStore = (store: ShopifyStore) => {
     toast({
@@ -805,12 +819,18 @@ export default function EcommercePage() {
                 <div className="flex gap-2">
                   <div className="relative w-full md:w-64">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input type="search" placeholder="Search products..." className="pl-8" />
+                    <Input 
+                      type="search" 
+                      placeholder="Search products..." 
+                      className="pl-8" 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                   </div>
                   <Button variant="outline" size="icon">
                     <Filter className="h-4 w-4" />
                   </Button>
-                  <Select defaultValue="all-stores">
+                  <Select value={selectedStoreFilter} onValueChange={setSelectedStoreFilter}>
                     <SelectTrigger className="w-[150px]">
                       <SelectValue placeholder="All stores" />
                     </SelectTrigger>
@@ -844,14 +864,16 @@ export default function EcommercePage() {
                         Loading products...
                       </TableCell>
                     </TableRow>
-                  ) : products.length === 0 ? (
+                  ) : filteredProducts.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-4">
-                        No products found. Connect a Shopify store to import products.
+                        {searchQuery || selectedStoreFilter !== 'all-stores' 
+                          ? 'No products found matching your search criteria.' 
+                          : 'No products found. Connect a Shopify store to import products.'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    products.map((product) => (
+                    filteredProducts.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>
                           <div className="flex items-center">
