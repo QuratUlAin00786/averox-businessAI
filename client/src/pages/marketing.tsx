@@ -357,7 +357,7 @@ export default function Marketing() {
                         <Button variant="outline" size="sm" className="text-xs px-2" onClick={() => setLocation(`/marketing/campaigns/${campaign.id}`)}>
                           Edit
                         </Button>
-                        <Button variant="outline" size="sm" className="text-xs px-2">
+                        <Button variant="outline" size="sm" className="text-xs px-2" onClick={() => setLocation(`/marketing/campaigns/${campaign.id}/report`)}>
                           View Report
                         </Button>
                       </div>
@@ -429,7 +429,7 @@ export default function Marketing() {
                   <Button variant="outline" size="sm" onClick={() => setLocation(`/marketing/automations/${automation.id}`)}>
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm">View Report</Button>
+                  <Button variant="outline" size="sm" onClick={() => setLocation(`/marketing/automations/${automation.id}/report`)}>View Report</Button>
                 </CardFooter>
               </Card>
             ))}
