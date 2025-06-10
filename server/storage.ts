@@ -7536,24 +7536,34 @@ Object.assign(DatabaseStorage.prototype, {
   
   // Marketing operations
   async getMarketingCampaigns() {
-    // Get campaigns from storage
-    const campaigns = Array.from(this.marketingCampaigns.values());
-    console.log('[Storage Interface] Returning stored campaigns:', campaigns.length);
-    return campaigns;
+    try {
+      // Get campaigns from storage
+      const campaigns = Array.from(this.marketingCampaigns.values());
+      console.log('[Storage Interface] Returning stored campaigns:', campaigns.length);
+      return campaigns;
+    } catch (error) {
+      console.error('[Storage Interface] Error getting campaigns:', error);
+      return [];
+    }
   },
   
   async createMarketingCampaign(campaignData: any) {
-    const campaign = {
-      id: Date.now(),
-      ...campaignData,
-      createdAt: new Date()
-    };
-    
-    console.log('[Storage Interface] Creating campaign:', campaign.id);
-    this.marketingCampaigns.set(campaign.id, campaign);
-    console.log('[Storage Interface] Campaign stored, total campaigns:', this.marketingCampaigns.size);
-    
-    return campaign;
+    try {
+      const campaign = {
+        id: Date.now(),
+        ...campaignData,
+        createdAt: new Date()
+      };
+      
+      console.log('[Storage Interface] Creating campaign:', campaign.id);
+      this.marketingCampaigns.set(campaign.id, campaign);
+      console.log('[Storage Interface] Campaign stored, total campaigns:', this.marketingCampaigns.size);
+      
+      return campaign;
+    } catch (error) {
+      console.error('[Storage Interface] Error creating campaign:', error);
+      throw error;
+    }
   },
   
   async getMarketingAutomations() {
