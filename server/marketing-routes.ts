@@ -54,11 +54,8 @@ export function registerMarketingRoutes(app: Express) {
     try {
       console.log('[Marketing] Fetching all campaigns');
       const campaigns = await storage.getMarketingCampaigns();
-      const decryptedCampaigns = await Promise.all(
-        campaigns.map(campaign => decryptFromDatabase(campaign, 'marketing_campaigns'))
-      );
-      console.log(`[Marketing] Successfully retrieved ${decryptedCampaigns.length} campaigns`);
-      res.json(decryptedCampaigns);
+      console.log(`[Marketing] Successfully retrieved ${campaigns.length} campaigns`);
+      res.json(campaigns);
     } catch (error) {
       console.error('[Marketing] Error fetching campaigns:', error);
       handleError(res, error);
@@ -71,12 +68,10 @@ export function registerMarketingRoutes(app: Express) {
       console.log('[Marketing] Creating new campaign:', req.body);
       const validatedData = createCampaignSchema.parse(req.body);
       
-      const encryptedData = await encryptForDatabase(validatedData, 'marketing_campaigns');
-      const campaign = await storage.createMarketingCampaign(encryptedData);
-      const decryptedCampaign = await decryptFromDatabase(campaign, 'marketing_campaigns');
+      const campaign = await storage.createMarketingCampaign(validatedData);
       
       console.log(`[Marketing] Successfully created campaign with ID ${campaign.id}`);
-      res.status(201).json(decryptedCampaign);
+      res.status(201).json(campaign);
     } catch (error) {
       console.error('[Marketing] Error creating campaign:', error);
       handleError(res, error);
@@ -90,11 +85,8 @@ export function registerMarketingRoutes(app: Express) {
     try {
       console.log('[Marketing] Fetching all automations');
       const automations = await storage.getMarketingAutomations();
-      const decryptedAutomations = await Promise.all(
-        automations.map(automation => decryptFromDatabase(automation, 'marketing_automations'))
-      );
-      console.log(`[Marketing] Successfully retrieved ${decryptedAutomations.length} automations`);
-      res.json(decryptedAutomations);
+      console.log(`[Marketing] Successfully retrieved ${automations.length} automations`);
+      res.json(automations);
     } catch (error) {
       console.error('[Marketing] Error fetching automations:', error);
       handleError(res, error);
@@ -107,12 +99,10 @@ export function registerMarketingRoutes(app: Express) {
       console.log('[Marketing] Creating new automation:', req.body);
       const validatedData = createAutomationSchema.parse(req.body);
       
-      const encryptedData = await encryptForDatabase(validatedData, 'marketing_automations');
-      const automation = await storage.createMarketingAutomation(encryptedData);
-      const decryptedAutomation = await decryptFromDatabase(automation, 'marketing_automations');
+      const automation = await storage.createMarketingAutomation(validatedData);
       
       console.log(`[Marketing] Successfully created automation with ID ${automation.id}`);
-      res.status(201).json(decryptedAutomation);
+      res.status(201).json(automation);
     } catch (error) {
       console.error('[Marketing] Error creating automation:', error);
       handleError(res, error);
