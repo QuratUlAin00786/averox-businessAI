@@ -39,6 +39,18 @@ export default function InvoicePayment() {
   // Create payment intent when invoice is loaded
   useEffect(() => {
     if (invoice) {
+      const amount = parseFloat(invoice.totalAmount);
+      
+      // Check if amount is valid for payment processing
+      if (amount <= 0) {
+        toast({
+          title: 'Payment Not Required',
+          description: 'This invoice has no amount due.',
+          variant: 'default',
+        });
+        return;
+      }
+
       const createPaymentIntent = async () => {
         try {
           const response = await fetch('/api/create-payment-intent', {
@@ -47,13 +59,14 @@ export default function InvoicePayment() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              amount: parseFloat(invoice.totalAmount),
+              amount: amount,
               invoiceId: invoice.id
             }),
           });
 
           if (!response.ok) {
-            throw new Error('Failed to create payment intent');
+            const errorData = await response.json();
+            throw new Error(errorData.details || 'Failed to create payment intent');
           }
 
           const data = await response.json();
@@ -62,7 +75,7 @@ export default function InvoicePayment() {
           console.error('Error creating payment intent:', error);
           toast({
             title: 'Payment Setup Failed',
-            description: 'Unable to initialize payment processing. Please try again.',
+            description: error instanceof Error ? error.message : 'Unable to initialize payment processing. Please try again.',
             variant: 'destructive',
           });
         }
@@ -139,6 +152,54 @@ export default function InvoicePayment() {
                 <span className="font-medium">Payment Date:</span>
                 <span>{new Date().toLocaleDateString()}</span>
               </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <button
+              onClick={() => setLocation('/accounting')}
+              className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 w-full"
+            >
+              Return to Accounting
+            </button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check for zero amount invoices
+  const invoiceAmount = parseFloat(invoice.totalAmount);
+  if (invoiceAmount <= 0) {
+    return (
+      <div className="flex justify-center items-center h-[70vh]">
+        <Card className="w-full max-w-md">
+          <CardHeader className="bg-blue-50">
+            <CardTitle className="text-blue-600">No Payment Required</CardTitle>
+            <CardDescription>This invoice has no amount due</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="font-medium">Invoice Number:</span>
+                <span>{invoice.invoiceNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Due Date:</span>
+                <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Total Amount:</span>
+                <span>${invoiceAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Status:</span>
+                <span>{invoice.status}</span>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700">
+                This invoice does not require payment as the total amount is $0.00.
+              </p>
             </div>
           </CardContent>
           <CardFooter>

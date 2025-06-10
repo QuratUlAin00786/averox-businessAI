@@ -2739,16 +2739,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/create-payment-intent', async (req: Request, res: Response) => {
     try {
       const { amount } = req.body;
+      const numericAmount = parseFloat(amount);
       
-      if (!amount || isNaN(amount) || amount <= 0) {
+      if (!amount || isNaN(numericAmount) || numericAmount <= 0) {
         return res.status(400).json({ 
           error: "Invalid amount", 
-          details: "Amount must be a positive number" 
+          details: "Amount must be a positive number. Current amount: " + amount
         });
       }
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
+        amount: Math.round(numericAmount * 100), // Convert to cents
         currency: "usd",
       });
       
