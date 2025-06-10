@@ -6551,14 +6551,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const ticketData = {
+      // Validate data using schema
+      const ticketData = insertSupportTicketSchema.parse({
         subject: title,
         description: description,
         customerId: req.user.id,
         type: categoryMap[category] || 'general_inquiry',
         priority: priorityMap[priority] || 'medium',
-        status: 'open' as const
-      };
+        status: 'open'
+      });
 
       const [newTicket] = await db.insert(supportTickets)
         .values(ticketData)
