@@ -7592,7 +7592,8 @@ Object.assign(DatabaseStorage.prototype, {
   },
   
   async getMarketingMetrics() {
-    const campaigns = await this.getMarketingCampaigns();
+    // Get campaigns from storage
+    const campaigns = Array.from(this.marketingCampaigns.values());
     const automations = await this.getMarketingAutomations();
     
     const totalCampaigns = campaigns.length;
