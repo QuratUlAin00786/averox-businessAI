@@ -777,7 +777,7 @@ export default function SupportTicketsPage() {
                     <div>
                       <p className="font-medium">Live Chat</p>
                       <p className="text-sm text-gray-500">Available during business hours</p>
-                      <Button variant="link" className="p-0 h-auto">Start Chat</Button>
+                      <Button variant="link" className="p-0 h-auto" onClick={() => setIsNewTicketDialogOpen(true)}>Start Chat</Button>
                     </div>
                   </div>
                 </div>
