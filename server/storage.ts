@@ -7534,9 +7534,27 @@ Object.assign(DatabaseStorage.prototype, {
     return { totalRevenue, totalOrders, activeProducts, averageOrderValue };
   },
   
-  // Marketing operations - this method is now handled by the main implementation above
+  // Marketing operations
+  async getMarketingCampaigns() {
+    // Get campaigns from storage
+    const campaigns = Array.from(this.marketingCampaigns.values());
+    console.log('[Storage Interface] Returning stored campaigns:', campaigns.length);
+    return campaigns;
+  },
   
-  // Duplicate method removed - using main implementation above
+  async createMarketingCampaign(campaignData: any) {
+    const campaign = {
+      id: Date.now(),
+      ...campaignData,
+      createdAt: new Date()
+    };
+    
+    console.log('[Storage Interface] Creating campaign:', campaign.id);
+    this.marketingCampaigns.set(campaign.id, campaign);
+    console.log('[Storage Interface] Campaign stored, total campaigns:', this.marketingCampaigns.size);
+    
+    return campaign;
+  },
   
   async getMarketingAutomations() {
     // Return sample automation data until proper schema is implemented
