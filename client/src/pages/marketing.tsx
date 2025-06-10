@@ -79,11 +79,18 @@ export default function Marketing() {
   
   // Dialog state
   const [isCreateAutomationOpen, setIsCreateAutomationOpen] = useState(false);
+  const [isCreateCampaignOpen, setIsCreateCampaignOpen] = useState(false);
   const [automationForm, setAutomationForm] = useState({
     name: '',
     triggerType: 'lead_created' as const,
     description: '',
     actions: [] as string[]
+  });
+  const [campaignForm, setCampaignForm] = useState({
+    name: '',
+    type: 'email' as const,
+    description: '',
+    recipientCount: 0
   });
 
   // Real API queries
@@ -113,6 +120,13 @@ export default function Marketing() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/marketing/campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['/api/marketing/metrics'] });
+      setIsCreateCampaignOpen(false);
+      setCampaignForm({
+        name: '',
+        type: 'email',
+        description: '',
+        recipientCount: 0
+      });
       toast({
         title: "Campaign Created",
         description: "Your marketing campaign has been created successfully.",
@@ -171,6 +185,29 @@ export default function Marketing() {
       status: 'draft',
       actions: automationForm.actions.length > 0 ? automationForm.actions : ['send_welcome_email'],
       executionCount: 0,
+      createdAt: new Date().toISOString()
+    });
+  };
+
+  const handleCreateCampaign = () => {
+    if (!campaignForm.name.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a campaign name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createCampaignMutation.mutate({
+      name: campaignForm.name,
+      type: campaignForm.type,
+      status: 'draft',
+      recipientCount: campaignForm.recipientCount,
+      sentCount: 0,
+      openedCount: 0,
+      clickedCount: 0,
+      conversionCount: 0,
       createdAt: new Date().toISOString()
     });
   };
@@ -286,11 +323,17 @@ export default function Marketing() {
 
         <TabsContent value="campaigns" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Marketing Campaigns</CardTitle>
-              <CardDescription>
-                Manage your email, SMS, and social media campaigns
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="space-y-1">
+                <CardTitle>Marketing Campaigns</CardTitle>
+                <CardDescription>
+                  Manage your email, SMS, and social media campaigns
+                </CardDescription>
+              </div>
+              <Button onClick={() => setIsCreateCampaignOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Campaign
+              </Button>
             </CardHeader>
             <CardContent>
               {isLoadingCampaigns ? (
@@ -306,7 +349,7 @@ export default function Marketing() {
                   <p className="text-muted-foreground mb-4">
                     Create your first marketing campaign to start engaging with your audience.
                   </p>
-                  <Button onClick={() => {/* Open campaign creation */}}>
+                  <Button onClick={() => setIsCreateCampaignOpen(true)}>
                     Create First Campaign
                   </Button>
                 </div>
@@ -571,6 +614,89 @@ export default function Marketing() {
               disabled={createAutomationMutation.isPending}
             >
               {createAutomationMutation.isPending ? "Creating..." : "Create Automation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Campaign Dialog */}
+      <Dialog open={isCreateCampaignOpen} onOpenChange={setIsCreateCampaignOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Campaign</DialogTitle>
+            <DialogDescription>
+              Create a new marketing campaign to engage with your audience.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="campaign-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="campaign-name"
+                value={campaignForm.name}
+                onChange={(e) => setCampaignForm(prev => ({ ...prev, name: e.target.value }))}
+                className="col-span-3"
+                placeholder="Campaign name"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="campaign-type" className="text-right">
+                Type
+              </Label>
+              <select
+                id="campaign-type"
+                value={campaignForm.type}
+                onChange={(e) => setCampaignForm(prev => ({ ...prev, type: e.target.value as 'email' | 'sms' | 'social' | 'automation' }))}
+                className="col-span-3 h-10 px-3 py-2 text-sm border border-input bg-background rounded-md"
+              >
+                <option value="email">Email</option>
+                <option value="sms">SMS</option>
+                <option value="social">Social Media</option>
+                <option value="automation">Automation</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="campaign-description" className="text-right">
+                Description
+              </Label>
+              <Input
+                id="campaign-description"
+                value={campaignForm.description}
+                onChange={(e) => setCampaignForm(prev => ({ ...prev, description: e.target.value }))}
+                className="col-span-3"
+                placeholder="Campaign description"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="campaign-recipients" className="text-right">
+                Recipients
+              </Label>
+              <Input
+                id="campaign-recipients"
+                type="number"
+                value={campaignForm.recipientCount}
+                onChange={(e) => setCampaignForm(prev => ({ ...prev, recipientCount: parseInt(e.target.value) || 0 }))}
+                className="col-span-3"
+                placeholder="Number of recipients"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsCreateCampaignOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCreateCampaign}
+              disabled={createCampaignMutation.isPending}
+            >
+              {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
             </Button>
           </DialogFooter>
         </DialogContent>
