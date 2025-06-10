@@ -45,6 +45,7 @@ import NewProduct from "@/pages/inventory/products/new";
 import NewCategory from "@/pages/inventory/categories/new";
 import NewTransaction from "@/pages/inventory/transactions/new";
 import NewInvoice from "@/pages/accounting/invoices/new";
+import InvoiceEdit from "@/pages/accounting/invoices/edit";
 import NewPurchaseOrder from "@/pages/accounting/purchase-orders/new";
 import RevenueReport from "@/pages/accounting/reports/revenue";
 import ExpensesReport from "@/pages/accounting/reports/expenses";
@@ -246,6 +247,12 @@ function Router() {
       <ProtectedRoute path="/accounting/invoices/new" component={() => (
         <Layout>
           <NewInvoice />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/accounting/invoices/:id/edit" component={({ params }: { params: { id: string } }) => (
+        <Layout>
+          <InvoiceEdit />
         </Layout>
       )} />
       

@@ -4129,6 +4129,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/invoices/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const id = parseInt(req.params.id);
+      const invoiceData = insertInvoiceSchema.partial().parse(req.body);
+      const updatedInvoice = await storage.updateInvoice(id, invoiceData);
+      if (!updatedInvoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      res.json(updatedInvoice);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
   app.delete('/api/invoices/:id', async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
