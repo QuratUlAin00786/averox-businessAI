@@ -535,9 +535,9 @@ export default function SupportTicketsPage() {
   const [isNewTicketDialogOpen, setIsNewTicketDialogOpen] = useState(false);
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
-    status: '',
-    priority: '',
-    category: ''
+    status: 'all',
+    priority: 'all',
+    category: 'all'
   });
   const { user } = useAuth();
   
@@ -558,9 +558,9 @@ export default function SupportTicketsPage() {
       ticket.description.toLowerCase().includes(searchQuery.toLowerCase());
     
     // Filter by advanced filters
-    const matchesStatus = filters.status === '' || ticket.status === filters.status;
-    const matchesPriority = filters.priority === '' || ticket.priority === filters.priority;
-    const matchesCategory = filters.category === '' || ticket.category === filters.category;
+    const matchesStatus = filters.status === 'all' || ticket.status === filters.status;
+    const matchesPriority = filters.priority === 'all' || ticket.priority === filters.priority;
+    const matchesCategory = filters.category === 'all' || ticket.category === filters.category;
     
     // Filter by tab
     let matchesTab = true;
