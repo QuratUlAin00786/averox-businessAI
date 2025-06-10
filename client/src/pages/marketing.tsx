@@ -279,82 +279,92 @@ export default function Marketing() {
         
         {/* Campaigns Tab */}
         <TabsContent value="campaigns" className="mt-0">
-          <div className="rounded-md border">
-            <div className="bg-slate-50 p-4 text-sm font-medium text-slate-500 grid grid-cols-12 gap-4">
-              <div className="col-span-4">Campaign</div>
-              <div className="col-span-1 text-center">Status</div>
-              <div className="col-span-2 text-center">Sent</div>
-              <div className="col-span-3 text-center">Performance</div>
-              <div className="col-span-2 text-right">Actions</div>
+          <div className="rounded-md border overflow-hidden">
+            {/* Table Header */}
+            <div className="bg-slate-50 border-b">
+              <div className="grid grid-cols-12 gap-4 px-6 py-3 text-sm font-medium text-slate-600">
+                <div className="col-span-4">Campaign</div>
+                <div className="col-span-2 text-center">Status</div>
+                <div className="col-span-2 text-center">Sent</div>
+                <div className="col-span-2 text-center">Performance</div>
+                <div className="col-span-2 text-center">Actions</div>
+              </div>
             </div>
             
-            {campaigns.map((campaign) => (
-              <div key={campaign.id} className="p-4 border-t grid grid-cols-12 gap-4 items-center hover:bg-slate-50">
-                <div className="col-span-4">
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Mail className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{campaign.name}</div>
-                      <div className="text-sm text-slate-500">
-                        Last activity: {campaign.lastSent}
+            {/* Table Body */}
+            <div className="divide-y">
+              {campaigns.map((campaign) => (
+                <div key={campaign.id} className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-slate-50/50 transition-colors">
+                  {/* Campaign Info */}
+                  <div className="col-span-4 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Mail className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-gray-900 truncate">{campaign.name}</div>
+                        <div className="text-sm text-gray-500 truncate">
+                          Last activity: {campaign.lastSent}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="col-span-1 text-center">
-                  <Badge 
-                    className={
-                      campaign.status === 'active' 
-                        ? 'bg-green-50 text-green-700 border-green-200' 
+                  
+                  {/* Status */}
+                  <div className="col-span-2 flex justify-center">
+                    <Badge 
+                      variant="outline"
+                      className={
+                        campaign.status === 'active' 
+                          ? 'bg-green-50 text-green-700 border-green-200' 
+                          : campaign.status === 'scheduled'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                      }
+                    >
+                      {campaign.status === 'active' 
+                        ? 'Active' 
                         : campaign.status === 'scheduled'
-                        ? 'bg-blue-50 text-blue-700 border-blue-200'
-                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                    }
-                  >
-                    {campaign.status === 'active' 
-                      ? 'Active' 
-                      : campaign.status === 'scheduled'
-                      ? 'Scheduled'
-                      : 'Draft'
-                    }
-                  </Badge>
-                </div>
-                
-                <div className="col-span-2 text-center">
-                  <div className="font-medium">{campaign.sent.toLocaleString()}</div>
-                  <div className="text-xs text-slate-500">recipients</div>
-                </div>
-                
-                <div className="col-span-3">
-                  <div className="space-y-2">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Open Rate:</span>
-                        <span className="font-medium">{campaign.openRate}</span>
+                        ? 'Scheduled'
+                        : 'Draft'
+                      }
+                    </Badge>
+                  </div>
+                  
+                  {/* Sent */}
+                  <div className="col-span-2 text-center">
+                    <div className="font-semibold text-gray-900">{campaign.sent.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">recipients</div>
+                  </div>
+                  
+                  {/* Performance */}
+                  <div className="col-span-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600">Open Rate</span>
+                        <span className="font-medium text-gray-900">{campaign.openRate}</span>
                       </div>
-                      <Progress value={parseInt(campaign.openRate) || 0} className="h-1.5" />
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Click Rate:</span>
-                        <span className="font-medium">{campaign.clickRate}</span>
+                      <Progress value={parseInt(campaign.openRate) || 0} className="h-1" />
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600">Click Rate</span>
+                        <span className="font-medium text-gray-900">{campaign.clickRate}</span>
                       </div>
-                      <Progress value={parseInt(campaign.clickRate) || 0} className="h-1.5" />
+                      <Progress value={parseInt(campaign.clickRate) || 0} className="h-1" />
                     </div>
                   </div>
+                  
+                  {/* Actions */}
+                  <div className="col-span-2 flex justify-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setLocation(`/marketing/campaigns/${campaign.id}`)}>
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      View Report
+                    </Button>
+                  </div>
                 </div>
-                
-                <div className="col-span-2 flex justify-end space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => setLocation(`/marketing/campaigns/${campaign.id}`)}>
-                    Edit
-                  </Button>
-                  <Button variant="outline" size="sm">View Report</Button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </TabsContent>
         
