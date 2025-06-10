@@ -75,15 +75,19 @@ export default function Marketing() {
   const queryClient = useQueryClient();
 
   // Real API queries
-  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery({
+  const { data: campaignsData, isLoading: isLoadingCampaigns } = useQuery({
     queryKey: ['/api/marketing/campaigns'],
     queryFn: () => apiRequest('GET', '/api/marketing/campaigns'),
   });
 
-  const { data: automations = [], isLoading: isLoadingAutomations } = useQuery({
+  const { data: automationsData, isLoading: isLoadingAutomations } = useQuery({
     queryKey: ['/api/marketing/automations'],
     queryFn: () => apiRequest('GET', '/api/marketing/automations'),
   });
+
+  // Ensure data is always an array
+  const campaigns = Array.isArray(campaignsData) ? campaignsData : [];
+  const automations = Array.isArray(automationsData) ? automationsData : [];
 
   const { data: metrics, isLoading: isLoadingMetrics } = useQuery({
     queryKey: ['/api/marketing/metrics'],
