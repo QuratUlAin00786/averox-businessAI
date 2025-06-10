@@ -44,6 +44,9 @@ import {
   insertProposalCollaboratorSchema,
   insertProposalCommentSchema,
   insertProposalActivitySchema,
+  // Support ticket schemas
+  insertSupportTicketSchema,
+  supportTickets,
   // System types
   type MenuVisibilitySettings,
   type SystemSettings,
@@ -6494,6 +6497,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       handleError(res, error);
+    }
+  });
+
+  // Support Tickets API routes
+  app.get('/api/support-tickets', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const tickets = await db.select()
+        .from(supportTickets)
+        .where(eq(supportTickets.customerId, req.user.id))
+        .orderBy(desc(supportTickets.createdAt));
+      
+      res.json(tickets);
+    } catch (error) {
+      console.error('Error fetching support tickets:', error);
+      res.status(500).json({ error: "Failed to fetch support tickets" });
+    }
+  });
+
+  app.post('/api/support-tickets', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Map frontend category/priority values to database enum values
+      const categoryMap: { [key: string]: string } = {
+        'technical': 'technical',
+        'billing': 'billing',
+        'howto': 'general_inquiry',
+        'feature': 'feature_request',
+        'integration': 'technical',
+        'other': 'general_inquiry'
+      };
+
+      const priorityMap: { [key: string]: string } = {
+        'low': 'low',
+        'medium': 'medium',
+        'high': 'high',
+        'critical': 'critical'
+      };
+
+      const { title, description, category, priority } = req.body;
+
+      if (!title || !description || !category || !priority) {
+        return res.status(400).json({ 
+          error: "Missing required fields",
+          details: "title, description, category, and priority are required"
+        });
+      }
+
+      const ticketData = {
+        subject: title,
+        description: description,
+        customerId: req.user.id,
+        type: categoryMap[category] || 'general_inquiry',
+        priority: priorityMap[priority] || 'medium',
+        status: 'open' as const
+      };
+
+      const [newTicket] = await db.insert(supportTickets)
+        .values(ticketData)
+        .returning();
+
+      res.status(201).json(newTicket);
+    } catch (error) {
+      console.error('Error creating support ticket:', error);
+      res.status(500).json({ 
+        error: "Failed to create support ticket",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

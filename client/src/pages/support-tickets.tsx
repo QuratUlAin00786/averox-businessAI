@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Card, CardContent, CardDescription, CardFooter, 
   CardHeader, CardTitle 
@@ -501,6 +502,38 @@ const NewTicketDialog = ({ open, onOpenChange }: { open: boolean, onOpenChange: 
   const [ticketCategory, setTicketCategory] = useState('');
   const [ticketPriority, setTicketPriority] = useState('');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const createTicketMutation = useMutation({
+    mutationFn: async (ticketData: {
+      title: string;
+      description: string;
+      category: string;
+      priority: string;
+    }) => {
+      return await apiRequest('POST', '/api/support-tickets', ticketData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/support-tickets'] });
+      toast({
+        title: "Ticket created",
+        description: "Your support ticket has been submitted successfully.",
+      });
+      // Reset form
+      setTicketTitle('');
+      setTicketDescription('');
+      setTicketCategory('');
+      setTicketPriority('');
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error creating ticket",
+        description: error.message || "Failed to create support ticket. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
   
   const handleSubmit = () => {
     if (!ticketTitle || !ticketDescription || !ticketCategory || !ticketPriority) {
@@ -512,18 +545,12 @@ const NewTicketDialog = ({ open, onOpenChange }: { open: boolean, onOpenChange: 
       return;
     }
     
-    // In a real implementation, this would send the ticket data to the API
-    toast({
-      title: "Ticket created",
-      description: "Your support ticket has been submitted successfully.",
+    createTicketMutation.mutate({
+      title: ticketTitle,
+      description: ticketDescription,
+      category: ticketCategory,
+      priority: ticketPriority
     });
-    
-    // Reset form
-    setTicketTitle('');
-    setTicketDescription('');
-    setTicketCategory('');
-    setTicketPriority('');
-    onOpenChange(false);
   };
   
   return (
@@ -606,8 +633,8 @@ const NewTicketDialog = ({ open, onOpenChange }: { open: boolean, onOpenChange: 
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="button" onClick={handleSubmit}>
-            Submit Ticket
+          <Button type="button" onClick={handleSubmit} disabled={createTicketMutation.isPending}>
+            {createTicketMutation.isPending ? "Creating..." : "Submit Ticket"}
           </Button>
         </DialogFooter>
       </DialogContent>
