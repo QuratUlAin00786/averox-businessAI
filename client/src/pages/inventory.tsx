@@ -1307,7 +1307,7 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
               {/* Sort By */}
               <div className="space-y-2">
                 <Label htmlFor="sortBy">Sort By</Label>
-                <Select value={sortBy} onValueChange={setSortBy}>
+                <Select value={sortField} onValueChange={setSortField}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select sort field" />
                   </SelectTrigger>
@@ -1324,7 +1324,7 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
               {/* Sort Order */}
               <div className="space-y-2">
                 <Label htmlFor="sortOrder">Sort Order</Label>
-                <Select value={sortOrder} onValueChange={setSortOrder}>
+                <Select value={sortDirection} onValueChange={setSortDirection}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select sort order" />
                   </SelectTrigger>
@@ -1340,8 +1340,8 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                 <Button 
                   variant="outline" 
                   onClick={() => {
-                    setSortBy("name");
-                    setSortOrder("asc");
+                    setSortField("name");
+                    setSortDirection("asc");
                     toast({
                       title: "Sort Reset",
                       description: "Sort options have been reset to default",
@@ -1354,7 +1354,7 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                   setIsSortDialogOpen(false);
                   toast({
                     title: "Sort Applied",
-                    description: `Products sorted by ${sortBy} in ${sortOrder === 'asc' ? 'ascending' : 'descending'} order`,
+                    description: `Products sorted by ${sortField} in ${sortDirection === 'asc' ? 'ascending' : 'descending'} order`,
                   });
                 }}>
                   Apply Sort
