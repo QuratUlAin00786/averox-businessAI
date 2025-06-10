@@ -61,6 +61,7 @@ import WorkflowBuilder from "@/pages/marketing/workflow-builder";
 import SegmentBuilder from "@/pages/marketing/segment-builder";
 import EmailTemplateEditor from "@/pages/marketing/email-template-editor";
 import EngagementAnalytics from "@/pages/marketing/engagement-analytics";
+import MarketingReports from "@/pages/marketing/reports";
 import Manufacturing from "@/pages/Manufacturing";
 import InvoicePayment from "@/pages/InvoicePayment";
 import SecurityPage from "@/pages/security";
@@ -409,6 +410,12 @@ function Router() {
       <ProtectedRoute path="/marketing/engagement" component={() => (
         <Layout>
           <EngagementAnalytics />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing/reports" component={() => (
+        <Layout>
+          <MarketingReports />
         </Layout>
       )} />
       
