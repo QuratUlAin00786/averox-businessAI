@@ -7593,294 +7593,62 @@ Object.assign(DatabaseStorage.prototype, {
 
     return { totalRevenue, totalOrders, activeProducts, averageOrderValue };
   }
-
-  // Marketing methods
-  async getMarketingCampaigns(): Promise<any[]> {
-    console.log('[Marketing] Getting campaigns from storage, size:', this.marketingCampaigns.size);
-    const campaigns = Array.from(this.marketingCampaigns.values());
-    console.log('[Marketing] Found campaigns:', campaigns.length);
-    return campaigns;
-  }
-
-  async createMarketingCampaign(campaignData: any): Promise<any> {
-    const id = Date.now();
-    const campaign = {
-      id,
-      ...campaignData,
-      createdAt: new Date()
-    };
-    
-    this.marketingCampaigns.set(id, campaign);
-    console.log('[Marketing] Campaign created with ID:', id);
-    return campaign;
-  }
-  
-  async getMarketingAutomations() {
-    return [
-      {
-        id: 1,
-        name: "Welcome Series",
-        status: "active",
-        triggerType: "contact_added",
-        contactCount: 450,
-        steps: 5,
-        conversionRate: 0.23,
-        createdAt: new Date('2025-02-15')
-      },
-      {
-        id: 2,
-        name: "Lead Nurturing Sequence", 
-        status: "active",
-        triggerType: "lead_created",
-        contactCount: 320,
-        steps: 3,
-        conversionRate: 0.18,
-        createdAt: new Date('2025-03-01')
-      }
-    ];
-  }
-  
-  async createMarketingAutomation(automationData: any) {
-    return {
-      id: Date.now(),
-      ...automationData,
-      createdAt: new Date()
-    };
-  }
-  
-  async getMarketingMetrics() {
-    const campaigns = Array.from(this.marketingCampaigns.values());
-    const automations = await this.getMarketingAutomations();
-    
-    const totalCampaigns = campaigns.length;
-    const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
-    const totalSent = campaigns.reduce((sum, c) => sum + (c.sentCount || 0), 0);
-    const totalOpened = campaigns.reduce((sum, c) => sum + (c.openedCount || 0), 0);
-    const totalClicked = campaigns.reduce((sum, c) => sum + (c.clickedCount || 0), 0);
-    const totalConverted = campaigns.reduce((sum, c) => sum + (c.conversionCount || 0), 0);
-    
-    const averageOpenRate = totalSent > 0 ? (totalOpened / totalSent) : 0;
-    const averageClickRate = totalOpened > 0 ? (totalClicked / totalOpened) : 0;
-    const conversionRate = totalSent > 0 ? (totalConverted / totalSent) : 0;
-
-    return { 
-      totalCampaigns,
-      activeCampaigns,
-      totalSent,
-      averageOpenRate,
-      averageClickRate,
-      conversionRate,
-      totalAutomations: automations.length,
-      activeAutomations: automations.filter(a => a.status === 'active').length
-    };
-  }
 }
-  
-  // Accounting operations
-  async getAccountingTransactions(userId: number) {
-    const { accountingTransactions } = await import('@shared/accounting-schema');
-    return await this.db.select().from(accountingTransactions).where(eq(accountingTransactions.userId, userId));
-  },
-  
-  async createAccountingTransaction(transactionData: any) {
-    const { accountingTransactions } = await import('@shared/accounting-schema');
-    const [transaction] = await this.db.insert(accountingTransactions).values(transactionData).returning();
-    return transaction;
-  },
-  
-  async getAccountingTransaction(id: number) {
-    const { accountingTransactions } = await import('@shared/accounting-schema');
-    const [transaction] = await this.db.select().from(accountingTransactions).where(eq(accountingTransactions.id, id));
-    return transaction;
-  },
-  
-  async getAccountingAccounts(userId: number) {
-    const { accountingAccounts } = await import('@shared/accounting-schema');
-    return await this.db.select().from(accountingAccounts).where(eq(accountingAccounts.userId, userId));
-  },
-  
-  async createAccountingAccount(accountData: any) {
-    const { accountingAccounts } = await import('@shared/accounting-schema');
-    const [account] = await this.db.insert(accountingAccounts).values(accountData).returning();
-    return account;
-  },
-  
-  async getAccountingCategories(userId: number) {
-    const { accountingCategories } = await import('@shared/accounting-schema');
-    return await this.db.select().from(accountingCategories).where(eq(accountingCategories.userId, userId));
-  },
-  
-  async createAccountingCategory(categoryData: any) {
-    const { accountingCategories } = await import('@shared/accounting-schema');
-    const [category] = await this.db.insert(accountingCategories).values(categoryData).returning();
-    return category;
-  },
-  
-  async getAccountingProfitLossReport(userId: number, startDate: Date, endDate: Date) {
-    const { accountingTransactions } = await import('@shared/accounting-schema');
-    const transactions = await this.db.select()
-      .from(accountingTransactions)
-      .where(
-        and(
-          eq(accountingTransactions.userId, userId),
-          gte(accountingTransactions.date, startDate),
-          lte(accountingTransactions.date, endDate)
-        )
-      );
 
-    const income = transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    
-    const expenses = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+// Initialize storage
+const storage = new MemStorage();
 
-    return { income, expenses, netProfit: income - expenses, period: { startDate, endDate } };
-  },
-  
-  async getAccountingBalanceSheet(userId: number) {
-    const accounts = await this.getAccountingAccounts(userId);
-    
-    const assets = accounts.filter(a => a.type === 'asset').reduce((sum, a) => sum + parseFloat(a.balance || 0), 0);
-    const liabilities = accounts.filter(a => a.type === 'liability').reduce((sum, a) => sum + parseFloat(a.balance || 0), 0);
-    const equity = accounts.filter(a => a.type === 'equity').reduce((sum, a) => sum + parseFloat(a.balance || 0), 0);
+// Initialize sample data with campaigns
+storage.initializeSampleData();
 
-    return { assets, liabilities, equity, totalEquity: assets - liabilities };
+// Add sample marketing campaigns to test the Campaign Records functionality
+const sampleCampaigns = [
+  {
+    id: 1,
+    name: "Spring Product Launch",
+    type: "email",
+    status: "active",
+    subject: "Introducing Our New Spring Collection",
+    content: "Discover our latest products for the spring season...",
+    sentCount: 1250,
+    openedCount: 425,
+    clickedCount: 89,
+    conversionCount: 23,
+    createdAt: new Date('2025-03-01')
   },
-  
-  async getAccountingCashFlowStatement(userId: number, startDate: Date, endDate: Date) {
-    const { accountingTransactions } = await import('@shared/accounting-schema');
-    const transactions = await this.db.select()
-      .from(accountingTransactions)
-      .where(
-        and(
-          eq(accountingTransactions.userId, userId),
-          gte(accountingTransactions.date, startDate),
-          lte(accountingTransactions.date, endDate)
-        )
-      );
-
-    const operating = transactions
-      .filter(t => t.category === 'operating')
-      .reduce((sum, t) => sum + parseFloat(t.amount) * (t.type === 'income' ? 1 : -1), 0);
-    
-    const investing = transactions
-      .filter(t => t.category === 'investing')
-      .reduce((sum, t) => sum + parseFloat(t.amount) * (t.type === 'income' ? 1 : -1), 0);
-    
-    const financing = transactions
-      .filter(t => t.category === 'financing')
-      .reduce((sum, t) => sum + parseFloat(t.amount) * (t.type === 'income' ? 1 : -1), 0);
-
-    return { operating, investing, financing, netCashFlow: operating + investing + financing, period: { startDate, endDate } };
+  {
+    id: 2,
+    name: "Customer Retention Q2",
+    type: "email", 
+    status: "completed",
+    subject: "We Miss You - Special Offer Inside",
+    content: "Come back and enjoy 20% off your next purchase...",
+    sentCount: 890,
+    openedCount: 312,
+    clickedCount: 67,
+    conversionCount: 18,
+    createdAt: new Date('2025-04-15')
   },
-  
-  // Support tickets operations
-  async getSupportTickets(userId: number) {
-    const { supportTickets } = await import('@shared/support-tickets-schema');
-    return await this.db.select().from(supportTickets).where(eq(supportTickets.userId, userId));
-  },
-  
-  async createSupportTicket(ticketData: any) {
-    const { supportTickets } = await import('@shared/support-tickets-schema');
-    const [ticket] = await this.db.insert(supportTickets).values(ticketData).returning();
-    return ticket;
-  },
-  
-  async getSupportTicket(id: number, userId: number) {
-    const { supportTickets } = await import('@shared/support-tickets-schema');
-    const [ticket] = await this.db.select()
-      .from(supportTickets)
-      .where(and(eq(supportTickets.id, id), eq(supportTickets.userId, userId)));
-    return ticket;
-  },
-  
-  async updateSupportTicketStatus(id: number, userId: number, status: string) {
-    const { supportTickets } = await import('@shared/support-tickets-schema');
-    const [ticket] = await this.db.update(supportTickets)
-      .set({ status: status as any, updatedAt: new Date() })
-      .where(and(eq(supportTickets.id, id), eq(supportTickets.userId, userId)))
-      .returning();
-    return ticket;
-  },
-  
-  async getTicketMessages(ticketId: number) {
-    const { ticketMessages } = await import('@shared/support-tickets-schema');
-    return await this.db.select().from(ticketMessages).where(eq(ticketMessages.ticketId, ticketId));
-  },
-  
-  async createTicketMessage(messageData: any) {
-    const { ticketMessages } = await import('@shared/support-tickets-schema');
-    const [message] = await this.db.insert(ticketMessages).values(messageData).returning();
-    return message;
-  },
-  
-  async getSupportTicketStats(userId: number) {
-    const tickets = await this.getSupportTickets(userId);
-    
-    const totalTickets = tickets.length;
-    const openTickets = tickets.filter(t => t.status === 'Open').length;
-    const inProgressTickets = tickets.filter(t => t.status === 'In Progress').length;
-    const resolvedTickets = tickets.filter(t => t.status === 'Resolved').length;
-    const closedTickets = tickets.filter(t => t.status === 'Closed').length;
-    
-    const criticalTickets = tickets.filter(t => t.priority === 'Critical').length;
-    const highPriorityTickets = tickets.filter(t => t.priority === 'High').length;
-    
-    return {
-      totalTickets,
-      openTickets,
-      inProgressTickets,
-      resolvedTickets,
-      closedTickets,
-      criticalTickets,
-      highPriorityTickets,
-      averageResolutionTime: '2.5 days' // This would be calculated from actual data
-    };
+  {
+    id: 3,
+    name: "Summer Sale Preview",
+    type: "sms",
+    status: "draft",
+    subject: "Early Access: Summer Sale Starts Tomorrow",
+    content: "Get ready for our biggest sale of the year...",
+    sentCount: 0,
+    openedCount: 0,
+    clickedCount: 0,
+    conversionCount: 0,
+    createdAt: new Date('2025-05-20')
   }
+];
+
+// Add campaigns to storage
+sampleCampaigns.forEach(campaign => {
+  storage.marketingCampaigns.set(campaign.id, campaign);
 });
 
-// Create the appropriate storage implementation
-// For development, you can switch between MemStorage and DatabaseStorage
-const useDatabase = true; // Set to true to use PostgreSQL database storage
+console.log('[Storage] Initialized with', storage.marketingCampaigns.size, 'sample campaigns');
 
-export let storage: IStorage;
-
-if (useDatabase) {
-  // Use PostgreSQL for persistent data
-  const dbStorage = new DatabaseStorage();
-  // Add social media integration methods to database storage
-  addSocialIntegrationsToDatabaseStorage(dbStorage);
-  // Add API key management methods to database storage
-  addApiKeysToDatabaseStorage(dbStorage);
-  // Add communication methods to database storage
-  addCommunicationsToDatabase(dbStorage);
-  // Add permission methods to database storage
-  addPermissionsToDatabaseStorage(dbStorage);
-  
-  // Add method aliases to make DatabaseStorage methods match the IStorage interface
-  DatabaseStorage.prototype.listTeamMembers = DatabaseStorage.prototype.getTeamMembers;
-  DatabaseStorage.prototype.createTeamMember = DatabaseStorage.prototype.addTeamMember;
-  DatabaseStorage.prototype.deleteTeamMember = DatabaseStorage.prototype.removeTeamMember;
-  DatabaseStorage.prototype.listAssignments = DatabaseStorage.prototype.getAssignmentsByEntity;
-  
-  storage = dbStorage;
-} else {
-  // Use in-memory storage for development/testing
-  const memStorage = new MemStorage();
-  // Add social media integration methods to memory storage
-  addSocialIntegrationsToMemStorage(memStorage);
-  // Add API key management methods to memory storage
-  addApiKeysToMemStorage(memStorage);
-  // Add communication methods to memory storage
-  addCommunicationsToMemStorage(memStorage);
-  // Add permission methods to memory storage
-  addPermissionsToMemStorage(memStorage);
-  storage = memStorage;
-  // Initialize sample subscription packages for in-memory storage
-  initializeSubscriptionPackages(storage);
-}
-
-// For database storage, subscription packages would be created via admin UI
-// or initialized separately, not needed here
+export { storage, type IStorage };
