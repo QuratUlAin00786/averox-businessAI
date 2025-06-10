@@ -526,6 +526,8 @@ export class MemStorage implements IStorage {
   private socialMessages: Map<number, SocialMessage>;
   private leadSources: Map<number, LeadSource>;
   private socialCampaigns: Map<number, SocialCampaign>;
+  private marketingCampaigns: Map<number, any>;
+  private marketingAutomations: Map<number, any>;
   private apiKeys: Map<number, ApiKey>;
   private workflows: Map<number, Workflow>;
   // Communications map already initialized
@@ -620,6 +622,8 @@ export class MemStorage implements IStorage {
     this.socialMessages = new Map();
     this.leadSources = new Map();
     this.socialCampaigns = new Map();
+    this.marketingCampaigns = new Map();
+    this.marketingAutomations = new Map();
     this.apiKeys = new Map();
     this.workflows = new Map();
     this.systemSettingsMap = new Map();
@@ -3294,42 +3298,55 @@ export class MemStorage implements IStorage {
 
   // Marketing Methods
   async getMarketingCampaigns(): Promise<any[]> {
-    return [
-      {
-        id: 1,
-        name: "Spring Product Launch",
-        type: "email",
-        status: "active",
-        recipientCount: 2500,
-        sentCount: 2500,
-        openedCount: 1850,
-        clickedCount: 425,
-        conversionCount: 85,
-        createdAt: new Date('2025-03-01'),
-        scheduledAt: null
-      },
-      {
-        id: 2,
-        name: "Customer Retention Campaign",
-        type: "automation",
-        status: "active",
-        recipientCount: 1200,
-        sentCount: 1200,
-        openedCount: 960,
-        clickedCount: 288,
-        conversionCount: 72,
-        createdAt: new Date('2025-03-15'),
-        scheduledAt: null
-      }
-    ];
+    // Get all stored campaigns
+    const campaigns = Array.from(this.marketingCampaigns.values());
+    
+    // Include default campaigns if no campaigns exist
+    if (campaigns.length === 0) {
+      return [
+        {
+          id: 1,
+          name: "Spring Product Launch",
+          type: "email",
+          status: "active",
+          recipientCount: 2500,
+          sentCount: 2500,
+          openedCount: 1850,
+          clickedCount: 425,
+          conversionCount: 85,
+          createdAt: new Date('2025-03-01'),
+          scheduledAt: null
+        },
+        {
+          id: 2,
+          name: "Customer Retention Campaign",
+          type: "automation",
+          status: "active",
+          recipientCount: 1200,
+          sentCount: 1200,
+          openedCount: 960,
+          clickedCount: 288,
+          conversionCount: 72,
+          createdAt: new Date('2025-03-15'),
+          scheduledAt: null
+        }
+      ];
+    }
+    
+    return campaigns;
   }
 
   async createMarketingCampaign(campaignData: any): Promise<any> {
-    return {
+    const campaign = {
       id: Date.now(),
       ...campaignData,
       createdAt: new Date()
     };
+    
+    // Store the campaign in the map
+    this.marketingCampaigns.set(campaign.id, campaign);
+    
+    return campaign;
   }
 
   async getMarketingAutomations(): Promise<any[]> {
