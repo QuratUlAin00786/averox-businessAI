@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Search, Filter, DownloadCloud, Eye } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const SAMPLE_TRANSACTIONS = [
   {
@@ -106,6 +107,80 @@ export default function TransactionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [transactionType, setTransactionType] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const { toast } = useToast();
+
+  const handleDownloadCSV = () => {
+    try {
+      console.log("Download CSV button clicked");
+      
+      // Generate CSV content from filtered transactions
+      const csvRows = [];
+      
+      // Header
+      csvRows.push(["AVEROX CRM - Transactions Report"]);
+      csvRows.push([`Generated on: ${new Date().toLocaleString()}`]);
+      csvRows.push([`Total Transactions: ${filteredTransactions.length}`]);
+      csvRows.push([""]);
+      
+      // Column headers
+      csvRows.push(["Transaction ID", "Date", "Type", "Description", "Amount", "Reference", "Status"]);
+      
+      // Transaction data
+      filteredTransactions.forEach(transaction => {
+        csvRows.push([
+          transaction.id,
+          formatDate(transaction.date),
+          transaction.type,
+          transaction.description,
+          formatCurrency(transaction.amount),
+          transaction.reference,
+          transaction.status
+        ]);
+      });
+      
+      // Convert to CSV format
+      const csvContent = csvRows.map(row => 
+        row.map(cell => 
+          typeof cell === 'string' ? `"${cell.replace(/"/g, '""')}"` : cell
+        ).join(',')
+      ).join('\n');
+      
+      // Create and trigger download
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `transactions_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.display = "none";
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      toast({
+        title: "Download Successful",
+        description: "Transactions report has been downloaded",
+      });
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download transactions report. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewTransaction = (transactionId: string) => {
+    toast({
+      title: "Transaction Details",
+      description: `Viewing details for transaction ${transactionId}`,
+    });
+  };
 
   // Filter transactions based on search query and filters
   const filteredTransactions = SAMPLE_TRANSACTIONS.filter(transaction => {
@@ -181,7 +256,11 @@ export default function TransactionsPage() {
                   <SelectItem value="failed">Failed</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={handleDownloadCSV}
+              >
                 <DownloadCloud size={16} />
               </Button>
             </div>
@@ -223,7 +302,11 @@ export default function TransactionsPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleViewTransaction(transaction.id)}
+                      >
                         <Eye size={16} />
                       </Button>
                     </TableCell>
