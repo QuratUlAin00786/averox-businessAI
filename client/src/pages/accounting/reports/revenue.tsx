@@ -5,9 +5,11 @@ import { ArrowLeft, Printer, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function RevenueReport() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8">
@@ -31,7 +33,85 @@ export default function RevenueReport() {
         <Button variant="outline" className="flex items-center gap-2">
           <Printer size={16} /> Print Report
         </Button>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={() => {
+            try {
+              // Generate comprehensive revenue report CSV
+              const csvRows = [];
+              
+              // Header information
+              csvRows.push(["AVEROX CRM - Revenue Report"]);
+              csvRows.push([`Generated on: ${new Date().toLocaleString()}`]);
+              csvRows.push([`Period: Current Fiscal Year`]);
+              csvRows.push([""]);
+              
+              // Revenue Summary
+              csvRows.push(["REVENUE SUMMARY"]);
+              csvRows.push(["Metric", "Amount"]);
+              csvRows.push(["Total Revenue", "$24,500.00"]);
+              csvRows.push([""]);
+              
+              // Revenue by Category
+              csvRows.push(["REVENUE BY CATEGORY"]);
+              csvRows.push(["Category", "Amount"]);
+              csvRows.push(["Product Sales", "$16,800.00"]);
+              csvRows.push(["Services", "$5,200.00"]);
+              csvRows.push(["Subscriptions", "$2,500.00"]);
+              csvRows.push([""]);
+              
+              // Revenue by Status
+              csvRows.push(["REVENUE BY STATUS"]);
+              csvRows.push(["Status", "Amount"]);
+              csvRows.push(["Collected", "$18,180.00"]);
+              csvRows.push(["Outstanding", "$5,070.00"]);
+              csvRows.push(["Overdue", "$1,250.00"]);
+              csvRows.push([""]);
+              
+              // Monthly Breakdown
+              csvRows.push(["MONTHLY BREAKDOWN"]);
+              csvRows.push(["Month", "Revenue", "Status", "Invoices"]);
+              csvRows.push(["January 2025", "$4,200.00", "Closed", "15 invoices"]);
+              csvRows.push(["February 2025", "$4,850.00", "Closed", "18 invoices"]);
+              csvRows.push(["March 2025", "$5,100.00", "Closed", "19 invoices"]);
+              csvRows.push(["April 2025", "$5,670.00", "Current", "21 invoices"]);
+              csvRows.push(["May 2025", "$4,680.00", "Projected", "Estimated"]);
+              
+              // Convert to CSV content
+              const csvContent = csvRows.map(row => 
+                row.map(cell => 
+                  typeof cell === 'string' ? `"${cell.replace(/"/g, '""')}"` : cell
+                ).join(',')
+              ).join('\n');
+              
+              // Create and trigger download
+              const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.setAttribute("href", url);
+              link.setAttribute("download", `averox_revenue_report_${new Date().toISOString().split('T')[0]}.csv`);
+              
+              // Append link, trigger download, then clean up
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+              
+              toast({
+                title: "Download Successful",
+                description: "Revenue report has been downloaded",
+              });
+            } catch (error) {
+              console.error("Download failed:", error);
+              toast({
+                title: "Download Failed", 
+                description: "Failed to download revenue report. Please try again.",
+                variant: "destructive",
+              });
+            }
+          }}
+        >
           <Download size={16} /> Download CSV
         </Button>
       </div>
