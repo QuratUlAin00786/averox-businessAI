@@ -36,7 +36,12 @@ export default function RevenueReport() {
         <Button 
           variant="outline" 
           className="flex items-center gap-2"
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log("Download CSV button clicked");
+            
             try {
               // Generate comprehensive revenue report CSV
               const csvRows = [];
@@ -78,6 +83,8 @@ export default function RevenueReport() {
               csvRows.push(["April 2025", "$5,670.00", "Current", "21 invoices"]);
               csvRows.push(["May 2025", "$4,680.00", "Projected", "Estimated"]);
               
+              console.log("CSV data prepared:", csvRows.length, "rows");
+              
               // Convert to CSV content
               const csvContent = csvRows.map(row => 
                 row.map(cell => 
@@ -85,30 +92,52 @@ export default function RevenueReport() {
                 ).join(',')
               ).join('\n');
               
+              console.log("CSV content generated, length:", csvContent.length);
+              
               // Create and trigger download
               const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
               const url = URL.createObjectURL(blob);
               const link = document.createElement("a");
               link.setAttribute("href", url);
               link.setAttribute("download", `averox_revenue_report_${new Date().toISOString().split('T')[0]}.csv`);
+              link.style.display = "none";
               
               // Append link, trigger download, then clean up
               document.body.appendChild(link);
+              console.log("Triggering download...");
               link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
               
-              toast({
-                title: "Download Successful",
-                description: "Revenue report has been downloaded",
-              });
+              // Clean up after a short delay
+              setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                console.log("Download cleanup completed");
+              }, 100);
+              
+              // Show success message if toast is available
+              if (toast) {
+                toast({
+                  title: "Download Successful",
+                  description: "Revenue report has been downloaded",
+                });
+              } else {
+                console.log("Toast not available, download should have started");
+                alert("Revenue report download started!");
+              }
             } catch (error) {
               console.error("Download failed:", error);
-              toast({
-                title: "Download Failed", 
-                description: "Failed to download revenue report. Please try again.",
-                variant: "destructive",
-              });
+              
+              // Show error message if toast is available
+              if (toast) {
+                toast({
+                  title: "Download Failed", 
+                  description: "Failed to download revenue report. Please try again.",
+                  variant: "destructive",
+                });
+              } else {
+                console.error("Toast not available, showing alert");
+                alert("Download failed: " + error.message);
+              }
             }
           }}
         >
