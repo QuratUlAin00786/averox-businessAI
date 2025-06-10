@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Search, Filter, DownloadCloud, Eye } from 'lucide-react';
+import { ArrowLeft, Search, Filter, DownloadCloud, Eye, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 const SAMPLE_TRANSACTIONS = [
   {
@@ -107,6 +108,8 @@ export default function TransactionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [transactionType, setTransactionType] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleDownloadCSV = () => {
@@ -176,10 +179,11 @@ export default function TransactionsPage() {
   };
 
   const handleViewTransaction = (transactionId: string) => {
-    toast({
-      title: "Transaction Details",
-      description: `Viewing details for transaction ${transactionId}`,
-    });
+    const transaction = filteredTransactions.find(t => t.id === transactionId);
+    if (transaction) {
+      setSelectedTransaction(transaction);
+      setIsDialogOpen(true);
+    }
   };
 
   // Filter transactions based on search query and filters
@@ -326,6 +330,89 @@ export default function TransactionsPage() {
           </div>
         </CardFooter>
       </Card>
+
+      {/* Transaction Details Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Transaction Details</DialogTitle>
+            <DialogDescription>
+              View complete details for transaction {selectedTransaction?.id}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedTransaction && (
+            <div className="space-y-6">
+              {/* Transaction Summary */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Transaction ID</label>
+                  <p className="text-lg font-semibold">{selectedTransaction.id}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <p className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                    selectedTransaction.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                    selectedTransaction.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedTransaction.status}
+                  </p>
+                </div>
+              </div>
+
+              {/* Financial Details */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Amount</label>
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatCurrency(selectedTransaction.amount)}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Transaction Type</label>
+                  <p className="text-lg">{selectedTransaction.type}</p>
+                </div>
+              </div>
+
+              {/* Transaction Details */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Description</label>
+                  <p className="text-base">{selectedTransaction.description}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Date</label>
+                    <p className="text-base">{formatDate(selectedTransaction.date)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Reference</label>
+                    <p className="text-base font-mono">{selectedTransaction.reference}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Close
+                </Button>
+                <Button onClick={() => {
+                  toast({
+                    title: "Transaction Updated",
+                    description: `Transaction ${selectedTransaction.id} has been processed`,
+                  });
+                  setIsDialogOpen(false);
+                }}>
+                  Process Transaction
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
