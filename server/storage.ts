@@ -3291,6 +3291,105 @@ export class MemStorage implements IStorage {
   async deleteWorkflow(id: number): Promise<boolean> {
     return this.workflows.delete(id);
   }
+
+  // Marketing Methods
+  async getMarketingCampaigns(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        name: "Spring Product Launch",
+        type: "email",
+        status: "active",
+        recipientCount: 2500,
+        sentCount: 2500,
+        openedCount: 1850,
+        clickedCount: 425,
+        conversionCount: 85,
+        createdAt: new Date('2025-03-01'),
+        scheduledAt: null
+      },
+      {
+        id: 2,
+        name: "Customer Retention Campaign",
+        type: "automation",
+        status: "active",
+        recipientCount: 1200,
+        sentCount: 1200,
+        openedCount: 960,
+        clickedCount: 288,
+        conversionCount: 72,
+        createdAt: new Date('2025-03-15'),
+        scheduledAt: null
+      }
+    ];
+  }
+
+  async createMarketingCampaign(campaignData: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...campaignData,
+      createdAt: new Date()
+    };
+  }
+
+  async getMarketingAutomations(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        name: "Welcome Series",
+        status: "active",
+        triggerType: "contact_added",
+        contactCount: 450,
+        steps: 5,
+        conversionRate: 0.23,
+        createdAt: new Date('2025-02-15')
+      },
+      {
+        id: 2,
+        name: "Lead Nurturing Sequence",
+        status: "active",
+        triggerType: "lead_created",
+        contactCount: 320,
+        steps: 3,
+        conversionRate: 0.18,
+        createdAt: new Date('2025-03-01')
+      }
+    ];
+  }
+
+  async createMarketingAutomation(automationData: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...automationData,
+      createdAt: new Date()
+    };
+  }
+
+  async getMarketingMetrics(): Promise<any> {
+    const campaigns = await this.getMarketingCampaigns();
+    const automations = await this.getMarketingAutomations();
+    
+    const totalCampaigns = campaigns.length;
+    const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
+    const totalSent = campaigns.reduce((sum, c) => sum + (c.sentCount || 0), 0);
+    const totalOpened = campaigns.reduce((sum, c) => sum + (c.openedCount || 0), 0);
+    const totalClicked = campaigns.reduce((sum, c) => sum + (c.clickedCount || 0), 0);
+    
+    const openRate = totalSent > 0 ? (totalOpened / totalSent) * 100 : 0;
+    const clickRate = totalOpened > 0 ? (totalClicked / totalOpened) * 100 : 0;
+    
+    return {
+      totalCampaigns,
+      activeCampaigns,
+      totalSent,
+      totalOpened,
+      totalClicked,
+      openRate: Math.round(openRate * 100) / 100,
+      clickRate: Math.round(clickRate * 100) / 100,
+      totalAutomations: automations.length,
+      activeAutomations: automations.filter(a => a.status === 'active').length
+    };
+  }
 }
 
 // Initialize default subscription packages
