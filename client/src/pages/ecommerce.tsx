@@ -697,6 +697,61 @@ export default function EcommercePage() {
       description: `Syncing data from ${store.name}. This may take a few minutes.`,
     });
   };
+
+  const handleExportProducts = () => {
+    const csvHeaders = ['Product Name', 'SKU', 'Price', 'Inventory', 'Status', 'Store'];
+    const csvData = filteredProducts.map(product => [
+      product.title,
+      product.sku,
+      `$${product.price.toFixed(2)}`,
+      product.inventory.toString(),
+      product.status,
+      product.store
+    ]);
+    
+    const csvContent = [csvHeaders, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `products_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    toast({
+      title: "Export complete",
+      description: "Products have been exported to CSV file.",
+    });
+  };
+
+  const handleExportOrders = () => {
+    const csvHeaders = ['Order Number', 'Customer Name', 'Customer Email', 'Status', 'Total', 'Store', 'Date'];
+    const csvData = orders.map(order => [
+      order.orderNumber,
+      order.customer.name,
+      order.customer.email,
+      order.status,
+      `$${order.total.toFixed(2)}`,
+      order.store,
+      new Date(order.createdAt).toLocaleDateString()
+    ]);
+    
+    const csvContent = [csvHeaders, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `orders_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    toast({
+      title: "Export complete",
+      description: "Orders have been exported to CSV file.",
+    });
+  };
   
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -1331,10 +1386,10 @@ export default function EcommercePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={handleExportProducts}>
                     <Download className="mr-2 h-4 w-4" /> Export Products
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={handleExportOrders}>
                     <Download className="mr-2 h-4 w-4" /> Export Orders
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
