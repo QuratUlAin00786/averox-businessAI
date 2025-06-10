@@ -54,8 +54,14 @@ export function registerMarketingRoutes(app: Express) {
     try {
       console.log('[Marketing] Fetching all campaigns');
       const campaigns = await storage.getMarketingCampaigns();
-      console.log(`[Marketing] Successfully retrieved ${campaigns.length} campaigns`);
-      res.json(campaigns);
+      console.log('[Marketing] Campaigns data type:', typeof campaigns);
+      console.log('[Marketing] Campaigns is array:', Array.isArray(campaigns));
+      console.log('[Marketing] Campaigns data:', JSON.stringify(campaigns, null, 2));
+      
+      // Ensure we always return an array
+      const campaignsArray = Array.isArray(campaigns) ? campaigns : [];
+      console.log(`[Marketing] Successfully retrieved ${campaignsArray.length} campaigns`);
+      res.json(campaignsArray);
     } catch (error) {
       console.error('[Marketing] Error fetching campaigns:', error);
       handleError(res, error);
@@ -85,8 +91,13 @@ export function registerMarketingRoutes(app: Express) {
     try {
       console.log('[Marketing] Fetching all automations');
       const automations = await storage.getMarketingAutomations();
-      console.log(`[Marketing] Successfully retrieved ${automations.length} automations`);
-      res.json(automations);
+      console.log('[Marketing] Automations data type:', typeof automations);
+      console.log('[Marketing] Automations is array:', Array.isArray(automations));
+      
+      // Ensure we always return an array
+      const automationsArray = Array.isArray(automations) ? automations : [];
+      console.log(`[Marketing] Successfully retrieved ${automationsArray.length} automations`);
+      res.json(automationsArray);
     } catch (error) {
       console.error('[Marketing] Error fetching automations:', error);
       handleError(res, error);
