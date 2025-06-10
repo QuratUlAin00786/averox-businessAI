@@ -545,6 +545,91 @@ const SyncSettingsDialog = ({ open, onOpenChange, store }: { open: boolean, onOp
   );
 };
 
+interface FilterDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  statusFilter: string;
+  setStatusFilter: (status: string) => void;
+  priceRangeFilter: { min: string; max: string };
+  setPriceRangeFilter: (range: { min: string; max: string }) => void;
+}
+
+function FilterDialog({ 
+  open, 
+  onOpenChange, 
+  statusFilter, 
+  setStatusFilter, 
+  priceRangeFilter, 
+  setPriceRangeFilter 
+}: FilterDialogProps) {
+  const handleApplyFilters = () => {
+    onOpenChange(false);
+  };
+
+  const handleClearFilters = () => {
+    setStatusFilter('all');
+    setPriceRangeFilter({ min: '', max: '' });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Filter Products</DialogTitle>
+          <DialogDescription>
+            Set filters to refine your product search results.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="status">Status</Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label>Price Range</Label>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  type="number"
+                  placeholder="Min price"
+                  value={priceRangeFilter.min}
+                  onChange={(e) => setPriceRangeFilter({ ...priceRangeFilter, min: e.target.value })}
+                />
+              </div>
+              <div className="flex-1">
+                <Input
+                  type="number"
+                  placeholder="Max price"
+                  value={priceRangeFilter.max}
+                  onChange={(e) => setPriceRangeFilter({ ...priceRangeFilter, max: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClearFilters}>
+            Clear Filters
+          </Button>
+          <Button onClick={handleApplyFilters}>
+            Apply Filters
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function EcommercePage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedStore, setSelectedStore] = useState<ShopifyStore | null>(null);
@@ -552,6 +637,9 @@ export default function EcommercePage() {
   const [isSyncSettingsDialogOpen, setIsSyncSettingsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStoreFilter, setSelectedStoreFilter] = useState('all-stores');
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [priceRangeFilter, setPriceRangeFilter] = useState({ min: '', max: '' });
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -594,7 +682,13 @@ export default function EcommercePage() {
     const matchesStore = selectedStoreFilter === 'all-stores' || 
       product.store === stores.find(store => store.id === selectedStoreFilter)?.name;
     
-    return matchesSearch && matchesStore;
+    const matchesStatus = statusFilter === 'all' || 
+      product.status === statusFilter;
+    
+    const matchesPriceRange = (!priceRangeFilter.min || product.price >= parseFloat(priceRangeFilter.min)) &&
+      (!priceRangeFilter.max || product.price <= parseFloat(priceRangeFilter.max));
+    
+    return matchesSearch && matchesStore && matchesStatus && matchesPriceRange;
   });
   
   const handleSyncStore = (store: ShopifyStore) => {
@@ -827,7 +921,7 @@ export default function EcommercePage() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" onClick={() => setIsFilterDialogOpen(true)}>
                     <Filter className="h-4 w-4" />
                   </Button>
                   <Select value={selectedStoreFilter} onValueChange={setSelectedStoreFilter}>
@@ -1255,6 +1349,15 @@ export default function EcommercePage() {
         open={isSyncSettingsDialogOpen} 
         onOpenChange={setIsSyncSettingsDialogOpen}
         store={selectedStore}
+      />
+      
+      <FilterDialog 
+        open={isFilterDialogOpen} 
+        onOpenChange={setIsFilterDialogOpen}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        priceRangeFilter={priceRangeFilter}
+        setPriceRangeFilter={setPriceRangeFilter}
       />
     </div>
   );
