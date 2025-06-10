@@ -736,39 +736,46 @@ export default function AccountingPage({ subPath }: AccountingPageProps = {}) {
                 ))
               ) : getFilteredData()?.length > 0 ? (
                 getFilteredData().map((po) => (
-                  <Link key={po.id} href={`/accounting/purchase-orders/${po.id}`}>
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-lg font-medium">{po.poNumber}</CardTitle>
-                          <Badge className={getStatusColor(po.status)}>
-                            {po.status}
-                          </Badge>
-                        </div>
-                        <CardDescription>
-                          {po.supplierName || "No supplier name"}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-muted-foreground">Amount:</span>
-                          <span className="font-semibold">{formatCurrency(po.totalAmount)}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Order Date:</span>
-                          <span>{formatDate(po.orderDate)}</span>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="pt-2">
-                        <div className="w-full flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">
-                            Created: {formatDate(po.createdAt)}
-                          </span>
-                          <Button variant="ghost" size="sm">View</Button>
-                        </div>
-                      </CardFooter>
-                    </Card>
-                  </Link>
+                  <Card key={po.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg font-medium">{po.poNumber}</CardTitle>
+                        <Badge className={getStatusColor(po.status)}>
+                          {po.status}
+                        </Badge>
+                      </div>
+                      <CardDescription>
+                        {po.supplierName || "No supplier name"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pb-2">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-muted-foreground">Amount:</span>
+                        <span className="font-semibold">{formatCurrency(po.totalAmount)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Order Date:</span>
+                        <span>{formatDate(po.orderDate)}</span>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="pt-2">
+                      <div className="w-full flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Created: {formatDate(po.createdAt)}
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLocation(`/accounting/purchase-orders/${po.id}`);
+                          }}
+                        >
+                          View
+                        </Button>
+                      </div>
+                    </CardFooter>
+                  </Card>
                 ))
               ) : (
                 <div className="col-span-full flex flex-col items-center justify-center p-8 border rounded-lg bg-muted/10">
