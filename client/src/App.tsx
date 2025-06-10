@@ -56,6 +56,7 @@ import EcommerceStore from "@/pages/ecommerce-store";
 import NotificationsPage from "@/pages/notifications";
 import Marketing from "@/pages/marketing";
 import MarketingCreate from "@/pages/marketing/create";
+import CampaignEdit from "@/pages/marketing/campaign-edit";
 import MarketingAutomations from "@/pages/marketing/automations";
 import WorkflowBuilder from "@/pages/marketing/workflow-builder";
 import SegmentBuilder from "@/pages/marketing/segment-builder";
@@ -380,6 +381,12 @@ function Router() {
       <ProtectedRoute path="/marketing/create" component={() => (
         <Layout>
           <MarketingCreate />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing/campaigns/:id" component={() => (
+        <Layout>
+          <CampaignEdit />
         </Layout>
       )} />
       
