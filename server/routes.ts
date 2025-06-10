@@ -2741,10 +2741,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { amount } = req.body;
       const numericAmount = parseFloat(amount);
       
-      if (!amount || isNaN(numericAmount) || numericAmount <= 0) {
+      // Handle zero amount invoices gracefully
+      if (numericAmount === 0) {
+        return res.json({ 
+          clientSecret: null,
+          requiresPayment: false,
+          message: "No payment required for zero amount"
+        });
+      }
+      
+      if (!amount || isNaN(numericAmount) || numericAmount < 0) {
         return res.status(400).json({ 
           error: "Invalid amount", 
-          details: "Amount must be a positive number. Current amount: " + amount
+          details: "Amount must be a non-negative number. Current amount: " + amount
         });
       }
 
@@ -2753,7 +2762,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currency: "usd",
       });
       
-      res.json({ clientSecret: paymentIntent.client_secret });
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        requiresPayment: true
+      });
     } catch (error: any) {
       res.status(500).json({ 
         error: "Stripe Error", 

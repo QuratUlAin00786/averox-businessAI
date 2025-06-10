@@ -66,6 +66,17 @@ export default function InvoicePayment() {
           }
 
           const data = await response.json();
+          
+          // Handle zero-amount invoices
+          if (!data.requiresPayment) {
+            toast({
+              title: 'No Payment Required',
+              description: 'This invoice has a zero amount and does not require payment.',
+            });
+            setLocation(`/accounting/invoices/${invoiceId}`);
+            return;
+          }
+          
           setClientSecret(data.clientSecret);
         } catch (error) {
           console.error('Error creating payment intent:', error);

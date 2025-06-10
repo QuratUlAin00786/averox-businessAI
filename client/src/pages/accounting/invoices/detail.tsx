@@ -175,7 +175,7 @@ export default function InvoiceDetail() {
           >
             <Mail className="w-4 h-4" /> Send Email
           </Button>
-          {invoice.status !== "Paid" && invoice.status !== "Cancelled" && parseFloat(invoice.totalAmount) > 0 && (
+          {invoice.status !== "Paid" && invoice.status !== "Cancelled" && (
             <Button onClick={handlePayInvoice} className="flex items-center gap-2">
               <CreditCard className="w-4 h-4" /> Pay Now
             </Button>
@@ -385,7 +385,7 @@ export default function InvoiceDetail() {
             <p className="text-sm text-muted-foreground">
               Invoice created on {formatDate(invoice.createdAt)}
             </p>
-            {invoice.status !== "Paid" && invoice.status !== "Cancelled" && parseFloat(invoice.totalAmount) > 0 && (
+            {invoice.status !== "Paid" && invoice.status !== "Cancelled" && (
               <div className="mt-4">
                 <Button onClick={handlePayInvoice} className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4" /> Pay Invoice
