@@ -698,10 +698,8 @@ export class MemStorage implements IStorage {
     this.teamMemberIdCounter = 1;
     this.assignmentIdCounter = 1;
     
-    // Create default data asynchronously
-    this.initializeData().catch(error => {
-      console.error("Failed to initialize data:", error);
-    });
+    // Create default data
+    this.initializeData();
   }
 
   private initializeSampleCampaigns() {
@@ -762,11 +760,11 @@ export class MemStorage implements IStorage {
     });
   }
 
-  private async initializeData() {
+  private initializeData() {
     // Initialize sample marketing campaigns
     this.initializeSampleCampaigns();
     // Create a default admin user
-    await this.createUser({
+    this.createUser({
       username: "admin",
       password: "password",
       firstName: "Admin",
@@ -777,7 +775,7 @@ export class MemStorage implements IStorage {
     });
     
     // Create a sample sales manager
-    await this.createUser({
+    this.createUser({
       username: "sales.manager",
       password: "password",
       firstName: "Sales",
@@ -863,46 +861,6 @@ export class MemStorage implements IStorage {
     });
   }
 
-  async initializePermissions() {
-    // Initialize default permissions for the system
-    console.log("[Storage] Initializing permissions system...");
-    // This method can be expanded to set up role-based permissions
-    return Promise.resolve();
-  }
-
-  initializeSampleData() {
-    // Initialize sample data for the application
-    console.log("[Storage] Initializing sample data...");
-    // This method sets up initial sample data for testing
-  }
-
-  async getSystemSettings(userId?: number): Promise<any> {
-    // Return default system settings for the user
-    return {
-      theme: 'light',
-      language: 'en',
-      menuItems: this.getDefaultMenuItems(),
-      notifications: true
-    };
-  }
-
-  getDefaultMenuItems() {
-    return [
-      { id: 'dashboard', name: 'Dashboard', icon: 'Home', path: '/', visible: true },
-      { id: 'contacts', name: 'Contacts', icon: 'Users', path: '/contacts', visible: true },
-      { id: 'accounts', name: 'Accounts', icon: 'Building', path: '/accounts', visible: true },
-      { id: 'leads', name: 'Leads', icon: 'Target', path: '/leads', visible: true },
-      { id: 'opportunities', name: 'Opportunities', icon: 'TrendingUp', path: '/opportunities', visible: true },
-      { id: 'marketing', name: 'Marketing', icon: 'Megaphone', path: '/marketing', visible: true },
-      { id: 'analytics', name: 'Analytics', icon: 'BarChart3', path: '/analytics', visible: true },
-      { id: 'tasks', name: 'Tasks', icon: 'CheckSquare', path: '/tasks', visible: true },
-      { id: 'calendar', name: 'Calendar', icon: 'Calendar', path: '/calendar', visible: true },
-      { id: 'accounting', name: 'Accounting', icon: 'Calculator', path: '/accounting', visible: true },
-      { id: 'ecommerce', name: 'E-commerce', icon: 'ShoppingCart', path: '/ecommerce', visible: true },
-      { id: 'manufacturing', name: 'Manufacturing', icon: 'Settings', path: '/manufacturing', visible: true }
-    ];
-  }
-
   // User Methods
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
@@ -921,14 +879,9 @@ export class MemStorage implements IStorage {
     const id = this.userIdCounter++;
     const createdAt = new Date();
     
-    // Hash the password using the auth system
-    const { hashPassword } = await import('./auth');
-    const hashedPassword = await hashPassword(insertUser.password);
-    
     // Default values for fields not in InsertUser but required in User
     const user: User = {
       ...insertUser,
-      password: hashedPassword, // Use hashed password instead of plain text
       id,
       createdAt,
       isActive: true,
@@ -7575,7 +7528,72 @@ DatabaseStorage.prototype.removeTeamMember = async function(id: number): Promise
   }
 };
 
+// Add required database-driven storage methods to DatabaseStorage
+Object.assign(DatabaseStorage.prototype, {
+  // E-commerce operations
+  async getEcommerceStores(userId: number) {
+    const { ecommerceStores } = await import('@shared/ecommerce-schema');
+    return await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.userId, userId));
+  },
+  
+  async createEcommerceStore(storeData: any) {
+    const { ecommerceStores } = await import('@shared/ecommerce-schema');
+    const [store] = await this.db.insert(ecommerceStores).values(storeData).returning();
+    return store;
+  },
+  
+  async getEcommerceStore(id: number) {
+    const { ecommerceStores } = await import('@shared/ecommerce-schema');
+    const [store] = await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.id, id));
+    return store;
+  },
+  
+  async updateEcommerceStore(id: number, data: any) {
+    const { ecommerceStores } = await import('@shared/ecommerce-schema');
+    const [store] = await this.db.update(ecommerceStores).set(data).where(eq(ecommerceStores.id, id)).returning();
+    return store;
+  },
+  
+  async getEcommerceProducts(storeId?: number) {
+    const { ecommerceProducts } = await import('@shared/ecommerce-schema');
+    if (storeId) {
+      return await this.db.select().from(ecommerceProducts).where(eq(ecommerceProducts.storeId, storeId));
+    }
+    return await this.db.select().from(ecommerceProducts);
+  },
+  
+  async createEcommerceProduct(productData: any) {
+    const { ecommerceProducts } = await import('@shared/ecommerce-schema');
+    const [product] = await this.db.insert(ecommerceProducts).values(productData).returning();
+    return product;
+  },
+  
+  async getEcommerceOrders(storeId?: number) {
+    const { ecommerceOrders } = await import('@shared/ecommerce-schema');
+    if (storeId) {
+      return await this.db.select().from(ecommerceOrders).where(eq(ecommerceOrders.storeId, storeId));
+    }
+    return await this.db.select().from(ecommerceOrders);
+  },
+  
+  async createEcommerceOrder(orderData: any) {
+    const { ecommerceOrders } = await import('@shared/ecommerce-schema');
+    const [order] = await this.db.insert(ecommerceOrders).values(orderData).returning();
+    return order;
+  },
+  
+  async getEcommerceAnalytics(storeId?: number) {
+    const orders = await this.getEcommerceOrders(storeId);
+    const products = await this.getEcommerceProducts(storeId);
+    
+    const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
+    const totalOrders = orders.length;
+    const activeProducts = products.filter(p => p.isActive).length;
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
+    return { totalRevenue, totalOrders, activeProducts, averageOrderValue };
+  }
+}
 
 // Initialize storage
 const storage = new MemStorage();
