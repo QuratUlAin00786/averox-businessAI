@@ -408,6 +408,327 @@ function ProductHistoryView({ productId, onBack }: ProductHistoryViewProps) {
   );
 }
 
+// Product Edit View Component
+interface ProductEditViewProps {
+  productId: number;
+  onBack: () => void;
+  onSaved: () => void;
+}
+
+function ProductEditView({ productId, onBack, onSaved }: ProductEditViewProps) {
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  
+  const { data: product, isLoading } = useQuery({
+    queryKey: [`/api/products/${productId}`],
+  });
+
+  const { data: categories } = useQuery({
+    queryKey: ['/api/product-categories'],
+  });
+
+  const [formData, setFormData] = useState({
+    name: '',
+    sku: '',
+    description: '',
+    price: '',
+    cost: '',
+    categoryId: '',
+    stockQuantity: '',
+    reorderLevel: '',
+    barcode: '',
+    weight: '',
+    isActive: true,
+    taxable: true,
+    taxRate: ''
+  });
+
+  // Update form data when product loads
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name || '',
+        sku: product.sku || '',
+        description: product.description || '',
+        price: product.price || '',
+        cost: product.cost || '',
+        categoryId: product.categoryId?.toString() || '',
+        stockQuantity: product.stockQuantity?.toString() || '',
+        reorderLevel: product.reorderLevel?.toString() || '',
+        barcode: product.barcode || '',
+        weight: product.weight || '',
+        isActive: product.isActive ?? true,
+        taxable: product.taxable ?? true,
+        taxRate: product.taxRate?.toString() || ''
+      });
+    }
+  }, [product]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const updateData = {
+        ...formData,
+        price: parseFloat(formData.price) || 0,
+        cost: parseFloat(formData.cost) || 0,
+        categoryId: formData.categoryId ? parseInt(formData.categoryId) : null,
+        stockQuantity: parseInt(formData.stockQuantity) || 0,
+        reorderLevel: parseInt(formData.reorderLevel) || 0,
+        weight: parseFloat(formData.weight) || null,
+        taxRate: parseFloat(formData.taxRate) || null
+      };
+
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Product Updated",
+          description: "The product has been successfully updated.",
+        });
+        onSaved();
+      } else {
+        throw new Error('Failed to update product');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update product. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+            <ChevronLeft size={16} />
+            Back to Products
+          </Button>
+          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+          <ChevronLeft size={16} />
+          Back to Products
+        </Button>
+        <h2 className="text-2xl font-bold">Edit Product</h2>
+      </div>
+
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="name">Product Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter product name"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="sku">SKU *</Label>
+              <Input
+                id="sku"
+                value={formData.sku}
+                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                placeholder="Enter SKU"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Enter product description"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Select value={formData.categoryId} onValueChange={(value) => setFormData({ ...formData, categoryId: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No category</SelectItem>
+                  {categories?.map((category: any) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Pricing & Inventory</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="price">Price *</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="cost">Cost</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  step="0.01"
+                  value={formData.cost}
+                  onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="stockQuantity">Stock Quantity</Label>
+                <Input
+                  id="stockQuantity"
+                  type="number"
+                  value={formData.stockQuantity}
+                  onChange={(e) => setFormData({ ...formData, stockQuantity: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="reorderLevel">Reorder Level</Label>
+                <Input
+                  id="reorderLevel"
+                  type="number"
+                  value={formData.reorderLevel}
+                  onChange={(e) => setFormData({ ...formData, reorderLevel: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="barcode">Barcode</Label>
+              <Input
+                id="barcode"
+                value={formData.barcode}
+                onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                placeholder="Enter barcode"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="weight">Weight (kg)</Label>
+              <Input
+                id="weight"
+                type="number"
+                step="0.01"
+                value={formData.weight}
+                onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                placeholder="0.00"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  className="rounded"
+                />
+                <Label htmlFor="isActive">Active Product</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="taxable"
+                  checked={formData.taxable}
+                  onChange={(e) => setFormData({ ...formData, taxable: e.target.checked })}
+                  className="rounded"
+                />
+                <Label htmlFor="taxable">Taxable</Label>
+              </div>
+            </div>
+            
+            {formData.taxable && (
+              <div className="w-48">
+                <Label htmlFor="taxRate">Tax Rate (%)</Label>
+                <Input
+                  id="taxRate"
+                  type="number"
+                  step="0.01"
+                  value={formData.taxRate}
+                  onChange={(e) => setFormData({ ...formData, taxRate: e.target.value })}
+                  placeholder="0.00"
+                />
+              </div>
+            )}
+            
+            <div className="flex gap-2 pt-4">
+              <Button type="submit" className="flex items-center gap-2">
+                <FileEdit size={16} />
+                Update Product
+              </Button>
+              <Button type="button" variant="outline" onClick={onBack}>
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </form>
+    </div>
+  );
+}
+
 type InventoryPageProps = {
   subPath?: string;
 };
@@ -650,21 +971,19 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                 }}
               />
             ) : selectedProductId && viewMode === 'edit' ? (
-              <div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setSelectedProductId(null);
-                    setViewMode('list');
-                    setLocation('/inventory');
-                  }}
-                  className="mb-4"
-                >
-                  Back to Products
-                </Button>
-                <h2 className="text-xl font-semibold mb-4">Edit Product</h2>
-                {/* Product edit form will be added here */}
-              </div>
+              <ProductEditView 
+                productId={selectedProductId} 
+                onBack={() => {
+                  setSelectedProductId(null);
+                  setViewMode('list');
+                  setLocation('/inventory');
+                }}
+                onSaved={() => {
+                  setSelectedProductId(null);
+                  setViewMode('list');
+                  setLocation('/inventory');
+                }}
+              />
             ) : (
               <>
                 <div className="flex justify-between mb-4">
