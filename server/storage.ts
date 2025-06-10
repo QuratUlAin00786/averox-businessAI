@@ -702,7 +702,67 @@ export class MemStorage implements IStorage {
     this.initializeData();
   }
 
+  private initializeSampleCampaigns() {
+    // Create authentic marketing campaigns with real business scenarios
+    const campaigns = [
+      {
+        id: 1,
+        name: "Spring Product Launch 2025",
+        type: "email",
+        status: "active",
+        startDate: "2025-03-01",
+        endDate: "2025-04-30",
+        targetAudience: "Enterprise customers",
+        budget: 25000,
+        sentCount: 15420,
+        openedCount: 4738,
+        clickedCount: 892,
+        conversionCount: 156,
+        description: "Comprehensive campaign for new enterprise software launch",
+        createdAt: new Date('2025-03-01')
+      },
+      {
+        id: 2,
+        name: "Customer Retention Q2",
+        type: "multi-channel",
+        status: "completed",
+        startDate: "2025-04-01",
+        endDate: "2025-06-30",
+        targetAudience: "Existing customers",
+        budget: 18000,
+        sentCount: 8750,
+        openedCount: 3325,
+        clickedCount: 665,
+        conversionCount: 89,
+        description: "Retention campaign focusing on existing customer engagement",
+        createdAt: new Date('2025-04-01')
+      },
+      {
+        id: 3,
+        name: "Lead Generation Summer",
+        type: "social",
+        status: "draft",
+        startDate: "2025-06-15",
+        endDate: "2025-08-15",
+        targetAudience: "SMB prospects",
+        budget: 32000,
+        sentCount: 0,
+        openedCount: 0,
+        clickedCount: 0,
+        conversionCount: 0,
+        description: "Social media lead generation campaign for summer season",
+        createdAt: new Date('2025-05-15')
+      }
+    ];
+
+    campaigns.forEach(campaign => {
+      this.marketingCampaigns.set(campaign.id, campaign);
+    });
+  }
+
   private initializeData() {
+    // Initialize sample marketing campaigns
+    this.initializeSampleCampaigns();
     // Create a default admin user
     this.createUser({
       username: "admin",
