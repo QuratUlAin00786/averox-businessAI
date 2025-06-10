@@ -1307,6 +1307,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user's visibility settings from system settings
       const userSettings = await storage.getSystemSettings(userId);
       
+      // Ensure menuVisibility exists with fallback defaults
+      const menuVisibility = userSettings?.menuVisibility || {
+        contacts: true,
+        accounts: true,
+        leads: true,
+        opportunities: true,
+        calendar: true,
+        tasks: true,
+        communicationCenter: true,
+        accounting: true,
+        inventory: true,
+        supportTickets: true,
+        ecommerce: true,
+        ecommerceStore: true,
+        reports: true,
+        intelligence: true,
+        workflows: true,
+        subscriptions: true,
+        training: true
+      };
+      
       // Fetch global menu items from database
       const menuItemsQuery = await db.select()
         .from(systemSettings)
@@ -1323,34 +1344,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         menuItems = menuItems.map(item => ({
           ...item,
           isVisible: item.key ? 
-            (userSettings.menuVisibility[item.key] ?? true) : 
+            (menuVisibility[item.key] ?? true) : 
             true // Items without a key are always visible
         }));
       } else {
         // If no menu items defined yet, create default ones
         const defaultMenuItems = [
           { name: "Dashboard", path: '/', icon: "LayoutDashboard", key: null, isVisible: true },
-          { name: "Contacts", path: '/contacts', icon: "Users", key: "contacts", isVisible: userSettings.menuVisibility.contacts },
-          { name: "Accounts", path: '/accounts', icon: "Briefcase", key: "accounts", isVisible: userSettings.menuVisibility.accounts },
-          { name: "Leads", path: '/leads', icon: "UserPlus", key: "leads", isVisible: userSettings.menuVisibility.leads },
-          { name: "Opportunities", path: '/opportunities', icon: "TrendingUp", key: "opportunities", isVisible: userSettings.menuVisibility.opportunities },
-          { name: "Calendar", path: '/calendar', icon: "Calendar", key: "calendar", isVisible: userSettings.menuVisibility.calendar },
-          { name: "Tasks", path: '/tasks', icon: "CheckSquare", key: "tasks", isVisible: userSettings.menuVisibility.tasks },
+          { name: "Contacts", path: '/contacts', icon: "Users", key: "contacts", isVisible: menuVisibility.contacts ?? true },
+          { name: "Accounts", path: '/accounts', icon: "Briefcase", key: "accounts", isVisible: menuVisibility.accounts ?? true },
+          { name: "Leads", path: '/leads', icon: "UserPlus", key: "leads", isVisible: menuVisibility.leads ?? true },
+          { name: "Opportunities", path: '/opportunities', icon: "TrendingUp", key: "opportunities", isVisible: menuVisibility.opportunities ?? true },
+          { name: "Calendar", path: '/calendar', icon: "Calendar", key: "calendar", isVisible: menuVisibility.calendar ?? true },
+          { name: "Tasks", path: '/tasks', icon: "CheckSquare", key: "tasks", isVisible: menuVisibility.tasks ?? true },
           { name: "Marketing", path: '/marketing', icon: "Megaphone", key: null, isVisible: true },
-          { name: "Communication Center", path: '/communication-center', icon: "MessageSquare", key: "communicationCenter", isVisible: userSettings.menuVisibility.communicationCenter },
-          { name: "Accounting", path: '/accounting', icon: "Calculator", key: "accounting", isVisible: userSettings.menuVisibility.accounting },
+          { name: "Communication Center", path: '/communication-center', icon: "MessageSquare", key: "communicationCenter", isVisible: menuVisibility.communicationCenter ?? true },
+          { name: "Accounting", path: '/accounting', icon: "Calculator", key: "accounting", isVisible: menuVisibility.accounting ?? true },
           { name: "Manufacturing", path: '/manufacturing', icon: "Factory", key: null, isVisible: true },
-          { name: "Inventory", path: '/inventory', icon: "PackageOpen", key: "inventory", isVisible: userSettings.menuVisibility.inventory },
-          { name: "Support Tickets", path: '/support-tickets', icon: "TicketCheck", key: "supportTickets", isVisible: userSettings.menuVisibility.supportTickets },
-          { name: "E-commerce", path: '/ecommerce', icon: "ShoppingCart", key: "ecommerce", isVisible: userSettings.menuVisibility.ecommerce },
-          { name: "Store", path: '/ecommerce-store', icon: "Store", key: "ecommerceStore", isVisible: userSettings.menuVisibility.ecommerceStore },
-          { name: "Reports", path: '/reports', icon: "BarChart2", key: "reports", isVisible: userSettings.menuVisibility.reports },
+          { name: "Inventory", path: '/inventory', icon: "PackageOpen", key: "inventory", isVisible: menuVisibility.inventory ?? true },
+          { name: "Support Tickets", path: '/support-tickets', icon: "TicketCheck", key: "supportTickets", isVisible: menuVisibility.supportTickets ?? true },
+          { name: "E-commerce", path: '/ecommerce', icon: "ShoppingCart", key: "ecommerce", isVisible: menuVisibility.ecommerce ?? true },
+          { name: "Store", path: '/ecommerce-store', icon: "Store", key: "ecommerceStore", isVisible: menuVisibility.ecommerceStore ?? true },
+          { name: "Reports", path: '/reports', icon: "BarChart2", key: "reports", isVisible: menuVisibility.reports ?? true },
           { name: "Analytics", path: '/analytics', icon: "TrendingUp", key: null, isVisible: true },
-          { name: "Intelligence", path: '/intelligence', icon: "BrainCircuit", key: "intelligence", isVisible: userSettings.menuVisibility.intelligence },
-          { name: "Workflows", path: '/workflows', icon: "Workflow", key: "workflows", isVisible: userSettings.menuVisibility.workflows },
+          { name: "Intelligence", path: '/intelligence', icon: "BrainCircuit", key: "intelligence", isVisible: menuVisibility.intelligence ?? true },
+          { name: "Workflows", path: '/workflows', icon: "Workflow", key: "workflows", isVisible: menuVisibility.workflows ?? true },
           { name: "Integrations", path: '/integrations', icon: "Zap", key: null, isVisible: true },
-          { name: "Subscriptions", path: '/subscriptions', icon: "CreditCard", key: "subscriptions", isVisible: userSettings.menuVisibility.subscriptions },
-          { name: "Training", path: '/training-help', icon: "HelpCircle", key: "training", isVisible: userSettings.menuVisibility.training },
+          { name: "Subscriptions", path: '/subscriptions', icon: "CreditCard", key: "subscriptions", isVisible: menuVisibility.subscriptions ?? true },
+          { name: "Training", path: '/training-help', icon: "HelpCircle", key: "training", isVisible: menuVisibility.training ?? true },
           { name: "Settings", path: '/settings', icon: "Settings", key: null, isVisible: true }
         ];
         
