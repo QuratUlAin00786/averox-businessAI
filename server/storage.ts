@@ -7592,42 +7592,30 @@ Object.assign(DatabaseStorage.prototype, {
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
     return { totalRevenue, totalOrders, activeProducts, averageOrderValue };
-  },
-  
-  // Marketing operations
-  async getMarketingCampaigns() {
-    try {
-      // Get campaigns from storage
-      const campaigns = Array.from(this.marketingCampaigns.values());
-      console.log('[Storage Interface] Returning stored campaigns:', campaigns.length);
-      return campaigns;
-    } catch (error) {
-      console.error('[Storage Interface] Error getting campaigns:', error);
-      return [];
-    }
-  },
-  
-  async createMarketingCampaign(campaignData: any) {
-    try {
-      const campaign = {
-        id: Date.now(),
-        ...campaignData,
-        createdAt: new Date()
-      };
-      
-      console.log('[Storage Interface] Creating campaign:', campaign.id);
-      this.marketingCampaigns.set(campaign.id, campaign);
-      console.log('[Storage Interface] Campaign stored, total campaigns:', this.marketingCampaigns.size);
-      
-      return campaign;
-    } catch (error) {
-      console.error('[Storage Interface] Error creating campaign:', error);
-      throw error;
-    }
-  },
+  }
+
+  // Marketing methods
+  async getMarketingCampaigns(): Promise<any[]> {
+    console.log('[Marketing] Getting campaigns from storage, size:', this.marketingCampaigns.size);
+    const campaigns = Array.from(this.marketingCampaigns.values());
+    console.log('[Marketing] Found campaigns:', campaigns.length);
+    return campaigns;
+  }
+
+  async createMarketingCampaign(campaignData: any): Promise<any> {
+    const id = Date.now();
+    const campaign = {
+      id,
+      ...campaignData,
+      createdAt: new Date()
+    };
+    
+    this.marketingCampaigns.set(id, campaign);
+    console.log('[Marketing] Campaign created with ID:', id);
+    return campaign;
+  }
   
   async getMarketingAutomations() {
-    // Return sample automation data until proper schema is implemented
     return [
       {
         id: 1,
@@ -7641,7 +7629,7 @@ Object.assign(DatabaseStorage.prototype, {
       },
       {
         id: 2,
-        name: "Lead Nurturing Sequence",
+        name: "Lead Nurturing Sequence", 
         status: "active",
         triggerType: "lead_created",
         contactCount: 320,
@@ -7650,19 +7638,17 @@ Object.assign(DatabaseStorage.prototype, {
         createdAt: new Date('2025-03-01')
       }
     ];
-  },
+  }
   
   async createMarketingAutomation(automationData: any) {
-    // For now, return the automation data with an ID
     return {
       id: Date.now(),
       ...automationData,
       createdAt: new Date()
     };
-  },
+  }
   
   async getMarketingMetrics() {
-    // Get campaigns from storage
     const campaigns = Array.from(this.marketingCampaigns.values());
     const automations = await this.getMarketingAutomations();
     
@@ -7678,26 +7664,17 @@ Object.assign(DatabaseStorage.prototype, {
     const conversionRate = totalSent > 0 ? (totalConverted / totalSent) : 0;
 
     return { 
-      totalCampaigns, 
-      activeCampaigns, 
-      totalSent, 
-      averageOpenRate, 
-      averageClickRate, 
+      totalCampaigns,
+      activeCampaigns,
+      totalSent,
+      averageOpenRate,
+      averageClickRate,
       conversionRate,
-      recentActivity: [
-        {
-          action: "Campaign sent",
-          target: "Spring Product Launch",
-          timestamp: new Date().toISOString()
-        },
-        {
-          action: "Automation triggered",
-          target: "Welcome Series",
-          timestamp: new Date(Date.now() - 3600000).toISOString()
-        }
-      ]
+      totalAutomations: automations.length,
+      activeAutomations: automations.filter(a => a.status === 'active').length
     };
-  },
+  }
+}
   
   // Accounting operations
   async getAccountingTransactions(userId: number) {
