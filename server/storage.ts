@@ -7534,47 +7534,9 @@ Object.assign(DatabaseStorage.prototype, {
     return { totalRevenue, totalOrders, activeProducts, averageOrderValue };
   },
   
-  // Marketing operations
-  async getMarketingCampaigns() {
-    // Return sample campaigns data until proper schema is implemented
-    return [
-      {
-        id: 1,
-        name: "Spring Product Launch",
-        type: "email",
-        status: "active",
-        recipientCount: 2500,
-        sentCount: 2500,
-        openedCount: 1850,
-        clickedCount: 425,
-        conversionCount: 85,
-        createdAt: new Date('2025-03-01'),
-        scheduledAt: null
-      },
-      {
-        id: 2,
-        name: "Customer Retention Campaign",
-        type: "automation",
-        status: "active",
-        recipientCount: 1200,
-        sentCount: 1200,
-        openedCount: 960,
-        clickedCount: 288,
-        conversionCount: 72,
-        createdAt: new Date('2025-03-15'),
-        scheduledAt: null
-      }
-    ];
-  },
+  // Marketing operations - this method is now handled by the main implementation above
   
-  async createMarketingCampaign(campaignData: any) {
-    // For now, return the campaign data with an ID
-    return {
-      id: Date.now(),
-      ...campaignData,
-      createdAt: new Date()
-    };
-  },
+  // Duplicate method removed - using main implementation above
   
   async getMarketingAutomations() {
     // Return sample automation data until proper schema is implemented
