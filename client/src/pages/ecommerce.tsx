@@ -747,9 +747,19 @@ export default function EcommercePage() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
-                <CardDescription>Latest orders across all stores</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Recent Orders</CardTitle>
+                  <CardDescription>Latest orders from your store</CardDescription>
+                </div>
+                <Button 
+                  variant="default"
+                  size="sm"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                  onClick={() => setActiveTab('orders')}
+                >
+                  View All
+                </Button>
               </CardHeader>
               <CardContent>
                 <Table>
