@@ -7552,7 +7552,7 @@ Object.assign(DatabaseStorage.prototype, {
     const { ecommerceStores } = await import('@shared/ecommerce-schema');
     const [store] = await this.db.update(ecommerceStores).set(data).where(eq(ecommerceStores.id, id)).returning();
     return store;
-  },
+  }
   
   async getEcommerceProducts(storeId?: number) {
     const { ecommerceProducts } = await import('@shared/ecommerce-schema');
@@ -7560,13 +7560,13 @@ Object.assign(DatabaseStorage.prototype, {
       return await this.db.select().from(ecommerceProducts).where(eq(ecommerceProducts.storeId, storeId));
     }
     return await this.db.select().from(ecommerceProducts);
-  },
+  }
   
   async createEcommerceProduct(productData: any) {
     const { ecommerceProducts } = await import('@shared/ecommerce-schema');
     const [product] = await this.db.insert(ecommerceProducts).values(productData).returning();
     return product;
-  },
+  }
   
   async getEcommerceOrders(storeId?: number) {
     const { ecommerceOrders } = await import('@shared/ecommerce-schema');
@@ -7574,24 +7574,12 @@ Object.assign(DatabaseStorage.prototype, {
       return await this.db.select().from(ecommerceOrders).where(eq(ecommerceOrders.storeId, storeId));
     }
     return await this.db.select().from(ecommerceOrders);
-  },
+  }
   
   async createEcommerceOrder(orderData: any) {
     const { ecommerceOrders } = await import('@shared/ecommerce-schema');
     const [order] = await this.db.insert(ecommerceOrders).values(orderData).returning();
     return order;
-  },
-  
-  async getEcommerceAnalytics(storeId?: number) {
-    const orders = await this.getEcommerceOrders(storeId);
-    const products = await this.getEcommerceProducts(storeId);
-    
-    const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
-    const totalOrders = orders.length;
-    const activeProducts = products.filter(p => p.isActive).length;
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-
-    return { totalRevenue, totalOrders, activeProducts, averageOrderValue };
   }
 }
 
