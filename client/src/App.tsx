@@ -60,6 +60,7 @@ import CampaignEdit from "@/pages/marketing/campaign-edit";
 import CampaignReport from "@/pages/marketing/campaign-report";
 import AutomationReport from "@/pages/marketing/automation-report";
 import MarketingAutomations from "@/pages/marketing/automations";
+import AutomationEdit from "@/pages/marketing/automation-edit";
 import WorkflowBuilder from "@/pages/marketing/workflow-builder";
 import SegmentBuilder from "@/pages/marketing/segment-builder";
 import EmailTemplateEditor from "@/pages/marketing/email-template-editor";
@@ -401,6 +402,12 @@ function Router() {
       <ProtectedRoute path="/marketing/automations/:id/report" component={() => (
         <Layout>
           <AutomationReport />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing/automations/:id" component={() => (
+        <Layout>
+          <AutomationEdit />
         </Layout>
       )} />
       
