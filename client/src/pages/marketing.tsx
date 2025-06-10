@@ -316,6 +316,7 @@ export default function Marketing() {
       <Tabs defaultValue="campaigns" className="space-y-4">
         <TabsList>
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="records">Campaign Records</TabsTrigger>
           <TabsTrigger value="automations">Automations</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -410,6 +411,132 @@ export default function Marketing() {
                           </p>
                         </div>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="records" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="space-y-1">
+                <CardTitle>Campaign Records</CardTitle>
+                <CardDescription>
+                  Complete history of all created campaigns with detailed tracking
+                </CardDescription>
+              </div>
+              <Button onClick={() => setIsCreateCampaignOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create New Campaign
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {isLoadingCampaigns ? (
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-20 bg-muted animate-pulse rounded" />
+                  ))}
+                </div>
+              ) : campaigns.length === 0 ? (
+                <div className="text-center py-8">
+                  <HardDriveDownload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Campaign Records</h3>
+                  <p className="text-muted-foreground mb-4">
+                    All your created campaigns will be tracked and stored here for easy access and management.
+                  </p>
+                  <Button onClick={() => setIsCreateCampaignOpen(true)}>
+                    Create First Campaign Record
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-sm text-muted-foreground">
+                      Total Records: {campaigns.length} campaigns
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        Export Records
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Filter Records
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {campaigns.map((campaign: MarketingCampaign) => (
+                    <div key={campaign.id} className="border rounded-lg p-4 bg-card">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-lg">{campaign.name}</h3>
+                            <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
+                              {campaign.status}
+                            </Badge>
+                            <Badge variant="outline">{campaign.type}</Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Campaign ID: #{campaign.id} • Created: {new Date(campaign.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            View Details
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            Edit
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-muted/50 rounded-lg">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600">{campaign.sentCount?.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground">Messages Sent</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">
+                            {campaign.openedCount?.toLocaleString()}
+                            {campaign.sentCount > 0 && (
+                              <span className="text-sm ml-1">
+                                ({((campaign.openedCount / campaign.sentCount) * 100).toFixed(1)}%)
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Opened</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-purple-600">
+                            {campaign.clickedCount?.toLocaleString()}
+                            {campaign.openedCount > 0 && (
+                              <span className="text-sm ml-1">
+                                ({((campaign.clickedCount / campaign.openedCount) * 100).toFixed(1)}%)
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Clicked</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600">{campaign.conversionCount?.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground">Conversions</div>
+                        </div>
+                      </div>
+                      
+                      {campaign.sentCount > 0 && (
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                            <span>Campaign Performance</span>
+                            <span>{((campaign.conversionCount / campaign.sentCount) * 100).toFixed(2)}% conversion rate</span>
+                          </div>
+                          <Progress 
+                            value={(campaign.conversionCount / campaign.sentCount) * 100} 
+                            className="h-2"
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

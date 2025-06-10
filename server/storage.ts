@@ -3300,6 +3300,11 @@ export class MemStorage implements IStorage {
   async getMarketingCampaigns(): Promise<any[]> {
     // Get all stored campaigns
     const campaigns = Array.from(this.marketingCampaigns.values());
+    console.log('[Marketing Storage] Retrieving campaigns:', {
+      storedCount: campaigns.length,
+      mapSize: this.marketingCampaigns.size,
+      campaigns: campaigns
+    });
     
     // Default campaigns that are always included
     const defaultCampaigns = [
@@ -3332,7 +3337,9 @@ export class MemStorage implements IStorage {
     ];
     
     // Return both default campaigns and any newly created campaigns
-    return [...defaultCampaigns, ...campaigns];
+    const allCampaigns = [...defaultCampaigns, ...campaigns];
+    console.log('[Marketing Storage] Returning total campaigns:', allCampaigns.length);
+    return allCampaigns;
   }
 
   async createMarketingCampaign(campaignData: any): Promise<any> {
@@ -3342,8 +3349,19 @@ export class MemStorage implements IStorage {
       createdAt: new Date()
     };
     
+    console.log('[Marketing Storage] Creating campaign:', {
+      campaignId: campaign.id,
+      campaignData: campaign,
+      mapSizeBefore: this.marketingCampaigns.size
+    });
+    
     // Store the campaign in the map
     this.marketingCampaigns.set(campaign.id, campaign);
+    
+    console.log('[Marketing Storage] Campaign stored:', {
+      mapSizeAfter: this.marketingCampaigns.size,
+      storedCampaign: this.marketingCampaigns.get(campaign.id)
+    });
     
     return campaign;
   }
