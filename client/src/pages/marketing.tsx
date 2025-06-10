@@ -23,6 +23,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
@@ -73,6 +76,15 @@ export default function Marketing() {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  
+  // Dialog state
+  const [isCreateAutomationOpen, setIsCreateAutomationOpen] = useState(false);
+  const [automationForm, setAutomationForm] = useState({
+    name: '',
+    triggerType: 'lead_created' as const,
+    description: '',
+    actions: [] as string[]
+  });
 
   // Real API queries
   const { data: campaignsData, isLoading: isLoadingCampaigns } = useQuery({
@@ -120,6 +132,14 @@ export default function Marketing() {
       apiRequest('POST', '/api/marketing/automations', automationData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/marketing/automations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketing/metrics'] });
+      setIsCreateAutomationOpen(false);
+      setAutomationForm({
+        name: '',
+        triggerType: 'lead_created',
+        description: '',
+        actions: []
+      });
       toast({
         title: "Automation Created",
         description: "Your marketing automation has been created successfully.",
@@ -133,6 +153,27 @@ export default function Marketing() {
       });
     }
   });
+
+  const handleCreateAutomation = () => {
+    if (!automationForm.name.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter an automation name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createAutomationMutation.mutate({
+      name: automationForm.name,
+      triggerType: automationForm.triggerType,
+      description: automationForm.description,
+      status: 'draft',
+      actions: automationForm.actions.length > 0 ? automationForm.actions : ['send_welcome_email'],
+      executionCount: 0,
+      createdAt: new Date().toISOString()
+    });
+  };
 
   if (!user) {
     return (
@@ -356,7 +397,7 @@ export default function Marketing() {
                   <p className="text-muted-foreground mb-4">
                     Create automated workflows to nurture leads and improve conversions.
                   </p>
-                  <Button onClick={() => {/* Open automation creation */}}>
+                  <Button onClick={() => setIsCreateAutomationOpen(true)}>
                     Create First Automation
                   </Button>
                 </div>
@@ -450,6 +491,84 @@ export default function Marketing() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Create Automation Dialog */}
+      <Dialog open={isCreateAutomationOpen} onOpenChange={setIsCreateAutomationOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Create New Automation</DialogTitle>
+            <DialogDescription>
+              Set up an automated workflow to nurture leads and engage customers.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="automation-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="automation-name"
+                value={automationForm.name}
+                onChange={(e) => setAutomationForm(prev => ({ ...prev, name: e.target.value }))}
+                className="col-span-3"
+                placeholder="e.g., Welcome Series"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="trigger-type" className="text-right">
+                Trigger
+              </Label>
+              <Select
+                value={automationForm.triggerType}
+                onValueChange={(value: any) => setAutomationForm(prev => ({ ...prev, triggerType: value }))}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select trigger type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lead_created">New Lead Created</SelectItem>
+                  <SelectItem value="contact_added">Contact Added</SelectItem>
+                  <SelectItem value="opportunity_stage">Opportunity Stage Change</SelectItem>
+                  <SelectItem value="date_based">Date Based</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="automation-description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="automation-description"
+                value={automationForm.description}
+                onChange={(e) => setAutomationForm(prev => ({ ...prev, description: e.target.value }))}
+                className="col-span-3"
+                placeholder="Describe what this automation does..."
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsCreateAutomationOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCreateAutomation}
+              disabled={createAutomationMutation.isPending}
+            >
+              {createAutomationMutation.isPending ? "Creating..." : "Create Automation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
