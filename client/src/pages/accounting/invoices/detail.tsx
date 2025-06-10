@@ -89,6 +89,129 @@ export default function InvoiceDetail() {
     setLocation(`/accounting/invoices/${invoiceId}/pay`);
   };
 
+  const handleDownload = async () => {
+    try {
+      toast({
+        title: "Download initiated",
+        description: "Your invoice is being prepared for download",
+      });
+
+      // Create a simple HTML representation of the invoice for PDF generation
+      const invoiceHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Invoice ${invoice.invoiceNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
+            .company-info { text-align: left; }
+            .invoice-info { text-align: right; }
+            .billing-info { display: flex; justify-content: space-between; margin-bottom: 40px; }
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+            .items-table th, .items-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            .items-table th { background-color: #f5f5f5; }
+            .totals { text-align: right; }
+            .total-row { font-weight: bold; font-size: 1.2em; }
+            .status-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; background-color: #e2e8f0; color: #1e293b; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-info">
+              <h1>Averox Business AI</h1>
+              <p>123 Business Avenue<br>Suite 789<br>New York, NY 10001<br>United States</p>
+              <p>contact@averox.com<br>+1 (555) 123-4567</p>
+            </div>
+            <div class="invoice-info">
+              <h2>INVOICE</h2>
+              <p><strong>Invoice #:</strong> ${invoice.invoiceNumber}</p>
+              <p><strong>Date:</strong> ${formatDate(invoice.issueDate)}</p>
+              <p><strong>Due Date:</strong> ${formatDate(invoice.dueDate)}</p>
+              <p><span class="status-badge">${invoice.status}</span></p>
+            </div>
+          </div>
+          
+          <div class="billing-info">
+            <div>
+              <h3>Bill To:</h3>
+              <p><strong>${invoice.accountName || "N/A"}</strong><br>
+              ${invoice.billingAddress || "No address provided"}<br>
+              ${invoice.clientEmail || "No email provided"}<br>
+              ${invoice.clientPhone || "No phone provided"}</p>
+            </div>
+          </div>
+          
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(invoiceItems || []).map(item => `
+                <tr>
+                  <td>${item.description || 'No description'}</td>
+                  <td>${item.quantity || '0'}</td>
+                  <td>${formatCurrency(item.unitPrice || '0', invoice.currency || 'USD')}</td>
+                  <td>${formatCurrency((parseFloat(item.quantity || '0') * parseFloat(item.unitPrice || '0')).toFixed(2), invoice.currency || 'USD')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div class="totals">
+            <p><strong>Subtotal:</strong> ${formatCurrency(invoice.subtotal, invoice.currency || "USD")}</p>
+            <p><strong>Tax:</strong> ${formatCurrency(invoice.taxAmount, invoice.currency || "USD")}</p>
+            <p class="total-row"><strong>Total:</strong> ${formatCurrency(invoice.totalAmount, invoice.currency || "USD")}</p>
+          </div>
+          
+          ${invoice.notes ? `<div style="margin-top: 40px;"><h3>Notes:</h3><p>${invoice.notes}</p></div>` : ''}
+        </body>
+        </html>
+      `;
+
+      // Create a new window and print to PDF
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(invoiceHtml);
+        printWindow.document.close();
+        
+        // Wait for content to load then trigger print
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+          
+          // Close the window after a delay
+          setTimeout(() => {
+            printWindow.close();
+          }, 1000);
+        };
+      } else {
+        // Fallback: create downloadable HTML file
+        const blob = new Blob([invoiceHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Invoice-${invoice.invoiceNumber}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Error generating download:', error);
+      toast({
+        title: "Download failed",
+        description: "Unable to generate invoice download. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Draft":
@@ -151,13 +274,7 @@ export default function InvoiceDetail() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => {
-              /* Implement download functionality */
-              toast({
-                title: "Download initiated",
-                description: "Your invoice is being prepared for download",
-              });
-            }}
+            onClick={handleDownload}
             className="flex items-center gap-2"
           >
             <Download className="w-4 h-4" /> Download
