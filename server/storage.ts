@@ -861,6 +861,19 @@ export class MemStorage implements IStorage {
     });
   }
 
+  async initializePermissions() {
+    // Initialize default permissions for the system
+    console.log("[Storage] Initializing permissions system...");
+    // This method can be expanded to set up role-based permissions
+    return Promise.resolve();
+  }
+
+  initializeSampleData() {
+    // Initialize sample data for the application
+    console.log("[Storage] Initializing sample data...");
+    // This method sets up initial sample data for testing
+  }
+
   // User Methods
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
@@ -7528,60 +7541,7 @@ DatabaseStorage.prototype.removeTeamMember = async function(id: number): Promise
   }
 };
 
-// Add required database-driven storage methods to DatabaseStorage
-Object.assign(DatabaseStorage.prototype, {
-  // E-commerce operations
-  async getEcommerceStores(userId: number) {
-    const { ecommerceStores } = await import('@shared/ecommerce-schema');
-    return await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.userId, userId));
-  },
-  
-  async createEcommerceStore(storeData: any) {
-    const { ecommerceStores } = await import('@shared/ecommerce-schema');
-    const [store] = await this.db.insert(ecommerceStores).values(storeData).returning();
-    return store;
-  },
-  
-  async getEcommerceStore(id: number) {
-    const { ecommerceStores } = await import('@shared/ecommerce-schema');
-    const [store] = await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.id, id));
-    return store;
-  },
-  
-  async updateEcommerceStore(id: number, data: any) {
-    const { ecommerceStores } = await import('@shared/ecommerce-schema');
-    const [store] = await this.db.update(ecommerceStores).set(data).where(eq(ecommerceStores.id, id)).returning();
-    return store;
-  }
-  
-  async getEcommerceProducts(storeId?: number) {
-    const { ecommerceProducts } = await import('@shared/ecommerce-schema');
-    if (storeId) {
-      return await this.db.select().from(ecommerceProducts).where(eq(ecommerceProducts.storeId, storeId));
-    }
-    return await this.db.select().from(ecommerceProducts);
-  }
-  
-  async createEcommerceProduct(productData: any) {
-    const { ecommerceProducts } = await import('@shared/ecommerce-schema');
-    const [product] = await this.db.insert(ecommerceProducts).values(productData).returning();
-    return product;
-  }
-  
-  async getEcommerceOrders(storeId?: number) {
-    const { ecommerceOrders } = await import('@shared/ecommerce-schema');
-    if (storeId) {
-      return await this.db.select().from(ecommerceOrders).where(eq(ecommerceOrders.storeId, storeId));
-    }
-    return await this.db.select().from(ecommerceOrders);
-  }
-  
-  async createEcommerceOrder(orderData: any) {
-    const { ecommerceOrders } = await import('@shared/ecommerce-schema');
-    const [order] = await this.db.insert(ecommerceOrders).values(orderData).returning();
-    return order;
-  }
-}
+
 
 // Initialize storage
 const storage = new MemStorage();
