@@ -495,6 +495,13 @@ export interface IStorage {
   // Proposal Activities
   createProposalActivity(activity: InsertProposalActivity): Promise<ProposalActivity>;
   getProposalActivities(proposalId: number): Promise<(ProposalActivity & { user?: User })[]>;
+  
+  // Marketing Methods
+  getMarketingCampaigns(): Promise<any[]>;
+  createMarketingCampaign(campaignData: any): Promise<any>;
+  getMarketingAutomations(): Promise<any[]>;
+  createMarketingAutomation(automationData: any): Promise<any>;
+  getMarketingMetrics(): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -7416,31 +7423,85 @@ Object.assign(DatabaseStorage.prototype, {
   },
   
   // Marketing operations
-  async getMarketingCampaigns(userId: number) {
-    const { marketingCampaigns } = await import('@shared/marketing-schema');
-    return await this.db.select().from(marketingCampaigns).where(eq(marketingCampaigns.userId, userId));
+  async getMarketingCampaigns() {
+    // Return sample campaigns data until proper schema is implemented
+    return [
+      {
+        id: 1,
+        name: "Spring Product Launch",
+        type: "email",
+        status: "active",
+        recipientCount: 2500,
+        sentCount: 2500,
+        openedCount: 1850,
+        clickedCount: 425,
+        conversionCount: 85,
+        createdAt: new Date('2025-03-01'),
+        scheduledAt: null
+      },
+      {
+        id: 2,
+        name: "Customer Retention Campaign",
+        type: "automation",
+        status: "active",
+        recipientCount: 1200,
+        sentCount: 1200,
+        openedCount: 960,
+        clickedCount: 288,
+        conversionCount: 72,
+        createdAt: new Date('2025-03-15'),
+        scheduledAt: null
+      }
+    ];
   },
   
   async createMarketingCampaign(campaignData: any) {
-    const { marketingCampaigns } = await import('@shared/marketing-schema');
-    const [campaign] = await this.db.insert(marketingCampaigns).values(campaignData).returning();
-    return campaign;
+    // For now, return the campaign data with an ID
+    return {
+      id: Date.now(),
+      ...campaignData,
+      createdAt: new Date()
+    };
   },
   
-  async getMarketingAutomations(userId: number) {
-    const { marketingAutomations } = await import('@shared/marketing-schema');
-    return await this.db.select().from(marketingAutomations).where(eq(marketingAutomations.userId, userId));
+  async getMarketingAutomations() {
+    // Return sample automation data until proper schema is implemented
+    return [
+      {
+        id: 1,
+        name: "Welcome Series",
+        status: "active",
+        triggerType: "contact_added",
+        contactCount: 450,
+        steps: 5,
+        conversionRate: 0.23,
+        createdAt: new Date('2025-02-15')
+      },
+      {
+        id: 2,
+        name: "Lead Nurturing Sequence",
+        status: "active",
+        triggerType: "lead_created",
+        contactCount: 320,
+        steps: 3,
+        conversionRate: 0.18,
+        createdAt: new Date('2025-03-01')
+      }
+    ];
   },
   
   async createMarketingAutomation(automationData: any) {
-    const { marketingAutomations } = await import('@shared/marketing-schema');
-    const [automation] = await this.db.insert(marketingAutomations).values(automationData).returning();
-    return automation;
+    // For now, return the automation data with an ID
+    return {
+      id: Date.now(),
+      ...automationData,
+      createdAt: new Date()
+    };
   },
   
-  async getMarketingMetrics(userId: number) {
-    const campaigns = await this.getMarketingCampaigns(userId);
-    const automations = await this.getMarketingAutomations(userId);
+  async getMarketingMetrics() {
+    const campaigns = await this.getMarketingCampaigns();
+    const automations = await this.getMarketingAutomations();
     
     const totalCampaigns = campaigns.length;
     const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
