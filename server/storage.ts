@@ -502,6 +502,9 @@ export interface IStorage {
   getMarketingAutomations(): Promise<any[]>;
   createMarketingAutomation(automationData: any): Promise<any>;
   getMarketingMetrics(): Promise<any>;
+  
+  // System Settings
+  getSystemSettings(userId: number): Promise<SystemSettings>;
 }
 
 export class MemStorage implements IStorage {
