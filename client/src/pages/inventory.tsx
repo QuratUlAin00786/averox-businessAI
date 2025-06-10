@@ -423,6 +423,11 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
   const [stockFilter, setStockFilter] = useState("all");
   const [priceRangeFilter, setPriceRangeFilter] = useState("all");
   
+  // Sort state management
+  const [isSortDialogOpen, setIsSortDialogOpen] = useState(false);
+  const [sortField, setSortField] = useState("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  
   // Retrieve single product details if ID is provided
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'detail' | 'edit' | 'history'>('list');
@@ -502,7 +507,7 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
     });
   }
 
-  const filteredProducts = products?.filter(product => {
+  const filteredAndSortedProducts = products?.filter(product => {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -538,6 +543,34 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
     }
 
     return true;
+  })?.sort((a, b) => {
+    // Sort logic
+    let comparison = 0;
+    
+    switch (sortField) {
+      case "name":
+        comparison = a.name.localeCompare(b.name);
+        break;
+      case "sku":
+        comparison = a.sku.localeCompare(b.sku);
+        break;
+      case "price":
+        comparison = parseFloat(a.price) - parseFloat(b.price);
+        break;
+      case "stock":
+        comparison = (a.stockQuantity || 0) - (b.stockQuantity || 0);
+        break;
+      case "status":
+        comparison = (a.isActive === b.isActive) ? 0 : (a.isActive ? -1 : 1);
+        break;
+      case "created":
+        comparison = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+        break;
+      default:
+        comparison = a.name.localeCompare(b.name);
+    }
+    
+    return sortDirection === "asc" ? comparison : -comparison;
   });
 
   return (
@@ -570,7 +603,11 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
             >
               <Filter size={16} /> Filter
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setIsSortDialogOpen(true)}
+            >
               <ArrowUpDown size={16} /> Sort
             </Button>
           </div>
@@ -665,7 +702,7 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                       </TableBody>
                     </Table>
                   </div>
-                ) : filteredProducts?.length > 0 ? (
+                ) : filteredAndSortedProducts?.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -680,7 +717,7 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredProducts.map((product) => (
+                    {filteredAndSortedProducts.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell className="font-medium">
                           {product.name}
