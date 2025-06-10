@@ -26,7 +26,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { 
   AlertCircle, Clock, Filter, MessageSquare, Search, User, Info, Ticket, 
   CheckCircle2, AlertTriangle, HelpCircle, XCircle, Phone, Mail, 
-  MessageCircleQuestion, ExternalLink, Globe
+  MessageCircleQuestion, ExternalLink, Globe, Send, X, Plus
 } from 'lucide-react';
 
 // Mock data structure until API is implemented
@@ -206,6 +206,93 @@ const getStatusIcon = (status: string) => {
     default:
       return <HelpCircle className="h-4 w-4 mr-1" />;
   }
+};
+
+const ChatBox = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  const [chatMessages, setChatMessages] = useState([
+    {
+      id: 1,
+      message: "Hello! I'm here to help you with any questions or issues you may have. How can I assist you today?",
+      isAgent: true,
+      timestamp: new Date().toISOString()
+    }
+  ]);
+  const [newMessage, setNewMessage] = useState('');
+  const { toast } = useToast();
+
+  const handleSendMessage = () => {
+    if (!newMessage.trim()) return;
+
+    const userMessage = {
+      id: chatMessages.length + 1,
+      message: newMessage,
+      isAgent: false,
+      timestamp: new Date().toISOString()
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setNewMessage('');
+
+    // Simulate agent response
+    setTimeout(() => {
+      const agentResponse = {
+        id: chatMessages.length + 2,
+        message: "Thank you for your message. I'm reviewing your inquiry and will provide assistance shortly. Is there any additional information you'd like to share?",
+        isAgent: true,
+        timestamp: new Date().toISOString()
+      };
+      setChatMessages(prev => [...prev, agentResponse]);
+    }, 1500);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 w-80 h-96 bg-white border rounded-lg shadow-lg z-50 flex flex-col">
+      <div className="flex justify-between items-center p-3 bg-primary text-white rounded-t-lg">
+        <div className="flex items-center">
+          <MessageCircleQuestion className="h-4 w-4 mr-2" />
+          <span className="font-medium">Live Chat Support</span>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-primary-foreground/20">
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      <div className="flex-1 overflow-auto p-3 space-y-3">
+        {chatMessages.map((msg) => (
+          <div key={msg.id} className={`flex ${msg.isAgent ? 'justify-start' : 'justify-end'}`}>
+            <div className={`max-w-[80%] p-2 rounded-lg ${
+              msg.isAgent 
+                ? 'bg-gray-100 text-gray-800' 
+                : 'bg-primary text-white'
+            }`}>
+              <p className="text-sm">{msg.message}</p>
+              <p className="text-xs opacity-70 mt-1">
+                {new Date(msg.timestamp).toLocaleTimeString()}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="p-3 border-t">
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            placeholder="Type your message..."
+            className="flex-1 px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <Button size="sm" onClick={handleSendMessage} disabled={!newMessage.trim()}>
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const TicketDetails = ({ ticket, onClose }: { ticket: SupportTicket | null, onClose: () => void }) => {
@@ -534,6 +621,7 @@ export default function SupportTicketsPage() {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [isNewTicketDialogOpen, setIsNewTicketDialogOpen] = useState(false);
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all',
     priority: 'all',
@@ -777,7 +865,7 @@ export default function SupportTicketsPage() {
                     <div>
                       <p className="font-medium">Live Chat</p>
                       <p className="text-sm text-gray-500">Available during business hours</p>
-                      <Button variant="link" className="p-0 h-auto" onClick={() => setIsNewTicketDialogOpen(true)}>Start Chat</Button>
+                      <Button variant="link" className="p-0 h-auto" onClick={() => setIsChatOpen(true)}>Start Chat</Button>
                     </div>
                   </div>
                 </div>
@@ -858,6 +946,11 @@ export default function SupportTicketsPage() {
         onOpenChange={setIsFilterDialogOpen}
         filters={filters}
         onFiltersChange={setFilters}
+      />
+      
+      <ChatBox 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
       />
     </div>
   );
