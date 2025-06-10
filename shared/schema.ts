@@ -773,15 +773,7 @@ export const products = pgTable("products", {
   weight: numeric("weight"), // In kg
   dimensions: jsonb("dimensions"), // {length, width, height} in cm
   barcode: text("barcode"),
-  tags: text("tags").array(),
-  materialType: materialTypeEnum("material_type"), // For manufacturing classification
-  unitOfMeasure: unitOfMeasureEnum("unit_of_measure"), // Unit for measurements
-  leadTime: integer("lead_time"), // Manufacturing lead time in days
-  isBillOfMaterial: boolean("is_bill_of_material").default(false), // Whether this is a BOM
-  isManufactured: boolean("is_manufactured").default(false), // Whether this product is manufactured in-house
-  defaultWarehouseId: integer("default_warehouse_id"), // Default warehouse for storage
-  qualityInspectionRequired: boolean("quality_inspection_required").default(false), // Whether QC is required
-  technicalSpecifications: jsonb("technical_specifications"), // Technical product specifications
+  tags: text("tags").array()
 });
 
 // Inventory Transactions
