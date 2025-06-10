@@ -64,6 +64,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -1283,6 +1284,80 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                   });
                 }}>
                   Apply Filters
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Sort Dialog */}
+        <Dialog open={isSortDialogOpen} onOpenChange={setIsSortDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ArrowUpDown className="w-5 h-5" />
+                Sort Products
+              </DialogTitle>
+              <DialogDescription>
+                Choose how you want to sort the product list
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              {/* Sort By */}
+              <div className="space-y-2">
+                <Label htmlFor="sortBy">Sort By</Label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sort field" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">Product Name</SelectItem>
+                    <SelectItem value="sku">SKU</SelectItem>
+                    <SelectItem value="price">Price</SelectItem>
+                    <SelectItem value="stockLevel">Stock Level</SelectItem>
+                    <SelectItem value="createdAt">Date Created</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sort Order */}
+              <div className="space-y-2">
+                <Label htmlFor="sortOrder">Sort Order</Label>
+                <Select value={sortOrder} onValueChange={setSortOrder}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sort order" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="asc">Ascending (A-Z, Low to High)</SelectItem>
+                    <SelectItem value="desc">Descending (Z-A, High to Low)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSortBy("name");
+                    setSortOrder("asc");
+                    toast({
+                      title: "Sort Reset",
+                      description: "Sort options have been reset to default",
+                    });
+                  }}
+                >
+                  Reset
+                </Button>
+                <Button onClick={() => {
+                  setIsSortDialogOpen(false);
+                  toast({
+                    title: "Sort Applied",
+                    description: `Products sorted by ${sortBy} in ${sortOrder === 'asc' ? 'ascending' : 'descending'} order`,
+                  });
+                }}>
+                  Apply Sort
                 </Button>
               </div>
             </div>
