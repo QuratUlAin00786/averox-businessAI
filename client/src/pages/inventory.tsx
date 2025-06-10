@@ -452,7 +452,7 @@ function ProductEditView({ productId, onBack, onSaved }: ProductEditViewProps) {
         description: product.description || '',
         price: product.price || '',
         cost: product.cost || '',
-        categoryId: product.categoryId?.toString() || '',
+        categoryId: product.categoryId?.toString() || 'none',
         stockQuantity: product.stockQuantity?.toString() || '',
         reorderLevel: product.reorderLevel?.toString() || '',
         barcode: product.barcode || '',
@@ -472,7 +472,7 @@ function ProductEditView({ productId, onBack, onSaved }: ProductEditViewProps) {
         ...formData,
         price: parseFloat(formData.price) || 0,
         cost: parseFloat(formData.cost) || 0,
-        categoryId: formData.categoryId ? parseInt(formData.categoryId) : null,
+        categoryId: formData.categoryId && formData.categoryId !== 'none' ? parseInt(formData.categoryId) : null,
         stockQuantity: parseInt(formData.stockQuantity) || 0,
         reorderLevel: parseInt(formData.reorderLevel) || 0,
         weight: parseFloat(formData.weight) || null,
@@ -578,7 +578,7 @@ function ProductEditView({ productId, onBack, onSaved }: ProductEditViewProps) {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No category</SelectItem>
+                  <SelectItem value="none">No category</SelectItem>
                   {categories?.map((category: any) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}
