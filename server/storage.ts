@@ -3301,39 +3301,38 @@ export class MemStorage implements IStorage {
     // Get all stored campaigns
     const campaigns = Array.from(this.marketingCampaigns.values());
     
-    // Include default campaigns if no campaigns exist
-    if (campaigns.length === 0) {
-      return [
-        {
-          id: 1,
-          name: "Spring Product Launch",
-          type: "email",
-          status: "active",
-          recipientCount: 2500,
-          sentCount: 2500,
-          openedCount: 1850,
-          clickedCount: 425,
-          conversionCount: 85,
-          createdAt: new Date('2025-03-01'),
-          scheduledAt: null
-        },
-        {
-          id: 2,
-          name: "Customer Retention Campaign",
-          type: "automation",
-          status: "active",
-          recipientCount: 1200,
-          sentCount: 1200,
-          openedCount: 960,
-          clickedCount: 288,
-          conversionCount: 72,
-          createdAt: new Date('2025-03-15'),
-          scheduledAt: null
-        }
-      ];
-    }
+    // Default campaigns that are always included
+    const defaultCampaigns = [
+      {
+        id: 1,
+        name: "Spring Product Launch",
+        type: "email",
+        status: "active",
+        recipientCount: 2500,
+        sentCount: 2500,
+        openedCount: 1850,
+        clickedCount: 425,
+        conversionCount: 85,
+        createdAt: new Date('2025-03-01'),
+        scheduledAt: null
+      },
+      {
+        id: 2,
+        name: "Customer Retention Campaign",
+        type: "automation",
+        status: "active",
+        recipientCount: 1200,
+        sentCount: 1200,
+        openedCount: 960,
+        clickedCount: 288,
+        conversionCount: 72,
+        createdAt: new Date('2025-03-15'),
+        scheduledAt: null
+      }
+    ];
     
-    return campaigns;
+    // Return both default campaigns and any newly created campaigns
+    return [...defaultCampaigns, ...campaigns];
   }
 
   async createMarketingCampaign(campaignData: any): Promise<any> {
