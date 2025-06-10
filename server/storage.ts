@@ -698,8 +698,10 @@ export class MemStorage implements IStorage {
     this.teamMemberIdCounter = 1;
     this.assignmentIdCounter = 1;
     
-    // Create default data
-    this.initializeData();
+    // Create default data asynchronously
+    this.initializeData().catch(error => {
+      console.error("Failed to initialize data:", error);
+    });
   }
 
   private initializeSampleCampaigns() {
@@ -760,11 +762,11 @@ export class MemStorage implements IStorage {
     });
   }
 
-  private initializeData() {
+  private async initializeData() {
     // Initialize sample marketing campaigns
     this.initializeSampleCampaigns();
     // Create a default admin user
-    this.createUser({
+    await this.createUser({
       username: "admin",
       password: "password",
       firstName: "Admin",
@@ -775,7 +777,7 @@ export class MemStorage implements IStorage {
     });
     
     // Create a sample sales manager
-    this.createUser({
+    await this.createUser({
       username: "sales.manager",
       password: "password",
       firstName: "Sales",
@@ -892,9 +894,14 @@ export class MemStorage implements IStorage {
     const id = this.userIdCounter++;
     const createdAt = new Date();
     
+    // Hash the password using the auth system
+    const { hashPassword } = await import('./auth');
+    const hashedPassword = await hashPassword(insertUser.password);
+    
     // Default values for fields not in InsertUser but required in User
     const user: User = {
       ...insertUser,
+      password: hashedPassword, // Use hashed password instead of plain text
       id,
       createdAt,
       isActive: true,
