@@ -470,8 +470,8 @@ function ProductEditView({ productId, onBack, onSaved }: ProductEditViewProps) {
     try {
       const updateData = {
         ...formData,
-        price: parseFloat(formData.price) || 0,
-        cost: parseFloat(formData.cost) || 0,
+        price: formData.price || '0',
+        cost: formData.cost || '0',
         categoryId: formData.categoryId && formData.categoryId !== 'none' ? parseInt(formData.categoryId) : null,
         stockQuantity: parseInt(formData.stockQuantity) || 0,
         reorderLevel: parseInt(formData.reorderLevel) || 0,
