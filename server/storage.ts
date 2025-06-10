@@ -876,6 +876,33 @@ export class MemStorage implements IStorage {
     // This method sets up initial sample data for testing
   }
 
+  async getSystemSettings(userId?: number): Promise<any> {
+    // Return default system settings for the user
+    return {
+      theme: 'light',
+      language: 'en',
+      menuItems: this.getDefaultMenuItems(),
+      notifications: true
+    };
+  }
+
+  getDefaultMenuItems() {
+    return [
+      { id: 'dashboard', name: 'Dashboard', icon: 'Home', path: '/', visible: true },
+      { id: 'contacts', name: 'Contacts', icon: 'Users', path: '/contacts', visible: true },
+      { id: 'accounts', name: 'Accounts', icon: 'Building', path: '/accounts', visible: true },
+      { id: 'leads', name: 'Leads', icon: 'Target', path: '/leads', visible: true },
+      { id: 'opportunities', name: 'Opportunities', icon: 'TrendingUp', path: '/opportunities', visible: true },
+      { id: 'marketing', name: 'Marketing', icon: 'Megaphone', path: '/marketing', visible: true },
+      { id: 'analytics', name: 'Analytics', icon: 'BarChart3', path: '/analytics', visible: true },
+      { id: 'tasks', name: 'Tasks', icon: 'CheckSquare', path: '/tasks', visible: true },
+      { id: 'calendar', name: 'Calendar', icon: 'Calendar', path: '/calendar', visible: true },
+      { id: 'accounting', name: 'Accounting', icon: 'Calculator', path: '/accounting', visible: true },
+      { id: 'ecommerce', name: 'E-commerce', icon: 'ShoppingCart', path: '/ecommerce', visible: true },
+      { id: 'manufacturing', name: 'Manufacturing', icon: 'Settings', path: '/manufacturing', visible: true }
+    ];
+  }
+
   // User Methods
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
