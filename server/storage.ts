@@ -855,10 +855,7 @@ export class MemStorage implements IStorage {
       isActive: true
     });
     
-    // Initialize permissions
-    this.initializePermissions().catch(error => {
-      console.error("Failed to initialize permissions:", error);
-    });
+    // Permissions will be initialized through the addPermissionsToMemStorage function
   }
 
   // User Methods
@@ -7528,78 +7525,72 @@ DatabaseStorage.prototype.removeTeamMember = async function(id: number): Promise
   }
 };
 
-// Add required database-driven storage methods to DatabaseStorage
-Object.assign(DatabaseStorage.prototype, {
-  // E-commerce operations
-  async getEcommerceStores(userId: number) {
-    const { ecommerceStores } = await import('@shared/ecommerce-schema');
-    return await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.userId, userId));
-  },
-  
-  async createEcommerceStore(storeData: any) {
-    const { ecommerceStores } = await import('@shared/ecommerce-schema');
-    const [store] = await this.db.insert(ecommerceStores).values(storeData).returning();
-    return store;
-  },
-  
-  async getEcommerceStore(id: number) {
-    const { ecommerceStores } = await import('@shared/ecommerce-schema');
-    const [store] = await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.id, id));
-    return store;
-  },
-  
-  async updateEcommerceStore(id: number, data: any) {
-    const { ecommerceStores } = await import('@shared/ecommerce-schema');
-    const [store] = await this.db.update(ecommerceStores).set(data).where(eq(ecommerceStores.id, id)).returning();
-    return store;
-  },
-  
-  async getEcommerceProducts(storeId?: number) {
-    const { ecommerceProducts } = await import('@shared/ecommerce-schema');
-    if (storeId) {
-      return await this.db.select().from(ecommerceProducts).where(eq(ecommerceProducts.storeId, storeId));
-    }
-    return await this.db.select().from(ecommerceProducts);
-  }
-  
-  async createEcommerceProduct(productData: any) {
-    const { ecommerceProducts } = await import('@shared/ecommerce-schema');
-    const [product] = await this.db.insert(ecommerceProducts).values(productData).returning();
-    return product;
-  }
-  
-  async getEcommerceOrders(storeId?: number) {
-    const { ecommerceOrders } = await import('@shared/ecommerce-schema');
-    if (storeId) {
-      return await this.db.select().from(ecommerceOrders).where(eq(ecommerceOrders.storeId, storeId));
-    }
-    return await this.db.select().from(ecommerceOrders);
-  }
-  
-  async createEcommerceOrder(orderData: any) {
-    const { ecommerceOrders } = await import('@shared/ecommerce-schema');
-    const [order] = await this.db.insert(ecommerceOrders).values(orderData).returning();
-    return order;
-  }
-  
-  async getEcommerceAnalytics(storeId?: number) {
-    const orders = await this.getEcommerceOrders(storeId);
-    const products = await this.getEcommerceProducts(storeId);
-    
-    const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
-    const totalOrders = orders.length;
-    const activeProducts = products.filter(p => p.isActive).length;
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+// Add E-commerce operations to DatabaseStorage
+DatabaseStorage.prototype.getEcommerceStores = async function(userId: number) {
+  const { ecommerceStores } = await import('@shared/ecommerce-schema');
+  return await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.userId, userId));
+};
 
-    return { totalRevenue, totalOrders, activeProducts, averageOrderValue };
+DatabaseStorage.prototype.createEcommerceStore = async function(storeData: any) {
+  const { ecommerceStores } = await import('@shared/ecommerce-schema');
+  const [store] = await this.db.insert(ecommerceStores).values(storeData).returning();
+  return store;
+};
+
+DatabaseStorage.prototype.getEcommerceStore = async function(id: number) {
+  const { ecommerceStores } = await import('@shared/ecommerce-schema');
+  const [store] = await this.db.select().from(ecommerceStores).where(eq(ecommerceStores.id, id));
+  return store;
+};
+
+DatabaseStorage.prototype.updateEcommerceStore = async function(id: number, data: any) {
+  const { ecommerceStores } = await import('@shared/ecommerce-schema');
+  const [store] = await this.db.update(ecommerceStores).set(data).where(eq(ecommerceStores.id, id)).returning();
+  return store;
+};
+
+DatabaseStorage.prototype.getEcommerceProducts = async function(storeId?: number) {
+  const { ecommerceProducts } = await import('@shared/ecommerce-schema');
+  if (storeId) {
+    return await this.db.select().from(ecommerceProducts).where(eq(ecommerceProducts.storeId, storeId));
   }
-}
+  return await this.db.select().from(ecommerceProducts);
+};
+
+DatabaseStorage.prototype.createEcommerceProduct = async function(productData: any) {
+  const { ecommerceProducts } = await import('@shared/ecommerce-schema');
+  const [product] = await this.db.insert(ecommerceProducts).values(productData).returning();
+  return product;
+};
+
+DatabaseStorage.prototype.getEcommerceOrders = async function(storeId?: number) {
+  const { ecommerceOrders } = await import('@shared/ecommerce-schema');
+  if (storeId) {
+    return await this.db.select().from(ecommerceOrders).where(eq(ecommerceOrders.storeId, storeId));
+  }
+  return await this.db.select().from(ecommerceOrders);
+};
+
+DatabaseStorage.prototype.createEcommerceOrder = async function(orderData: any) {
+  const { ecommerceOrders } = await import('@shared/ecommerce-schema');
+  const [order] = await this.db.insert(ecommerceOrders).values(orderData).returning();
+  return order;
+};
+
+DatabaseStorage.prototype.getEcommerceAnalytics = async function(storeId?: number) {
+  const orders = await this.getEcommerceOrders(storeId);
+  const products = await this.getEcommerceProducts(storeId);
+  
+  const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.totalAmount || 0), 0);
+  const totalOrders = orders.length;
+  const activeProducts = products.filter(p => p.isActive).length;
+  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+  return { totalRevenue, totalOrders, activeProducts, averageOrderValue };
+};
 
 // Initialize storage
 const storage = new MemStorage();
-
-// Initialize sample data with campaigns
-storage.initializeSampleData();
 
 // Add sample marketing campaigns to test the Campaign Records functionality
 const sampleCampaigns = [
