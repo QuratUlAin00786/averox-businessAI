@@ -2890,22 +2890,21 @@ router.get('/work-centers', async (req: Request, res: Response) => {
       SELECT 
         wc.id,
         wc.name,
-        wc.type,
-        wc.location,
+        wc.code,
+        wc.description,
         wc.status,
         wc.capacity,
         COALESCE(
           (SELECT SUM(po.quantity) FROM production_orders po WHERE po.routing_id = wc.id AND po.status IN ('Scheduled', 'InProgress')),
           0
         ) as current_load,
-        wc.manager_id,
-        u.username as manager_name,
         wc.operating_hours,
-        (SELECT COUNT(*) FROM work_center_workers WHERE work_center_id = wc.id) as workers_assigned,
-        (SELECT COUNT(*) FROM equipment WHERE work_center_id = wc.id) as equipment_count,
+        wc.hourly_rate,
+        wc.setup_time,
+        0 as workers_assigned,
+        0 as equipment_count,
         wc.created_at
       FROM work_centers wc
-      LEFT JOIN users u ON wc.manager_id = u.id
       ORDER BY wc.name
     `);
     
