@@ -309,7 +309,9 @@ export default function MRPDashboard() {
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
                                   // Show forecast details in a modal or expanded view
                                   console.log('Viewing forecast details for:', forecast);
                                   // For now, just log the details - can be expanded to show a modal
