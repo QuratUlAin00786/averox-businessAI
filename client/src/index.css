@@ -163,8 +163,18 @@ html[dir="rtl"] .rtl-mirror {
     @apply border-border;
   }
 
+  html, body {
+    height: 100%;
+    overflow: visible;
+  }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  #root {
+    height: 100%;
+    overflow: visible;
   }
 }
 
