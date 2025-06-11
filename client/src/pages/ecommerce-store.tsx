@@ -854,6 +854,7 @@ const ProductsTabContent = () => {
   const [isProductViewOpen, setIsProductViewOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [tableKey, setTableKey] = useState(0);
   const { toast } = useToast();
   
   const handleViewProduct = (product: Product) => {
@@ -862,26 +863,29 @@ const ProductsTabContent = () => {
   };
 
   const handleDuplicateProduct = (product: Product) => {
+    const timestamp = Date.now();
     const duplicatedProduct: Product = {
       ...product,
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `copy-${timestamp}`,
       name: `${product.name} (Copy)`,
-      tags: product.tags ? [...product.tags] : [],
-      images: product.images ? [...product.images] : [],
+      tags: [...(product.tags || [])],
+      images: [...(product.images || [])],
       dateCreated: new Date().toISOString(),
       dateModified: new Date().toISOString(),
     };
     
-    setProducts(prev => [...prev, duplicatedProduct]);
+    // Update products array with new product
+    setProducts(currentProducts => {
+      const newProducts = [...currentProducts, duplicatedProduct];
+      return newProducts;
+    });
     
-    // Force component re-render by updating search query momentarily
-    const currentQuery = searchQuery;
-    setSearchQuery(' ');
-    setTimeout(() => setSearchQuery(currentQuery), 10);
+    // Force table re-render
+    setTableKey(prev => prev + 1);
     
     toast({
       title: "Product Duplicated",
-      description: `${product.name} has been successfully duplicated.`,
+      description: `Created: ${duplicatedProduct.name}`,
       variant: "default",
     });
   };
@@ -978,7 +982,7 @@ const ProductsTabContent = () => {
       </div>
       
       <Card>
-        <Table>
+        <Table key={tableKey}>
           <TableHeader>
             <TableRow>
               <TableHead>Product</TableHead>
