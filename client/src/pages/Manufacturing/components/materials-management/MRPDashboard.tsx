@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
@@ -72,7 +73,11 @@ import {
 import { AlertCircle, ArrowRight, TrendingUp, TrendingDown, Package, Calendar, CheckCircle2, PackageX } from 'lucide-react';
 
 export default function MRPDashboard() {
-  const [activeTab, setActiveTab] = useState('summary');
+  const [location] = useLocation();
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const tabParam = urlParams.get('tab');
+  
+  const [activeTab, setActiveTab] = useState(tabParam || 'summary');
   const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
@@ -124,7 +129,7 @@ export default function MRPDashboard() {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="summary" className="w-full" onValueChange={setActiveTab}>
+      <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="summary">MRP Summary</TabsTrigger>
           <TabsTrigger value="forecasts">Demand Forecasting</TabsTrigger>

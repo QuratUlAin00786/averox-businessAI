@@ -99,10 +99,10 @@ export default function ForecastingPage() {
     onSuccess: () => {
       toast({
         title: 'Forecast Created',
-        description: 'The forecast has been created successfully.',
+        description: 'The forecast has been created successfully. View it in the MRP Dashboard.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/mrp/dashboard'] });
-      setLocation('/manufacturing');
+      setLocation('/manufacturing/materials/mrp?tab=forecasts');
     },
     onError: (error: any) => {
       toast({
