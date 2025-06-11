@@ -80,7 +80,7 @@ export default function MRPDashboard() {
   const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isRunningMrp, setIsRunningMrp] = useState(false);
-  const [lastRunId, setLastRunId] = useState<number | null>(null);
+  const [lastRunId, setLastRunId] = useState<number | null>(14);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -536,11 +536,15 @@ export default function MRPDashboard() {
                       if (response.ok) {
                         const result = await response.json();
                         
-                        // Update local state with new run ID
+                        // Update local state with new run ID immediately
+                        console.log('Setting lastRunId to:', result.runId);
                         setLastRunId(result.runId);
                         
-                        // Refresh dashboard data to show updated results
-                        await queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/mrp/dashboard'] });
+                        // Small delay to ensure state updates
+                        setTimeout(async () => {
+                          // Refresh dashboard data to show updated results
+                          await queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/mrp/dashboard'] });
+                        }, 100);
                         
                         toast({
                           title: "MRP Process Completed",
@@ -602,6 +606,40 @@ export default function MRPDashboard() {
                   </div>
                 </div>
                 
+                {data?.lowStockItems && data.lowStockItems.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium mb-4">Purchase Recommendations</h3>
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Material</TableHead>
+                            <TableHead>Current Stock</TableHead>
+                            <TableHead>Required Qty</TableHead>
+                            <TableHead>Recommended Order</TableHead>
+                            <TableHead>Supplier</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {data.lowStockItems.slice(0, 5).map((item: LowStockItem) => (
+                            <TableRow key={item.id}>
+                              <TableCell className="font-medium">{item.material_name}</TableCell>
+                              <TableCell>{item.current_stock} {item.unit_of_measure}</TableCell>
+                              <TableCell className="text-orange-600 font-medium">
+                                {item.reorder_level * 2} {item.unit_of_measure}
+                              </TableCell>
+                              <TableCell className="text-green-600 font-medium">
+                                {Math.max(item.reorder_level * 3 - item.current_stock, 0)} {item.unit_of_measure}
+                              </TableCell>
+                              <TableCell>{item.supplier_name}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="pt-4 text-center">
                   <p className="mb-4 text-muted-foreground">
                     MRP process analyzes inventory levels and generates purchase recommendations
@@ -609,7 +647,7 @@ export default function MRPDashboard() {
                   <Button
                     onClick={() => setLocation("/manufacturing/materials-management")}
                   >
-                    View Planning Details
+                    View Detailed Planning
                   </Button>
                 </div>
               </div>
