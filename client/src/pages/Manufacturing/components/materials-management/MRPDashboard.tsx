@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Table, 
@@ -78,6 +79,8 @@ export default function MRPDashboard() {
   const [activeTab, setActiveTab] = useState('summary');
   const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRunningMrp, setIsRunningMrp] = useState(false);
+  const { toast } = useToast();
 
   // Update active tab based on URL parameters
   useEffect(() => {
@@ -510,7 +513,9 @@ export default function MRPDashboard() {
                   </CardDescription>
                 </div>
                 <Button
+                  disabled={isRunningMrp}
                   onClick={async () => {
+                    setIsRunningMrp(true);
                     try {
                       const response = await fetch('/api/manufacturing/mrp/run', {
                         method: 'POST',
@@ -528,17 +533,33 @@ export default function MRPDashboard() {
                       
                       if (response.ok) {
                         const result = await response.json();
-                        // Successfully ran MRP process, stay on current page
+                        toast({
+                          title: "MRP Process Started",
+                          description: `Successfully initiated MRP run #${result.runId}`,
+                        });
                         console.log('MRP process completed successfully:', result);
                       } else {
-                        console.error('Error running MRP process:', await response.text());
+                        const errorText = await response.text();
+                        toast({
+                          title: "MRP Process Failed", 
+                          description: "Failed to start MRP process. Please try again.",
+                          variant: "destructive",
+                        });
+                        console.error('Error running MRP process:', errorText);
                       }
                     } catch (error) {
+                      toast({
+                        title: "MRP Process Failed",
+                        description: "An error occurred while starting the MRP process.",
+                        variant: "destructive",
+                      });
                       console.error('Error running MRP process:', error);
+                    } finally {
+                      setIsRunningMrp(false);
                     }
                   }}
                 >
-                  Run MRP Process
+                  {isRunningMrp ? 'Running...' : 'Run MRP Process'}
                 </Button>
               </div>
             </CardHeader>
