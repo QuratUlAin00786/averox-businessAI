@@ -536,6 +536,7 @@ export default function MRPDashboard() {
                         toast({
                           title: "MRP Process Started",
                           description: `Successfully initiated MRP run #${result.runId}`,
+                          variant: "default",
                         });
                         console.log('MRP process completed successfully:', result);
                       } else {
