@@ -34,9 +34,7 @@ const forecastFormSchema = z.object({
   }).refine((date) => date > new Date(), {
     message: 'End date must be in the future',
   }),
-  product_id: z.number({
-    required_error: 'Product is required',
-  }),
+  product_id: z.number().min(1, 'Product selection is required'),
   forecast_period: z.enum(['Monthly', 'Quarterly', 'Yearly'], {
     required_error: 'Period is required',
   }),
@@ -74,6 +72,7 @@ export default function ForecastingPage() {
       description: '',
       start_date: new Date(),
       end_date: new Date(new Date().setMonth(new Date().getMonth() + 3)),
+      product_id: 0,
       forecast_period: 'Monthly',
       forecast_type: 'Statistical',
       confidence_level: 0.8,
@@ -84,7 +83,18 @@ export default function ForecastingPage() {
   // Create forecast mutation
   const createForecastMutation = useMutation({
     mutationFn: async (data: z.infer<typeof forecastFormSchema>) => {
-      return apiRequest('POST', '/api/manufacturing/forecasts', data);
+      // Transform the form data to match server expectations
+      const transformedData = {
+        name: data.name,
+        description: data.description,
+        startDate: data.start_date.toISOString(),
+        endDate: data.end_date.toISOString(),
+        items: [{
+          productId: data.product_id,
+          quantity: 100 // Default quantity, could be made configurable
+        }]
+      };
+      return apiRequest('POST', '/api/manufacturing/forecasts', transformedData);
     },
     onSuccess: () => {
       toast({
