@@ -3531,11 +3531,11 @@ router.get('/dashboard', async (req: Request, res: Response) => {
 // ---------------------------------------------------------------
 router.get('/trade-compliance', async (req: Request, res: Response) => {
   try {
-    // First verify if trade_compliance table exists
+    // First verify if trade_compliance_documents table exists
     const tableExistsResult = await db.execute(sql`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
-        WHERE table_name = 'trade_compliance'
+        WHERE table_name = 'trade_compliance_documents'
       ) as exists
     `);
     
@@ -3544,30 +3544,27 @@ router.get('/trade-compliance', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
+    console.log('Fetching trade compliance documents...');
     const result = await db.execute(sql`
       SELECT 
-        tc.id,
-        tc.product_id,
-        p.name as product_name,
-        p.sku as product_code,
-        tc.country_of_origin,
-        tc.hs_code,
-        tc.eccn,
-        tc.is_dual_use,
-        tc.restricted_countries,
-        tc.export_license_required,
-        tc.import_license_required,
-        tc.classification_notes,
-        tc.last_reviewed_date,
-        tc.reviewed_by,
-        u.username as reviewed_by_name,
-        tc.created_at,
-        tc.updated_at
-      FROM trade_compliance tc
-      LEFT JOIN products p ON tc.product_id = p.id
-      LEFT JOIN users u ON tc.reviewed_by = u.id
-      ORDER BY tc.updated_at DESC NULLS LAST
+        tcd.id,
+        tcd.document_type as "documentType",
+        tcd.document_number as "documentNumber",
+        tcd.country,
+        tcd.status,
+        tcd.issue_date as "issueDate",
+        tcd.expiry_date as "expiryDate",
+        tcd.notes,
+        tcd.attachment_url as "attachmentUrl",
+        tcd.created_at as "createdAt",
+        tcd.updated_at as "updatedAt",
+        u.username as "createdByName"
+      FROM trade_compliance_documents tcd
+      LEFT JOIN users u ON tcd.created_by = u.id
+      ORDER BY tcd.updated_at DESC NULLS LAST
     `);
+    
+    console.log('Query result rows:', result.rows?.length || 0);
     
     // Extract rows from PostgreSQL result
     const tradeComplianceRecords = result.rows || [];
