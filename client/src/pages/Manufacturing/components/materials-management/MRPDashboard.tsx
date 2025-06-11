@@ -74,12 +74,18 @@ import { AlertCircle, ArrowRight, TrendingUp, TrendingDown, Package, Calendar, C
 
 export default function MRPDashboard() {
   const [location] = useLocation();
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
-  const tabParam = urlParams.get('tab');
-  
-  const [activeTab, setActiveTab] = useState(tabParam || 'summary');
+  const [activeTab, setActiveTab] = useState('summary');
   const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Update active tab based on URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.split('?')[1] || '');
+    const tabParam = urlParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [location]);
   
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['/api/manufacturing/mrp/dashboard'],
