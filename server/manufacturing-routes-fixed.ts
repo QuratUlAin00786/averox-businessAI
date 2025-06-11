@@ -3713,6 +3713,77 @@ router.get('/returns', async (req: Request, res: Response) => {
   }
 });
 
+// Create new return authorization
+router.post('/returns', async (req: Request, res: Response) => {
+  try {
+    const {
+      rma_number,
+      customer_name,
+      return_type,
+      return_reason,
+      product_id,
+      quantity,
+      condition,
+      notes,
+      expected_return_date,
+      status = 'Pending'
+    } = req.body;
+
+    // Validate required fields
+    if (!rma_number || !customer_name || !return_reason) {
+      return res.status(400).json({ error: 'Missing required fields: rma_number, customer_name, return_reason' });
+    }
+
+    // Check if return_authorizations table exists
+    const tableExistsResult = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'return_authorizations'
+      ) as exists
+    `);
+    
+    if (!tableExistsResult.rows || !tableExistsResult.rows[0] || !tableExistsResult.rows[0].exists) {
+      return res.status(500).json({ error: 'Return authorizations table not found' });
+    }
+
+    // Insert new return authorization
+    const result = await db.execute(sql`
+      INSERT INTO return_authorizations (
+        rma_number,
+        customer_name,
+        return_type,
+        return_reason,
+        product_id,
+        quantity,
+        condition,
+        notes,
+        expected_return_date,
+        status,
+        created_at
+      ) VALUES (
+        ${rma_number},
+        ${customer_name},
+        ${return_type},
+        ${return_reason},
+        ${product_id},
+        ${quantity},
+        ${condition},
+        ${notes},
+        ${expected_return_date},
+        ${status},
+        NOW()
+      ) RETURNING *
+    `);
+
+    const newReturn = result.rows[0];
+    return res.status(201).json(newReturn);
+
+  } catch (error) {
+    console.error('Error creating return authorization:', error);
+    return res.status(500).json({ error: 'Failed to create return authorization' });
+  }
+});
+
 // ---------------------------------------------------------------
 // BOM MANAGEMENT (BILL OF MATERIALS)
 // ---------------------------------------------------------------
