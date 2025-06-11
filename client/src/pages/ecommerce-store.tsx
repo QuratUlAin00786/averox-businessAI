@@ -1185,6 +1185,7 @@ const OrdersTabContent = () => {
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
   const [isOrderEditOpen, setIsOrderEditOpen] = useState(false);
   const [orders, setOrders] = useState(mockOrders);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleViewOrder = (order: any) => {
     console.log("Opening order details for:", order);
@@ -1201,10 +1202,11 @@ const OrdersTabContent = () => {
     setOrders(prevOrders => 
       prevOrders.map(o => 
         o.id === order.id 
-          ? { ...o, status: 'completed', shippingStatus: 'shipped', lastUpdated: Date.now() }
+          ? { ...o, status: 'completed' as const, shippingStatus: 'shipped' as const }
           : o
       )
     );
+    setRefreshKey(prev => prev + 1);
     toast({
       title: "Order Shipped",
       description: `Order ${order.orderNumber} has been marked as shipped.`,
@@ -1212,13 +1214,17 @@ const OrdersTabContent = () => {
   };
 
   const handleCapturePayment = (order: any) => {
-    setOrders(prevOrders => 
-      prevOrders.map(o => 
+    console.log('Capturing payment for order:', order.id);
+    setOrders(prevOrders => {
+      const updatedOrders = prevOrders.map(o => 
         o.id === order.id 
-          ? { ...o, paymentStatus: 'paid', lastUpdated: Date.now() }
+          ? { ...o, paymentStatus: 'paid' as const }
           : o
-      )
-    );
+      );
+      console.log('Updated orders:', updatedOrders);
+      return updatedOrders;
+    });
+    setRefreshKey(prev => prev + 1);
     toast({
       title: "Payment Captured",
       description: `Payment for order ${order.orderNumber} has been captured successfully.`,
@@ -1229,10 +1235,11 @@ const OrdersTabContent = () => {
     setOrders(prevOrders => 
       prevOrders.map(o => 
         o.id === order.id 
-          ? { ...o, status: 'processing', lastUpdated: Date.now() }
+          ? { ...o, status: 'processing' as const }
           : o
       )
     );
+    setRefreshKey(prev => prev + 1);
     toast({
       title: "Order Processing",
       description: `Order ${order.orderNumber} has been marked as processing.`,
@@ -1243,10 +1250,11 @@ const OrdersTabContent = () => {
     setOrders(prevOrders => 
       prevOrders.map(o => 
         o.id === order.id 
-          ? { ...o, status: 'cancelled', lastUpdated: Date.now() }
+          ? { ...o, status: 'cancelled' as const }
           : o
       )
     );
+    setRefreshKey(prev => prev + 1);
     toast({
       title: "Order Cancelled",
       description: `Order ${order.orderNumber} has been cancelled.`,
@@ -1334,7 +1342,7 @@ const OrdersTabContent = () => {
               </TableRow>
             ) : (
               filteredOrders.map(order => (
-                <TableRow key={`${order.id}-${order.status}-${order.paymentStatus}-${order.lastUpdated || 0}`}>
+                <TableRow key={`${order.id}-${order.status}-${order.paymentStatus}-${refreshKey}`}>
                   <TableCell className="font-medium">{order.orderNumber}</TableCell>
                   <TableCell>
                     <div>
@@ -1344,12 +1352,12 @@ const OrdersTabContent = () => {
                   </TableCell>
                   <TableCell>{formatDate(order.createdAt)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusColor(order.status)}>
+                    <Badge variant="outline" className={getStatusColor(order.status)} key={`status-${order.id}-${refreshKey}`}>
                       {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusColor(order.paymentStatus)}>
+                    <Badge variant="outline" className={getStatusColor(order.paymentStatus)} key={`payment-${order.id}-${refreshKey}`}>
                       {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
                     </Badge>
                   </TableCell>
