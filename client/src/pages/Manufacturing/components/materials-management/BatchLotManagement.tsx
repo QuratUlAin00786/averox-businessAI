@@ -34,6 +34,7 @@ export default function BatchLotManagement() {
   const [activeTab, setActiveTab] = useState('current');
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isInspectionDialogOpen, setIsInspectionDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     lotNumber: '',
     batchNumber: '',
@@ -47,6 +48,19 @@ export default function BatchLotManagement() {
     qualityStatus: 'Pending',
     cost: '',
     notes: ''
+  });
+  
+  const [inspectionFormData, setInspectionFormData] = useState({
+    batchLotId: '',
+    inspectorName: '',
+    inspectionDate: new Date().toISOString().split('T')[0],
+    testType: '',
+    testResult: '',
+    qualityRating: '',
+    defectsFound: '',
+    corrective_action: '',
+    approved: false,
+    comments: ''
   });
   
   const { toast } = useToast();
@@ -94,6 +108,49 @@ export default function BatchLotManagement() {
       title: "Report Generated",
       description: "Expiring batches report has been downloaded successfully."
     });
+  };
+
+  // Create inspection mutation
+  const createInspectionMutation = useMutation({
+    mutationFn: async (inspectionData: any) => {
+      const response = await apiRequest('POST', '/api/manufacturing/quality-inspections', inspectionData);
+      if (!response.ok) {
+        throw new Error('Failed to create quality inspection');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Inspection Created",
+        description: "Quality inspection has been created successfully."
+      });
+      setIsInspectionDialogOpen(false);
+      setInspectionFormData({
+        batchLotId: '',
+        inspectorName: '',
+        inspectionDate: new Date().toISOString().split('T')[0],
+        testType: '',
+        testResult: '',
+        qualityRating: '',
+        defectsFound: '',
+        corrective_action: '',
+        approved: false,
+        comments: ''
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/quality-inspections'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create quality inspection.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleInspectionSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createInspectionMutation.mutate(inspectionFormData);
   };
   
   // Fetch products for dropdown
@@ -617,7 +674,164 @@ export default function BatchLotManagement() {
                     Batch/lot quality inspection and reporting
                   </CardDescription>
                 </div>
-                <Button>New Inspection</Button>
+                <Dialog open={isInspectionDialogOpen} onOpenChange={setIsInspectionDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Inspection
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create Quality Inspection</DialogTitle>
+                      <DialogDescription>
+                        Enter inspection details for batch/lot quality control
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleInspectionSubmit} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="batchLotId">Batch/Lot</Label>
+                          <Select value={inspectionFormData.batchLotId} onValueChange={(value) => setInspectionFormData(prev => ({ ...prev, batchLotId: value }))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select batch/lot" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {batchLotsData?.map((batch: any) => (
+                                <SelectItem key={batch.id} value={batch.id.toString()}>
+                                  {batch.batchNumber} - {batch.materialName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="inspectorName">Inspector Name</Label>
+                          <Input
+                            id="inspectorName"
+                            value={inspectionFormData.inspectorName}
+                            onChange={(e) => setInspectionFormData(prev => ({ ...prev, inspectorName: e.target.value }))}
+                            placeholder="Enter inspector name"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="inspectionDate">Inspection Date</Label>
+                          <Input
+                            id="inspectionDate"
+                            type="date"
+                            value={inspectionFormData.inspectionDate}
+                            onChange={(e) => setInspectionFormData(prev => ({ ...prev, inspectionDate: e.target.value }))}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="testType">Test Type</Label>
+                          <Select value={inspectionFormData.testType} onValueChange={(value) => setInspectionFormData(prev => ({ ...prev, testType: value }))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select test type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Visual Inspection">Visual Inspection</SelectItem>
+                              <SelectItem value="Chemical Analysis">Chemical Analysis</SelectItem>
+                              <SelectItem value="Physical Testing">Physical Testing</SelectItem>
+                              <SelectItem value="Microbiological">Microbiological</SelectItem>
+                              <SelectItem value="Functional Testing">Functional Testing</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="testResult">Test Result</Label>
+                          <Select value={inspectionFormData.testResult} onValueChange={(value) => setInspectionFormData(prev => ({ ...prev, testResult: value }))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select result" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Pass">Pass</SelectItem>
+                              <SelectItem value="Fail">Fail</SelectItem>
+                              <SelectItem value="Conditional">Conditional</SelectItem>
+                              <SelectItem value="Pending">Pending</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="qualityRating">Quality Rating</Label>
+                          <Select value={inspectionFormData.qualityRating} onValueChange={(value) => setInspectionFormData(prev => ({ ...prev, qualityRating: value }))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select rating" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="A">A - Excellent</SelectItem>
+                              <SelectItem value="B">B - Good</SelectItem>
+                              <SelectItem value="C">C - Acceptable</SelectItem>
+                              <SelectItem value="D">D - Poor</SelectItem>
+                              <SelectItem value="F">F - Failed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="defectsFound">Defects Found</Label>
+                        <Textarea
+                          id="defectsFound"
+                          value={inspectionFormData.defectsFound}
+                          onChange={(e) => setInspectionFormData(prev => ({ ...prev, defectsFound: e.target.value }))}
+                          placeholder="Describe any defects found..."
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="corrective_action">Corrective Action</Label>
+                        <Textarea
+                          id="corrective_action"
+                          value={inspectionFormData.corrective_action}
+                          onChange={(e) => setInspectionFormData(prev => ({ ...prev, corrective_action: e.target.value }))}
+                          placeholder="Describe corrective actions taken..."
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="comments">Comments</Label>
+                        <Textarea
+                          id="comments"
+                          value={inspectionFormData.comments}
+                          onChange={(e) => setInspectionFormData(prev => ({ ...prev, comments: e.target.value }))}
+                          placeholder="Additional comments..."
+                          rows={3}
+                        />
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="approved"
+                          checked={inspectionFormData.approved}
+                          onChange={(e) => setInspectionFormData(prev => ({ ...prev, approved: e.target.checked }))}
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="approved">Mark as Approved</Label>
+                      </div>
+
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button type="button" variant="outline" onClick={() => setIsInspectionDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={createInspectionMutation.isPending}>
+                          {createInspectionMutation.isPending ? 'Creating...' : 'Create Inspection'}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
