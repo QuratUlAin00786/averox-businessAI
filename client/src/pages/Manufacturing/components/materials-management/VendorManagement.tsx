@@ -1,10 +1,16 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Building,
   ChevronRight, 
@@ -19,6 +25,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { formatDate } from '@/lib/formatters';
+
+const vendorSchema = z.object({
+  name: z.string().min(1, 'Vendor name is required'),
+  code: z.string().min(1, 'Vendor code is required'),
+  contactPerson: z.string().min(1, 'Contact person is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().min(1, 'Phone number is required'),
+  address: z.string().min(1, 'Address is required'),
+  taxId: z.string().optional(),
+  paymentTerms: z.string().min(1, 'Payment terms are required'),
+  deliveryTerms: z.string().min(1, 'Delivery terms are required'),
+  website: z.string().optional(),
+  qualityRating: z.number().min(0).max(5).default(0),
+  deliveryRating: z.number().min(0).max(5).default(0),
+  priceRating: z.number().min(0).max(5).default(0),
+  isActive: z.boolean().default(true),
+});
+
+type VendorFormData = z.infer<typeof vendorSchema>;
 
 interface Vendor {
   id: number;
@@ -43,6 +68,55 @@ interface Vendor {
 
 export default function VendorManagement() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const form = useForm<VendorFormData>({
+    resolver: zodResolver(vendorSchema),
+    defaultValues: {
+      name: '',
+      code: '',
+      contactPerson: '',
+      email: '',
+      phone: '',
+      address: '',
+      taxId: '',
+      paymentTerms: 'Net 30',
+      deliveryTerms: 'FOB',
+      website: '',
+      qualityRating: 0,
+      deliveryRating: 0,
+      priceRating: 0,
+      isActive: true,
+    },
+  });
+
+  const createVendorMutation = useMutation({
+    mutationFn: async (data: VendorFormData) => {
+      const response = await apiRequest('POST', '/api/manufacturing/vendors', data);
+      if (!response.ok) {
+        throw new Error('Failed to create vendor');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/vendors'] });
+      setIsDialogOpen(false);
+      form.reset();
+      toast({
+        title: "Success",
+        description: "Vendor created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create vendor",
+        variant: "destructive",
+      });
+    },
+  });
   
   // Fetch vendors from API
   const { data: rawVendorData, isLoading, refetch } = useQuery({
@@ -100,10 +174,175 @@ export default function VendorManagement() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                New Vendor
-              </Button>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Vendor
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Create New Vendor</DialogTitle>
+                  </DialogHeader>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit((data) => createVendorMutation.mutate(data))} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Vendor Name</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Enter vendor name" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="code"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Vendor Code</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Enter vendor code" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="contactPerson"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Contact Person</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Enter contact person" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="email" placeholder="Enter email address" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Enter phone number" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="website"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Website</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Enter website URL" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Address</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Enter full address" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="paymentTerms"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Payment Terms</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="e.g., Net 30" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="deliveryTerms"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Delivery Terms</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="e.g., FOB" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name="taxId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tax ID (Optional)</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Enter tax identification number" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={createVendorMutation.isPending}>
+                          {createVendorMutation.isPending ? 'Creating...' : 'Create Vendor'}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardHeader>
