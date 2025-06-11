@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -51,6 +51,15 @@ export default function TradeComplianceManagement() {
   const [activeTab, setActiveTab] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isNewDocumentDialogOpen, setIsNewDocumentDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    documentType: '',
+    documentNumber: '',
+    country: '',
+    status: '',
+    issueDate: '',
+    expiryDate: '',
+    notes: ''
+  });
   const queryClient = useQueryClient();
   
   // Fetch compliance data from API
@@ -76,6 +85,53 @@ export default function TradeComplianceManagement() {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  // Mutation for creating new compliance document
+  const createDocumentMutation = useMutation({
+    mutationFn: async (documentData: any) => {
+      const response = await apiRequest('POST', '/api/manufacturing/trade-compliance', documentData);
+      return response.json();
+    },
+    onSuccess: () => {
+      // Refresh the documents list
+      queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/trade-compliance'] });
+      // Close the dialog
+      setIsNewDocumentDialogOpen(false);
+      // Reset form
+      setFormData({
+        documentType: '',
+        documentNumber: '',
+        country: '',
+        status: '',
+        issueDate: '',
+        expiryDate: '',
+        notes: ''
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to create compliance document:', error);
+    }
+  });
+
+  const handleCreateDocument = () => {
+    // Validate required fields
+    if (!formData.documentType || !formData.documentNumber || !formData.country || !formData.status) {
+      console.error('Please fill in all required fields');
+      return;
+    }
+
+    // Submit the form
+    createDocumentMutation.mutate({
+      document_type: formData.documentType,
+      document_number: formData.documentNumber,
+      country: formData.country,
+      status: formData.status,
+      issue_date: formData.issueDate,
+      expiry_date: formData.expiryDate,
+      notes: formData.notes,
+      attachment_url: ''
+    });
   };
 
   // Filter documents based on tab and search term
@@ -289,7 +345,7 @@ export default function TradeComplianceManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="documentType">Document Type</Label>
-                <Select>
+                <Select value={formData.documentType} onValueChange={(value) => setFormData({...formData, documentType: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select document type" />
                   </SelectTrigger>
@@ -306,19 +362,29 @@ export default function TradeComplianceManagement() {
               
               <div className="space-y-2">
                 <Label htmlFor="documentNumber">Document Number</Label>
-                <Input id="documentNumber" placeholder="Enter document number" />
+                <Input 
+                  id="documentNumber" 
+                  placeholder="Enter document number" 
+                  value={formData.documentNumber}
+                  onChange={(e) => setFormData({...formData, documentNumber: e.target.value})}
+                />
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="country">Country</Label>
-                <Input id="country" placeholder="Enter country" />
+                <Input 
+                  id="country" 
+                  placeholder="Enter country" 
+                  value={formData.country}
+                  onChange={(e) => setFormData({...formData, country: e.target.value})}
+                />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select>
+                <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -335,18 +401,33 @@ export default function TradeComplianceManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="issueDate">Issue Date</Label>
-                <Input id="issueDate" type="date" />
+                <Input 
+                  id="issueDate" 
+                  type="date" 
+                  value={formData.issueDate}
+                  onChange={(e) => setFormData({...formData, issueDate: e.target.value})}
+                />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="expiryDate">Expiry Date</Label>
-                <Input id="expiryDate" type="date" />
+                <Input 
+                  id="expiryDate" 
+                  type="date" 
+                  value={formData.expiryDate}
+                  onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
+                />
               </div>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
-              <Input id="notes" placeholder="Additional notes or comments" />
+              <Input 
+                id="notes" 
+                placeholder="Additional notes or comments" 
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              />
             </div>
           </div>
           
@@ -354,12 +435,11 @@ export default function TradeComplianceManagement() {
             <Button variant="outline" onClick={() => setIsNewDocumentDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => {
-              // TODO: Implement form submission
-              console.log('Creating new compliance document...');
-              setIsNewDocumentDialogOpen(false);
-            }}>
-              Create Document
+            <Button 
+              onClick={handleCreateDocument}
+              disabled={createDocumentMutation.isPending}
+            >
+              {createDocumentMutation.isPending ? 'Creating...' : 'Create Document'}
             </Button>
           </div>
         </DialogContent>
