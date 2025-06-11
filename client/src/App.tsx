@@ -54,6 +54,7 @@ import TransactionsPage from "@/pages/accounting/transactions";
 import SupportTickets from "@/pages/support-tickets";
 import Ecommerce from "@/pages/ecommerce";
 import EcommerceStore from "@/pages/ecommerce-store";
+import StoreFrontend from "@/pages/store-frontend";
 import NotificationsPage from "@/pages/notifications";
 import Marketing from "@/pages/marketing";
 import MarketingCreate from "@/pages/marketing/create";
@@ -376,11 +377,7 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/store" component={() => (
-        <Layout>
-          <EcommerceStore />
-        </Layout>
-      )} />
+      <Route path="/store" component={StoreFrontend} />
       
       <ProtectedRoute path="/notifications" component={() => (
         <Layout>
