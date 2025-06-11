@@ -53,6 +53,7 @@ interface Forecast {
   period: string;
   created_date: string;
   confidence: number;
+  status: string;
   values: {
     period: string;
     value: number;
@@ -73,7 +74,7 @@ import {
 import { AlertCircle, ArrowRight, TrendingUp, TrendingDown, Package, Calendar, CheckCircle2, PackageX } from 'lucide-react';
 
 export default function MRPDashboard() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('summary');
   const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -489,7 +490,7 @@ export default function MRPDashboard() {
                   View detailed inventory status with real-time tracking and analytics
                 </p>
                 <Button 
-                  onClick={() => window.location.href = "/manufacturing/inventory"}
+                  onClick={() => setLocation("/inventory/status")}
                 >
                   View Detailed Inventory
                 </Button>
