@@ -35,6 +35,7 @@ export default function BatchLotManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isInspectionDialogOpen, setIsInspectionDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     lotNumber: '',
     batchNumber: '',
@@ -169,6 +170,16 @@ export default function BatchLotManagement() {
     queryFn: async () => {
       const response = await fetch('/api/manufacturing/vendors');
       if (!response.ok) throw new Error('Failed to fetch vendors');
+      return response.json();
+    }
+  });
+
+  // Fetch quality inspections for history
+  const { data: qualityInspections = [], isLoading: isLoadingInspections } = useQuery({
+    queryKey: ['/api/manufacturing/quality-inspections'],
+    queryFn: async () => {
+      const response = await fetch('/api/manufacturing/quality-inspections');
+      if (!response.ok) throw new Error('Failed to fetch quality inspections');
       return response.json();
     }
   });
@@ -832,6 +843,83 @@ export default function BatchLotManagement() {
                     </form>
                   </DialogContent>
                 </Dialog>
+
+                {/* Quality Inspection History Dialog */}
+                <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Quality Inspection History</DialogTitle>
+                      <DialogDescription>
+                        View all quality inspections performed on batch lots
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    {isLoadingInspections ? (
+                      <div className="flex justify-center py-8">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                          <p className="text-muted-foreground">Loading inspection history...</p>
+                        </div>
+                      </div>
+                    ) : qualityInspections.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">No quality inspections found.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {qualityInspections.map((inspection: any) => (
+                          <Card key={inspection.id} className="border">
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <CardTitle className="text-base">{inspection.inspection_number || `QI-${inspection.id}`}</CardTitle>
+                                  <CardDescription>{inspection.batch_lot_number || 'N/A'}</CardDescription>
+                                </div>
+                                <Badge variant={inspection.result === 'Pass' ? 'default' : inspection.result === 'Fail' ? 'destructive' : 'secondary'}>
+                                  {inspection.result || 'Pending'}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                  <p className="text-muted-foreground">Inspector:</p>
+                                  <p className="font-medium">{inspection.inspector_name || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Date:</p>
+                                  <p className="font-medium">
+                                    {inspection.inspection_date ? new Date(inspection.inspection_date).toLocaleDateString() : 'N/A'}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Type:</p>
+                                  <p className="font-medium">{inspection.type || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Status:</p>
+                                  <p className="font-medium">{inspection.status || 'Completed'}</p>
+                                </div>
+                              </div>
+                              {inspection.notes && (
+                                <div className="mt-3 pt-3 border-t">
+                                  <p className="text-muted-foreground text-xs">Notes:</p>
+                                  <p className="text-sm">{inspection.notes}</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-end pt-4">
+                      <Button variant="outline" onClick={() => setIsHistoryDialogOpen(false)}>
+                        Close
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -839,7 +927,7 @@ export default function BatchLotManagement() {
                 <p className="text-muted-foreground mb-4">
                   No quality control data available. Please add data to the database.
                 </p>
-                <Button variant="outline">View Inspection History</Button>
+                <Button variant="outline" onClick={() => setIsHistoryDialogOpen(true)}>View Inspection History</Button>
               </div>
             </CardContent>
           </Card>
