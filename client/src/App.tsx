@@ -376,6 +376,12 @@ function Router() {
         </Layout>
       )} />
       
+      <ProtectedRoute path="/store" component={() => (
+        <Layout>
+          <EcommerceStore />
+        </Layout>
+      )} />
+      
       <ProtectedRoute path="/notifications" component={() => (
         <Layout>
           <NotificationsPage />
