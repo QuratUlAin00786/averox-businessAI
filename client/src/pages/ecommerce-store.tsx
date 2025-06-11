@@ -851,12 +851,13 @@ const ProductsTabContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
+  const [isProductViewOpen, setIsProductViewOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { toast } = useToast();
   
   const handleViewProduct = (product: Product) => {
     setSelectedProduct(product);
-    setIsProductFormOpen(true);
+    setIsProductViewOpen(true);
   };
 
   const handleShareProduct = (product: Product) => {
@@ -1061,6 +1062,84 @@ const ProductsTabContent = () => {
         onOpenChange={setIsProductFormOpen} 
         product={selectedProduct}
       />
+
+      {/* Product View Modal */}
+      <Dialog open={isProductViewOpen} onOpenChange={setIsProductViewOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Product Details - {selectedProduct?.name}</DialogTitle>
+            <DialogDescription>
+              Complete product information and specifications
+            </DialogDescription>
+          </DialogHeader>
+          {selectedProduct && (
+            <div className="grid gap-6 py-4">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Basic Information</h3>
+                    <div className="space-y-2 mt-2">
+                      <p><strong>Name:</strong> {selectedProduct.name}</p>
+                      <p><strong>Category:</strong> {selectedProduct.category}</p>
+                      <p><strong>SKU:</strong> {selectedProduct.sku}</p>
+                      <p><strong>Status:</strong> <Badge variant="outline">{selectedProduct.status}</Badge></p>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Pricing & Inventory</h3>
+                    <div className="space-y-2 mt-2">
+                      <p><strong>Price:</strong> {formatCurrency(selectedProduct.price)}</p>
+                      <p><strong>Cost:</strong> {formatCurrency(selectedProduct.cost || 0)}</p>
+                      <p><strong>Inventory:</strong> {selectedProduct.inventory} units</p>
+                      <p><strong>Weight:</strong> {selectedProduct.weight || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Product Features</h3>
+                    <div className="space-y-2 mt-2">
+                      <div className="flex items-center gap-2">
+                        <strong>Featured Product:</strong> 
+                        {selectedProduct.featured ? (
+                          <Badge variant="default">Yes</Badge>
+                        ) : (
+                          <Badge variant="outline">No</Badge>
+                        )}
+                      </div>
+                      <p><strong>Tags:</strong> {selectedProduct.tags?.join(', ') || 'None'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Dimensions</h3>
+                    <div className="space-y-2 mt-2">
+                      <p><strong>Length:</strong> {selectedProduct.dimensions?.length || 'N/A'}</p>
+                      <p><strong>Width:</strong> {selectedProduct.dimensions?.width || 'N/A'}</p>
+                      <p><strong>Height:</strong> {selectedProduct.dimensions?.height || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Description</h3>
+                <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedProduct.description}</p>
+              </div>
+              {selectedProduct.images && selectedProduct.images.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold">Product Images</h3>
+                  <div className="grid grid-cols-3 gap-4 mt-2">
+                    {selectedProduct.images.map((image, index) => (
+                      <div key={index} className="border rounded-md p-2">
+                        <img src={image} alt={`Product ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
