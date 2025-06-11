@@ -357,16 +357,17 @@ export default function ReturnsManagement() {
 
       {/* New Return Dialog */}
       <Dialog open={isNewReturnDialogOpen} onOpenChange={setIsNewReturnDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Create New Return Authorization</DialogTitle>
             <DialogDescription>
               Create a new return merchandise authorization (RMA) for product returns.
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleReturnSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="overflow-y-auto flex-1 pr-2">
+            <form onSubmit={handleReturnSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="customerName">Customer Name *</Label>
                 <Input
@@ -486,7 +487,7 @@ export default function ReturnsManagement() {
               />
             </div>
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-3 pt-4 border-t mt-6">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -501,7 +502,8 @@ export default function ReturnsManagement() {
                 {createReturnMutation.isPending ? 'Creating...' : 'Create Return Authorization'}
               </Button>
             </div>
-          </form>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
