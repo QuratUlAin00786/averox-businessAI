@@ -1068,10 +1068,17 @@ const OrdersTabContent = () => {
   
   const handleViewOrder = (order: any) => {
     console.log("handleViewOrder called with order:", order);
-    toast({
-      title: "Order Details",
-      description: `Viewing details for order ${order.orderNumber}`,
-    });
+    try {
+      toast({
+        title: "Order Details",
+        description: `Viewing details for order ${order.orderNumber}`,
+        variant: "default",
+      });
+      console.log("Toast called successfully");
+    } catch (error) {
+      console.error("Toast error:", error);
+      alert(`Order Details: Viewing details for order ${order.orderNumber}`);
+    }
   };
   
   const filteredOrders = mockOrders.filter(order => {
