@@ -1184,6 +1184,7 @@ const OrdersTabContent = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
   const [isOrderEditOpen, setIsOrderEditOpen] = useState(false);
+  const [orders, setOrders] = useState(mockOrders);
 
   const handleViewOrder = (order: any) => {
     console.log("Opening order details for:", order);
@@ -1197,6 +1198,13 @@ const OrdersTabContent = () => {
   };
 
   const handleMarkAsShipped = (order: any) => {
+    setOrders(prevOrders => 
+      prevOrders.map(o => 
+        o.id === order.id 
+          ? { ...o, status: 'completed', shippingStatus: 'shipped' }
+          : o
+      )
+    );
     toast({
       title: "Order Shipped",
       description: `Order ${order.orderNumber} has been marked as shipped.`,
@@ -1204,6 +1212,13 @@ const OrdersTabContent = () => {
   };
 
   const handleCapturePayment = (order: any) => {
+    setOrders(prevOrders => 
+      prevOrders.map(o => 
+        o.id === order.id 
+          ? { ...o, paymentStatus: 'paid' }
+          : o
+      )
+    );
     toast({
       title: "Payment Captured",
       description: `Payment for order ${order.orderNumber} has been captured successfully.`,
@@ -1211,6 +1226,13 @@ const OrdersTabContent = () => {
   };
 
   const handleMarkAsProcessing = (order: any) => {
+    setOrders(prevOrders => 
+      prevOrders.map(o => 
+        o.id === order.id 
+          ? { ...o, status: 'processing' }
+          : o
+      )
+    );
     toast({
       title: "Order Processing",
       description: `Order ${order.orderNumber} has been marked as processing.`,
@@ -1218,6 +1240,13 @@ const OrdersTabContent = () => {
   };
 
   const handleCancelOrder = (order: any) => {
+    setOrders(prevOrders => 
+      prevOrders.map(o => 
+        o.id === order.id 
+          ? { ...o, status: 'cancelled' }
+          : o
+      )
+    );
     toast({
       title: "Order Cancelled",
       description: `Order ${order.orderNumber} has been cancelled.`,
@@ -1225,7 +1254,7 @@ const OrdersTabContent = () => {
     });
   };
   
-  const filteredOrders = mockOrders.filter(order => {
+  const filteredOrders = orders.filter(order => {
     const matchesSearch = searchQuery === '' || 
       order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
