@@ -6,6 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   AlertTriangle,
   Check,
@@ -47,6 +50,7 @@ export default function TradeComplianceManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isNewDocumentDialogOpen, setIsNewDocumentDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   
   // Fetch compliance data from API
@@ -127,7 +131,7 @@ export default function TradeComplianceManagement() {
                 <RefreshCw className={`h-4 w-4 mr-2 ${(isRefreshing || isFetching) ? 'animate-spin' : ''}`} />
                 {isRefreshing || isFetching ? 'Refreshing...' : 'Refresh'}
               </Button>
-              <Button size="sm">
+              <Button size="sm" onClick={() => setIsNewDocumentDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Document
               </Button>
@@ -270,6 +274,96 @@ export default function TradeComplianceManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* New Document Dialog */}
+      <Dialog open={isNewDocumentDialogOpen} onOpenChange={setIsNewDocumentDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Compliance Document</DialogTitle>
+            <DialogDescription>
+              Add a new trade compliance document to track regulatory requirements and certifications.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="documentType">Document Type</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select document type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="certificate">Certificate of Origin</SelectItem>
+                    <SelectItem value="customs">Customs Declaration</SelectItem>
+                    <SelectItem value="inspection">Inspection Certificate</SelectItem>
+                    <SelectItem value="license">Import/Export License</SelectItem>
+                    <SelectItem value="permit">Special Permit</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="documentNumber">Document Number</Label>
+                <Input id="documentNumber" placeholder="Enter document number" />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input id="country" placeholder="Enter country" />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Valid">Valid</SelectItem>
+                    <SelectItem value="Expired">Expired</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Under Review">Under Review</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="issueDate">Issue Date</Label>
+                <Input id="issueDate" type="date" />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="expiryDate">Expiry Date</Label>
+                <Input id="expiryDate" type="date" />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Input id="notes" placeholder="Additional notes or comments" />
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsNewDocumentDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              // TODO: Implement form submission
+              console.log('Creating new compliance document...');
+              setIsNewDocumentDialogOpen(false);
+            }}>
+              Create Document
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
