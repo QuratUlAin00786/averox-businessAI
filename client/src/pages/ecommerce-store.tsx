@@ -1201,7 +1201,7 @@ const OrdersTabContent = () => {
     setOrders(prevOrders => 
       prevOrders.map(o => 
         o.id === order.id 
-          ? { ...o, status: 'completed', shippingStatus: 'shipped' }
+          ? { ...o, status: 'completed', shippingStatus: 'shipped', lastUpdated: Date.now() }
           : o
       )
     );
@@ -1215,7 +1215,7 @@ const OrdersTabContent = () => {
     setOrders(prevOrders => 
       prevOrders.map(o => 
         o.id === order.id 
-          ? { ...o, paymentStatus: 'paid' }
+          ? { ...o, paymentStatus: 'paid', lastUpdated: Date.now() }
           : o
       )
     );
@@ -1229,7 +1229,7 @@ const OrdersTabContent = () => {
     setOrders(prevOrders => 
       prevOrders.map(o => 
         o.id === order.id 
-          ? { ...o, status: 'processing' }
+          ? { ...o, status: 'processing', lastUpdated: Date.now() }
           : o
       )
     );
@@ -1243,7 +1243,7 @@ const OrdersTabContent = () => {
     setOrders(prevOrders => 
       prevOrders.map(o => 
         o.id === order.id 
-          ? { ...o, status: 'cancelled' }
+          ? { ...o, status: 'cancelled', lastUpdated: Date.now() }
           : o
       )
     );
@@ -1334,7 +1334,7 @@ const OrdersTabContent = () => {
               </TableRow>
             ) : (
               filteredOrders.map(order => (
-                <TableRow key={order.id}>
+                <TableRow key={`${order.id}-${order.status}-${order.paymentStatus}-${order.lastUpdated || 0}`}>
                   <TableCell className="font-medium">{order.orderNumber}</TableCell>
                   <TableCell>
                     <div>
