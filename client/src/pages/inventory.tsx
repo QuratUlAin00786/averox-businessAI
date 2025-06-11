@@ -936,7 +936,7 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
         </div>
 
         <Tabs defaultValue="products" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4 mb-6">
+          <TabsList className="grid grid-cols-5 mb-6">
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package size={16} /> Products
             </TabsTrigger>
@@ -945,6 +945,9 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
             </TabsTrigger>
             <TabsTrigger value="transactions" className="flex items-center gap-2">
               <ArrowDownUp size={16} /> Transactions
+            </TabsTrigger>
+            <TabsTrigger value="status" className="flex items-center gap-2">
+              <Settings size={16} /> Inventory Status
             </TabsTrigger>
             <TabsTrigger value="summary" className="flex items-center gap-2">
               <Layers size={16} /> Inventory Summary
@@ -1328,6 +1331,166 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
                   className="flex items-center gap-2"
                 >
                   <PlusCircle size={16} /> New Transaction
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="status">
+            <div className="flex justify-between mb-4">
+              <h2 className="text-xl font-semibold">Inventory Status</h2>
+              <Button variant="outline" className="flex items-center gap-2">
+                <FileEdit size={16} /> Export Status Report
+              </Button>
+            </div>
+
+            {isLoadingProducts ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {Array(4).fill(0).map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardHeader className="pb-2">
+                      <div className="h-5 bg-gray-200 rounded w-1/2 mb-2"></div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : products ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-2xl font-bold">{products.length}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-2xl font-bold text-green-600">
+                        {products.filter(p => p.isActive).length}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-2xl font-bold text-yellow-600">
+                        {products.filter(p => p.stockQuantity <= p.reorderLevel).length}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-2xl font-bold text-red-600">
+                        {products.filter(p => p.stockQuantity === 0).length}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <h3 className="text-lg font-semibold mb-3">Stock Status Overview</h3>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product Name</TableHead>
+                        <TableHead>SKU</TableHead>
+                        <TableHead>Current Stock</TableHead>
+                        <TableHead>Reorder Level</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Last Updated</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {products.map((product) => {
+                        const stockLevel = product.stockQuantity || 0;
+                        const reorderLevel = product.reorderLevel || 0;
+                        const isLowStock = stockLevel <= reorderLevel && stockLevel > 0;
+                        const isOutOfStock = stockLevel === 0;
+                        const isGoodStock = stockLevel > reorderLevel;
+                        
+                        return (
+                          <TableRow key={product.id}>
+                            <TableCell className="font-medium">{product.name}</TableCell>
+                            <TableCell>{product.sku}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                isOutOfStock ? "destructive" : 
+                                isLowStock ? "secondary" : 
+                                "default"
+                              }>
+                                {stockLevel}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{reorderLevel}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                isOutOfStock ? "destructive" : 
+                                isLowStock ? "secondary" : 
+                                "default"
+                              }>
+                                {isOutOfStock ? "Out of Stock" : 
+                                 isLowStock ? "Low Stock" : 
+                                 "Good Stock"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {product.updatedAt ? formatDate(product.updatedAt) : formatDate(product.createdAt)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setLocation(`/inventory/products/${product.id}`)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <Eye size={14} /> View
+                                </Button>
+                                {(isLowStock || isOutOfStock) && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setLocation(`/inventory/transactions/new?productId=${product.id}&type=Purchase`)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <PlusCircle size={14} /> Restock
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 border rounded-lg bg-muted/10">
+                <Package size={48} className="text-muted-foreground mb-4" />
+                <h3 className="text-xl font-medium mb-2">No Products Found</h3>
+                <p className="text-muted-foreground text-center mb-4">
+                  Add products to your inventory to see their status here.
+                </p>
+                <Button 
+                  onClick={() => setLocation("/inventory/products/new")}
+                  className="flex items-center gap-2"
+                >
+                  <PlusCircle size={16} /> Add Product
                 </Button>
               </div>
             )}
