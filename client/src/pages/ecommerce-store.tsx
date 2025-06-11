@@ -1224,7 +1224,7 @@ const OrdersTabContent = () => {
 
       {/* Order Details Modal */}
       <Dialog open={isOrderDetailsOpen} onOpenChange={setIsOrderDetailsOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Order Details - {selectedOrder?.orderNumber}</DialogTitle>
             <DialogDescription>
