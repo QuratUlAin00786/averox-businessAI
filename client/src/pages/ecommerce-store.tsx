@@ -853,6 +853,7 @@ const ProductsTabContent = () => {
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [isProductViewOpen, setIsProductViewOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<Product[]>(mockProducts);
   const { toast } = useToast();
   
   const handleViewProduct = (product: Product) => {
@@ -861,9 +862,19 @@ const ProductsTabContent = () => {
   };
 
   const handleDuplicateProduct = (product: Product) => {
+    const duplicatedProduct: Product = {
+      ...product,
+      id: `${Date.now()}`, // Generate unique ID
+      name: `${product.name} (Copy)`,
+      dateCreated: new Date().toISOString(),
+      dateModified: new Date().toISOString(),
+    };
+    
+    setProducts(prev => [...prev, duplicatedProduct]);
+    
     toast({
       title: "Product Duplicated",
-      description: `${product.name} has been successfully duplicated as "${product.name} (Copy)".`,
+      description: `${product.name} has been successfully duplicated as "${duplicatedProduct.name}".`,
       variant: "default",
     });
   };
@@ -902,7 +913,7 @@ const ProductsTabContent = () => {
     }
   };
 
-  const filteredProducts = mockProducts.filter(product => {
+  const filteredProducts = products.filter(product => {
     const matchesSearch = searchQuery === '' || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase());
