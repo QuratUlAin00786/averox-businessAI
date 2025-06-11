@@ -645,7 +645,7 @@ export default function MRPDashboard() {
                     MRP process analyzes inventory levels and generates purchase recommendations
                   </p>
                   <Button
-                    onClick={() => setLocation("/manufacturing/materials-management")}
+                    onClick={() => setActiveTab('inventory')}
                   >
                     View Detailed Planning
                   </Button>
