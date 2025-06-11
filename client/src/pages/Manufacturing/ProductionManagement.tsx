@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Settings, Truck, FileText, CheckSquare, Workflow, Factory } from 'lucide-react';
@@ -19,6 +19,29 @@ type ProductionFeature = {
 };
 
 export default function ProductionManagement() {
+  const [location] = useLocation();
+  
+  // Check if we're on a specific sub-page
+  if (location === '/manufacturing/production/production-lines') {
+    return <ProductionOrdersList />;
+  }
+  
+  if (location === '/manufacturing/production/workcenters') {
+    return <WorkCentersList />;
+  }
+  
+  if (location === '/manufacturing/production/bom') {
+    return <BillOfMaterialsList />;
+  }
+  
+  if (location === '/manufacturing/production/work-orders') {
+    return <ProductionOrdersList />;
+  }
+  
+  if (location === '/manufacturing/production/quality') {
+    return <QualityInspectionsList />;
+  }
+
   const features: ProductionFeature[] = [
     {
       id: 'production-lines',
