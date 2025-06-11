@@ -3551,25 +3551,22 @@ router.get('/trade-compliance', async (req: Request, res: Response) => {
         p.name as product_name,
         p.sku as product_code,
         tc.country_of_origin,
-        tc.harmonized_code,
-        tc.export_control_classification,
-        tc.preferential_origin_status,
-        tc.documentation_status,
-        tc.license_requirements,
-        tc.restricted_parties_status,
-        tc.compliance_status,
-        tc.valid_from,
-        tc.valid_to,
+        tc.hs_code,
+        tc.eccn,
+        tc.is_dual_use,
+        tc.restricted_countries,
+        tc.export_license_required,
+        tc.import_license_required,
+        tc.classification_notes,
         tc.last_reviewed_date,
         tc.reviewed_by,
         u.username as reviewed_by_name,
-        tc.notes,
         tc.created_at,
         tc.updated_at
       FROM trade_compliance tc
       LEFT JOIN products p ON tc.product_id = p.id
       LEFT JOIN users u ON tc.reviewed_by = u.id
-      ORDER BY tc.updated_at DESC
+      ORDER BY tc.updated_at DESC NULLS LAST
     `);
     
     // Extract rows from PostgreSQL result
