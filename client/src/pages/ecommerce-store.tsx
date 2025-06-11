@@ -31,7 +31,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { 
   BarChart4, 
@@ -845,7 +844,42 @@ const ProductsTabContent = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const { toast } = useToast();
   
+  const handleShareProduct = (product: Product) => {
+    const shareUrl = `${window.location.origin}/product/${product.id}`;
+    const shareText = `Check out ${product.name} - ${product.description}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: product.name,
+        text: shareText,
+        url: shareUrl,
+      }).then(() => {
+        toast({
+          title: "Product Shared",
+          description: "Product has been shared successfully.",
+        });
+      }).catch((error) => {
+        console.log('Error sharing:', error);
+        // Fallback to clipboard
+        navigator.clipboard.writeText(shareUrl);
+        toast({
+          title: "Link Copied",
+          description: "Product link copied to clipboard.",
+        });
+      });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        toast({
+          title: "Link Copied",
+          description: "Product link copied to clipboard.",
+        });
+      });
+    }
+  };
+
   const filteredProducts = mockProducts.filter(product => {
     const matchesSearch = searchQuery === '' || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -989,7 +1023,7 @@ const ProductsTabContent = () => {
                             <Copy className="h-4 w-4 mr-2" />
                             Duplicate
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShareProduct(product)}>
                             <Share2 className="h-4 w-4 mr-2" />
                             Share
                           </DropdownMenuItem>
