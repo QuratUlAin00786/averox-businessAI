@@ -1167,7 +1167,12 @@ const OrdersTabContent = () => {
                   <TableCell className="font-medium">{formatCurrency(order.total)}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-1">
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" onClick={() => {
+                        toast({
+                          title: "Order Details",
+                          description: `Viewing details for order ${order.orderNumber}`,
+                        });
+                      }}>
                         <EyeIcon className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon">
