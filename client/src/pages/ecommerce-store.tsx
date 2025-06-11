@@ -1289,6 +1289,17 @@ const OrdersTabContent = () => {
       description: "Orders have been exported to CSV file.",
     });
   };
+
+  const handleRefreshOrders = () => {
+    setOrders(mockOrders);
+    setRefreshKey(prev => prev + 1);
+    setSearchQuery('');
+    setStatusFilter('all');
+    toast({
+      title: "Orders Refreshed",
+      description: "Order data has been refreshed successfully.",
+    });
+  };
   
   const filteredOrders = orders.filter(order => {
     const matchesSearch = searchQuery === '' || 
@@ -1313,7 +1324,7 @@ const OrdersTabContent = () => {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleRefreshOrders}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
