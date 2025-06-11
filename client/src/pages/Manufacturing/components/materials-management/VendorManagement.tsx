@@ -132,8 +132,8 @@ export default function VendorManagement() {
     }
   });
 
-  // Extract vendors from the PostgreSQL response
-  const vendors: Vendor[] = rawVendorData?.rows || [];
+  // Extract vendors from the API response
+  const vendors: Vendor[] = Array.isArray(rawVendorData) ? rawVendorData : (rawVendorData?.rows || []);
   
   // Filter vendors based on search term
   const filteredVendors = vendors.filter(vendor => 
