@@ -1690,40 +1690,57 @@ const OrdersTabContent = () => {
 const SettingsTabContent = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [settings, setSettings] = useState({
-    storeName: 'AVEROX Store',
-    storeEmail: 'store@averox.com',
-    currency: 'USD',
-    language: 'en',
-    description: 'AVEROX Store - Your one-stop shop for CRM software, support, and services.',
-    creditCard: true,
-    paypal: true,
-    bankTransfer: false,
-    digitalDelivery: true,
-    standardShipping: true,
-    expressShipping: false
-  });
-
-  // Load settings from localStorage on component mount
-  useEffect(() => {
-    const savedSettings = localStorage.getItem('ecommerce_store_settings');
-    if (savedSettings) {
-      try {
+  
+  // Initialize settings with saved data or defaults
+  const getInitialSettings = () => {
+    try {
+      const savedSettings = localStorage.getItem('ecommerce_store_settings');
+      if (savedSettings) {
         const parsedSettings = JSON.parse(savedSettings);
-        setSettings(parsedSettings);
-        console.log("Loaded saved settings:", parsedSettings);
-      } catch (error) {
-        console.error("Error loading saved settings:", error);
+        console.log("Loading initial settings from localStorage:", parsedSettings);
+        return parsedSettings;
       }
+    } catch (error) {
+      console.error("Error loading initial settings:", error);
     }
-  }, []);
+    
+    // Return default settings if no saved settings found
+    const defaults = {
+      storeName: 'AVEROX Store',
+      storeEmail: 'store@averox.com',
+      currency: 'USD',
+      language: 'en',
+      description: 'AVEROX Store - Your one-stop shop for CRM software, support, and services.',
+      creditCard: true,
+      paypal: true,
+      bankTransfer: false,
+      digitalDelivery: true,
+      standardShipping: true,
+      expressShipping: false
+    };
+    console.log("Using default settings:", defaults);
+    return defaults;
+  };
+
+  const [settings, setSettings] = useState(getInitialSettings());
+  
+  // Debug logging for settings changes
+  useEffect(() => {
+    console.log("Settings state updated:", settings);
+  }, [settings]);
   
   const handleSaveSettings = async () => {
     console.log("Save Settings button clicked!");
+    console.log("Current settings to save:", settings);
     setIsLoading(true);
     try {
       // Save settings to localStorage for persistence
       localStorage.setItem('ecommerce_store_settings', JSON.stringify(settings));
+      console.log("Settings saved to localStorage:", JSON.stringify(settings));
+      
+      // Verify the save worked
+      const savedCheck = localStorage.getItem('ecommerce_store_settings');
+      console.log("Verification - settings in localStorage:", savedCheck);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -1748,19 +1765,8 @@ const SettingsTabContent = () => {
   };
 
   const handleCancel = () => {
-    setSettings({
-      storeName: 'AVEROX Store',
-      storeEmail: 'store@averox.com',
-      currency: 'USD',
-      language: 'en',
-      description: 'AVEROX Store - Your one-stop shop for CRM software, support, and services.',
-      creditCard: true,
-      paypal: true,
-      bankTransfer: false,
-      digitalDelivery: true,
-      standardShipping: true,
-      expressShipping: false
-    });
+    // Reset to saved settings or defaults
+    setSettings(getInitialSettings());
     
     toast({
       title: "Changes Cancelled",
