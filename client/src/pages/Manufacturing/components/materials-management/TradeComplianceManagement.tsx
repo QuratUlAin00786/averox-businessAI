@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,6 +12,7 @@ import {
   ClipboardList,
   FileText,
   Globe,
+  Package,
   Plus,
   RefreshCw, 
   Search, 
@@ -45,9 +46,11 @@ interface ComplianceDocument {
 export default function TradeComplianceManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
   
-  // Simulate fetching compliance data from API
-  const { data: complianceDocuments = [], isLoading, refetch } = useQuery({
+  // Fetch compliance data from API
+  const { data: complianceDocuments = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ['/api/manufacturing/trade-compliance'],
     queryFn: async () => {
       try {
@@ -59,6 +62,17 @@ export default function TradeComplianceManagement() {
       }
     }
   });
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate and refetch the data
+      await queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/trade-compliance'] });
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Filter documents based on tab and search term
   const filteredDocuments = complianceDocuments.filter(doc => {
@@ -104,9 +118,14 @@ export default function TradeComplianceManagement() {
               <CardDescription>Manage international trade compliance documentation and regulations</CardDescription>
             </div>
             <div className="flex space-x-3">
-              <Button variant="outline" size="sm" onClick={() => refetch()}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefresh}
+                disabled={isRefreshing || isFetching}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${(isRefreshing || isFetching) ? 'animate-spin' : ''}`} />
+                {isRefreshing || isFetching ? 'Refreshing...' : 'Refresh'}
               </Button>
               <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />
