@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, AlertCircle, Plus, CalendarClock, ClipboardCheck } from 'lucide-react';
+import { Search, AlertCircle, Plus, CalendarClock, ClipboardCheck, FileDown } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -51,6 +51,50 @@ export default function BatchLotManagement() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Function to generate and download expiring batches report
+  const generateExpiringBatchesReport = () => {
+    if (!expiringLotsData || expiringLotsData.length === 0) {
+      toast({
+        title: "No Data Available",
+        description: "There are no expiring batches to include in the report.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create CSV content
+    const headers = ['Batch Number', 'Material', 'Quantity', 'UOM', 'Location', 'Expiration Date', 'Days Remaining', 'Status'];
+    const csvContent = [
+      headers.join(','),
+      ...expiringLotsData.map(batch => [
+        `"${batch.batchNumber}"`,
+        `"${batch.materialName}"`,
+        parseFloat(batch.remainingQuantity).toFixed(2),
+        `"${batch.uom}"`,
+        `"${batch.locationName || 'Unassigned'}"`,
+        `"${formatDate(batch.expirationDate)}"`,
+        batch.daysRemaining,
+        `"${batch.status}"`
+      ].join(','))
+    ].join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `expiring-batches-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Report Generated",
+      description: "Expiring batches report has been downloaded successfully."
+    });
+  };
   
   // Fetch products for dropdown
   const { data: products = [] } = useQuery({
@@ -503,7 +547,10 @@ export default function BatchLotManagement() {
                     Batches expiring in the next 90 days
                   </CardDescription>
                 </div>
-                <Button variant="outline">Generate Report</Button>
+                <Button variant="outline" onClick={generateExpiringBatchesReport}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Generate Report
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
