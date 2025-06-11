@@ -1075,6 +1075,7 @@ const OrdersTabContent = () => {
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
 
   const handleViewOrder = (order: any) => {
+    console.log("Opening order details for:", order);
     setSelectedOrder(order);
     setIsOrderDetailsOpen(true);
   };
@@ -1238,16 +1239,22 @@ const OrdersTabContent = () => {
                   <div>
                     <h3 className="text-lg font-semibold">Customer Information</h3>
                     <div className="space-y-2 mt-2">
-                      <p><strong>Name:</strong> {selectedOrder.customer.name}</p>
-                      <p><strong>Email:</strong> {selectedOrder.customer.email}</p>
-                      <p><strong>Phone:</strong> {selectedOrder.customer.phone}</p>
+                      <p><strong>Name:</strong> {selectedOrder.customer?.name}</p>
+                      <p><strong>Email:</strong> {selectedOrder.customer?.email}</p>
+                      <p><strong>Phone:</strong> {selectedOrder.customer?.phone}</p>
                     </div>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">Order Status</h3>
                     <div className="space-y-2 mt-2">
-                      <p><strong>Order Status:</strong> <Badge variant="outline" className={getStatusColor(selectedOrder.status)}>{selectedOrder.status}</Badge></p>
-                      <p><strong>Payment Status:</strong> <Badge variant="outline" className={getStatusColor(selectedOrder.paymentStatus)}>{selectedOrder.paymentStatus}</Badge></p>
+                      <div className="flex items-center gap-2">
+                        <strong>Order Status:</strong> 
+                        <Badge variant="outline">{selectedOrder.status}</Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <strong>Payment Status:</strong> 
+                        <Badge variant="outline">{selectedOrder.paymentStatus}</Badge>
+                      </div>
                       <p><strong>Shipping Status:</strong> {selectedOrder.shippingStatus}</p>
                     </div>
                   </div>
@@ -1256,9 +1263,9 @@ const OrdersTabContent = () => {
                   <div>
                     <h3 className="text-lg font-semibold">Shipping Address</h3>
                     <div className="space-y-1 mt-2">
-                      <p>{selectedOrder.shippingAddress.street}</p>
-                      <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.zipCode}</p>
-                      <p>{selectedOrder.shippingAddress.country}</p>
+                      <p>{selectedOrder.shippingAddress?.street}</p>
+                      <p>{selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state} {selectedOrder.shippingAddress?.zipCode}</p>
+                      <p>{selectedOrder.shippingAddress?.country}</p>
                     </div>
                   </div>
                   <div>
@@ -1284,7 +1291,7 @@ const OrdersTabContent = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedOrder.items.map((item: any) => (
+                    {selectedOrder.items?.map((item: any) => (
                       <TableRow key={item.id}>
                         <TableCell>{item.productName}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
