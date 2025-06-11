@@ -11,10 +11,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Plus, Factory, Calendar, ClipboardList } from 'lucide-react';
+import { Loader2, Plus, Factory, Calendar, ClipboardList, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export default function ProductionOrdersList() {
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
   // Fetch production orders from the API
   const { data: productionOrders, isLoading, error } = useQuery({
     queryKey: ['/api/manufacturing/production-orders'],
@@ -26,6 +30,11 @@ export default function ProductionOrdersList() {
       return response.json();
     }
   });
+
+  const handleDetailsClick = (order) => {
+    setSelectedOrder(order);
+    setIsDetailsOpen(true);
+  };
 
   // Keep sample data for now but it will be removed when database is fully populated
   const sampleProductionOrders = [
@@ -336,7 +345,12 @@ export default function ProductionOrdersList() {
                 )}
               </CardContent>
               <CardFooter className="flex gap-2 pt-0">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => handleDetailsClick(order)}
+                >
                   <ClipboardList className="h-4 w-4 mr-2" />
                   Details
                 </Button>
@@ -355,6 +369,214 @@ export default function ProductionOrdersList() {
           );
         })}
       </div>
+
+      {/* Production Order Details Modal */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Factory className="h-5 w-5" />
+              Production Order Details - {selectedOrder?.production_number}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedOrder && (
+            <div className="space-y-6">
+              {/* Overview Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Order Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="font-medium text-muted-foreground">Order Number:</p>
+                        <p className="font-semibold">{selectedOrder.production_number}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-muted-foreground">Status:</p>
+                        <Badge className={getStatusColor(selectedOrder.status)}>
+                          {selectedOrder.status}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="font-medium text-muted-foreground">Priority:</p>
+                        <p className={`font-semibold ${getPriorityColor(selectedOrder.priority)}`}>
+                          {selectedOrder.priority}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-muted-foreground">Created:</p>
+                        <p>{formatDate(selectedOrder.created_at)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Product Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      <div>
+                        <p className="font-medium text-muted-foreground">Product:</p>
+                        <p className="font-semibold">{selectedOrder.product_name}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="font-medium text-muted-foreground">Total Quantity:</p>
+                          <p className="font-semibold">{selectedOrder.quantity}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-muted-foreground">Completed:</p>
+                          <p className="font-semibold">{selectedOrder.completed_quantity}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="font-medium text-muted-foreground mb-1">Progress:</p>
+                        <Progress 
+                          value={Math.round((selectedOrder.completed_quantity / selectedOrder.quantity) * 100)} 
+                          className="h-3"
+                        />
+                        <p className="text-xs text-right mt-1">
+                          {Math.round((selectedOrder.completed_quantity / selectedOrder.quantity) * 100)}%
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Timeline Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Production Timeline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <p className="font-medium text-muted-foreground">Start Date</p>
+                      <p className="text-lg font-semibold">{formatDate(selectedOrder.start_date)}</p>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 rounded-lg">
+                      <p className="font-medium text-muted-foreground">End Date</p>
+                      <p className="text-lg font-semibold">{formatDate(selectedOrder.end_date)}</p>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <p className="font-medium text-muted-foreground">Time Remaining</p>
+                      <p className={`text-lg font-semibold ${calculateTimeRemaining(selectedOrder.end_date).className}`}>
+                        {calculateTimeRemaining(selectedOrder.end_date).text}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Work Center & BOM Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Work Center</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="font-medium text-muted-foreground">Center:</p>
+                        <p className="font-semibold">{selectedOrder.work_center_name}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-muted-foreground">Center ID:</p>
+                        <p>{selectedOrder.work_center_id}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Bill of Materials</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="font-medium text-muted-foreground">BOM:</p>
+                        <p className="font-semibold">{selectedOrder.bom_name}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-muted-foreground">BOM ID:</p>
+                        <p>{selectedOrder.bom_id}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quality Control Section (if applicable) */}
+              {selectedOrder.quality_check_required && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Quality Control</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="p-3 bg-green-50 rounded-lg">
+                        <p className="text-2xl font-bold text-green-600">{selectedOrder.quality_checks_passed}</p>
+                        <p className="text-sm text-muted-foreground">Passed</p>
+                      </div>
+                      <div className="p-3 bg-red-50 rounded-lg">
+                        <p className="text-2xl font-bold text-red-600">{selectedOrder.quality_checks_failed}</p>
+                        <p className="text-sm text-muted-foreground">Failed</p>
+                      </div>
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <p className="text-2xl font-bold text-blue-600">
+                          {selectedOrder.quality_checks_passed + selectedOrder.quality_checks_failed}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Total Checks</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Notes Section */}
+              {selectedOrder.notes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed">{selectedOrder.notes}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Created By Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Created By</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold">{selectedOrder.created_by_name}</p>
+                      <p className="text-sm text-muted-foreground">User ID: {selectedOrder.created_by}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Created on</p>
+                      <p className="font-medium">{formatDate(selectedOrder.created_at)}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
