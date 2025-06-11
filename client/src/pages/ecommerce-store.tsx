@@ -1183,11 +1183,17 @@ const OrdersTabContent = () => {
   
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
+  const [isOrderEditOpen, setIsOrderEditOpen] = useState(false);
 
   const handleViewOrder = (order: any) => {
     console.log("Opening order details for:", order);
     setSelectedOrder(order);
     setIsOrderDetailsOpen(true);
+  };
+
+  const handleEditOrder = (order: any) => {
+    setSelectedOrder(order);
+    setIsOrderEditOpen(true);
   };
   
   const filteredOrders = mockOrders.filter(order => {
@@ -1295,7 +1301,7 @@ const OrdersTabContent = () => {
                       <Button variant="ghost" size="icon" onClick={() => handleViewOrder(order)}>
                         <EyeIcon className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditOrder(order)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <DropdownMenu>
@@ -1420,6 +1426,96 @@ const OrdersTabContent = () => {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Edit Modal */}
+      <Dialog open={isOrderEditOpen} onOpenChange={setIsOrderEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Order - {selectedOrder?.orderNumber}</DialogTitle>
+            <DialogDescription>
+              Update order status, payment, and shipping information
+            </DialogDescription>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="grid gap-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="order-status">Order Status</Label>
+                  <Select defaultValue={selectedOrder.status}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="refunded">Refunded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payment-status">Payment Status</Label>
+                  <Select defaultValue={selectedOrder.paymentStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                      <SelectItem value="refunded">Refunded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="shipping-status">Shipping Status</Label>
+                  <Select defaultValue={selectedOrder.shippingStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="shipped">Shipped</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="returned">Returned</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tracking-number">Tracking Number</Label>
+                  <Input id="tracking-number" placeholder="Enter tracking number" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="order-notes">Order Notes</Label>
+                <Textarea 
+                  id="order-notes" 
+                  placeholder="Add notes about this order..."
+                  defaultValue={selectedOrder.notes}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOrderEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              setIsOrderEditOpen(false);
+              toast({
+                title: "Order Updated",
+                description: "Order has been successfully updated.",
+              });
+            }}>
+              Save Changes
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
