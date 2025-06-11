@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Table, 
@@ -14,8 +14,12 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Search, AlertCircle, Plus, CalendarClock, ClipboardCheck } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Dialog,
   DialogContent,
@@ -24,10 +28,96 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { apiRequest } from '@/lib/queryClient';
 
 export default function BatchLotManagement() {
   const [activeTab, setActiveTab] = useState('current');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    lotNumber: '',
+    batchNumber: '',
+    productId: '',
+    vendorId: '',
+    quantity: '',
+    unitOfMeasure: 'kg',
+    manufacturingDate: '',
+    expirationDate: '',
+    status: 'Available',
+    qualityStatus: 'Pending',
+    cost: '',
+    notes: ''
+  });
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Fetch products for dropdown
+  const { data: products = [] } = useQuery({
+    queryKey: ['/api/products'],
+    queryFn: async () => {
+      const response = await fetch('/api/products');
+      if (!response.ok) throw new Error('Failed to fetch products');
+      return response.json();
+    }
+  });
+  
+  // Fetch vendors for dropdown
+  const { data: vendors = [] } = useQuery({
+    queryKey: ['/api/manufacturing/vendors'],
+    queryFn: async () => {
+      const response = await fetch('/api/manufacturing/vendors');
+      if (!response.ok) throw new Error('Failed to fetch vendors');
+      return response.json();
+    }
+  });
+  
+  // Create batch lot mutation
+  const createBatchLotMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const response = await apiRequest('POST', '/api/manufacturing/batch-lots', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Batch/lot created successfully" });
+      setIsDialogOpen(false);
+      setFormData({
+        lotNumber: '',
+        batchNumber: '',
+        productId: '',
+        vendorId: '',
+        quantity: '',
+        unitOfMeasure: 'kg',
+        manufacturingDate: '',
+        expirationDate: '',
+        status: 'Available',
+        qualityStatus: 'Pending',
+        cost: '',
+        notes: ''
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/batch-lots'] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to create batch/lot",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.lotNumber || !formData.productId || !formData.quantity) {
+      toast({ 
+        title: "Error", 
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    createBatchLotMutation.mutate(formData);
+  };
   
   // Fetch all batch lots
   const { 
@@ -134,25 +224,191 @@ export default function BatchLotManagement() {
                     Manage batch and lot tracking for inventory
                   </CardDescription>
                 </div>
-                <Dialog>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Batch/Lot
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[625px]">
+                  <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Add New Batch/Lot</DialogTitle>
                       <DialogDescription>
                         Enter batch/lot details to add a new entry to the system
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
-                      <p className="text-center text-muted-foreground">
-                        No batch/lot data available. Please add data to the database.
-                      </p>
-                    </div>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="lotNumber">Lot Number *</Label>
+                          <Input
+                            id="lotNumber"
+                            value={formData.lotNumber}
+                            onChange={(e) => setFormData(prev => ({ ...prev, lotNumber: e.target.value }))}
+                            placeholder="LOT-001"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="batchNumber">Batch Number</Label>
+                          <Input
+                            id="batchNumber"
+                            value={formData.batchNumber}
+                            onChange={(e) => setFormData(prev => ({ ...prev, batchNumber: e.target.value }))}
+                            placeholder="BATCH-001"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="productId">Product *</Label>
+                          <Select value={formData.productId} onValueChange={(value) => setFormData(prev => ({ ...prev, productId: value }))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a product" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.isArray(products) && products.map((product: any) => (
+                                <SelectItem key={product.id} value={product.id.toString()}>
+                                  {product.name} ({product.sku})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="vendorId">Vendor</Label>
+                          <Select value={formData.vendorId} onValueChange={(value) => setFormData(prev => ({ ...prev, vendorId: value }))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a vendor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.isArray(vendors) && vendors.map((vendor: any) => (
+                                <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                                  {vendor.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="quantity">Quantity *</Label>
+                          <Input
+                            id="quantity"
+                            type="number"
+                            step="0.01"
+                            value={formData.quantity}
+                            onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                            placeholder="100"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="unitOfMeasure">Unit of Measure</Label>
+                          <Select value={formData.unitOfMeasure} onValueChange={(value) => setFormData(prev => ({ ...prev, unitOfMeasure: value }))}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="kg">kg</SelectItem>
+                              <SelectItem value="g">g</SelectItem>
+                              <SelectItem value="lbs">lbs</SelectItem>
+                              <SelectItem value="pieces">pieces</SelectItem>
+                              <SelectItem value="liters">liters</SelectItem>
+                              <SelectItem value="ml">ml</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="manufacturingDate">Manufacturing Date</Label>
+                          <Input
+                            id="manufacturingDate"
+                            type="datetime-local"
+                            value={formData.manufacturingDate}
+                            onChange={(e) => setFormData(prev => ({ ...prev, manufacturingDate: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="expirationDate">Expiration Date</Label>
+                          <Input
+                            id="expirationDate"
+                            type="datetime-local"
+                            value={formData.expirationDate}
+                            onChange={(e) => setFormData(prev => ({ ...prev, expirationDate: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="status">Status</Label>
+                          <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Available">Available</SelectItem>
+                              <SelectItem value="Reserved">Reserved</SelectItem>
+                              <SelectItem value="Consumed">Consumed</SelectItem>
+                              <SelectItem value="Expired">Expired</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="qualityStatus">Quality Status</Label>
+                          <Select value={formData.qualityStatus} onValueChange={(value) => setFormData(prev => ({ ...prev, qualityStatus: value }))}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Pending">Pending</SelectItem>
+                              <SelectItem value="Approved">Approved</SelectItem>
+                              <SelectItem value="Rejected">Rejected</SelectItem>
+                              <SelectItem value="On Hold">On Hold</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="cost">Cost</Label>
+                        <Input
+                          id="cost"
+                          type="number"
+                          step="0.01"
+                          value={formData.cost}
+                          onChange={(e) => setFormData(prev => ({ ...prev, cost: e.target.value }))}
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea
+                          id="notes"
+                          value={formData.notes}
+                          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                          placeholder="Additional notes..."
+                          rows={3}
+                        />
+                      </div>
+
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={createBatchLotMutation.isPending}>
+                          {createBatchLotMutation.isPending ? 'Creating...' : 'Create Batch/Lot'}
+                        </Button>
+                      </div>
+                    </form>
                   </DialogContent>
                 </Dialog>
               </div>
