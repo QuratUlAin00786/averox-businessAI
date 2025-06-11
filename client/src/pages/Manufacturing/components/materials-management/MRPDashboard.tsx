@@ -15,6 +15,14 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface LowStockItem {
   id: number;
@@ -65,6 +73,8 @@ import { AlertCircle, ArrowRight, TrendingUp, TrendingDown, Package, Calendar, C
 
 export default function MRPDashboard() {
   const [activeTab, setActiveTab] = useState('summary');
+  const [selectedForecast, setSelectedForecast] = useState<Forecast | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['/api/manufacturing/mrp/dashboard'],
@@ -306,19 +316,73 @@ export default function MRPDashboard() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  // Show forecast details in a modal or expanded view
-                                  console.log('Viewing forecast details for:', forecast);
-                                  // For now, just log the details - can be expanded to show a modal
-                                }}
-                              >
-                                View Details
-                              </Button>
+                              <Dialog open={isDialogOpen && selectedForecast?.id === forecast.id} onOpenChange={(open) => {
+                                setIsDialogOpen(open);
+                                if (!open) setSelectedForecast(null);
+                              }}>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setSelectedForecast(forecast);
+                                      setIsDialogOpen(true);
+                                    }}
+                                  >
+                                    View Details
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>{forecast.name}</DialogTitle>
+                                    <DialogDescription>
+                                      Detailed forecast information and analytics
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <label className="text-sm font-medium">Period</label>
+                                        <p className="text-sm text-muted-foreground">{forecast.period}</p>
+                                      </div>
+                                      <div>
+                                        <label className="text-sm font-medium">Confidence Level</label>
+                                        <p className="text-sm text-muted-foreground">
+                                          {Math.round(forecast.confidence * 100)}% - {forecast.confidence > 0.8 ? 'High' : forecast.confidence > 0.5 ? 'Medium' : 'Low'}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <label className="text-sm font-medium">Created Date</label>
+                                        <p className="text-sm text-muted-foreground">
+                                          {new Date(forecast.created_date).toLocaleDateString()}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <label className="text-sm font-medium">Status</label>
+                                        <p className="text-sm text-muted-foreground">{forecast.status}</p>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="border-t pt-4">
+                                      <h4 className="text-sm font-medium mb-2">Forecast Values</h4>
+                                      {forecast.values && forecast.values.length > 0 ? (
+                                        <div className="space-y-2">
+                                          {forecast.values.map((value, index) => (
+                                            <div key={index} className="flex justify-between text-sm">
+                                              <span>{value.period}</span>
+                                              <span className="font-medium">{value.value}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm text-muted-foreground">No forecast values available</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
                             </TableCell>
                           </TableRow>
                         ))}
