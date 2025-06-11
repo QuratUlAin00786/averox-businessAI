@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,7 +18,18 @@ import {
   Undo
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency, formatDate } from '@/lib/formatters';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from '@/hooks/use-toast';
 
 interface ReturnAuthorization {
   id: number;
@@ -57,6 +68,20 @@ interface ReturnItem {
 export default function ReturnsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
+  const [isNewReturnDialogOpen, setIsNewReturnDialogOpen] = useState(false);
+  const [returnFormData, setReturnFormData] = useState({
+    customerName: '',
+    returnType: 'Product Return',
+    returnReason: '',
+    productId: '',
+    quantity: '',
+    condition: 'Used',
+    notes: '',
+    expectedReturnDate: ''
+  });
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Fetch returns data from API
   const { data: returns = [], isLoading, refetch } = useQuery({
@@ -71,6 +96,74 @@ export default function ReturnsManagement() {
       }
     }
   });
+
+  // Fetch products for dropdown
+  const { data: products = [] } = useQuery({
+    queryKey: ['/api/products'],
+    queryFn: async () => {
+      const response = await fetch('/api/products');
+      if (!response.ok) throw new Error('Failed to fetch products');
+      return response.json();
+    }
+  });
+
+  // Create return mutation
+  const createReturnMutation = useMutation({
+    mutationFn: async (returnData: any) => {
+      const response = await apiRequest('POST', '/api/manufacturing/returns', returnData);
+      if (!response.ok) {
+        throw new Error('Failed to create return authorization');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Return Created",
+        description: "Return authorization has been created successfully."
+      });
+      setIsNewReturnDialogOpen(false);
+      setReturnFormData({
+        customerName: '',
+        returnType: 'Product Return',
+        returnReason: '',
+        productId: '',
+        quantity: '',
+        condition: 'Used',
+        notes: '',
+        expectedReturnDate: ''
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/returns'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create return authorization.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleReturnSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Generate RMA number
+    const rmaNumber = `RMA-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
+    
+    const returnData = {
+      rma_number: rmaNumber,
+      customer_name: returnFormData.customerName,
+      return_type: returnFormData.returnType,
+      return_reason: returnFormData.returnReason,
+      product_id: returnFormData.productId ? parseInt(returnFormData.productId) : null,
+      quantity: returnFormData.quantity ? parseFloat(returnFormData.quantity) : 0,
+      condition: returnFormData.condition,
+      notes: returnFormData.notes,
+      expected_return_date: returnFormData.expectedReturnDate || null,
+      status: 'Pending'
+    };
+    
+    createReturnMutation.mutate(returnData);
+  };
 
   // Filter returns based on tab and search term
   const filteredReturns = returns.filter(returnAuth => {
@@ -123,7 +216,7 @@ export default function ReturnsManagement() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-              <Button size="sm">
+              <Button size="sm" onClick={() => setIsNewReturnDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Return
               </Button>
@@ -261,6 +354,156 @@ export default function ReturnsManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* New Return Dialog */}
+      <Dialog open={isNewReturnDialogOpen} onOpenChange={setIsNewReturnDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Return Authorization</DialogTitle>
+            <DialogDescription>
+              Create a new return merchandise authorization (RMA) for product returns.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleReturnSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customerName">Customer Name *</Label>
+                <Input
+                  id="customerName"
+                  value={returnFormData.customerName}
+                  onChange={(e) => setReturnFormData(prev => ({ ...prev, customerName: e.target.value }))}
+                  placeholder="Enter customer name"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="returnType">Return Type</Label>
+                <Select 
+                  value={returnFormData.returnType} 
+                  onValueChange={(value) => setReturnFormData(prev => ({ ...prev, returnType: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select return type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Product Return">Product Return</SelectItem>
+                    <SelectItem value="Warranty Return">Warranty Return</SelectItem>
+                    <SelectItem value="Exchange">Exchange</SelectItem>
+                    <SelectItem value="Refund">Refund</SelectItem>
+                    <SelectItem value="Quality Issue">Quality Issue</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="productId">Product</Label>
+                <Select 
+                  value={returnFormData.productId} 
+                  onValueChange={(value) => setReturnFormData(prev => ({ ...prev, productId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((product: any) => (
+                      <SelectItem key={product.id} value={product.id.toString()}>
+                        {product.name} ({product.sku})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={returnFormData.quantity}
+                  onChange={(e) => setReturnFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                  placeholder="Enter quantity"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="condition">Condition</Label>
+                <Select 
+                  value={returnFormData.condition} 
+                  onValueChange={(value) => setReturnFormData(prev => ({ ...prev, condition: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select condition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="New">New/Unopened</SelectItem>
+                    <SelectItem value="Used">Used</SelectItem>
+                    <SelectItem value="Damaged">Damaged</SelectItem>
+                    <SelectItem value="Defective">Defective</SelectItem>
+                    <SelectItem value="Expired">Expired</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="expectedReturnDate">Expected Return Date</Label>
+                <Input
+                  id="expectedReturnDate"
+                  type="date"
+                  value={returnFormData.expectedReturnDate}
+                  onChange={(e) => setReturnFormData(prev => ({ ...prev, expectedReturnDate: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="returnReason">Return Reason *</Label>
+              <Textarea
+                id="returnReason"
+                value={returnFormData.returnReason}
+                onChange={(e) => setReturnFormData(prev => ({ ...prev, returnReason: e.target.value }))}
+                placeholder="Enter reason for return"
+                rows={3}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Additional Notes</Label>
+              <Textarea
+                id="notes"
+                value={returnFormData.notes}
+                onChange={(e) => setReturnFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Enter any additional notes or instructions"
+                rows={2}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsNewReturnDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createReturnMutation.isPending}
+              >
+                {createReturnMutation.isPending ? 'Creating...' : 'Create Return Authorization'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
