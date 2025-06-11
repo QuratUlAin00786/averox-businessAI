@@ -1791,18 +1791,30 @@ const SettingsTabContent = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="store-name">Store Name</Label>
-                <Input id="store-name" defaultValue="AVEROX Store" />
+                <Input 
+                  id="store-name" 
+                  value={settings.storeName}
+                  onChange={(e) => setSettings({...settings, storeName: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="store-email">Store Email</Label>
-                <Input id="store-email" type="email" defaultValue="store@averox.com" />
+                <Input 
+                  id="store-email" 
+                  type="email" 
+                  value={settings.storeEmail}
+                  onChange={(e) => setSettings({...settings, storeEmail: e.target.value})}
+                />
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="store-currency">Currency</Label>
-                <Select defaultValue="USD">
+                <Select 
+                  value={settings.currency} 
+                  onValueChange={(value) => setSettings({...settings, currency: value})}
+                >
                   <SelectTrigger id="store-currency">
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
@@ -1818,7 +1830,10 @@ const SettingsTabContent = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="store-language">Default Language</Label>
-                <Select defaultValue="en">
+                <Select 
+                  value={settings.language} 
+                  onValueChange={(value) => setSettings({...settings, language: value})}
+                >
                   <SelectTrigger id="store-language">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
@@ -1836,7 +1851,12 @@ const SettingsTabContent = () => {
             
             <div className="space-y-2">
               <Label htmlFor="store-description">Store Description</Label>
-              <Textarea id="store-description" rows={4} defaultValue="AVEROX Store - Your one-stop shop for CRM software, support, and services." />
+              <Textarea 
+                id="store-description" 
+                rows={4} 
+                value={settings.description}
+                onChange={(e) => setSettings({...settings, description: e.target.value})}
+              />
             </div>
           </div>
         </CardContent>
@@ -1859,7 +1879,11 @@ const SettingsTabContent = () => {
                   <p className="text-sm text-muted-foreground">Accept Visa, Mastercard, Amex and more</p>
                 </div>
               </div>
-              <Switch defaultChecked id="payment-cc" />
+              <Switch 
+                checked={settings.creditCard} 
+                onCheckedChange={(checked) => setSettings({...settings, creditCard: checked})}
+                id="payment-cc" 
+              />
             </div>
             
             <div className="flex items-center justify-between">
@@ -1872,7 +1896,11 @@ const SettingsTabContent = () => {
                   <p className="text-sm text-muted-foreground">Accept payments through PayPal</p>
                 </div>
               </div>
-              <Switch defaultChecked id="payment-paypal" />
+              <Switch 
+                checked={settings.paypal} 
+                onCheckedChange={(checked) => setSettings({...settings, paypal: checked})}
+                id="payment-paypal" 
+              />
             </div>
             
             <div className="flex items-center justify-between">
@@ -1885,7 +1913,11 @@ const SettingsTabContent = () => {
                   <p className="text-sm text-muted-foreground">Accept direct bank transfers</p>
                 </div>
               </div>
-              <Switch id="payment-bank" />
+              <Switch 
+                checked={settings.bankTransfer} 
+                onCheckedChange={(checked) => setSettings({...settings, bankTransfer: checked})}
+                id="payment-bank" 
+              />
             </div>
           </div>
         </CardContent>
@@ -1908,7 +1940,11 @@ const SettingsTabContent = () => {
                   <p className="text-sm text-muted-foreground">Email delivery of digital products and licenses</p>
                 </div>
               </div>
-              <Switch defaultChecked id="shipping-digital" />
+              <Switch 
+                checked={settings.digitalDelivery} 
+                onCheckedChange={(checked) => setSettings({...settings, digitalDelivery: checked})}
+                id="shipping-digital" 
+              />
             </div>
             
             <div className="flex items-center justify-between">
@@ -1921,7 +1957,11 @@ const SettingsTabContent = () => {
                   <p className="text-sm text-muted-foreground">Physical products delivery (3-5 business days)</p>
                 </div>
               </div>
-              <Switch id="shipping-standard" />
+              <Switch 
+                checked={settings.standardShipping} 
+                onCheckedChange={(checked) => setSettings({...settings, standardShipping: checked})}
+                id="shipping-standard" 
+              />
             </div>
             
             <div className="flex items-center justify-between">
@@ -1934,7 +1974,11 @@ const SettingsTabContent = () => {
                   <p className="text-sm text-muted-foreground">Expedited delivery (1-2 business days)</p>
                 </div>
               </div>
-              <Switch id="shipping-express" />
+              <Switch 
+                checked={settings.expressShipping} 
+                onCheckedChange={(checked) => setSettings({...settings, expressShipping: checked})}
+                id="shipping-express" 
+              />
             </div>
           </div>
         </CardContent>
