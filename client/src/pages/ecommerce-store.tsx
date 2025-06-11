@@ -1067,6 +1067,7 @@ const OrdersTabContent = () => {
   const { toast } = useToast();
   
   const handleViewOrder = (order: any) => {
+    console.log("handleViewOrder called with order:", order);
     toast({
       title: "Order Details",
       description: `Viewing details for order ${order.orderNumber}`,
