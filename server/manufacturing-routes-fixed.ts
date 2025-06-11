@@ -3730,8 +3730,8 @@ router.post('/returns', async (req: Request, res: Response) => {
     } = req.body;
 
     // Validate required fields
-    if (!rma_number || !customer_name || !return_reason) {
-      return res.status(400).json({ error: 'Missing required fields: rma_number, customer_name, return_reason' });
+    if (!rma_number || !return_reason) {
+      return res.status(400).json({ error: 'Missing required fields: rma_number, return_reason' });
     }
 
     // Check if return_authorizations table exists
@@ -3750,24 +3750,16 @@ router.post('/returns', async (req: Request, res: Response) => {
     const result = await db.execute(sql`
       INSERT INTO return_authorizations (
         rma_number,
-        customer_name,
         return_type,
         return_reason,
-        product_id,
-        quantity,
-        condition,
         notes,
         expected_return_date,
         status,
         created_at
       ) VALUES (
         ${rma_number},
-        ${customer_name},
         ${return_type},
         ${return_reason},
-        ${product_id},
-        ${quantity},
-        ${condition},
         ${notes},
         ${expected_return_date},
         ${status},
