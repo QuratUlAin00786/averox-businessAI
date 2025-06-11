@@ -864,7 +864,7 @@ const ProductsTabContent = () => {
   const handleDuplicateProduct = (product: Product) => {
     const duplicatedProduct: Product = {
       ...product,
-      id: `${Date.now()}`, // Generate unique ID
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: `${product.name} (Copy)`,
       tags: product.tags ? [...product.tags] : [],
       images: product.images ? [...product.images] : [],
@@ -872,15 +872,16 @@ const ProductsTabContent = () => {
       dateModified: new Date().toISOString(),
     };
     
-    setProducts(prev => {
-      const newProducts = [...prev, duplicatedProduct];
-      console.log('Products updated:', newProducts.length, 'Total products');
-      return newProducts;
-    });
+    setProducts(prev => [...prev, duplicatedProduct]);
+    
+    // Force component re-render by updating search query momentarily
+    const currentQuery = searchQuery;
+    setSearchQuery(' ');
+    setTimeout(() => setSearchQuery(currentQuery), 10);
     
     toast({
       title: "Product Duplicated",
-      description: `${product.name} has been successfully duplicated as "${duplicatedProduct.name}".`,
+      description: `${product.name} has been successfully duplicated.`,
       variant: "default",
     });
   };
@@ -929,7 +930,7 @@ const ProductsTabContent = () => {
     return matchesSearch && matchesCategory;
   });
 
-  console.log('Total products:', products.length, 'Filtered products:', filteredProducts.length);
+
   
   return (
     <div className="space-y-6">
@@ -996,8 +997,8 @@ const ProductsTabContent = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProducts.map(product => (
-                <TableRow key={product.id}>
+              filteredProducts.map((product, index) => (
+                <TableRow key={`${product.id}-${index}`}>
                   <TableCell>
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-gray-100 rounded-md mr-3 flex items-center justify-center">
