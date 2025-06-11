@@ -794,7 +794,7 @@ const DashboardTabContent = () => {
                 <CardTitle>Recent Orders</CardTitle>
                 <CardDescription>Latest orders from your store</CardDescription>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setActiveTab('orders')}>
                 View All
               </Button>
             </div>
