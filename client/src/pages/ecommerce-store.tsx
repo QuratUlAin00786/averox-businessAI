@@ -1195,6 +1195,35 @@ const OrdersTabContent = () => {
     setSelectedOrder(order);
     setIsOrderEditOpen(true);
   };
+
+  const handleMarkAsShipped = (order: any) => {
+    toast({
+      title: "Order Shipped",
+      description: `Order ${order.orderNumber} has been marked as shipped.`,
+    });
+  };
+
+  const handleCapturePayment = (order: any) => {
+    toast({
+      title: "Payment Captured",
+      description: `Payment for order ${order.orderNumber} has been captured successfully.`,
+    });
+  };
+
+  const handleMarkAsProcessing = (order: any) => {
+    toast({
+      title: "Order Processing",
+      description: `Order ${order.orderNumber} has been marked as processing.`,
+    });
+  };
+
+  const handleCancelOrder = (order: any) => {
+    toast({
+      title: "Order Cancelled",
+      description: `Order ${order.orderNumber} has been cancelled.`,
+      variant: "destructive",
+    });
+  };
   
   const filteredOrders = mockOrders.filter(order => {
     const matchesSearch = searchQuery === '' || 
@@ -1311,20 +1340,20 @@ const OrdersTabContent = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleMarkAsShipped(order)}>
                             <Truck className="h-4 w-4 mr-2" />
                             Mark as Shipped
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleCapturePayment(order)}>
                             <CreditCard className="h-4 w-4 mr-2" />
                             Capture Payment
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleMarkAsProcessing(order)}>
                             <Clock className="h-4 w-4 mr-2" />
                             Mark as Processing
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleCancelOrder(order)}>
                             <Trash className="h-4 w-4 mr-2" />
                             Cancel Order
                           </DropdownMenuItem>
