@@ -1261,6 +1261,34 @@ const OrdersTabContent = () => {
       variant: "destructive",
     });
   };
+
+  const handleExportOrders = () => {
+    const csvHeaders = ['Order Number', 'Customer Name', 'Customer Email', 'Date', 'Status', 'Payment Status', 'Total'];
+    const csvData = filteredOrders.map(order => [
+      order.orderNumber,
+      order.customer.name,
+      order.customer.email,
+      formatDate(order.createdAt),
+      order.status.charAt(0).toUpperCase() + order.status.slice(1),
+      order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1),
+      formatCurrency(order.total)
+    ]);
+    
+    const csvContent = [csvHeaders, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `orders_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    toast({
+      title: "Export Complete",
+      description: "Orders have been exported to CSV file.",
+    });
+  };
   
   const filteredOrders = orders.filter(order => {
     const matchesSearch = searchQuery === '' || 
@@ -1281,7 +1309,7 @@ const OrdersTabContent = () => {
           <p className="text-muted-foreground">Manage customer orders</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportOrders}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
