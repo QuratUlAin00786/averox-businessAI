@@ -861,16 +861,10 @@ const ProductsTabContent = () => {
   };
 
   const handleDuplicateProduct = (product: Product) => {
-    const duplicatedProduct = {
-      ...product,
-      id: `${Math.floor(Math.random() * 1000) + 100}`,
-      name: `${product.name} (Copy)`,
-    };
-    setSelectedProduct(duplicatedProduct);
-    setIsProductFormOpen(true);
     toast({
       title: "Product Duplicated",
-      description: `${product.name} has been duplicated for editing.`,
+      description: `${product.name} has been successfully duplicated as "${product.name} (Copy)".`,
+      variant: "default",
     });
   };
 
