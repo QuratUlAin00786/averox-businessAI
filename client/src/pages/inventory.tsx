@@ -780,6 +780,8 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
           setActiveTab('categories');
         } else if (pathParts[0] === 'transactions') {
           setActiveTab('transactions');
+        } else if (pathParts[0] === 'status') {
+          setActiveTab('status');
         }
       }
     }
@@ -936,21 +938,21 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
         </div>
 
         <Tabs defaultValue="products" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-5 mb-6">
-            <TabsTrigger value="products" className="flex items-center gap-2">
+          <TabsList className="w-full mb-6 overflow-x-auto">
+            <TabsTrigger value="products" className="flex items-center gap-2 whitespace-nowrap">
               <Package size={16} /> Products
             </TabsTrigger>
-            <TabsTrigger value="categories" className="flex items-center gap-2">
+            <TabsTrigger value="categories" className="flex items-center gap-2 whitespace-nowrap">
               <Tag size={16} /> Categories
             </TabsTrigger>
-            <TabsTrigger value="transactions" className="flex items-center gap-2">
+            <TabsTrigger value="transactions" className="flex items-center gap-2 whitespace-nowrap">
               <ArrowDownUp size={16} /> Transactions
             </TabsTrigger>
-            <TabsTrigger value="status" className="flex items-center gap-2">
-              <Settings size={16} /> Inventory Status
+            <TabsTrigger value="status" className="flex items-center gap-2 whitespace-nowrap">
+              <Settings size={16} /> Status
             </TabsTrigger>
-            <TabsTrigger value="summary" className="flex items-center gap-2">
-              <Layers size={16} /> Inventory Summary
+            <TabsTrigger value="summary" className="flex items-center gap-2 whitespace-nowrap">
+              <Layers size={16} /> Summary
             </TabsTrigger>
           </TabsList>
 
