@@ -676,15 +676,6 @@ const DashboardTabContent = ({ setActiveTab }: { setActiveTab: (tab: string) => 
   const stats = mockStoreStats;
   const { toast } = useToast();
   
-  const handleViewOrder = (order: any) => {
-    toast({
-      title: "Order Details",
-      description: `Viewing order ${order.orderNumber} for ${order.customer.name}`,
-    });
-    // Navigate to orders tab to show order details
-    setActiveTab('orders');
-  };
-  
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
