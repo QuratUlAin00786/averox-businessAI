@@ -118,22 +118,30 @@ export default function Reports() {
   const generateInsight = async () => {
     setIsGeneratingInsight(true);
     try {
-      // Import the generateRecommendations function
-      const { generateRecommendations } = await import('@/lib/openai');
+      // Import the generateInsights function
+      const { generateInsights } = await import('@/lib/openai');
       
-      // Use the recommendations endpoint instead of analysis
-      const recommendationsResult = await generateRecommendations(
-        "reports",
-        {
-          salesReport, 
-          leadsReport, 
-          conversionReport, 
-          teamReport,
-          timeRange: selectedTimeRange
-        }
-      );
+      // Prepare the report data for analysis
+      const reportData = {
+        salesReport, 
+        leadsReport, 
+        conversionReport, 
+        teamReport,
+        timeRange: selectedTimeRange
+      };
       
-      setAiInsight(recommendationsResult.content);
+      // Generate insights using the correct function
+      const insights = await generateInsights(reportData, "reports");
+      
+      // Format insights for display
+      if (insights && insights.length > 0) {
+        const formattedInsights = insights.map(insight => 
+          `**${insight.title}**: ${insight.description}`
+        ).join('\n\n');
+        setAiInsight(formattedInsights);
+      } else {
+        setAiInsight("AI analysis complete. Based on your current data, continue monitoring your metrics and check back when you have more data points for deeper insights.");
+      }
     } catch (error) {
       console.error("Error generating AI insights:", error);
       setAiInsight("Unable to generate insights at this time. Please try again later.");
