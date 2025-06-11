@@ -338,7 +338,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
 
   return (
     <div className={`flex-shrink-0 ${className}`}>
-      <div className="flex flex-col w-64 bg-white border-r border-neutral-200 h-full">
+      <div className="flex flex-col w-64 bg-white border-r border-neutral-200 min-h-screen">
         {sidebarContent}
       </div>
     </div>

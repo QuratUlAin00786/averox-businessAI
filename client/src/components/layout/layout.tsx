@@ -18,7 +18,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex min-h-screen">
       {/* Sidebar for desktop */}
       <Sidebar className="hidden md:flex" />
       
@@ -59,10 +59,10 @@ export default function Layout({ children }: LayoutProps) {
       )}
       
       {/* Main content */}
-      <div className="flex flex-col flex-1 w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 w-0">
         <TopBar onToggleSidebar={toggleSidebar} />
         
-        <main className="relative flex-1 overflow-y-auto focus:outline-none">
+        <main className="relative flex-1">
           {children}
         </main>
       </div>
