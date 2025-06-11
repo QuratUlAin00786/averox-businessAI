@@ -395,6 +395,32 @@ export default function BillOfMaterialsPage() {
     setSelectedBomId(bomId === selectedBomId ? null : bomId);
   };
 
+  // Get next available version for a product
+  const getNextAvailableVersion = (productId: number): string => {
+    if (!boms || !productId) return "1.0";
+    
+    // Find all BOMs for this product
+    const productBoms = boms.filter(bom => bom.product_id === productId);
+    if (productBoms.length === 0) return "1.0";
+    
+    // Extract version numbers and find the highest
+    const versions = productBoms.map(bom => {
+      const parts = bom.version.split('.');
+      const major = parseInt(parts[0]) || 1;
+      const minor = parseInt(parts[1]) || 0;
+      return { major, minor, full: bom.version };
+    });
+    
+    // Sort by major then minor version
+    versions.sort((a, b) => {
+      if (a.major !== b.major) return b.major - a.major;
+      return b.minor - a.minor;
+    });
+    
+    const highest = versions[0];
+    return `${highest.major}.${highest.minor + 1}`;
+  };
+
   const handleCreateBom = (data: BomFormValues) => {
     createBomMutation.mutate(data);
   };
@@ -512,7 +538,18 @@ export default function BillOfMaterialsPage() {
                     <FormItem>
                       <FormLabel>Product</FormLabel>
                       <Select 
-                        onValueChange={(value) => field.onChange(parseInt(value))} 
+                        onValueChange={(value) => {
+                          const productId = parseInt(value);
+                          field.onChange(productId);
+                          // Auto-set the next available version for this product
+                          const nextVersion = getNextAvailableVersion(productId);
+                          bomForm.setValue('version', nextVersion);
+                          // Auto-generate a default name
+                          const selectedProduct = products?.find(p => p.id === productId);
+                          if (selectedProduct) {
+                            bomForm.setValue('name', `BOM for ${selectedProduct.name} - Version ${nextVersion}`);
+                          }
+                        }} 
                         value={field.value ? field.value.toString() : undefined}
                       >
                         <FormControl>
@@ -556,6 +593,9 @@ export default function BillOfMaterialsPage() {
                       <FormControl>
                         <Input placeholder="1.0" {...field} />
                       </FormControl>
+                      <FormDescription>
+                        Version is auto-set when you select a product
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
