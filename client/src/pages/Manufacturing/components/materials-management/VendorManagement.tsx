@@ -119,7 +119,7 @@ export default function VendorManagement() {
   });
   
   // Fetch vendors from API
-  const { data: rawVendorData, isLoading, refetch } = useQuery({
+  const { data: rawVendorData, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['/api/manufacturing/vendors'],
     queryFn: async () => {
       try {
@@ -170,9 +170,9 @@ export default function VendorManagement() {
               <CardDescription>Manage suppliers and track vendor performance</CardDescription>
             </div>
             <div className="flex space-x-3">
-              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                {isLoading ? 'Refreshing...' : 'Refresh'}
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+                {isFetching ? 'Refreshing...' : 'Refresh'}
               </Button>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
