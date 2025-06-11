@@ -3544,7 +3544,6 @@ router.get('/trade-compliance', async (req: Request, res: Response) => {
       return res.json([]);
     }
     
-    console.log('Fetching trade compliance documents...');
     const result = await db.execute(sql`
       SELECT 
         tcd.id,
@@ -3563,8 +3562,6 @@ router.get('/trade-compliance', async (req: Request, res: Response) => {
       LEFT JOIN users u ON tcd.created_by = u.id
       ORDER BY tcd.updated_at DESC NULLS LAST
     `);
-    
-    console.log('Query result rows:', result.rows?.length || 0);
     
     // Extract rows from PostgreSQL result
     const tradeComplianceRecords = result.rows || [];
