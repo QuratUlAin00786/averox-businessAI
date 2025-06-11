@@ -75,6 +75,7 @@ interface ProductDetailViewProps {
 }
 
 function ProductDetailView({ productId, onBack }: ProductDetailViewProps) {
+  const [, setLocation] = useLocation();
   const { data: product, isLoading } = useQuery({
     queryKey: [`/api/products/${productId}`],
   });
