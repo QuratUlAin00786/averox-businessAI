@@ -1689,11 +1689,60 @@ const OrdersTabContent = () => {
 // Settings tab content
 const SettingsTabContent = () => {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [settings, setSettings] = useState({
+    storeName: 'AVEROX Store',
+    storeEmail: 'store@averox.com',
+    currency: 'USD',
+    language: 'en',
+    description: 'AVEROX Store - Your one-stop shop for CRM software, support, and services.',
+    creditCard: true,
+    paypal: true,
+    bankTransfer: false,
+    digitalDelivery: true,
+    standardShipping: true,
+    expressShipping: false
+  });
   
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async () => {
+    setIsLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Settings Saved",
+        description: "Your store settings have been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setSettings({
+      storeName: 'AVEROX Store',
+      storeEmail: 'store@averox.com',
+      currency: 'USD',
+      language: 'en',
+      description: 'AVEROX Store - Your one-stop shop for CRM software, support, and services.',
+      creditCard: true,
+      paypal: true,
+      bankTransfer: false,
+      digitalDelivery: true,
+      standardShipping: true,
+      expressShipping: false
+    });
+    
     toast({
-      title: "Settings saved",
-      description: "Your store settings have been updated successfully.",
+      title: "Changes Cancelled",
+      description: "Settings have been reset to previous values.",
     });
   };
   
@@ -1864,8 +1913,19 @@ const SettingsTabContent = () => {
       </Card>
       
       <div className="flex justify-end space-x-4">
-        <Button variant="outline">Cancel</Button>
-        <Button onClick={handleSaveSettings}>Save Settings</Button>
+        <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
+          Cancel
+        </Button>
+        <Button onClick={handleSaveSettings} disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Saving...
+            </>
+          ) : (
+            'Save Settings'
+          )}
+        </Button>
       </div>
     </div>
   );
