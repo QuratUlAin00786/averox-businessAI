@@ -528,7 +528,8 @@ export default function MRPDashboard() {
                       
                       if (response.ok) {
                         const result = await response.json();
-                        window.location.href = `/manufacturing/mrp/runs/${result.runId}`;
+                        // Successfully ran MRP process, stay on current page
+                        console.log('MRP process completed successfully:', result);
                       } else {
                         console.error('Error running MRP process:', await response.text());
                       }
@@ -547,7 +548,7 @@ export default function MRPDashboard() {
                   View MRP planning results with purchase recommendations and production scheduling
                 </p>
                 <Button
-                  onClick={() => window.location.href = "/manufacturing/mrp/runs"}
+                  onClick={() => setLocation("/manufacturing/materials-management")}
                 >
                   View Planning Details
                 </Button>
