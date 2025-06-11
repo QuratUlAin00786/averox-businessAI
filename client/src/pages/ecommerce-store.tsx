@@ -855,11 +855,8 @@ const ProductsTabContent = () => {
   const { toast } = useToast();
   
   const handleViewProduct = (product: Product) => {
-    toast({
-      title: "Product Details",
-      description: `Viewing details for ${product.name}`,
-      variant: "default",
-    });
+    setSelectedProduct(product);
+    setIsProductFormOpen(true);
   };
 
   const handleShareProduct = (product: Product) => {
@@ -1074,19 +1071,12 @@ const OrdersTabContent = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const { toast } = useToast();
   
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
+
   const handleViewOrder = (order: any) => {
-    console.log("handleViewOrder called with order:", order);
-    try {
-      toast({
-        title: "Order Details",
-        description: `Viewing details for order ${order.orderNumber}`,
-        variant: "default",
-      });
-      console.log("Toast called successfully");
-    } catch (error) {
-      console.error("Toast error:", error);
-      alert(`Order Details: Viewing details for order ${order.orderNumber}`);
-    }
+    setSelectedOrder(order);
+    setIsOrderDetailsOpen(true);
   };
   
   const filteredOrders = mockOrders.filter(order => {
@@ -1231,6 +1221,90 @@ const OrdersTabContent = () => {
           </TableBody>
         </Table>
       </Card>
+
+      {/* Order Details Modal */}
+      <Dialog open={isOrderDetailsOpen} onOpenChange={setIsOrderDetailsOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Details - {selectedOrder?.orderNumber}</DialogTitle>
+            <DialogDescription>
+              Complete order information and customer details
+            </DialogDescription>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="grid gap-6 py-4">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Customer Information</h3>
+                    <div className="space-y-2 mt-2">
+                      <p><strong>Name:</strong> {selectedOrder.customer.name}</p>
+                      <p><strong>Email:</strong> {selectedOrder.customer.email}</p>
+                      <p><strong>Phone:</strong> {selectedOrder.customer.phone}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Order Status</h3>
+                    <div className="space-y-2 mt-2">
+                      <p><strong>Order Status:</strong> <Badge variant="outline" className={getStatusColor(selectedOrder.status)}>{selectedOrder.status}</Badge></p>
+                      <p><strong>Payment Status:</strong> <Badge variant="outline" className={getStatusColor(selectedOrder.paymentStatus)}>{selectedOrder.paymentStatus}</Badge></p>
+                      <p><strong>Shipping Status:</strong> {selectedOrder.shippingStatus}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Shipping Address</h3>
+                    <div className="space-y-1 mt-2">
+                      <p>{selectedOrder.shippingAddress.street}</p>
+                      <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.zipCode}</p>
+                      <p>{selectedOrder.shippingAddress.country}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Order Summary</h3>
+                    <div className="space-y-2 mt-2">
+                      <p><strong>Total:</strong> {formatCurrency(selectedOrder.total)}</p>
+                      <p><strong>Payment Method:</strong> {selectedOrder.paymentMethod}</p>
+                      <p><strong>Shipping Method:</strong> {selectedOrder.shippingMethod}</p>
+                      <p><strong>Order Date:</strong> {formatDate(selectedOrder.createdAt)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Order Items</h3>
+                <Table className="mt-2">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedOrder.items.map((item: any) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>{formatCurrency(item.price)}</TableCell>
+                        <TableCell>{formatCurrency(item.total)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {selectedOrder.notes && (
+                <div>
+                  <h3 className="text-lg font-semibold">Notes</h3>
+                  <p className="mt-2 p-3 bg-gray-50 rounded-md">{selectedOrder.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
