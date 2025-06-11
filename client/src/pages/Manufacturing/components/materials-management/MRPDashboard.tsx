@@ -490,7 +490,7 @@ export default function MRPDashboard() {
                   View detailed inventory status with real-time tracking and analytics
                 </p>
                 <Button 
-                  onClick={() => setLocation("/inventory/status")}
+                  onClick={() => setLocation("/inventory")}
                 >
                   View Detailed Inventory
                 </Button>
