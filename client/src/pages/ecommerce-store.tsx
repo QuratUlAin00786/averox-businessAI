@@ -1403,7 +1403,7 @@ export default function EcommerceStorePage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="hidden md:flex">
+          <Button variant="outline" className="hidden md:flex" onClick={() => window.open('/store', '_blank')}>
             <ExternalLink className="h-4 w-4 mr-2" />
             View Store
           </Button>
