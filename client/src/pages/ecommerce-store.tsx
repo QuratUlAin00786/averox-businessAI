@@ -860,6 +860,20 @@ const ProductsTabContent = () => {
     setIsProductViewOpen(true);
   };
 
+  const handleDuplicateProduct = (product: Product) => {
+    const duplicatedProduct = {
+      ...product,
+      id: `${Math.floor(Math.random() * 1000) + 100}`,
+      name: `${product.name} (Copy)`,
+    };
+    setSelectedProduct(duplicatedProduct);
+    setIsProductFormOpen(true);
+    toast({
+      title: "Product Duplicated",
+      description: `${product.name} has been duplicated for editing.`,
+    });
+  };
+
   const handleShareProduct = (product: Product) => {
     const shareUrl = `${window.location.origin}/product/${product.id}`;
     const shareText = `Check out ${product.name} - ${product.description}`;
@@ -1033,7 +1047,7 @@ const ProductsTabContent = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDuplicateProduct(product)}>
                             <Copy className="h-4 w-4 mr-2" />
                             Duplicate
                           </DropdownMenuItem>
@@ -1081,7 +1095,6 @@ const ProductsTabContent = () => {
                     <div className="space-y-2 mt-2">
                       <p><strong>Name:</strong> {selectedProduct.name}</p>
                       <p><strong>Category:</strong> {selectedProduct.category}</p>
-                      <p><strong>SKU:</strong> {selectedProduct.sku}</p>
                       <p><strong>Status:</strong> <Badge variant="outline">{selectedProduct.status}</Badge></p>
                     </div>
                   </div>
@@ -1089,9 +1102,10 @@ const ProductsTabContent = () => {
                     <h3 className="text-lg font-semibold">Pricing & Inventory</h3>
                     <div className="space-y-2 mt-2">
                       <p><strong>Price:</strong> {formatCurrency(selectedProduct.price)}</p>
-                      <p><strong>Cost:</strong> {formatCurrency(selectedProduct.cost || 0)}</p>
+                      {selectedProduct.discountedPrice && (
+                        <p><strong>Discounted Price:</strong> {formatCurrency(selectedProduct.discountedPrice)}</p>
+                      )}
                       <p><strong>Inventory:</strong> {selectedProduct.inventory} units</p>
-                      <p><strong>Weight:</strong> {selectedProduct.weight || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
@@ -1111,11 +1125,10 @@ const ProductsTabContent = () => {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">Dimensions</h3>
+                    <h3 className="text-lg font-semibold">Dates</h3>
                     <div className="space-y-2 mt-2">
-                      <p><strong>Length:</strong> {selectedProduct.dimensions?.length || 'N/A'}</p>
-                      <p><strong>Width:</strong> {selectedProduct.dimensions?.width || 'N/A'}</p>
-                      <p><strong>Height:</strong> {selectedProduct.dimensions?.height || 'N/A'}</p>
+                      <p><strong>Created:</strong> {formatDate(selectedProduct.dateCreated)}</p>
+                      <p><strong>Modified:</strong> {formatDate(selectedProduct.dateModified)}</p>
                     </div>
                   </div>
                 </div>
