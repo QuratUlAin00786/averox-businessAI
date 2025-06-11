@@ -33,6 +33,27 @@ export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
     return <ProductionManagement />;
   }
 
+  // Handle Production Management subsections
+  if (subPath === 'production/production-lines') {
+    return <ProductionManagement />;
+  }
+
+  if (subPath === 'production/workcenters') {
+    return <ProductionManagement />;
+  }
+
+  if (subPath === 'production/bom') {
+    return <ProductionManagement />;
+  }
+
+  if (subPath === 'production/work-orders') {
+    return <ProductionManagement />;
+  }
+
+  if (subPath === 'production/quality') {
+    return <ProductionManagement />;
+  }
+
   // Handle BOM Management
   if (subPath === 'boms') {
     return <BillOfMaterialsPage />;
