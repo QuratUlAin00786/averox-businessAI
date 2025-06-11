@@ -866,11 +866,17 @@ const ProductsTabContent = () => {
       ...product,
       id: `${Date.now()}`, // Generate unique ID
       name: `${product.name} (Copy)`,
+      tags: product.tags ? [...product.tags] : [],
+      images: product.images ? [...product.images] : [],
       dateCreated: new Date().toISOString(),
       dateModified: new Date().toISOString(),
     };
     
-    setProducts(prev => [...prev, duplicatedProduct]);
+    setProducts(prev => {
+      const newProducts = [...prev, duplicatedProduct];
+      console.log('Products updated:', newProducts.length, 'Total products');
+      return newProducts;
+    });
     
     toast({
       title: "Product Duplicated",
@@ -922,6 +928,8 @@ const ProductsTabContent = () => {
     
     return matchesSearch && matchesCategory;
   });
+
+  console.log('Total products:', products.length, 'Filtered products:', filteredProducts.length);
   
   return (
     <div className="space-y-6">
