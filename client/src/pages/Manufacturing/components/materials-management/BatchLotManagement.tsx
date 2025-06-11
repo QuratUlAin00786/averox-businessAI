@@ -75,7 +75,22 @@ export default function BatchLotManagement() {
   // Create batch lot mutation
   const createBatchLotMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const response = await apiRequest('POST', '/api/manufacturing/batch-lots', data);
+      // Transform camelCase to snake_case for API
+      const apiData = {
+        product_id: parseInt(data.productId),
+        lot_number: data.lotNumber,
+        batch_number: data.batchNumber,
+        quantity: parseFloat(data.quantity),
+        unit_of_measure: data.unitOfMeasure,
+        vendor_id: data.vendorId ? parseInt(data.vendorId) : null,
+        manufacture_date: data.manufacturingDate || null,
+        expiration_date: data.expirationDate || null,
+        status: data.status,
+        quality_status: data.qualityStatus,
+        cost: data.cost ? parseFloat(data.cost) : null,
+        notes: data.notes || null
+      };
+      const response = await apiRequest('POST', '/api/manufacturing/batch-lots', apiData);
       return response.json();
     },
     onSuccess: () => {
