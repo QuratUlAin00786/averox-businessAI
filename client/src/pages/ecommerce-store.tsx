@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Card, CardContent, CardDescription, CardFooter, 
@@ -1703,11 +1703,28 @@ const SettingsTabContent = () => {
     standardShipping: true,
     expressShipping: false
   });
+
+  // Load settings from localStorage on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('ecommerce_store_settings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings(parsedSettings);
+        console.log("Loaded saved settings:", parsedSettings);
+      } catch (error) {
+        console.error("Error loading saved settings:", error);
+      }
+    }
+  }, []);
   
   const handleSaveSettings = async () => {
     console.log("Save Settings button clicked!");
     setIsLoading(true);
     try {
+      // Save settings to localStorage for persistence
+      localStorage.setItem('ecommerce_store_settings', JSON.stringify(settings));
+      
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
