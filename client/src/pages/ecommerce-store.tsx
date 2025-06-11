@@ -1064,6 +1064,14 @@ const ProductsTabContent = () => {
 const OrdersTabContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const { toast } = useToast();
+  
+  const handleViewOrder = (order: any) => {
+    toast({
+      title: "Order Details",
+      description: `Viewing details for order ${order.orderNumber}`,
+    });
+  };
   
   const filteredOrders = mockOrders.filter(order => {
     const matchesSearch = searchQuery === '' || 
@@ -1167,12 +1175,7 @@ const OrdersTabContent = () => {
                   <TableCell className="font-medium">{formatCurrency(order.total)}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-1">
-                      <Button variant="ghost" size="icon" onClick={() => {
-                        toast({
-                          title: "Order Details",
-                          description: `Viewing details for order ${order.orderNumber}`,
-                        });
-                      }}>
+                      <Button variant="ghost" size="icon" onClick={() => handleViewOrder(order)}>
                         <EyeIcon className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon">
