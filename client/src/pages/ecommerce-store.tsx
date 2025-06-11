@@ -854,6 +854,14 @@ const ProductsTabContent = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { toast } = useToast();
   
+  const handleViewProduct = (product: Product) => {
+    toast({
+      title: "Product Details",
+      description: `Viewing details for ${product.name}`,
+      variant: "default",
+    });
+  };
+
   const handleShareProduct = (product: Product) => {
     const shareUrl = `${window.location.origin}/product/${product.id}`;
     const shareText = `Check out ${product.name} - ${product.description}`;
@@ -1007,7 +1015,7 @@ const ProductsTabContent = () => {
                   <TableCell>{product.inventory}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-1">
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" onClick={() => handleViewProduct(product)}>
                         <EyeIcon className="h-4 w-4" />
                       </Button>
                       <Button 
