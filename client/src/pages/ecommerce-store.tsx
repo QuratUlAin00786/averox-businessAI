@@ -1705,16 +1705,21 @@ const SettingsTabContent = () => {
   });
   
   const handleSaveSettings = async () => {
+    console.log("Save Settings button clicked!");
     setIsLoading(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Log success
+      console.log("Settings saved successfully");
       
       toast({
         title: "Settings Saved",
         description: "Your store settings have been updated successfully.",
       });
     } catch (error) {
+      console.error("Error saving settings:", error);
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",
@@ -1916,7 +1921,15 @@ const SettingsTabContent = () => {
         <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
           Cancel
         </Button>
-        <Button onClick={handleSaveSettings} disabled={isLoading}>
+        <Button 
+          onClick={(e) => {
+            e.preventDefault();
+            console.log("Button click event triggered");
+            handleSaveSettings();
+          }} 
+          disabled={isLoading}
+          type="button"
+        >
           {isLoading ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
