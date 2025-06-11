@@ -3579,6 +3579,82 @@ router.get('/trade-compliance', async (req: Request, res: Response) => {
   }
 });
 
+// Create a new trade compliance document
+router.post('/trade-compliance', async (req: Request, res: Response) => {
+  try {
+    const {
+      document_type,
+      document_number,
+      country,
+      status,
+      issue_date,
+      expiry_date,
+      notes,
+      attachment_url
+    } = req.body;
+    
+    // Validate required fields
+    if (!document_type || !document_number || !country || !status) {
+      return res.status(400).json({
+        error: 'Document type, document number, country, and status are required'
+      });
+    }
+    
+    // Check if document number already exists
+    const checkResult = await db.execute(sql`
+      SELECT id FROM trade_compliance_documents WHERE document_number = ${document_number}
+    `);
+    
+    if (checkResult.rows.length > 0) {
+      return res.status(409).json({
+        error: 'A document with this number already exists'
+      });
+    }
+    
+    // Create the new compliance document
+    const result = await db.execute(sql`
+      INSERT INTO trade_compliance_documents (
+        document_type,
+        document_number,
+        country,
+        status,
+        issue_date,
+        expiry_date,
+        notes,
+        attachment_url,
+        created_at,
+        updated_at,
+        created_by
+      )
+      VALUES (
+        ${document_type},
+        ${document_number},
+        ${country},
+        ${status},
+        ${issue_date ? new Date(issue_date) : null},
+        ${expiry_date ? new Date(expiry_date) : null},
+        ${notes || null},
+        ${attachment_url || null},
+        NOW(),
+        NOW(),
+        ${req.user?.id || null}
+      )
+      RETURNING *
+    `);
+    
+    const newDocument = result.rows[0];
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Trade compliance document created successfully',
+      document: newDocument
+    });
+  } catch (error) {
+    console.error('Error creating trade compliance document:', error);
+    return res.status(500).json({ error: 'Failed to create trade compliance document' });
+  }
+});
+
 // ---------------------------------------------------------------
 // RETURNS MANAGEMENT
 // ---------------------------------------------------------------
