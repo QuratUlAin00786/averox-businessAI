@@ -309,7 +309,11 @@ export default function MRPDashboard() {
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => window.location.href = `/manufacturing/forecasting/${forecast.id}`}
+                                onClick={() => {
+                                  // Show forecast details in a modal or expanded view
+                                  console.log('Viewing forecast details for:', forecast);
+                                  // For now, just log the details - can be expanded to show a modal
+                                }}
                               >
                                 View Details
                               </Button>
