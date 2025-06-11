@@ -672,7 +672,7 @@ const ProductFormDialog = ({
 };
 
 // Dashboard tab content
-const DashboardTabContent = () => {
+const DashboardTabContent = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
   const stats = mockStoreStats;
   
   return (
@@ -1388,7 +1388,7 @@ export default function EcommerceStorePage() {
         </TabsList>
         
         <TabsContent value="dashboard" className="mt-6">
-          <DashboardTabContent />
+          <DashboardTabContent setActiveTab={setActiveTab} />
         </TabsContent>
         
         <TabsContent value="products" className="mt-6">
