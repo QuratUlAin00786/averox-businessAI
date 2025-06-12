@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Plus } from 'lucide-react';
@@ -20,6 +21,8 @@ interface BillOfMaterials {
 }
 
 export default function BillOfMaterialsList() {
+  const [, setLocation] = useLocation();
+
   // Fetch BOM data from the API
   const { data: bomList, isLoading, error } = useQuery({
     queryKey: ['/api/manufacturing/bom'],
@@ -31,6 +34,10 @@ export default function BillOfMaterialsList() {
       return response.json();
     }
   });
+
+  const handleViewDetails = (bomId: number) => {
+    setLocation(`/manufacturing/production/bom?id=${bomId}`);
+  };
 
   // Process the data to correctly format for display
   const processedBomList = bomList?.map((bom: BillOfMaterials) => ({
@@ -114,7 +121,13 @@ export default function BillOfMaterialsList() {
               </div>
 
               <div className="mt-4 pt-4 border-t">
-                <Button variant="outline" className="w-full">View Details</Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => handleViewDetails(bom.id)}
+                >
+                  View Details
+                </Button>
               </div>
             </CardContent>
           </Card>
