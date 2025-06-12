@@ -242,12 +242,12 @@ export default function CreateCampaignPage() {
                           </div>
 
                           <div className="min-h-96 border rounded-md p-4">
-                            <div className="text-sm text-slate-400 text-center p-8">
-                              <div className="mb-4">
-                                <Mail className="h-12 w-12 mx-auto text-slate-300" />
-                              </div>
-                              <p>Design your email content here or select a template from the right panel</p>
-                            </div>
+                            <Textarea 
+                              className="min-h-80 border-none resize-none"
+                              placeholder="Start typing your email content here..."
+                              value={editorContent}
+                              onChange={(e) => setEditorContent(e.target.value)}
+                            />
                           </div>
                         </div>
                       </TabsContent>
