@@ -74,24 +74,33 @@ export function AccountList({
     
     // Filter by search query
     const query = searchQuery.toLowerCase();
+    const safeName = safeDisplayField(account.name);
+    const safeIndustry = safeDisplayField(account.industry);
+    const safeWebsite = safeDisplayField(account.website);
+    const safePhone = safeDisplayField(account.phone);
+    const safeBillingCity = safeDisplayField(account.billingCity);
+    const safeBillingState = safeDisplayField(account.billingState);
+    const safeBillingCountry = safeDisplayField(account.billingCountry);
+    
     return (
-      account.name?.toLowerCase().includes(query) ||
-      account.industry?.toLowerCase().includes(query) ||
-      account.website?.toLowerCase().includes(query) ||
-      account.phone?.toLowerCase().includes(query) ||
-      account.billingCity?.toLowerCase().includes(query) ||
-      account.billingState?.toLowerCase().includes(query) ||
-      account.billingCountry?.toLowerCase().includes(query)
+      (safeName && typeof safeName === 'string' && safeName.toLowerCase().includes(query)) ||
+      (safeIndustry && typeof safeIndustry === 'string' && safeIndustry.toLowerCase().includes(query)) ||
+      (safeWebsite && typeof safeWebsite === 'string' && safeWebsite.toLowerCase().includes(query)) ||
+      (safePhone && typeof safePhone === 'string' && safePhone.toLowerCase().includes(query)) ||
+      (safeBillingCity && typeof safeBillingCity === 'string' && safeBillingCity.toLowerCase().includes(query)) ||
+      (safeBillingState && typeof safeBillingState === 'string' && safeBillingState.toLowerCase().includes(query)) ||
+      (safeBillingCountry && typeof safeBillingCountry === 'string' && safeBillingCountry.toLowerCase().includes(query))
     );
   });
 
   // Generate initials from name
   const getInitials = (name: string | null) => {
-    if (!name) return '?';
+    const safeName = safeDisplayField(name);
+    if (!safeName || typeof safeName !== 'string') return '?';
     
-    const words = name.split(' ');
+    const words = safeName.split(' ');
     if (words.length === 1) {
-      return name.substring(0, 2).toUpperCase();
+      return safeName.substring(0, 2).toUpperCase();
     }
     
     return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
@@ -101,6 +110,14 @@ export function AccountList({
   const formatDate = (date: Date | null) => {
     if (!date) return "N/A";
     return new Date(date).toLocaleDateString();
+  };
+  
+  // Safely display field that might be encrypted
+  const safeDisplayField = (field: any) => {
+    if (!field) return null;
+    if (typeof field === 'string') return field;
+    if (typeof field === 'object' && field.encrypted) return "***";
+    return field;
   };
   
   // Handle select all accounts
@@ -324,12 +341,12 @@ export function AccountList({
                       </Badge>
                     ) : "—"}
                   </TableCell>
-                  <TableCell>{account.phone || "—"}</TableCell>
+                  <TableCell>{safeDisplayField(account.phone) || "—"}</TableCell>
                   <TableCell>
-                    {account.billingCity ? (
+                    {safeDisplayField(account.billingCity) ? (
                       <span className="text-neutral-600">
-                        {account.billingCity}
-                        {account.billingState ? `, ${account.billingState}` : ''}
+                        {safeDisplayField(account.billingCity)}
+                        {safeDisplayField(account.billingState) ? `, ${safeDisplayField(account.billingState)}` : ''}
                       </span>
                     ) : "—"}
                   </TableCell>
@@ -473,24 +490,24 @@ export function AccountList({
                 </DropdownMenu>
               </div>
               <div className="grid grid-cols-1 gap-1 pt-1 text-sm">
-                {account.phone && (
+                {safeDisplayField(account.phone) && (
                   <div className="flex items-start">
                     <Phone className="h-4 w-4 text-neutral-400 mr-2 mt-0.5" />
-                    <span className="text-neutral-700">{account.phone}</span>
+                    <span className="text-neutral-700">{safeDisplayField(account.phone)}</span>
                   </div>
                 )}
-                {account.website && (
+                {safeDisplayField(account.website) && (
                   <div className="flex items-start">
                     <Globe className="h-4 w-4 text-neutral-400 mr-2 mt-0.5" />
-                    <span className="text-neutral-700">{account.website}</span>
+                    <span className="text-neutral-700">{safeDisplayField(account.website)}</span>
                   </div>
                 )}
-                {(account.billingCity || account.billingState) && (
+                {(safeDisplayField(account.billingCity) || safeDisplayField(account.billingState)) && (
                   <div className="flex items-start">
                     <MapPin className="h-4 w-4 text-neutral-400 mr-2 mt-0.5" />
                     <span className="text-neutral-700">
-                      {account.billingCity}
-                      {account.billingState ? `, ${account.billingState}` : ''}
+                      {safeDisplayField(account.billingCity)}
+                      {safeDisplayField(account.billingState) ? `, ${safeDisplayField(account.billingState)}` : ''}
                     </span>
                   </div>
                 )}
