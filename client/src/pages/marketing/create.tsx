@@ -81,8 +81,8 @@ export default function CreateCampaignPage() {
         li.innerHTML = '&nbsp;'; // Non-breaking space to make it editable
         ul.appendChild(li);
         
-        // Insert the list at cursor position
-        range.deleteContents();
+        // Insert the list at cursor position without deleting content
+        range.collapse(true);
         range.insertNode(ul);
         
         // Position cursor inside the list item
@@ -99,6 +99,11 @@ export default function CreateCampaignPage() {
         const li = document.createElement('li');
         li.innerHTML = '&nbsp;';
         ul.appendChild(li);
+        
+        // Add line break before list if there's existing content
+        if (editor.innerHTML.trim()) {
+          editor.appendChild(document.createElement('br'));
+        }
         editor.appendChild(ul);
         
         // Focus the list item
@@ -131,8 +136,8 @@ export default function CreateCampaignPage() {
         li.innerHTML = '&nbsp;'; // Non-breaking space to make it editable
         ol.appendChild(li);
         
-        // Insert the list at cursor position
-        range.deleteContents();
+        // Insert the list at cursor position without deleting content
+        range.collapse(true);
         range.insertNode(ol);
         
         // Position cursor inside the list item
@@ -149,6 +154,11 @@ export default function CreateCampaignPage() {
         const li = document.createElement('li');
         li.innerHTML = '&nbsp;';
         ol.appendChild(li);
+        
+        // Add line break before list if there's existing content
+        if (editor.innerHTML.trim()) {
+          editor.appendChild(document.createElement('br'));
+        }
         editor.appendChild(ol);
         
         // Focus the list item
