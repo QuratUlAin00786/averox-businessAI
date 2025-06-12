@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Download, FileBarChart, BarChart3, PieChart as PieChartIcon, 
-  LineChart as LineChartIcon, ArrowUpRight, Lightbulb
+  LineChart as LineChartIcon, ArrowUpRight, Lightbulb, ArrowLeft
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PageHeader } from "@/components/ui/page-header";
@@ -152,6 +152,17 @@ export default function Reports() {
 
   return (
     <div className="container mx-auto py-6 space-y-8">
+      <div className="flex items-center gap-4 mb-6">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => window.history.back()}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </div>
       <PageHeader
         title="Reports"
         description="Analyze your business performance with comprehensive reports"
