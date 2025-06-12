@@ -70,54 +70,33 @@ export default function CreateCampaignPage() {
     const editor = editorRef.current;
     if (editor) {
       editor.focus();
-      const selection = window.getSelection();
       
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        
-        // Create a bullet list element
-        const ul = document.createElement('ul');
-        const li = document.createElement('li');
-        li.innerHTML = '&nbsp;'; // Non-breaking space to make it editable
-        ul.appendChild(li);
-        
-        // Insert the list at cursor position without deleting content
-        range.collapse(true);
-        range.insertNode(ul);
-        
-        // Position cursor inside the list item
-        const newRange = document.createRange();
-        newRange.setStart(li, 0);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-        
-        setEditorContent(editor.innerHTML);
+      // Simple approach: add bullet list HTML at the end
+      const currentContent = editor.innerHTML;
+      const listHTML = '<ul><li><br></li></ul>';
+      
+      if (currentContent.trim()) {
+        // Add list after existing content with line break
+        editor.innerHTML = currentContent + '<br>' + listHTML;
       } else {
-        // If no selection, append to end
-        const ul = document.createElement('ul');
-        const li = document.createElement('li');
-        li.innerHTML = '&nbsp;';
-        ul.appendChild(li);
-        
-        // Add line break before list if there's existing content
-        if (editor.innerHTML.trim()) {
-          editor.appendChild(document.createElement('br'));
-        }
-        editor.appendChild(ul);
-        
-        // Focus the list item
+        // Add list as first content
+        editor.innerHTML = listHTML;
+      }
+      
+      // Position cursor in the list item
+      const listItem = editor.querySelector('ul:last-child li:first-child');
+      if (listItem) {
         const range = document.createRange();
-        range.setStart(li, 0);
-        range.collapse(true);
         const selection = window.getSelection();
+        range.setStart(listItem, 0);
+        range.collapse(true);
         if (selection) {
           selection.removeAllRanges();
           selection.addRange(range);
         }
-        
-        setEditorContent(editor.innerHTML);
       }
+      
+      setEditorContent(editor.innerHTML);
     }
   };
 
@@ -125,54 +104,33 @@ export default function CreateCampaignPage() {
     const editor = editorRef.current;
     if (editor) {
       editor.focus();
-      const selection = window.getSelection();
       
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        
-        // Create a numbered list element
-        const ol = document.createElement('ol');
-        const li = document.createElement('li');
-        li.innerHTML = '&nbsp;'; // Non-breaking space to make it editable
-        ol.appendChild(li);
-        
-        // Insert the list at cursor position without deleting content
-        range.collapse(true);
-        range.insertNode(ol);
-        
-        // Position cursor inside the list item
-        const newRange = document.createRange();
-        newRange.setStart(li, 0);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-        
-        setEditorContent(editor.innerHTML);
+      // Simple approach: add numbered list HTML at the end
+      const currentContent = editor.innerHTML;
+      const listHTML = '<ol><li><br></li></ol>';
+      
+      if (currentContent.trim()) {
+        // Add list after existing content with line break
+        editor.innerHTML = currentContent + '<br>' + listHTML;
       } else {
-        // If no selection, append to end
-        const ol = document.createElement('ol');
-        const li = document.createElement('li');
-        li.innerHTML = '&nbsp;';
-        ol.appendChild(li);
-        
-        // Add line break before list if there's existing content
-        if (editor.innerHTML.trim()) {
-          editor.appendChild(document.createElement('br'));
-        }
-        editor.appendChild(ol);
-        
-        // Focus the list item
+        // Add list as first content
+        editor.innerHTML = listHTML;
+      }
+      
+      // Position cursor in the list item
+      const listItem = editor.querySelector('ol:last-child li:first-child');
+      if (listItem) {
         const range = document.createRange();
-        range.setStart(li, 0);
-        range.collapse(true);
         const selection = window.getSelection();
+        range.setStart(listItem, 0);
+        range.collapse(true);
         if (selection) {
           selection.removeAllRanges();
           selection.addRange(range);
         }
-        
-        setEditorContent(editor.innerHTML);
       }
+      
+      setEditorContent(editor.innerHTML);
     }
   };
 
