@@ -18,12 +18,8 @@ export default function ManufacturingIndex() {
   
   const handleModuleClick = (path: string) => {
     console.log('Manufacturing module clicked:', path);
-    try {
-      setLocation(path);
-      console.log('Navigation successful to:', path);
-    } catch (error) {
-      console.error('Navigation error:', error);
-    }
+    // Force page navigation to ensure routing works
+    window.location.href = path;
   };
 
   const modules: ManufacturingModule[] = [
