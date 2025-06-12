@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { 
   Search, 
   PlusCircle, 
@@ -65,33 +65,43 @@ export function AccountList({
   const [selectedAccounts, setSelectedAccounts] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   
+  // Safely display field that might be encrypted
+  const safeDisplayField = (field: any) => {
+    if (!field) return null;
+    if (typeof field === 'string') return field;
+    if (typeof field === 'object' && field.encrypted) return "***";
+    return field;
+  };
+
   // Filter accounts based on search query and active status
-  const filteredAccounts = accounts.filter(account => {
-    // Filter by active status
-    if (!showInactive && account.isActive === false) {
-      return false;
-    }
-    
-    // Filter by search query
-    const query = searchQuery.toLowerCase();
-    const safeName = safeDisplayField(account.name);
-    const safeIndustry = safeDisplayField(account.industry);
-    const safeWebsite = safeDisplayField(account.website);
-    const safePhone = safeDisplayField(account.phone);
-    const safeBillingCity = safeDisplayField(account.billingCity);
-    const safeBillingState = safeDisplayField(account.billingState);
-    const safeBillingCountry = safeDisplayField(account.billingCountry);
-    
-    return (
-      (safeName && typeof safeName === 'string' && safeName.toLowerCase().includes(query)) ||
-      (safeIndustry && typeof safeIndustry === 'string' && safeIndustry.toLowerCase().includes(query)) ||
-      (safeWebsite && typeof safeWebsite === 'string' && safeWebsite.toLowerCase().includes(query)) ||
-      (safePhone && typeof safePhone === 'string' && safePhone.toLowerCase().includes(query)) ||
-      (safeBillingCity && typeof safeBillingCity === 'string' && safeBillingCity.toLowerCase().includes(query)) ||
-      (safeBillingState && typeof safeBillingState === 'string' && safeBillingState.toLowerCase().includes(query)) ||
-      (safeBillingCountry && typeof safeBillingCountry === 'string' && safeBillingCountry.toLowerCase().includes(query))
-    );
-  });
+  const filteredAccounts = useMemo(() => {
+    return accounts.filter(account => {
+      // Filter by active status
+      if (!showInactive && account.isActive === false) {
+        return false;
+      }
+      
+      // Filter by search query
+      const query = searchQuery.toLowerCase();
+      const safeName = safeDisplayField(account.name);
+      const safeIndustry = safeDisplayField(account.industry);
+      const safeWebsite = safeDisplayField(account.website);
+      const safePhone = safeDisplayField(account.phone);
+      const safeBillingCity = safeDisplayField(account.billingCity);
+      const safeBillingState = safeDisplayField(account.billingState);
+      const safeBillingCountry = safeDisplayField(account.billingCountry);
+      
+      return (
+        (safeName && typeof safeName === 'string' && safeName.toLowerCase().includes(query)) ||
+        (safeIndustry && typeof safeIndustry === 'string' && safeIndustry.toLowerCase().includes(query)) ||
+        (safeWebsite && typeof safeWebsite === 'string' && safeWebsite.toLowerCase().includes(query)) ||
+        (safePhone && typeof safePhone === 'string' && safePhone.toLowerCase().includes(query)) ||
+        (safeBillingCity && typeof safeBillingCity === 'string' && safeBillingCity.toLowerCase().includes(query)) ||
+        (safeBillingState && typeof safeBillingState === 'string' && safeBillingState.toLowerCase().includes(query)) ||
+        (safeBillingCountry && typeof safeBillingCountry === 'string' && safeBillingCountry.toLowerCase().includes(query))
+      );
+    });
+  }, [accounts, searchQuery, showInactive]);
 
   // Generate initials from name
   const getInitials = (name: string | null) => {
@@ -110,14 +120,6 @@ export function AccountList({
   const formatDate = (date: Date | null) => {
     if (!date) return "N/A";
     return new Date(date).toLocaleDateString();
-  };
-  
-  // Safely display field that might be encrypted
-  const safeDisplayField = (field: any) => {
-    if (!field) return null;
-    if (typeof field === 'string') return field;
-    if (typeof field === 'object' && field.encrypted) return "***";
-    return field;
   };
   
   // Handle select all accounts
@@ -324,7 +326,7 @@ export function AccountList({
                       </Avatar>
                       <div className="flex flex-col">
                         <span className="font-medium">
-                          {account.name}
+                          {safeDisplayField(account.name)}
                         </span>
                         {account.isActive === false && (
                           <span className="text-xs text-neutral-500">
@@ -335,9 +337,9 @@ export function AccountList({
                     </div>
                   </TableCell>
                   <TableCell>
-                    {account.industry ? (
+                    {safeDisplayField(account.industry) ? (
                       <Badge variant="outline" className="font-normal">
-                        {account.industry}
+                        {safeDisplayField(account.industry)}
                       </Badge>
                     ) : "—"}
                   </TableCell>
@@ -450,11 +452,11 @@ export function AccountList({
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="font-medium">
-                      {account.name}
+                      {safeDisplayField(account.name)}
                     </span>
-                    {account.industry && (
+                    {safeDisplayField(account.industry) && (
                       <Badge variant="outline" className="font-normal mt-1">
-                        {account.industry}
+                        {safeDisplayField(account.industry)}
                       </Badge>
                     )}
                   </div>
