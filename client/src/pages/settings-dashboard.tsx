@@ -21,16 +21,9 @@ export default function DashboardSettingsPage() {
     setIsSaving(true);
     try {
       await saveSettings();
-      toast({
-        title: "Settings saved successfully",
-        description: "Your dashboard preferences have been updated",
-      });
+      // Toast notification is already handled by the useSystemSettings hook
     } catch (error) {
-      toast({
-        title: "Failed to save settings",
-        description: "There was an error saving your preferences",
-        variant: "destructive",
-      });
+      // Error toast is already handled by the useSystemSettings hook
     } finally {
       setIsSaving(false);
     }
