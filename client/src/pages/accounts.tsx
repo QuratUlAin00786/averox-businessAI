@@ -7,11 +7,15 @@ import { AccountForm } from "@/components/accounts/account-form";
 import { DeleteAccountDialog } from "@/components/accounts/delete-account-dialog";
 import { AccountDetail } from "@/components/accounts/account-detail";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { useLocation } from "wouter";
 import { z } from "zod";
 
 export default function Accounts() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   
   // State for account form
   const [isAccountFormOpen, setIsAccountFormOpen] = useState(false);
@@ -154,6 +158,17 @@ export default function Accounts() {
   return (
     <div className="py-6">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setLocation("/")}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
         <div className="mb-6 pb-5 border-b border-neutral-200">
           <h1 className="text-2xl font-bold text-neutral-700">Accounts</h1>
           <p className="mt-1 text-sm text-neutral-500">
