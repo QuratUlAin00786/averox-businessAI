@@ -239,8 +239,8 @@ export default function CreateCampaignPage() {
 
                       <TabsContent value="design" className="space-y-2">
                         <div className="border rounded-md p-4">
-                          <div className="text-xs text-slate-500 mb-2 px-2">
-                            Use the formatting buttons to add HTML tags. Preview the final result in the HTML Code tab.
+                          <div className="text-xs text-slate-500 mb-2 px-2 bg-blue-50 p-2 rounded">
+                            <strong>Note:</strong> Bold/Italic buttons add HTML tags (like &lt;strong&gt;text&lt;/strong&gt;) for email formatting. This is correct behavior - emails use HTML tags for styling.
                           </div>
                           <div className="flex items-center gap-2 mb-4 p-2 border-b">
                             <Button variant="outline" size="icon" onClick={handleBold}>
