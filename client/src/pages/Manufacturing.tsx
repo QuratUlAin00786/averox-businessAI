@@ -93,6 +93,11 @@ export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
     return <ForecastingPage />;
   }
   
+  // Add production planning route
+  if (subPath === 'planning') {
+    return <ProductionManagement />;
+  }
+  
   // Add test data view route
   if (subPath === 'test-data') {
     return <TestDataView />;
