@@ -39,34 +39,21 @@ export default function CreateCampaignPage() {
     setStep(nextStep);
   };
 
-  const insertFormatting = (startTag: string, endTag: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = editorContent.substring(start, end);
-    
-    const newText = editorContent.substring(0, start) + 
-                   startTag + selectedText + endTag + 
-                   editorContent.substring(end);
-    
-    setEditorContent(newText);
-    
-    // Restore focus and cursor position
-    setTimeout(() => {
-      textarea.focus();
-      const newCursorPos = start + startTag.length + selectedText.length + endTag.length;
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
+  const insertFormatting = (command: string) => {
+    document.execCommand(command, false, '');
+    // Update the HTML content
+    const editor = document.getElementById('visual-editor');
+    if (editor) {
+      setEditorContent(editor.innerHTML);
+    }
   };
 
   const handleBold = () => {
-    insertFormatting('<strong>', '</strong>');
+    insertFormatting('bold');
   };
 
   const handleItalic = () => {
-    insertFormatting('<em>', '</em>');
+    insertFormatting('italic');
   };
 
   const handleCancel = () => {
@@ -239,8 +226,8 @@ export default function CreateCampaignPage() {
 
                       <TabsContent value="design" className="space-y-2">
                         <div className="border rounded-md p-4">
-                          <div className="text-xs text-slate-500 mb-2 px-2 bg-blue-50 p-2 rounded">
-                            <strong>Note:</strong> Bold/Italic buttons add HTML tags (like &lt;strong&gt;text&lt;/strong&gt;) for email formatting. This is correct behavior - emails use HTML tags for styling.
+                          <div className="text-xs text-slate-500 mb-2 px-2 bg-green-50 p-2 rounded">
+                            <strong>Visual Editor:</strong> Select text and use Bold/Italic buttons to apply formatting. The text will appear styled in this editor.
                           </div>
                           <div className="flex items-center gap-2 mb-4 p-2 border-b">
                             <Button variant="outline" size="icon" onClick={handleBold}>
@@ -276,12 +263,17 @@ export default function CreateCampaignPage() {
                           </div>
 
                           <div className="min-h-96 border rounded-md p-4">
-                            <Textarea 
-                              ref={textareaRef}
-                              className="min-h-80 border-none resize-none"
-                              placeholder="Start typing your email content here..."
-                              value={editorContent}
-                              onChange={(e) => setEditorContent(e.target.value)}
+                            <div
+                              id="visual-editor"
+                              className="min-h-80 border-none resize-none outline-none p-2"
+                              contentEditable
+                              suppressContentEditableWarning={true}
+                              onInput={(e) => {
+                                const target = e.target as HTMLDivElement;
+                                setEditorContent(target.innerHTML);
+                              }}
+                              dangerouslySetInnerHTML={{ __html: editorContent || 'Start typing your email content here...' }}
+                              style={{ minHeight: '320px' }}
                             />
                           </div>
                         </div>
