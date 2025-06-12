@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 
@@ -60,12 +62,12 @@ export default function TestDataView() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Manufacturing Data Test</h1>
+      <h1 className="text-3xl font-bold">Manufacturing Data Overview</h1>
       
       {/* BOM Data */}
       <Card>
         <CardHeader>
-          <CardTitle>Bills of Materials (Raw Data)</CardTitle>
+          <CardTitle>Bills of Materials</CardTitle>
         </CardHeader>
         <CardContent>
           {bomsLoading ? (
@@ -83,22 +85,56 @@ export default function TestDataView() {
           ) : !boms || (Array.isArray(boms) && boms.length === 0) ? (
             <div className="p-4 text-center">
               <p>No BOM data available.</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Raw response: {JSON.stringify(boms)}
-              </p>
             </div>
           ) : (
-            <div className="overflow-auto max-h-96">
-              <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(boms, null, 2)}</pre>
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Version</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Industry</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Components</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.isArray(boms) && boms.map((bom: any) => (
+                    <TableRow key={bom.id}>
+                      <TableCell className="font-medium">{bom.id}</TableCell>
+                      <TableCell>{bom.product_name}</TableCell>
+                      <TableCell>{bom.product_sku}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{bom.version}</Badge>
+                      </TableCell>
+                      <TableCell>{bom.name}</TableCell>
+                      <TableCell className="max-w-xs truncate">{bom.description}</TableCell>
+                      <TableCell>
+                        <Badge variant={bom.is_active ? "default" : "secondary"}>
+                          {bom.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{bom.industry_type}</TableCell>
+                      <TableCell>{new Date(bom.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{bom.component_count || 0}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
       </Card>
       
-      {/* MRP Data */}
+      {/* Low Stock Items */}
       <Card>
         <CardHeader>
-          <CardTitle>MRP Dashboard Data (Raw Data)</CardTitle>
+          <CardTitle>Low Stock Items</CardTitle>
         </CardHeader>
         <CardContent>
           {mrpLoading ? (
@@ -113,31 +149,104 @@ export default function TestDataView() {
                 {mrpError instanceof Error ? mrpError.message : 'Unknown error'}
               </pre>
             </div>
-          ) : !mrpData ? (
+          ) : !mrpData || !(mrpData as any).lowStockItems || (mrpData as any).lowStockItems.length === 0 ? (
             <div className="p-4 text-center">
-              <p>No MRP data available.</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Raw response: {JSON.stringify(mrpData)}
-              </p>
+              <p>No low stock items found.</p>
             </div>
           ) : (
-            <div className="overflow-auto max-h-96">
-              <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(mrpData, null, 2)}</pre>
-              
-              {/* Show specific sections of MRP data if available */}
-              {mrpData && typeof mrpData === 'object' && 'lowStockItems' in mrpData && Array.isArray(mrpData.lowStockItems) && (
-                <div className="mt-4 border-t pt-4">
-                  <h3 className="text-lg font-medium mb-2">Low Stock Items ({mrpData.lowStockItems.length})</h3>
-                  <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(mrpData.lowStockItems, null, 2)}</pre>
-                </div>
-              )}
-              
-              {mrpData && typeof mrpData === 'object' && 'forecasts' in mrpData && Array.isArray(mrpData.forecasts) && (
-                <div className="mt-4 border-t pt-4">
-                  <h3 className="text-lg font-medium mb-2">Forecasts ({mrpData.forecasts.length})</h3>
-                  <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(mrpData.forecasts, null, 2)}</pre>
-                </div>
-              )}
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Material ID</TableHead>
+                    <TableHead>Material Name</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Current Stock</TableHead>
+                    <TableHead>Minimum Stock</TableHead>
+                    <TableHead>Reorder Level</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Supplier</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(mrpData as any).lowStockItems.map((item: any) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.material_id}</TableCell>
+                      <TableCell>{item.material_name}</TableCell>
+                      <TableCell>{item.material_code}</TableCell>
+                      <TableCell>
+                        <Badge variant={item.current_stock <= item.reorder_level ? "destructive" : "default"}>
+                          {item.current_stock}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{item.minimum_stock}</TableCell>
+                      <TableCell>{item.reorder_level}</TableCell>
+                      <TableCell>{item.unit_of_measure}</TableCell>
+                      <TableCell>{item.category}</TableCell>
+                      <TableCell>{item.supplier_name}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Forecasts */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Material Forecasts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {mrpLoading ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Loading forecast data...</span>
+            </div>
+          ) : !mrpData || !(mrpData as any).forecasts || (mrpData as any).forecasts.length === 0 ? (
+            <div className="p-4 text-center">
+              <p>No forecasts available.</p>
+            </div>
+          ) : (
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Period</TableHead>
+                    <TableHead>Confidence</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created Date</TableHead>
+                    <TableHead>Created By</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(mrpData as any).forecasts.map((forecast: any) => (
+                    <TableRow key={forecast.id}>
+                      <TableCell className="font-medium">{forecast.id}</TableCell>
+                      <TableCell>{forecast.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{forecast.period}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={forecast.confidence >= 0.8 ? "default" : "secondary"}>
+                          {Math.round(forecast.confidence * 100)}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={forecast.status === "Active" ? "default" : "secondary"}>
+                          {forecast.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(forecast.created_date).toLocaleDateString()}</TableCell>
+                      <TableCell>{forecast.createdBy}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
