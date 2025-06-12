@@ -3011,7 +3011,6 @@ router.get('/bom', async (req: Request, res: Response) => {
         bom.id,
         bom.name,
         bom.version,
-        bom.status,
         p.id as product_id,
         p.name as product_name,
         bom.is_active,
