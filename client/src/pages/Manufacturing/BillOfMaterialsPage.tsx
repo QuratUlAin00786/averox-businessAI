@@ -1033,7 +1033,10 @@ export default function BillOfMaterialsPage() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => handleToggleBomActive(selectedBom as any)}
+                      onClick={() => handleToggleBomActive({
+                        ...selectedBom,
+                        component_count: "0"
+                      } as Bom)}
                     >
                       {selectedBom.is_active ? "Deactivate" : "Activate"}
                     </Button>
