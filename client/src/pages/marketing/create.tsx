@@ -68,70 +68,78 @@ export default function CreateCampaignPage() {
 
   const handleBulletList = () => {
     const editor = editorRef.current;
-    if (editor) {
-      editor.focus();
-      
-      // Simple approach: add bullet list HTML at the end
-      const currentContent = editor.innerHTML;
-      const listHTML = '<ul><li><br></li></ul>';
-      
-      if (currentContent.trim()) {
-        // Add list after existing content with line break
-        editor.innerHTML = currentContent + '<br>' + listHTML;
-      } else {
-        // Add list as first content
-        editor.innerHTML = listHTML;
-      }
-      
-      // Position cursor in the list item
-      const listItem = editor.querySelector('ul:last-child li:first-child');
-      if (listItem) {
-        const range = document.createRange();
-        const selection = window.getSelection();
-        range.setStart(listItem, 0);
-        range.collapse(true);
-        if (selection) {
-          selection.removeAllRanges();
-          selection.addRange(range);
-        }
-      }
-      
-      setEditorContent(editor.innerHTML);
+    if (!editor) return;
+    
+    editor.focus();
+    
+    // Get current content and cursor position
+    const selection = window.getSelection();
+    let currentHTML = editor.innerHTML;
+    
+    // Create bullet list HTML
+    const bulletHTML = `
+      <ul style="margin: 10px 0; padding-left: 20px;">
+        <li style="margin: 5px 0;">•&nbsp;</li>
+      </ul>
+    `;
+    
+    // If editor is empty or has no meaningful content
+    if (!currentHTML || currentHTML.trim() === '' || currentHTML === '<br>') {
+      editor.innerHTML = bulletHTML;
+    } else {
+      // Append to existing content
+      editor.innerHTML = currentHTML + '<br>' + bulletHTML;
     }
+    
+    // Position cursor at the end of the new bullet point
+    const listItem = editor.querySelector('ul:last-child li:last-child');
+    if (listItem && selection) {
+      const range = document.createRange();
+      range.setStart(listItem, listItem.childNodes.length);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    
+    setEditorContent(editor.innerHTML);
   };
 
   const handleNumberedList = () => {
     const editor = editorRef.current;
-    if (editor) {
-      editor.focus();
-      
-      // Simple approach: add numbered list HTML at the end
-      const currentContent = editor.innerHTML;
-      const listHTML = '<ol><li><br></li></ol>';
-      
-      if (currentContent.trim()) {
-        // Add list after existing content with line break
-        editor.innerHTML = currentContent + '<br>' + listHTML;
-      } else {
-        // Add list as first content
-        editor.innerHTML = listHTML;
-      }
-      
-      // Position cursor in the list item
-      const listItem = editor.querySelector('ol:last-child li:first-child');
-      if (listItem) {
-        const range = document.createRange();
-        const selection = window.getSelection();
-        range.setStart(listItem, 0);
-        range.collapse(true);
-        if (selection) {
-          selection.removeAllRanges();
-          selection.addRange(range);
-        }
-      }
-      
-      setEditorContent(editor.innerHTML);
+    if (!editor) return;
+    
+    editor.focus();
+    
+    // Get current content and cursor position
+    const selection = window.getSelection();
+    let currentHTML = editor.innerHTML;
+    
+    // Create numbered list HTML
+    const numberedHTML = `
+      <ol style="margin: 10px 0; padding-left: 20px;">
+        <li style="margin: 5px 0;">1.&nbsp;</li>
+      </ol>
+    `;
+    
+    // If editor is empty or has no meaningful content
+    if (!currentHTML || currentHTML.trim() === '' || currentHTML === '<br>') {
+      editor.innerHTML = numberedHTML;
+    } else {
+      // Append to existing content
+      editor.innerHTML = currentHTML + '<br>' + numberedHTML;
     }
+    
+    // Position cursor at the end of the new numbered item
+    const listItem = editor.querySelector('ol:last-child li:last-child');
+    if (listItem && selection) {
+      const range = document.createRange();
+      range.setStart(listItem, listItem.childNodes.length);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    
+    setEditorContent(editor.innerHTML);
   };
 
   const handleCancel = () => {
