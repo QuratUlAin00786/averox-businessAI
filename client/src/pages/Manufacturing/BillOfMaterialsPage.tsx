@@ -530,15 +530,16 @@ export default function BillOfMaterialsPage() {
 
       {/* Create BOM Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Create New Bill of Materials</DialogTitle>
             <DialogDescription>
               Define the components and structure for a product
             </DialogDescription>
           </DialogHeader>
-          <Form {...bomForm}>
-            <form onSubmit={bomForm.handleSubmit(handleCreateBom)} className="space-y-4">
+          <div className="overflow-y-auto flex-1 pr-2">
+            <Form {...bomForm}>
+              <form id="bom-create-form" onSubmit={bomForm.handleSubmit(handleCreateBom)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={bomForm.control}
@@ -713,16 +714,17 @@ export default function BillOfMaterialsPage() {
                   </FormItem>
                 )}
               />
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createBomMutation.isPending}>
-                  {createBomMutation.isPending ? "Creating..." : "Create BOM"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+              </form>
+            </Form>
+          </div>
+          <DialogFooter className="border-t pt-4 mt-4">
+            <Button type="button" variant="outline" onClick={() => setAddDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="bom-create-form" disabled={createBomMutation.isPending}>
+              {createBomMutation.isPending ? "Creating..." : "Create BOM"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
