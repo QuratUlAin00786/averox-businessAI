@@ -248,10 +248,10 @@ export default function CreateCampaignPage() {
                               <Link2 className="h-4 w-4" />
                             </Button>
                             <Separator orientation="vertical" className="h-6" />
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" onClick={handleBulletList}>
                               <List className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" onClick={handleNumberedList}>
                               <ListOrdered className="h-4 w-4" />
                             </Button>
                             <Separator orientation="vertical" className="h-6" />
