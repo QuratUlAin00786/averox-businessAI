@@ -169,14 +169,14 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-2xl font-bold">{data?.stats?.find(s => s.title === "Revenue")?.value || '$0'}</div>
-                      <div className="text-sm flex items-center text-green-600">
-                        <ArrowUp className="w-4 h-4 mr-1" />
-                        {data?.stats?.find(s => s.title === "Revenue")?.change.value || '0%'} {data?.stats?.find(s => s.title === "Revenue")?.change.text || ''}
+                    <div className="flex-1 min-w-0 pr-3">
+                      <div className="text-2xl font-bold truncate">{data?.stats?.find(s => s.title === "Revenue")?.value || '$0'}</div>
+                      <div className="text-sm flex items-center text-green-600 truncate">
+                        <ArrowUp className="w-4 h-4 mr-1 flex-shrink-0" />
+                        <span className="truncate">{data?.stats?.find(s => s.title === "Revenue")?.change.value || '0%'} {data?.stats?.find(s => s.title === "Revenue")?.change.text || ''}</span>
                       </div>
                     </div>
-                    <div className="bg-primary/10 p-3 rounded-full">
+                    <div className="bg-primary/10 p-3 rounded-full flex-shrink-0">
                       <CreditCard className="w-5 h-5 text-primary" />
                     </div>
                   </div>
@@ -202,14 +202,14 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-2xl font-bold">{data?.stats?.find(s => s.title === "New Leads")?.value || '0'}</div>
-                      <div className="text-sm flex items-center text-green-600">
-                        <ArrowUp className="w-4 h-4 mr-1" />
-                        {data?.stats?.find(s => s.title === "New Leads")?.change.value || '0%'} {data?.stats?.find(s => s.title === "New Leads")?.change.text || ''}
+                    <div className="flex-1 min-w-0 pr-3">
+                      <div className="text-2xl font-bold truncate">{data?.stats?.find(s => s.title === "New Leads")?.value || '0'}</div>
+                      <div className="text-sm flex items-center text-green-600 truncate">
+                        <ArrowUp className="w-4 h-4 mr-1 flex-shrink-0" />
+                        <span className="truncate">{data?.stats?.find(s => s.title === "New Leads")?.change.value || '0%'} {data?.stats?.find(s => s.title === "New Leads")?.change.text || ''}</span>
                       </div>
                     </div>
-                    <div className="bg-primary/10 p-3 rounded-full">
+                    <div className="bg-primary/10 p-3 rounded-full flex-shrink-0">
                       <Users className="w-5 h-5 text-primary" />
                     </div>
                   </div>
@@ -235,14 +235,14 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-2xl font-bold">{data?.stats?.find(s => s.title === "Conversion Rate")?.value || '0%'}</div>
-                      <div className="text-sm flex items-center text-red-600">
-                        <ArrowDown className="w-4 h-4 mr-1" />
-                        {data?.stats?.find(s => s.title === "Conversion Rate")?.change.value || '0%'} {data?.stats?.find(s => s.title === "Conversion Rate")?.change.text || ''}
+                    <div className="flex-1 min-w-0 pr-3">
+                      <div className="text-2xl font-bold truncate">{data?.stats?.find(s => s.title === "Conversion Rate")?.value || '0%'}</div>
+                      <div className="text-sm flex items-center text-red-600 truncate">
+                        <ArrowDown className="w-4 h-4 mr-1 flex-shrink-0" />
+                        <span className="truncate">{data?.stats?.find(s => s.title === "Conversion Rate")?.change.value || '0%'} {data?.stats?.find(s => s.title === "Conversion Rate")?.change.text || ''}</span>
                       </div>
                     </div>
-                    <div className="bg-primary/10 p-3 rounded-full">
+                    <div className="bg-primary/10 p-3 rounded-full flex-shrink-0">
                       <Activity className="w-5 h-5 text-primary" />
                     </div>
                   </div>
@@ -268,16 +268,16 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-2xl font-bold">{data?.stats?.find(s => s.title === "Open Deals")?.value || '0'}</div>
-                      <div className="text-sm text-muted-foreground">
+                    <div className="flex-1 min-w-0 pr-3">
+                      <div className="text-2xl font-bold truncate">{data?.stats?.find(s => s.title === "Open Deals")?.value || '0'}</div>
+                      <div className="text-sm text-muted-foreground truncate">
                         {data?.pipelineStages ? 
                           `Value: ${data.pipelineStages.reduce((total, stage) => total + parseInt(stage.value.replace(/[$,]/g, '') || '0'), 0).toLocaleString('en-US', {style: 'currency', currency: 'USD', maximumFractionDigits: 0})}` : 
                           'No active deals'
                         }
                       </div>
                     </div>
-                    <div className="bg-primary/10 p-3 rounded-full">
+                    <div className="bg-primary/10 p-3 rounded-full flex-shrink-0">
                       <Layers className="w-5 h-5 text-primary" />
                     </div>
                   </div>
@@ -323,14 +323,14 @@ export default function Dashboard() {
                           <div className="bg-primary/10 p-2 rounded-full">
                             <Clock className="h-4 w-4 text-primary" />
                           </div>
-                          <div className="space-y-1 flex-1">
+                          <div className="space-y-1 flex-1 min-w-0">
                             <div className="flex items-center justify-between">
-                              <div className="font-medium">{event.title}</div>
-                              <div className="text-xs text-muted-foreground">{event.time}</div>
+                              <div className="font-medium truncate pr-2">{event.title}</div>
+                              <div className="text-xs text-muted-foreground flex-shrink-0">{event.time}</div>
                             </div>
-                            <div className="text-sm text-muted-foreground">{event.description}</div>
+                            <div className="text-sm text-muted-foreground truncate">{event.description}</div>
                             {event.attendees && (
-                              <div className="text-xs text-blue-600">{event.attendees} attending</div>
+                              <div className="text-xs text-blue-600 truncate">{event.attendees} attending</div>
                             )}
                           </div>
                         </div>
@@ -383,12 +383,12 @@ export default function Dashboard() {
                               task.priority === 'Medium' ? 'bg-amber-500' : 
                               'bg-blue-500'} rounded-full`}></div>
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
-                              <div className="font-medium">{task.title}</div>
-                              <Badge variant="outline" className="text-xs">{task.priority}</Badge>
+                              <div className="font-medium truncate pr-2">{task.title}</div>
+                              <Badge variant="outline" className="text-xs flex-shrink-0">{task.priority}</Badge>
                             </div>
-                            <div className="text-sm text-muted-foreground">{task.description}</div>
+                            <div className="text-sm text-muted-foreground truncate">{task.description || 'No description'}</div>
                           </div>
                         </div>
                       ))}
