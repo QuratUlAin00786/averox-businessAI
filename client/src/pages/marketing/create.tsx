@@ -77,54 +77,49 @@ export default function CreateCampaignPage() {
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
-      // Create bullet list element
-      const ul = document.createElement('ul');
-      ul.style.margin = '10px 0';
-      ul.style.paddingLeft = '20px';
-      
-      const li = document.createElement('li');
-      li.style.margin = '5px 0';
-      
-      // If there's selected text, preserve it in the bullet point
+      // If there's selected text, replace it with bullet format
       if (!range.collapsed) {
-        const selectedContent = range.extractContents();
-        li.innerHTML = '•&nbsp;';
-        li.appendChild(selectedContent);
+        const selectedText = range.toString();
+        const bulletText = `• ${selectedText}`;
+        range.deleteContents();
+        
+        const textNode = document.createTextNode(bulletText);
+        range.insertNode(textNode);
+        
+        // Position cursor at the end
+        const newRange = document.createRange();
+        newRange.setStartAfter(textNode);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
       } else {
-        li.innerHTML = '•&nbsp;';
+        // Just insert bullet at cursor position
+        const bulletText = '• ';
+        const textNode = document.createTextNode(bulletText);
+        range.insertNode(textNode);
+        
+        // Position cursor after the bullet
+        const newRange = document.createRange();
+        newRange.setStartAfter(textNode);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
       }
-      
-      ul.appendChild(li);
-      
-      // Insert the bullet list at cursor position
-      range.insertNode(ul);
-      
-      // Position cursor at the end of the bullet point
-      const newRange = document.createRange();
-      newRange.setStart(li, li.childNodes.length);
-      newRange.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
     } else {
       // Fallback: add at the end if no selection
-      const bulletHTML = `
-        <ul style="margin: 10px 0; padding-left: 20px;">
-          <li style="margin: 5px 0;">•&nbsp;</li>
-        </ul>
-      `;
+      const bulletHTML = '<br>• ';
       
       if (!editor.innerHTML || editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
-        editor.innerHTML = bulletHTML;
+        editor.innerHTML = '• ';
       } else {
-        editor.innerHTML = editor.innerHTML + '<br>' + bulletHTML;
+        editor.innerHTML = editor.innerHTML + bulletHTML;
       }
       
-      // Position cursor at the end of the new bullet point
-      const listItem = editor.querySelector('ul:last-child li:last-child');
-      if (listItem && selection) {
+      // Position cursor at the end
+      if (selection) {
         const range = document.createRange();
-        range.setStart(listItem, listItem.childNodes.length);
-        range.collapse(true);
+        range.selectNodeContents(editor);
+        range.collapse(false);
         selection.removeAllRanges();
         selection.addRange(range);
       }
@@ -144,54 +139,49 @@ export default function CreateCampaignPage() {
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
-      // Create numbered list element
-      const ol = document.createElement('ol');
-      ol.style.margin = '10px 0';
-      ol.style.paddingLeft = '20px';
-      
-      const li = document.createElement('li');
-      li.style.margin = '5px 0';
-      
-      // If there's selected text, preserve it in the numbered list
+      // If there's selected text, replace it with numbered format
       if (!range.collapsed) {
-        const selectedContent = range.extractContents();
-        li.innerHTML = '1.&nbsp;';
-        li.appendChild(selectedContent);
+        const selectedText = range.toString();
+        const numberedText = `1. ${selectedText}`;
+        range.deleteContents();
+        
+        const textNode = document.createTextNode(numberedText);
+        range.insertNode(textNode);
+        
+        // Position cursor at the end
+        const newRange = document.createRange();
+        newRange.setStartAfter(textNode);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
       } else {
-        li.innerHTML = '1.&nbsp;';
+        // Just insert number at cursor position
+        const numberedText = '1. ';
+        const textNode = document.createTextNode(numberedText);
+        range.insertNode(textNode);
+        
+        // Position cursor after the number
+        const newRange = document.createRange();
+        newRange.setStartAfter(textNode);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
       }
-      
-      ol.appendChild(li);
-      
-      // Insert the numbered list at cursor position
-      range.insertNode(ol);
-      
-      // Position cursor at the end of the numbered item
-      const newRange = document.createRange();
-      newRange.setStart(li, li.childNodes.length);
-      newRange.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
     } else {
       // Fallback: add at the end if no selection
-      const numberedHTML = `
-        <ol style="margin: 10px 0; padding-left: 20px;">
-          <li style="margin: 5px 0;">1.&nbsp;</li>
-        </ol>
-      `;
+      const numberedHTML = '<br>1. ';
       
       if (!editor.innerHTML || editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
-        editor.innerHTML = numberedHTML;
+        editor.innerHTML = '1. ';
       } else {
-        editor.innerHTML = editor.innerHTML + '<br>' + numberedHTML;
+        editor.innerHTML = editor.innerHTML + numberedHTML;
       }
       
-      // Position cursor at the end of the new numbered item
-      const listItem = editor.querySelector('ol:last-child li:last-child');
-      if (listItem && selection) {
+      // Position cursor at the end
+      if (selection) {
         const range = document.createRange();
-        range.setStart(listItem, listItem.childNodes.length);
-        range.collapse(true);
+        range.selectNodeContents(editor);
+        range.collapse(false);
         selection.removeAllRanges();
         selection.addRange(range);
       }
