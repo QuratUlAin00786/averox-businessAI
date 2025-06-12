@@ -33,17 +33,17 @@ export default function CreateCampaignPage() {
   const [step, setStep] = useState<number>(1);
   const [campaignType, setCampaignType] = useState<string>("email");
   const [editorContent, setEditorContent] = useState<string>("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   const proceedToStep = (nextStep: number) => {
     setStep(nextStep);
   };
 
   const insertFormatting = (command: string) => {
-    document.execCommand(command, false, '');
-    // Update the HTML content
-    const editor = document.getElementById('visual-editor');
+    const editor = editorRef.current;
     if (editor) {
+      editor.focus();
+      document.execCommand(command, false, '');
       setEditorContent(editor.innerHTML);
     }
   };
@@ -54,6 +54,14 @@ export default function CreateCampaignPage() {
 
   const handleItalic = () => {
     insertFormatting('italic');
+  };
+
+  const handleBulletList = () => {
+    insertFormatting('insertUnorderedList');
+  };
+
+  const handleNumberedList = () => {
+    insertFormatting('insertOrderedList');
   };
 
   const handleCancel = () => {
@@ -264,16 +272,31 @@ export default function CreateCampaignPage() {
 
                           <div className="min-h-96 border rounded-md p-4">
                             <div
-                              id="visual-editor"
-                              className="min-h-80 border-none resize-none outline-none p-2"
+                              ref={editorRef}
+                              className="min-h-80 border-none resize-none outline-none p-2 relative"
                               contentEditable
                               suppressContentEditableWarning={true}
                               onInput={(e) => {
                                 const target = e.target as HTMLDivElement;
                                 setEditorContent(target.innerHTML);
                               }}
-                              dangerouslySetInnerHTML={{ __html: editorContent || 'Start typing your email content here...' }}
-                              style={{ minHeight: '320px' }}
+                              onBlur={(e) => {
+                                const target = e.target as HTMLDivElement;
+                                if (!target.textContent?.trim()) {
+                                  target.classList.add('empty');
+                                } else {
+                                  target.classList.remove('empty');
+                                }
+                              }}
+                              onFocus={(e) => {
+                                const target = e.target as HTMLDivElement;
+                                target.classList.remove('empty');
+                              }}
+                              style={{ 
+                                minHeight: '320px',
+                                position: 'relative'
+                              }}
+                              data-placeholder="Start typing your email content here..."
                             />
                           </div>
                         </div>
