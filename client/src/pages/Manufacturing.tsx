@@ -109,6 +109,11 @@ export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
     return <TradeCompliancePage />;
   }
   
+  // Add configuration route
+  if (subPath === 'configuration') {
+    return <ProductionManagement />;
+  }
+  
   // Add test data view route
   if (subPath === 'test-data') {
     return <TestDataView />;
