@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save, Users, Package2, Settings as SettingsIcon, User, Shield, UserCog, FileUp, Database, LayoutDashboard, Sliders } from "lucide-react";
-import { Link } from "wouter";
+import { Save, Users, Package2, Settings as SettingsIcon, User, Shield, UserCog, FileUp, Database, LayoutDashboard, Sliders, ArrowLeft } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const isAdmin = user?.role === 'Admin';
   
   const makeAdminMutation = useMutation({
@@ -35,6 +36,17 @@ export default function Settings() {
   return (
     <div className="py-6">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setLocation("/")}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
