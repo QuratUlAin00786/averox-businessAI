@@ -49,8 +49,8 @@ interface TaskFormProps {
 }
 
 const formSchema = insertTaskSchema.extend({
-  dueDate: z.date().nullable().optional().transform(date => date ? date.toISOString() : null),
-  reminderDate: z.date().nullable().optional().transform(date => date ? date.toISOString() : null),
+  dueDate: z.date().nullable().optional(),
+  reminderDate: z.date().nullable().optional(),
 });
 
 export function TaskForm({
@@ -95,11 +95,12 @@ export function TaskForm({
   }, [isOpen, task, form]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    // Convert reminderDate to string format before submission
+    // Convert dates to string format before submission
     const formattedValues = {
       ...values,
-      reminderDate: values.reminderDate ? values.reminderDate.toString() : null
-    };
+      dueDate: values.dueDate ? values.dueDate.toISOString() : null,
+      reminderDate: values.reminderDate ? values.reminderDate.toISOString() : null
+    } as InsertTask;
     onSubmit(formattedValues);
   };
 
@@ -107,7 +108,7 @@ export function TaskForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Task" : "Add New Task"}</DialogTitle>
           <DialogDescription>
@@ -118,8 +119,9 @@ export function TaskForm({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col flex-1">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+              <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
@@ -255,7 +257,7 @@ export function TaskForm({
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
+                      checked={Boolean(field.value)}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
@@ -302,8 +304,9 @@ export function TaskForm({
                 )}
               />
             )}
+            </div>
 
-            <DialogFooter className="mt-6">
+            <DialogFooter className="mt-6 flex-shrink-0">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
