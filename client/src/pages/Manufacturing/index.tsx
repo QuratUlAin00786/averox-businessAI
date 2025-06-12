@@ -17,7 +17,13 @@ export default function ManufacturingIndex() {
   const [, setLocation] = useLocation();
   
   const handleModuleClick = (path: string) => {
-    setLocation(path);
+    console.log('Manufacturing module clicked:', path);
+    try {
+      setLocation(path);
+      console.log('Navigation successful to:', path);
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
   };
 
   const modules: ManufacturingModule[] = [
