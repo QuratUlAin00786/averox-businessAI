@@ -239,6 +239,9 @@ export default function CreateCampaignPage() {
 
                       <TabsContent value="design" className="space-y-2">
                         <div className="border rounded-md p-4">
+                          <div className="text-xs text-slate-500 mb-2 px-2">
+                            Use the formatting buttons to add HTML tags. Preview the final result in the HTML Code tab.
+                          </div>
                           <div className="flex items-center gap-2 mb-4 p-2 border-b">
                             <Button variant="outline" size="icon" onClick={handleBold}>
                               <Bold className="h-4 w-4" />
