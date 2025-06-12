@@ -108,8 +108,8 @@ export function TaskForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[80vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle>{isEditing ? "Edit Task" : "Add New Task"}</DialogTitle>
           <DialogDescription>
             {isEditing
@@ -119,8 +119,8 @@ export function TaskForm({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col flex-1">
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 max-h-[50vh]">
               <FormField
               control={form.control}
               name="title"
@@ -306,7 +306,7 @@ export function TaskForm({
             )}
             </div>
 
-            <DialogFooter className="mt-6 flex-shrink-0">
+            <DialogFooter className="p-6 pt-4 border-t flex-shrink-0">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
