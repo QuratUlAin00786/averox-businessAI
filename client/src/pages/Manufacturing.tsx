@@ -98,6 +98,11 @@ export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
     return <ProductionManagement />;
   }
   
+  // Add manufacturing analytics route
+  if (subPath === 'analytics') {
+    return <ProductionManagement />;
+  }
+  
   // Add test data view route
   if (subPath === 'test-data') {
     return <TestDataView />;
