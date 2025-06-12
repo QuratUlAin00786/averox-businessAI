@@ -99,7 +99,7 @@ export default function ForecastingPage() {
     onSuccess: () => {
       toast({
         title: 'Forecast Created',
-        description: 'The forecast has been created successfully.',
+        description: 'The forecast has been created successfully. Use "View All Forecasts" to see your forecasts in the MRP Dashboard.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/mrp/dashboard'] });
       // Reset the form instead of redirecting
@@ -136,12 +136,20 @@ export default function ForecastingPage() {
           <h1 className="text-3xl font-bold">Create New Forecast</h1>
           <p className="text-muted-foreground">Create demand forecasts for production planning</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setLocation('/manufacturing')}
-        >
-          Cancel
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setLocation('/manufacturing/materials/mrp?tab=forecasts')}
+          >
+            View All Forecasts
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setLocation('/manufacturing')}
+          >
+            Back to Manufacturing
+          </Button>
+        </div>
       </div>
       
       <Card>
