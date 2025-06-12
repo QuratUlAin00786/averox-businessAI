@@ -593,7 +593,7 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
                         {getStatusBadge(comm.status)}
                       </div>
                       
-                      <p className="text-sm mb-2">{comm.content}</p>
+                      <p className="text-sm mb-2 text-black">{comm.content}</p>
                       
                       <div className="flex justify-between items-center text-xs text-muted-foreground mt-2">
                         <span>{formatDate(comm.sentAt)}</span>
