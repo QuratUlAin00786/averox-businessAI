@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Factory, Boxes, Settings, ChevronRight, TrendingUp, BarChart3, FileSpreadsheet, Layers, FileText } from 'lucide-react';
@@ -14,6 +14,12 @@ type ManufacturingModule = {
 };
 
 export default function ManufacturingIndex() {
+  const [, setLocation] = useLocation();
+  
+  const handleModuleClick = (path: string) => {
+    setLocation(path);
+  };
+
   const modules: ManufacturingModule[] = [
     {
       id: 'materials',
@@ -94,6 +100,7 @@ export default function ManufacturingIndex() {
                 ? "border-primary border-2 shadow-md" 
                 : "hover:bg-slate-50"
             }`}
+            onClick={() => handleModuleClick(module.path)}
           >
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -104,14 +111,16 @@ export default function ManufacturingIndex() {
               <CardDescription>{module.description}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href={module.path}>
-                <Button 
-                  variant={module.highlighted ? "default" : "outline"} 
-                  className="w-full"
-                >
-                  Manage {module.name}
-                </Button>
-              </Link>
+              <Button 
+                variant={module.highlighted ? "default" : "outline"} 
+                className="w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleModuleClick(module.path);
+                }}
+              >
+                Manage {module.name}
+              </Button>
             </CardContent>
           </Card>
         ))}
