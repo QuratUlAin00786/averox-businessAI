@@ -43,6 +43,14 @@ export function LeadDetail({
   onEdit,
   onConvert,
 }: LeadDetailProps) {
+  // Helper function to safely display encrypted fields
+  const safeDisplayField = (field: any): string => {
+    if (!field) return "";
+    if (typeof field === 'string') return field;
+    if (typeof field === 'object' && field.encrypted) return "***";
+    return field;
+  };
+
   // Fetch owner data if available
   const { data: owner, isLoading: isLoadingOwner } = useQuery<User>({
     queryKey: ["/api/users", lead?.ownerId],
@@ -120,11 +128,11 @@ export function LeadDetail({
                 <CardContent className="text-sm space-y-2">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-neutral-500" />
-                    <span>{lead.email || "No email provided"}</span>
+                    <span>{safeDisplayField(lead.email) || "No email provided"}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-neutral-500" />
-                    <span>{lead.phone || "No phone provided"}</span>
+                    <span>{safeDisplayField(lead.phone) || "No phone provided"}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-neutral-500" />
@@ -221,7 +229,7 @@ export function LeadDetail({
                     <CardTitle className="text-sm">Notes</CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 text-sm min-h-[100px]">
-                    {lead.notes || "No notes available for this lead."}
+                    {safeDisplayField(lead.notes) || "No notes available for this lead."}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -231,8 +239,8 @@ export function LeadDetail({
                   contactId={lead.id}
                   contactType="lead"
                   contactName={`${lead.firstName} ${lead.lastName}`}
-                  email={lead.email || ""}
-                  phone={lead.phone || ""}
+                  email={safeDisplayField(lead.email) || ""}
+                  phone={safeDisplayField(lead.phone) || ""}
                 />
               </TabsContent>
 
