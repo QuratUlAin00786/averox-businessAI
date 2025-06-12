@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayoutDashboard, Save, PieChart, BarChart, LineChart, Calendar, RefreshCw } from "lucide-react";
+import { LayoutDashboard, Save, PieChart, BarChart, LineChart, Calendar, RefreshCw, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -11,8 +11,10 @@ import { useSystemSettings } from "@/hooks/use-system-settings";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
+import { useLocation } from "wouter";
 
 export default function DashboardSettingsPage() {
+  const [, setLocation] = useLocation();
   const { language } = useLanguage();
   const { settings, updateDashboardWidgets, updateDashboardChartType, updateDashboardTimeRange, saveSettings, isUpdating, isLoading } = useSystemSettings();
   const [isSaving, setIsSaving] = useState(false);
@@ -63,6 +65,17 @@ export default function DashboardSettingsPage() {
 
   return (
     <div className="container mx-auto py-6 space-y-8" dir={language === "arabic" ? 'rtl' : 'ltr'}>
+      <div className="flex items-center gap-4 mb-6">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setLocation("/settings")}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </div>
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Dashboard Preferences</h2>
