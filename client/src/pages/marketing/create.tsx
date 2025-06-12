@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { 
   Mail,
@@ -33,9 +33,40 @@ export default function CreateCampaignPage() {
   const [step, setStep] = useState<number>(1);
   const [campaignType, setCampaignType] = useState<string>("email");
   const [editorContent, setEditorContent] = useState<string>("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const proceedToStep = (nextStep: number) => {
     setStep(nextStep);
+  };
+
+  const insertFormatting = (startTag: string, endTag: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = editorContent.substring(start, end);
+    
+    const newText = editorContent.substring(0, start) + 
+                   startTag + selectedText + endTag + 
+                   editorContent.substring(end);
+    
+    setEditorContent(newText);
+    
+    // Restore focus and cursor position
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + startTag.length + selectedText.length + endTag.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  const handleBold = () => {
+    insertFormatting('<strong>', '</strong>');
+  };
+
+  const handleItalic = () => {
+    insertFormatting('<em>', '</em>');
   };
 
   const handleCancel = () => {
@@ -209,10 +240,10 @@ export default function CreateCampaignPage() {
                       <TabsContent value="design" className="space-y-2">
                         <div className="border rounded-md p-4">
                           <div className="flex items-center gap-2 mb-4 p-2 border-b">
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" onClick={handleBold}>
                               <Bold className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" onClick={handleItalic}>
                               <Italic className="h-4 w-4" />
                             </Button>
                             <Button variant="outline" size="icon">
@@ -243,6 +274,7 @@ export default function CreateCampaignPage() {
 
                           <div className="min-h-96 border rounded-md p-4">
                             <Textarea 
+                              ref={textareaRef}
                               className="min-h-80 border-none resize-none"
                               placeholder="Start typing your email content here..."
                               value={editorContent}
