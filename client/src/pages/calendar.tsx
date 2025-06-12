@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, ArrowLeft } from "lucide-react";
+import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -15,6 +16,7 @@ export default function Calendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const [, setLocation] = useLocation();
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -151,6 +153,17 @@ export default function Calendar() {
 
   return (
     <div className="container mx-auto py-6 space-y-8">
+      <div className="flex items-center gap-4 mb-6">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setLocation("/")}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </div>
       <PageHeader
         title="Calendar"
         description="View and manage your events and appointments"
