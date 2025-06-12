@@ -54,10 +54,20 @@ export function LeadList({
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Helper function to safely display encrypted fields
+  const safeDisplayField = (field: any): string => {
+    if (!field) return "";
+    if (typeof field === 'string') return field;
+    if (typeof field === 'object' && field.encrypted) return "***";
+    return field;
+  };
+
   // Filter leads based on search term
   const filteredLeads = data.filter((lead) => {
-    const searchString = `${lead.firstName} ${lead.lastName} ${lead.email || ""} ${
-      lead.phone || ""
+    const safeEmail = safeDisplayField(lead.email);
+    const safePhone = safeDisplayField(lead.phone);
+    const searchString = `${lead.firstName} ${lead.lastName} ${safeEmail} ${
+      safePhone
     } ${lead.title || ""} ${lead.company || ""}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
@@ -143,11 +153,11 @@ export function LeadList({
                   <div className="grid grid-cols-2 gap-2 text-neutral-600">
                     <div>
                       <p className="text-xs text-neutral-500">Email</p>
-                      <p className="truncate">{lead.email || "—"}</p>
+                      <p className="truncate">{safeDisplayField(lead.email) || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Phone</p>
-                      <p>{lead.phone || "—"}</p>
+                      <p>{safeDisplayField(lead.phone) || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500">Source</p>
@@ -229,8 +239,8 @@ export function LeadList({
                         {lead.status || "New"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{typeof lead.email === 'object' ? "—" : lead.email || "—"}</TableCell>
-                    <TableCell>{typeof lead.phone === 'object' ? "—" : lead.phone || "—"}</TableCell>
+                    <TableCell>{safeDisplayField(lead.email) || "—"}</TableCell>
+                    <TableCell>{safeDisplayField(lead.phone) || "—"}</TableCell>
                     <TableCell>{lead.source || "—"}</TableCell>
                     <TableCell>
                       <DropdownMenu>

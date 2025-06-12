@@ -9,11 +9,13 @@ import { LeadForm } from "@/components/leads/lead-form";
 import { LeadDetail } from "@/components/leads/lead-detail";
 import { LeadConvertForm } from "@/components/leads/lead-convert-form";
 import { apiRequestJson } from "@/lib/queryClient";
-import { Loader2, Plus, RefreshCw } from "lucide-react";
+import { Loader2, Plus, RefreshCw, ArrowLeft } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Leads() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   
   // State for dialog visibility
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -196,11 +198,20 @@ export default function Leads() {
   return (
     <div className="py-6">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+        <div className="flex items-center mb-4">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation('/')}
+            className="mr-4 p-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
+            Leads
+          </h2>
+        </div>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
-              Leads
-            </h2>
           </div>
           <div className="flex mt-4 md:mt-0 md:ml-4">
             <Button onClick={handleAddLead}>
