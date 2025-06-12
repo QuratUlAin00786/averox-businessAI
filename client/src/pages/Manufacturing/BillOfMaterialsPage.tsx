@@ -184,15 +184,12 @@ type Product = {
 
 export default function BillOfMaterialsPage() {
   const searchParams = useSearch();
-  const urlParams = new URLSearchParams(searchParams);
-  const urlBomId = urlParams.get('id');
+  const urlBomId = new URLSearchParams(searchParams).get('id');
   
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
-  const [selectedBomId, setSelectedBomId] = useState<number | null>(
-    urlBomId ? parseInt(urlBomId) : null
-  );
+  const [selectedBomId, setSelectedBomId] = useState<number | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -207,6 +204,16 @@ export default function BillOfMaterialsPage() {
       });
     }
   }, [user, authLoading, toast]);
+
+  // Set selected BOM ID from URL parameter
+  useEffect(() => {
+    if (urlBomId && !selectedBomId) {
+      const bomId = parseInt(urlBomId);
+      if (!isNaN(bomId)) {
+        setSelectedBomId(bomId);
+      }
+    }
+  }, [urlBomId, selectedBomId]);
 
   // Fetch BOMs list
   const { data: boms, isLoading, error } = useQuery<Bom[]>({
