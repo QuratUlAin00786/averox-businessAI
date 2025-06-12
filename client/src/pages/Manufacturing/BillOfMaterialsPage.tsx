@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
-import { Redirect } from 'wouter';
+import { Redirect, useSearch } from 'wouter';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -183,10 +183,16 @@ type Product = {
 };
 
 export default function BillOfMaterialsPage() {
+  const searchParams = useSearch();
+  const urlParams = new URLSearchParams(searchParams);
+  const urlBomId = urlParams.get('id');
+  
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
-  const [selectedBomId, setSelectedBomId] = useState<number | null>(null);
+  const [selectedBomId, setSelectedBomId] = useState<number | null>(
+    urlBomId ? parseInt(urlBomId) : null
+  );
   const [deletingItemId, setDeletingItemId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
