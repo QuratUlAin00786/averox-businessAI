@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
@@ -20,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export default function Reports() {
+  const [, setLocation] = useLocation();
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState("last-30");
@@ -156,7 +158,7 @@ export default function Reports() {
         <Button 
           variant="outline" 
           size="sm"
-          onClick={() => window.history.back()}
+          onClick={() => setLocation("/")}
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
