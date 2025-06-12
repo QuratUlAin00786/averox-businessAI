@@ -84,13 +84,17 @@ export default function CreateCampaignPage() {
       
       const li = document.createElement('li');
       li.style.margin = '5px 0';
-      li.innerHTML = '•&nbsp;';
-      ul.appendChild(li);
       
-      // If there's selected text, replace it with the bullet list
+      // If there's selected text, preserve it in the bullet point
       if (!range.collapsed) {
-        range.deleteContents();
+        const selectedContent = range.extractContents();
+        li.innerHTML = '•&nbsp;';
+        li.appendChild(selectedContent);
+      } else {
+        li.innerHTML = '•&nbsp;';
       }
+      
+      ul.appendChild(li);
       
       // Insert the bullet list at cursor position
       range.insertNode(ul);
@@ -147,13 +151,17 @@ export default function CreateCampaignPage() {
       
       const li = document.createElement('li');
       li.style.margin = '5px 0';
-      li.innerHTML = '1.&nbsp;';
-      ol.appendChild(li);
       
-      // If there's selected text, replace it with the numbered list
+      // If there's selected text, preserve it in the numbered list
       if (!range.collapsed) {
-        range.deleteContents();
+        const selectedContent = range.extractContents();
+        li.innerHTML = '1.&nbsp;';
+        li.appendChild(selectedContent);
+      } else {
+        li.innerHTML = '1.&nbsp;';
       }
+      
+      ol.appendChild(li);
       
       // Insert the numbered list at cursor position
       range.insertNode(ol);
