@@ -99,21 +99,10 @@ export default function ForecastingPage() {
     onSuccess: () => {
       toast({
         title: 'Forecast Created',
-        description: 'The forecast has been created successfully. Use "View All Forecasts" to see your forecasts in the MRP Dashboard.',
+        description: 'The forecast has been created successfully. View it in the MRP Dashboard.',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/manufacturing/mrp/dashboard'] });
-      // Reset the form instead of redirecting
-      form.reset({
-        name: '',
-        description: '',
-        start_date: new Date(),
-        end_date: new Date(new Date().setMonth(new Date().getMonth() + 3)),
-        product_id: 0,
-        forecast_period: 'Monthly',
-        forecast_type: 'Statistical',
-        confidence_level: 0.8,
-        unit_of_measure: 'Each'
-      });
+      setLocation('/manufacturing/materials/mrp?tab=forecasts');
     },
     onError: (error: any) => {
       toast({
