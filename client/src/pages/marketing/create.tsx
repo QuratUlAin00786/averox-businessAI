@@ -43,6 +43,16 @@ export default function CreateCampaignPage() {
     const editor = editorRef.current;
     if (editor) {
       editor.focus();
+      
+      // Ensure there's a selection or cursor position
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount === 0) {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        selection.addRange(range);
+      }
+      
       document.execCommand(command, false, '');
       setEditorContent(editor.innerHTML);
     }
@@ -57,11 +67,103 @@ export default function CreateCampaignPage() {
   };
 
   const handleBulletList = () => {
-    insertFormatting('insertUnorderedList');
+    const editor = editorRef.current;
+    if (editor) {
+      editor.focus();
+      const selection = window.getSelection();
+      
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        
+        // Create a bullet list element
+        const ul = document.createElement('ul');
+        const li = document.createElement('li');
+        li.innerHTML = '&nbsp;'; // Non-breaking space to make it editable
+        ul.appendChild(li);
+        
+        // Insert the list at cursor position
+        range.deleteContents();
+        range.insertNode(ul);
+        
+        // Position cursor inside the list item
+        const newRange = document.createRange();
+        newRange.setStart(li, 0);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+        
+        setEditorContent(editor.innerHTML);
+      } else {
+        // If no selection, append to end
+        const ul = document.createElement('ul');
+        const li = document.createElement('li');
+        li.innerHTML = '&nbsp;';
+        ul.appendChild(li);
+        editor.appendChild(ul);
+        
+        // Focus the list item
+        const range = document.createRange();
+        range.setStart(li, 0);
+        range.collapse(true);
+        const selection = window.getSelection();
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        
+        setEditorContent(editor.innerHTML);
+      }
+    }
   };
 
   const handleNumberedList = () => {
-    insertFormatting('insertOrderedList');
+    const editor = editorRef.current;
+    if (editor) {
+      editor.focus();
+      const selection = window.getSelection();
+      
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        
+        // Create a numbered list element
+        const ol = document.createElement('ol');
+        const li = document.createElement('li');
+        li.innerHTML = '&nbsp;'; // Non-breaking space to make it editable
+        ol.appendChild(li);
+        
+        // Insert the list at cursor position
+        range.deleteContents();
+        range.insertNode(ol);
+        
+        // Position cursor inside the list item
+        const newRange = document.createRange();
+        newRange.setStart(li, 0);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+        
+        setEditorContent(editor.innerHTML);
+      } else {
+        // If no selection, append to end
+        const ol = document.createElement('ol');
+        const li = document.createElement('li');
+        li.innerHTML = '&nbsp;';
+        ol.appendChild(li);
+        editor.appendChild(ol);
+        
+        // Focus the list item
+        const range = document.createRange();
+        range.setStart(li, 0);
+        range.collapse(true);
+        const selection = window.getSelection();
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        
+        setEditorContent(editor.innerHTML);
+      }
+    }
   };
 
   const handleCancel = () => {
