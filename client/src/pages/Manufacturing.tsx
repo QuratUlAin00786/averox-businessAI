@@ -98,9 +98,10 @@ export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
     return <ProductionManagement />;
   }
   
-  // Add manufacturing analytics route
+  // Add manufacturing analytics route - redirect to reports for analytics
   if (subPath === 'analytics') {
-    return <ProductionManagement />;
+    window.location.href = '/reports';
+    return null;
   }
   
   // Add test data view route
