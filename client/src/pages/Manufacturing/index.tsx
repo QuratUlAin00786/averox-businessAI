@@ -87,32 +87,33 @@ export default function ManufacturingIndex() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {modules.map((module) => (
-          <Link key={module.id} href={module.path}>
-            <Card 
-              className={`h-full cursor-pointer transition-colors ${
-                module.highlighted 
-                  ? "border-primary border-2 shadow-md" 
-                  : "hover:bg-slate-50"
-              }`}
-            >
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  {module.icon}
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <CardTitle className="mt-4">{module.name}</CardTitle>
-                <CardDescription>{module.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
+          <Card 
+            key={module.id}
+            className={`h-full cursor-pointer transition-colors ${
+              module.highlighted 
+                ? "border-primary border-2 shadow-md" 
+                : "hover:bg-slate-50"
+            }`}
+          >
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                {module.icon}
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <CardTitle className="mt-4">{module.name}</CardTitle>
+              <CardDescription>{module.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href={module.path}>
                 <Button 
                   variant={module.highlighted ? "default" : "outline"} 
                   className="w-full"
                 >
                   Manage {module.name}
                 </Button>
-              </CardContent>
-            </Card>
-          </Link>
+              </Link>
+            </CardContent>
+          </Card>
         ))}
         
         {/* Debug card for viewing raw data */}
