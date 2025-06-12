@@ -9,7 +9,8 @@ import { OpportunityForm } from "@/components/opportunities/opportunity-form";
 import { OpportunityDetail } from "@/components/opportunities/opportunity-detail";
 import { ProposalManager } from "@/components/proposals/proposal-manager";
 import { apiRequestJson } from "@/lib/queryClient";
-import { Loader2, Plus, RefreshCw } from "lucide-react";
+import { Loader2, Plus, RefreshCw, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Opportunities() {
   const { toast } = useToast();
@@ -217,6 +218,14 @@ export default function Opportunities() {
   return (
     <div className="py-6">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
+        <div className="mb-4">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="text-neutral-600 hover:text-neutral-800">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold leading-7 text-neutral-600 sm:text-3xl sm:truncate">
