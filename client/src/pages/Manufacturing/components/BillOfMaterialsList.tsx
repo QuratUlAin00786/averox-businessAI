@@ -20,7 +20,11 @@ interface BillOfMaterials {
   components?: any[];
 }
 
-export default function BillOfMaterialsList() {
+interface BillOfMaterialsListProps {
+  onAddNew?: () => void;
+}
+
+export default function BillOfMaterialsList({ onAddNew }: BillOfMaterialsListProps) {
   const [, setLocation] = useLocation();
 
   // Fetch BOM data from the API
@@ -79,7 +83,7 @@ export default function BillOfMaterialsList() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-semibold">Bill of Materials</h3>
-        <Button>
+        <Button onClick={onAddNew}>
           <Plus className="h-4 w-4 mr-2" />
           Add New BOM
         </Button>
