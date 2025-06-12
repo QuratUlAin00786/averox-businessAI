@@ -72,33 +72,58 @@ export default function CreateCampaignPage() {
     
     editor.focus();
     
-    // Get current content and cursor position
     const selection = window.getSelection();
-    let currentHTML = editor.innerHTML;
     
-    // Create bullet list HTML
-    const bulletHTML = `
-      <ul style="margin: 10px 0; padding-left: 20px;">
-        <li style="margin: 5px 0;">•&nbsp;</li>
-      </ul>
-    `;
-    
-    // If editor is empty or has no meaningful content
-    if (!currentHTML || currentHTML.trim() === '' || currentHTML === '<br>') {
-      editor.innerHTML = bulletHTML;
-    } else {
-      // Append to existing content
-      editor.innerHTML = currentHTML + '<br>' + bulletHTML;
-    }
-    
-    // Position cursor at the end of the new bullet point
-    const listItem = editor.querySelector('ul:last-child li:last-child');
-    if (listItem && selection) {
-      const range = document.createRange();
-      range.setStart(listItem, listItem.childNodes.length);
-      range.collapse(true);
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      
+      // Create bullet list element
+      const ul = document.createElement('ul');
+      ul.style.margin = '10px 0';
+      ul.style.paddingLeft = '20px';
+      
+      const li = document.createElement('li');
+      li.style.margin = '5px 0';
+      li.innerHTML = '•&nbsp;';
+      ul.appendChild(li);
+      
+      // If there's selected text, replace it with the bullet list
+      if (!range.collapsed) {
+        range.deleteContents();
+      }
+      
+      // Insert the bullet list at cursor position
+      range.insertNode(ul);
+      
+      // Position cursor at the end of the bullet point
+      const newRange = document.createRange();
+      newRange.setStart(li, li.childNodes.length);
+      newRange.collapse(true);
       selection.removeAllRanges();
-      selection.addRange(range);
+      selection.addRange(newRange);
+    } else {
+      // Fallback: add at the end if no selection
+      const bulletHTML = `
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li style="margin: 5px 0;">•&nbsp;</li>
+        </ul>
+      `;
+      
+      if (!editor.innerHTML || editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
+        editor.innerHTML = bulletHTML;
+      } else {
+        editor.innerHTML = editor.innerHTML + '<br>' + bulletHTML;
+      }
+      
+      // Position cursor at the end of the new bullet point
+      const listItem = editor.querySelector('ul:last-child li:last-child');
+      if (listItem && selection) {
+        const range = document.createRange();
+        range.setStart(listItem, listItem.childNodes.length);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
     }
     
     setEditorContent(editor.innerHTML);
@@ -110,33 +135,58 @@ export default function CreateCampaignPage() {
     
     editor.focus();
     
-    // Get current content and cursor position
     const selection = window.getSelection();
-    let currentHTML = editor.innerHTML;
     
-    // Create numbered list HTML
-    const numberedHTML = `
-      <ol style="margin: 10px 0; padding-left: 20px;">
-        <li style="margin: 5px 0;">1.&nbsp;</li>
-      </ol>
-    `;
-    
-    // If editor is empty or has no meaningful content
-    if (!currentHTML || currentHTML.trim() === '' || currentHTML === '<br>') {
-      editor.innerHTML = numberedHTML;
-    } else {
-      // Append to existing content
-      editor.innerHTML = currentHTML + '<br>' + numberedHTML;
-    }
-    
-    // Position cursor at the end of the new numbered item
-    const listItem = editor.querySelector('ol:last-child li:last-child');
-    if (listItem && selection) {
-      const range = document.createRange();
-      range.setStart(listItem, listItem.childNodes.length);
-      range.collapse(true);
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      
+      // Create numbered list element
+      const ol = document.createElement('ol');
+      ol.style.margin = '10px 0';
+      ol.style.paddingLeft = '20px';
+      
+      const li = document.createElement('li');
+      li.style.margin = '5px 0';
+      li.innerHTML = '1.&nbsp;';
+      ol.appendChild(li);
+      
+      // If there's selected text, replace it with the numbered list
+      if (!range.collapsed) {
+        range.deleteContents();
+      }
+      
+      // Insert the numbered list at cursor position
+      range.insertNode(ol);
+      
+      // Position cursor at the end of the numbered item
+      const newRange = document.createRange();
+      newRange.setStart(li, li.childNodes.length);
+      newRange.collapse(true);
       selection.removeAllRanges();
-      selection.addRange(range);
+      selection.addRange(newRange);
+    } else {
+      // Fallback: add at the end if no selection
+      const numberedHTML = `
+        <ol style="margin: 10px 0; padding-left: 20px;">
+          <li style="margin: 5px 0;">1.&nbsp;</li>
+        </ol>
+      `;
+      
+      if (!editor.innerHTML || editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
+        editor.innerHTML = numberedHTML;
+      } else {
+        editor.innerHTML = editor.innerHTML + '<br>' + numberedHTML;
+      }
+      
+      // Position cursor at the end of the new numbered item
+      const listItem = editor.querySelector('ol:last-child li:last-child');
+      if (listItem && selection) {
+        const range = document.createRange();
+        range.setStart(listItem, listItem.childNodes.length);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
     }
     
     setEditorContent(editor.innerHTML);
