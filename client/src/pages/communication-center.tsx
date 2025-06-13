@@ -461,23 +461,22 @@ const CommunicationCenter = () => {
             </CardHeader>
             <CardContent className="space-y-1.5">
               <div className="space-y-4">
-                {channels.map(channel => (
-                  <div key={channel.id} className="flex items-center">
-                    <Button
-                      variant={selectedFilters.includes(channel.id) ? "default" : "outline"}
-                      className={`w-full justify-start transition-all duration-200 ${
-                        selectedFilters.includes(channel.id) 
-                          ? "bg-primary text-primary-foreground shadow-sm" 
-                          : "hover:bg-accent hover:text-accent-foreground"
-                      }`}
-                      onClick={() => toggleFilter(channel.id)}
-                    >
-                      <div className="mr-2">{channel.icon}</div>
-                      <span>{channel.name}</span>
-                      {selectedFilters.includes(channel.id) && <Check className="ml-auto h-4 w-4" />}
-                    </Button>
-                  </div>
-                ))}
+                {channels.map(channel => {
+                  const isSelected = selectedFilters.includes(channel.id);
+                  return (
+                    <div key={channel.id} className="flex items-center">
+                      <Button
+                        variant={isSelected ? "default" : "outline"}
+                        className="w-full justify-start"
+                        onClick={() => toggleFilter(channel.id)}
+                      >
+                        <div className="mr-2">{channel.icon}</div>
+                        <span>{channel.name}</span>
+                        {isSelected && <Check className="ml-auto h-4 w-4" />}
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
