@@ -26,6 +26,8 @@ import { Progress } from "@/components/ui/progress";
 
 export default function Marketing() {
   const [, setLocation] = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Sample campaign data
   const campaigns = [
@@ -126,6 +128,13 @@ export default function Marketing() {
     { name: "Mar", value: 25 },
     { name: "Apr", value: 35 }
   ];
+
+  // Filter campaigns based on search and status
+  const filteredCampaigns = campaigns.filter((campaign) => {
+    const matchesSearch = campaign.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || campaign.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
   
   return (
     <div className="p-6">
@@ -262,8 +271,13 @@ export default function Marketing() {
           </TabsList>
           
           <div className="flex items-center gap-2">
-            <Input placeholder="Search..." className="w-[200px]" />
-            <Select defaultValue="all">
+            <Input 
+              placeholder="Search..." 
+              className="w-[200px]" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -271,7 +285,7 @@ export default function Marketing() {
                 <SelectItem value="all">All Campaigns</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="draft">Drafts</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -291,8 +305,15 @@ export default function Marketing() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {campaigns.map((campaign) => (
-                  <tr key={campaign.id} className="hover:bg-slate-50/50 transition-colors">
+                {filteredCampaigns.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-gray-500">
+                      No campaigns found matching your search criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredCampaigns.map((campaign) => (
+                    <tr key={campaign.id} className="hover:bg-slate-50/50 transition-colors">
                     {/* Campaign Info */}
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
@@ -363,7 +384,8 @@ export default function Marketing() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
