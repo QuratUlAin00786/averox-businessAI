@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Form schema for inventory transaction
@@ -100,8 +100,19 @@ export default function NewTransaction() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">New Inventory Transaction</h1>
-        <p className="text-muted-foreground">Record a new inventory transaction</p>
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setLocation("/inventory")}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">New Inventory Transaction</h1>
+            <p className="text-muted-foreground">Record a new inventory transaction</p>
+          </div>
+        </div>
       </div>
 
       <Card className="max-w-2xl">
