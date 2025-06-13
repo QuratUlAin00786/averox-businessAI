@@ -308,6 +308,8 @@ interface ProductHistoryViewProps {
 }
 
 function ProductHistoryView({ productId, onBack }: ProductHistoryViewProps) {
+  const [, setLocation] = useLocation();
+  
   const { data: product } = useQuery({
     queryKey: [`/api/products/${productId}`],
   });

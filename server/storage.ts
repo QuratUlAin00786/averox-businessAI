@@ -314,6 +314,7 @@ export interface IStorage {
   listInventoryTransactions(filter?: Partial<InventoryTransaction>): Promise<InventoryTransaction[]>;
   createInventoryTransaction(transaction: InsertInventoryTransaction): Promise<InventoryTransaction>;
   getProductInventory(productId: number): Promise<number>; // Returns current inventory level for a product
+  getProductInventoryHistory(productId: number): Promise<InventoryTransaction[]>; // Returns inventory history for a product
   getInventorySummary(): Promise<{products: Array<{id: number, name: string, sku: string, stock: number, value: number}>}>;
 
   // Invoices
