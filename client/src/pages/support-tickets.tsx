@@ -740,34 +740,34 @@ export default function SupportTicketsPage() {
         </Card>
       ) : (
         <>
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-            <Tabs defaultValue="all" className="w-full" value={selectedTab} onValueChange={setSelectedTab}>
+          <Tabs defaultValue="all" className="w-full" value={selectedTab} onValueChange={setSelectedTab}>
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
               <TabsList>
                 <TabsTrigger value="all">All Tickets</TabsTrigger>
                 <TabsTrigger value="open">Open</TabsTrigger>
                 <TabsTrigger value="in-progress">In Progress</TabsTrigger>
                 <TabsTrigger value="resolved">Resolved</TabsTrigger>
               </TabsList>
-            </Tabs>
-            
-            <div className="flex gap-2 w-full md:w-auto">
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="search"
-                  placeholder="Search tickets..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+              
+              <div className="flex gap-2 w-full md:w-auto">
+                <div className="relative w-full md:w-64">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                  <Input
+                    type="search"
+                    placeholder="Search tickets..."
+                    className="pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <Button variant="outline" size="icon" onClick={() => setIsFilterDialogOpen(true)}>
+                  <Filter className="h-4 w-4" />
+                </Button>
               </div>
-              <Button variant="outline" size="icon" onClick={() => setIsFilterDialogOpen(true)}>
-                <Filter className="h-4 w-4" />
-              </Button>
             </div>
-          </div>
-          
-          <Card>
+            
+            <TabsContent value="all" className="mt-6">
+              <Card>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -845,8 +845,265 @@ export default function SupportTicketsPage() {
                   })
                 )}
               </TableBody>
-            </Table>
-          </Card>
+              </Table>
+            </Card>
+            </TabsContent>
+            
+            <TabsContent value="open" className="mt-6">
+              <Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ticket</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Updated</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          Loading tickets...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredTickets.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          No open tickets found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredTickets.map((ticket) => {
+                        const displayStatus = ticket.status === 'open' ? 'Open' : 
+                                             ticket.status === 'in_progress' ? 'In Progress' :
+                                             ticket.status === 'resolved' ? 'Resolved' :
+                                             ticket.status === 'closed' ? 'Closed' : ticket.status;
+                        
+                        const displayPriority = ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1);
+                        
+                        const displayCategory = ticket.type === 'technical' ? 'Technical' :
+                                               ticket.type === 'billing' ? 'Billing' :
+                                               ticket.type === 'feature_request' ? 'Feature' :
+                                               ticket.type === 'general_inquiry' ? 'General' : ticket.type;
+
+                        return (
+                          <TableRow key={ticket.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{ticket.subject}</p>
+                                <p className="text-sm text-muted-foreground">#{ticket.id}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={displayStatus === 'Open' ? 'destructive' : 
+                                             displayStatus === 'In Progress' ? 'default' : 
+                                             displayStatus === 'Resolved' ? 'secondary' : 'outline'}>
+                                {displayStatus}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={displayPriority === 'Critical' ? 'destructive' :
+                                             displayPriority === 'High' ? 'destructive' :
+                                             displayPriority === 'Medium' ? 'default' : 'secondary'}>
+                                {displayPriority}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{displayCategory}</TableCell>
+                            <TableCell>{new Date(ticket.updatedAt).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedTicket(ticket)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="in-progress" className="mt-6">
+              <Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ticket</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Updated</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          Loading tickets...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredTickets.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          No tickets in progress found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredTickets.map((ticket) => {
+                        const displayStatus = ticket.status === 'open' ? 'Open' : 
+                                             ticket.status === 'in_progress' ? 'In Progress' :
+                                             ticket.status === 'resolved' ? 'Resolved' :
+                                             ticket.status === 'closed' ? 'Closed' : ticket.status;
+                        
+                        const displayPriority = ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1);
+                        
+                        const displayCategory = ticket.type === 'technical' ? 'Technical' :
+                                               ticket.type === 'billing' ? 'Billing' :
+                                               ticket.type === 'feature_request' ? 'Feature' :
+                                               ticket.type === 'general_inquiry' ? 'General' : ticket.type;
+
+                        return (
+                          <TableRow key={ticket.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{ticket.subject}</p>
+                                <p className="text-sm text-muted-foreground">#{ticket.id}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={displayStatus === 'Open' ? 'destructive' : 
+                                             displayStatus === 'In Progress' ? 'default' : 
+                                             displayStatus === 'Resolved' ? 'secondary' : 'outline'}>
+                                {displayStatus}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={displayPriority === 'Critical' ? 'destructive' :
+                                             displayPriority === 'High' ? 'destructive' :
+                                             displayPriority === 'Medium' ? 'default' : 'secondary'}>
+                                {displayPriority}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{displayCategory}</TableCell>
+                            <TableCell>{new Date(ticket.updatedAt).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedTicket(ticket)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="resolved" className="mt-6">
+              <Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ticket</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Updated</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          Loading tickets...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredTickets.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          No resolved tickets found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredTickets.map((ticket) => {
+                        const displayStatus = ticket.status === 'open' ? 'Open' : 
+                                             ticket.status === 'in_progress' ? 'In Progress' :
+                                             ticket.status === 'resolved' ? 'Resolved' :
+                                             ticket.status === 'closed' ? 'Closed' : ticket.status;
+                        
+                        const displayPriority = ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1);
+                        
+                        const displayCategory = ticket.type === 'technical' ? 'Technical' :
+                                               ticket.type === 'billing' ? 'Billing' :
+                                               ticket.type === 'feature_request' ? 'Feature' :
+                                               ticket.type === 'general_inquiry' ? 'General' : ticket.type;
+
+                        return (
+                          <TableRow key={ticket.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{ticket.subject}</p>
+                                <p className="text-sm text-muted-foreground">#{ticket.id}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={displayStatus === 'Open' ? 'destructive' : 
+                                             displayStatus === 'In Progress' ? 'default' : 
+                                             displayStatus === 'Resolved' ? 'secondary' : 'outline'}>
+                                {displayStatus}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={displayPriority === 'Critical' ? 'destructive' :
+                                             displayPriority === 'High' ? 'destructive' :
+                                             displayPriority === 'Medium' ? 'default' : 'secondary'}>
+                                {displayPriority}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{displayCategory}</TableCell>
+                            <TableCell>{new Date(ticket.updatedAt).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedTicket(ticket)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </Card>
+            </TabsContent>
+          </Tabs>
           
           <Card className="mb-6">
             <CardHeader>
