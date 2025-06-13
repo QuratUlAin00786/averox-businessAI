@@ -2408,6 +2408,14 @@ export class MemStorage implements IStorage {
     
     return totalQuantity;
   }
+
+  async getProductInventoryHistory(productId: number): Promise<InventoryTransaction[]> {
+    const transactions = Array.from(this.inventoryTransactions.values())
+      .filter(transaction => transaction.productId === productId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    return transactions;
+  }
   
   async getInventorySummary(): Promise<{products: Array<{id: number, name: string, sku: string, stock: number, value: number}>}> {
     const allProducts = Array.from(this.products.values());
@@ -5165,6 +5173,18 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Database error in getProductInventory:', error);
       return 0;
+    }
+  }
+
+  async getProductInventoryHistory(productId: number): Promise<InventoryTransaction[]> {
+    try {
+      return await db.select()
+        .from(inventoryTransactions)
+        .where(eq(inventoryTransactions.productId, productId))
+        .orderBy(desc(inventoryTransactions.createdAt));
+    } catch (error) {
+      console.error('Database error in getProductInventoryHistory:', error);
+      return [];
     }
   }
 
