@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/ui/date-picker';
 import { apiRequest } from '@/lib/queryClient';
-import { Loader2, Calendar, Briefcase, TrendingUp } from 'lucide-react';
+import { Loader2, Calendar, Briefcase, TrendingUp, ArrowLeft } from 'lucide-react';
 import { useParams, useLocation } from 'wouter';
 import { z } from 'zod';
 import { 
@@ -121,9 +121,18 @@ export default function ForecastingPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Create New Forecast</h1>
-          <p className="text-muted-foreground">Create demand forecasts for production planning</p>
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setLocation('/manufacturing')}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Create New Forecast</h1>
+            <p className="text-muted-foreground">Create demand forecasts for production planning</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button
