@@ -1238,19 +1238,29 @@ const OrdersTabContent = () => {
 
   const handleCapturePayment = (order: any) => {
     console.log('Capturing payment for order:', order.id);
+    console.log('Current payment status:', order.paymentStatus);
+    
     setOrders(prevOrders => {
       const updatedOrders = prevOrders.map(o => 
         o.id === order.id 
-          ? { ...o, paymentStatus: 'paid' as const }
+          ? { 
+              ...o, 
+              paymentStatus: 'paid' as const,
+              // Add timestamp for when payment was captured
+              paymentCapturedAt: new Date().toISOString()
+            }
           : o
       );
-      console.log('Updated orders:', updatedOrders);
+      console.log('Updated orders after payment capture:', updatedOrders);
       return updatedOrders;
     });
+    
+    // Force a re-render with updated key
     setRefreshKey(prev => prev + 1);
+    
     toast({
       title: "Payment Captured",
-      description: `Payment for order ${order.orderNumber} has been captured successfully.`,
+      description: `Payment for order ${order.orderNumber} has been successfully captured and updated to paid status.`,
     });
   };
 
