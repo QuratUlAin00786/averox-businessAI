@@ -1233,7 +1233,7 @@ export default function SupportTicketsPage() {
                       <AlertTriangle className="h-3 w-3 mr-1" /> Degraded
                     </Badge>
                   </div>
-                  <Button variant="link" className="text-sm p-0 h-auto mt-2">
+                  <Button variant="link" className="text-sm p-0 h-auto mt-2" onClick={() => window.open('https://status.averox.com', '_blank')}>
                     View System Status Page
                   </Button>
                 </div>
