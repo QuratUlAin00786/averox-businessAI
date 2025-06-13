@@ -465,7 +465,11 @@ const CommunicationCenter = () => {
                   <div key={channel.id} className="flex items-center">
                     <Button
                       variant={selectedFilters.includes(channel.id) ? "default" : "outline"}
-                      className="w-full justify-start"
+                      className={`w-full justify-start transition-all duration-200 ${
+                        selectedFilters.includes(channel.id) 
+                          ? "bg-primary text-primary-foreground shadow-sm" 
+                          : "hover:bg-accent hover:text-accent-foreground"
+                      }`}
                       onClick={() => toggleFilter(channel.id)}
                     >
                       <div className="mr-2">{channel.icon}</div>
