@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
+import { Link } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 
 export default function TestDataView() {
   const { user, isLoading: authLoading } = useAuth();
@@ -62,7 +64,16 @@ export default function TestDataView() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Manufacturing Data Overview</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Link href="/manufacturing">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold">Manufacturing Data Overview</h1>
+        </div>
+      </div>
       
       {/* BOM Data */}
       <Card>
