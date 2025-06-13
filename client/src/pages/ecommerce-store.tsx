@@ -1446,6 +1446,7 @@ const OrdersTabContent = () => {
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Payment</TableHead>
+              <TableHead>Shipping</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -1453,7 +1454,7 @@ const OrdersTabContent = () => {
           <TableBody>
             {filteredOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-4">
+                <TableCell colSpan={8} className="text-center py-4">
                   No orders found matching your criteria.
                 </TableCell>
               </TableRow>
@@ -1476,6 +1477,11 @@ const OrdersTabContent = () => {
                   <TableCell>
                     <Badge variant="outline" className={getStatusColor(order.paymentStatus)} key={`payment-${order.id}-${refreshKey}`}>
                       {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={getStatusColor(order.shippingStatus)} key={`shipping-${order.id}-${refreshKey}`}>
+                      {order.shippingStatus.charAt(0).toUpperCase() + order.shippingStatus.slice(1)}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium">{formatCurrency(order.total)}</TableCell>
