@@ -35,6 +35,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { 
+  ArrowLeft,
   BarChart4, 
   Box, 
   ChevronRight, 
@@ -2036,11 +2037,22 @@ export default function EcommerceStorePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Store</h1>
-          <p className="text-muted-foreground">
-            Manage your AVEROX online store
-          </p>
+        <div className="flex items-center space-x-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => window.history.back()}
+            className="flex items-center"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Store</h1>
+            <p className="text-muted-foreground">
+              Manage your AVEROX online store
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" className="hidden md:flex" onClick={() => window.open('/store', '_blank')}>
