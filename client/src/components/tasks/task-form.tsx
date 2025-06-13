@@ -45,12 +45,14 @@ interface TaskFormProps {
   task?: Task | null;
   isSubmitting: boolean;
   onClose: () => void;
-  onSubmit: (data: InsertTask | Partial<InsertTask>) => void;
+  onSubmit: (data: InsertTask) => void;
 }
 
 const formSchema = insertTaskSchema.extend({
   dueDate: z.date().nullable().optional(),
   reminderDate: z.date().nullable().optional(),
+}).required({
+  title: true,
 });
 
 export function TaskForm({
