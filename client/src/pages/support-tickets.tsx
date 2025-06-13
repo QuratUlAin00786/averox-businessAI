@@ -1189,7 +1189,7 @@ export default function SupportTicketsPage() {
                   <Button variant="outline" className="justify-start" onClick={() => window.open('https://averox.com', '_blank')}>
                     User Guide
                   </Button>
-                  <Button variant="outline" className="justify-start">
+                  <Button variant="outline" className="justify-start" onClick={() => window.open('https://api.averox.com', '_blank')}>
                     API Documentation
                   </Button>
                   <Button variant="outline" className="justify-start">
