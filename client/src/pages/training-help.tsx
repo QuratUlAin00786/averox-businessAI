@@ -335,7 +335,7 @@ export default function TrainingHelpPage() {
                   </div>
                   <h3 className="font-medium mb-2">{t.training.quickSetup}</h3>
                   <p className="text-sm text-neutral-600 mb-4">{t.training.quickSetupDesc}</p>
-                  <SimpleButton variant="link">{t.buttons.learnMore} <ArrowRight className="ml-1 w-4 h-4" /></SimpleButton>
+                  <SimpleButton variant="link" onClick={() => window.open('https://averox.com/docs/getting-started', '_blank')}>{t.buttons.learnMore} <ArrowRight className="ml-1 w-4 h-4" /></SimpleButton>
                 </div>
                 
                 <div className="flex flex-col items-center text-center p-4 border border-neutral-200 rounded-md hover:border-primary hover:bg-primary/5 transition-colors">
