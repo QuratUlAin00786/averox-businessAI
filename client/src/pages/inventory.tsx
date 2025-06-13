@@ -43,6 +43,7 @@ import {
   Truck,
   ShoppingCart,
   LayoutGrid,
+  ArrowLeft,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -903,11 +904,22 @@ export default function InventoryPage({ subPath }: InventoryPageProps = {}) {
   return (
       <div className="flex flex-col gap-6 p-4 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Inventory Management</h1>
-            <p className="text-muted-foreground">
-              Manage your product inventory, stock levels, and transactions
-            </p>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/")}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Inventory Management</h1>
+              <p className="text-muted-foreground">
+                Manage your product inventory, stock levels, and transactions
+              </p>
+            </div>
           </div>
 
           <div className="flex gap-2">
