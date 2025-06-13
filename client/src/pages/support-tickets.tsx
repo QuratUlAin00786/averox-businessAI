@@ -1186,7 +1186,7 @@ export default function SupportTicketsPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col space-y-3">
-                  <Button variant="outline" className="justify-start">
+                  <Button variant="outline" className="justify-start" onClick={() => window.open('https://docs.averox.com/user-guide', '_blank')}>
                     User Guide
                   </Button>
                   <Button variant="outline" className="justify-start">
