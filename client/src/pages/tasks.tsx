@@ -32,15 +32,8 @@ export default function Tasks() {
     data: tasks = [],
     isLoading,
     error,
-  } = useQuery({
+  } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: `Failed to load tasks: ${error.message}`,
-        variant: "destructive",
-      });
-    },
   });
 
   // Create task mutation
@@ -150,7 +143,7 @@ export default function Tasks() {
     createTaskMutation.mutate(data);
   };
 
-  const handleEditSubmit = (data: Partial<InsertTask>) => {
+  const handleEditSubmit = (data: InsertTask) => {
     if (selectedTask) {
       updateTaskMutation.mutate({ id: selectedTask.id, data });
     }
