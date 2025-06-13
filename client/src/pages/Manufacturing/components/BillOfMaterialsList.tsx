@@ -22,9 +22,10 @@ interface BillOfMaterials {
 
 interface BillOfMaterialsListProps {
   onAddNew?: () => void;
+  onViewDetails?: (bomId: number) => void;
 }
 
-export default function BillOfMaterialsList({ onAddNew }: BillOfMaterialsListProps) {
+export default function BillOfMaterialsList({ onAddNew, onViewDetails }: BillOfMaterialsListProps) {
   const [, setLocation] = useLocation();
 
   // Fetch BOM data from the API
@@ -40,7 +41,12 @@ export default function BillOfMaterialsList({ onAddNew }: BillOfMaterialsListPro
   });
 
   const handleViewDetails = (bomId: number) => {
-    setLocation(`/manufacturing/production/bom?id=${bomId}`);
+    if (onViewDetails) {
+      onViewDetails(bomId);
+    } else {
+      // Navigate to the full BOM management page with the selected BOM
+      setLocation(`/manufacturing/boms?id=${bomId}`);
+    }
   };
 
   // Process the data to correctly format for display

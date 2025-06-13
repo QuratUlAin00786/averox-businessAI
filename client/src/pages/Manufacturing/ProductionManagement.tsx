@@ -35,7 +35,13 @@ export default function ProductionManagement() {
       // Navigate to the full BOM management page which has the create dialog
       window.location.href = '/manufacturing/boms';
     };
-    return <BillOfMaterialsList onAddNew={handleAddNew} />;
+    
+    const handleViewDetails = (bomId: number) => {
+      // Navigate to the full BOM management page with the selected BOM
+      window.location.href = `/manufacturing/boms?id=${bomId}`;
+    };
+    
+    return <BillOfMaterialsList onAddNew={handleAddNew} onViewDetails={handleViewDetails} />;
   }
   
   if (location === '/manufacturing/production/work-orders') {
