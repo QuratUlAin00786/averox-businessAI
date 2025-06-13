@@ -32,6 +32,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { 
+  ArrowLeft,
   BarChart4, 
   Box, 
   ChevronRight, 
@@ -756,9 +757,20 @@ export default function EcommercePage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">E-commerce Manager</h1>
-          <p className="text-muted-foreground">Manage your Shopify stores, products, and orders</p>
+        <div className="flex items-center space-x-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => window.history.back()}
+            className="flex items-center"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">E-commerce Manager</h1>
+            <p className="text-muted-foreground">Manage your Shopify stores, products, and orders</p>
+          </div>
         </div>
         <div className="flex space-x-2">
           <Button 
