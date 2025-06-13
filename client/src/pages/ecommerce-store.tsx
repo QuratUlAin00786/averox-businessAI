@@ -1201,18 +1201,36 @@ const OrdersTabContent = () => {
   };
 
   const handleMarkAsShipped = (order: any) => {
-    setOrders(prevOrders => 
-      prevOrders.map(o => 
+    console.log('Marking order as shipped:', order.id);
+    
+    // Update the orders state
+    setOrders(prevOrders => {
+      const updatedOrders = prevOrders.map(o => 
         o.id === order.id 
-          ? { ...o, status: 'completed' as const, shippingStatus: 'shipped' as const }
+          ? { 
+              ...o, 
+              status: 'completed' as const, 
+              shippingStatus: 'shipped' as const,
+              // Add timestamp for when it was shipped
+              shippedAt: new Date().toISOString()
+            }
           : o
-      )
-    );
+      );
+      console.log('Updated orders after marking as shipped:', updatedOrders);
+      return updatedOrders;
+    });
+    
+    // Force a re-render with updated key
     setRefreshKey(prev => prev + 1);
+    
+    // Show success notification
     toast({
       title: "Order Shipped",
-      description: `Order ${order.orderNumber} has been marked as shipped.`,
+      description: `Order ${order.orderNumber} has been marked as shipped and status updated to completed.`,
     });
+    
+    // Close any open dropdown menus
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
   };
 
   const handleCapturePayment = (order: any) => {
