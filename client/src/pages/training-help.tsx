@@ -353,7 +353,7 @@ export default function TrainingHelpPage() {
                   </div>
                   <h3 className="font-medium mb-2">{t.training.documentation}</h3>
                   <p className="text-sm text-neutral-600 mb-4">{t.training.documentationDesc}</p>
-                  <SimpleButton variant="link">{t.buttons.readDocs} <ArrowRight className="ml-1 w-4 h-4" /></SimpleButton>
+                  <SimpleButton variant="link" onClick={() => window.open('https://averox.com/docs', '_blank')}>{t.buttons.readDocs} <ArrowRight className="ml-1 w-4 h-4" /></SimpleButton>
                 </div>
               </div>
             </CardContent>
