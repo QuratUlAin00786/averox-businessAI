@@ -384,8 +384,7 @@ export default function Marketing() {
                       </div>
                     </td>
                   </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
