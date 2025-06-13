@@ -566,7 +566,7 @@ export default function Marketing() {
             <Zap className="h-6 w-6" />
             <span>Create Automation</span>
           </Button>
-          <Button variant="outline" className="h-auto py-6 flex flex-col gap-2" onClick={() => setLocation("/marketing/schedule")}>
+          <Button variant="outline" className="h-auto py-6 flex flex-col gap-2" onClick={() => setLocation("/calendar")}>
             <Calendar className="h-6 w-6" />
             <span>Calendar View</span>
           </Button>
