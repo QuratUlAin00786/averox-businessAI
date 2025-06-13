@@ -6,7 +6,7 @@ import { useLocation } from "wouter";
 import { TaskList } from "@/components/tasks/task-list";
 import { TaskForm } from "@/components/tasks/task-form";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequestJson } from "@/lib/queryClient";
+import { queryClient, apiRequestJson, apiRequest } from "@/lib/queryClient";
 import { Task, InsertTask } from "@shared/schema";
 import {
   AlertDialog,
@@ -90,7 +90,7 @@ export default function Tasks() {
   // Delete task mutation
   const deleteTaskMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequestJson<Task>("DELETE", `/api/tasks/${id}`);
+      return apiRequest("DELETE", `/api/tasks/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
