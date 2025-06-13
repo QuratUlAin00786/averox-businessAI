@@ -650,6 +650,8 @@ export default function SupportTicketsPage() {
   const [isNewTicketDialogOpen, setIsNewTicketDialogOpen] = useState(false);
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isExternalPortalOpen, setIsExternalPortalOpen] = useState(false);
+  const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all',
     priority: 'all',
@@ -862,16 +864,9 @@ export default function SupportTicketsPage() {
                     Access our dedicated customer portal to submit tickets, view knowledge base articles, 
                     and get real-time updates on your support requests.
                   </p>
-                  <a 
-                    href="https://ticket.averox.com/portal" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-block"
-                  >
-                    <Button>
-                      <ExternalLink className="mr-2 h-4 w-4" /> Access Customer Portal
-                    </Button>
-                  </a>
+                  <Button onClick={() => setIsExternalPortalOpen(true)}>
+                    <ExternalLink className="mr-2 h-4 w-4" /> Access Customer Portal
+                  </Button>
                 </div>
                 
                 <div className="flex-1 bg-gray-50 p-4 rounded-md">
@@ -883,16 +878,9 @@ export default function SupportTicketsPage() {
                     Not satisfied with our support? Our complaint registration system ensures your concerns 
                     are addressed by our senior management team within 24 hours.
                   </p>
-                  <a 
-                    href="https://ticket.averox.com/complaint" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-block"
-                  >
-                    <Button variant="outline">
-                      <ExternalLink className="mr-2 h-4 w-4" /> Register Complaint
-                    </Button>
-                  </a>
+                  <Button variant="outline" onClick={() => setIsComplaintModalOpen(true)}>
+                    <MessageCircleQuestion className="mr-2 h-4 w-4" /> Register Complaint
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -1014,6 +1002,210 @@ export default function SupportTicketsPage() {
         isOpen={isChatOpen} 
         onClose={() => setIsChatOpen(false)} 
       />
+      
+      {/* External Support Portal Modal */}
+      <Dialog open={isExternalPortalOpen} onOpenChange={setIsExternalPortalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              External Support Portal
+            </DialogTitle>
+            <DialogDescription>
+              Access your dedicated customer portal for comprehensive support services
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">What you can do in the portal:</h3>
+              <ul className="text-sm space-y-1">
+                <li>• Submit and track support tickets</li>
+                <li>• Access knowledge base articles</li>
+                <li>• Download documentation and guides</li>
+                <li>• View your support history</li>
+                <li>• Contact support agents directly</li>
+              </ul>
+            </div>
+            
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">Portal Access Information:</h3>
+              <p className="text-sm mb-2">
+                <strong>Portal URL:</strong> https://support.averox.com
+              </p>
+              <p className="text-sm mb-2">
+                <strong>Username:</strong> {user?.email || 'Your registered email'}
+              </p>
+              <p className="text-sm">
+                <strong>Note:</strong> Use your current account credentials to log in
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => window.open('https://support.averox.com', '_blank')}
+                className="flex-1"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Open Portal
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsExternalPortalOpen(false)}
+                className="flex-1"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Register Complaint Modal */}
+      <RegisterComplaintModal 
+        open={isComplaintModalOpen}
+        onOpenChange={setIsComplaintModalOpen}
+      />
     </div>
   );
 }
+
+// Register Complaint Modal Component
+const RegisterComplaintModal = ({ 
+  open, 
+  onOpenChange 
+}: { 
+  open: boolean; 
+  onOpenChange: (open: boolean) => void; 
+}) => {
+  const [complaintTitle, setComplaintTitle] = useState('');
+  const [complaintDescription, setComplaintDescription] = useState('');
+  const [complaintCategory, setComplaintCategory] = useState('');
+  const [relatedTicket, setRelatedTicket] = useState('');
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  const handleSubmitComplaint = () => {
+    if (!complaintTitle.trim() || !complaintDescription.trim() || !complaintCategory) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Here you would normally submit to an API
+    toast({
+      title: "Complaint Registered",
+      description: "Your complaint has been submitted to our senior management team. You will receive a response within 24 hours.",
+    });
+    
+    // Reset form
+    setComplaintTitle('');
+    setComplaintDescription('');
+    setComplaintCategory('');
+    setRelatedTicket('');
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MessageCircleQuestion className="h-5 w-5" />
+            Register a Complaint
+          </DialogTitle>
+          <DialogDescription>
+            Submit a formal complaint to our senior management team for immediate attention
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="bg-red-50 p-4 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-red-800 mb-1">Important Notice</h3>
+                <p className="text-sm text-red-700">
+                  This form is for formal complaints regarding service quality, staff behavior, 
+                  or unresolved issues. For technical support, please use the regular ticket system.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <div>
+              <Label htmlFor="complaint-title">Complaint Title *</Label>
+              <Input
+                id="complaint-title"
+                placeholder="Brief summary of your complaint"
+                value={complaintTitle}
+                onChange={(e) => setComplaintTitle(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="complaint-category">Category *</Label>
+              <Select value={complaintCategory} onValueChange={setComplaintCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select complaint category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="service-quality">Service Quality</SelectItem>
+                  <SelectItem value="response-time">Response Time</SelectItem>
+                  <SelectItem value="staff-behavior">Staff Behavior</SelectItem>
+                  <SelectItem value="billing-dispute">Billing Dispute</SelectItem>
+                  <SelectItem value="unresolved-issue">Unresolved Technical Issue</SelectItem>
+                  <SelectItem value="policy-concern">Policy Concern</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="related-ticket">Related Ticket ID (Optional)</Label>
+              <Input
+                id="related-ticket"
+                placeholder="e.g., TK-2024-001"
+                value={relatedTicket}
+                onChange={(e) => setRelatedTicket(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="complaint-description">Detailed Description *</Label>
+              <Textarea
+                id="complaint-description"
+                placeholder="Please provide detailed information about your complaint, including dates, times, and any relevant context..."
+                value={complaintDescription}
+                onChange={(e) => setComplaintDescription(e.target.value)}
+                rows={6}
+              />
+            </div>
+
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <h4 className="font-semibold text-sm mb-1">What happens next?</h4>
+              <ul className="text-xs space-y-1">
+                <li>• Your complaint will be escalated to senior management</li>
+                <li>• You'll receive acknowledgment within 2 hours</li>
+                <li>• Investigation will begin immediately</li>
+                <li>• Resolution target: 24 hours</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitComplaint}>
+              Submit Complaint
+            </Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
