@@ -570,7 +570,7 @@ export default function Marketing() {
             <Calendar className="h-6 w-6" />
             <span>Calendar View</span>
           </Button>
-          <Button variant="outline" className="h-auto py-6 flex flex-col gap-2" onClick={() => setLocation("/marketing/import")}>
+          <Button variant="outline" className="h-auto py-6 flex flex-col gap-2" onClick={() => setLocation("/contacts")}>
             <HardDriveDownload className="h-6 w-6" />
             <span>Import Contacts</span>
           </Button>
