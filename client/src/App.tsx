@@ -44,6 +44,7 @@ import TrainingHelpPage from "@/pages/training-help";
 import NewProduct from "@/pages/inventory/products/new";
 import NewCategory from "@/pages/inventory/categories/new";
 import NewTransaction from "@/pages/inventory/transactions/new";
+import TransactionDetail from "@/pages/inventory/transactions/view";
 import NewInvoice from "@/pages/accounting/invoices/new";
 import InvoiceEdit from "@/pages/accounting/invoices/edit";
 import NewPurchaseOrder from "@/pages/accounting/purchase-orders/new";
@@ -350,6 +351,12 @@ function Router() {
       <ProtectedRoute path="/inventory/transactions/new" component={() => (
         <Layout>
           <NewTransaction />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/inventory/transactions/:id" component={({ params }: { params: { id: string } }) => (
+        <Layout>
+          <TransactionDetail transactionId={params.id} />
         </Layout>
       )} />
       
