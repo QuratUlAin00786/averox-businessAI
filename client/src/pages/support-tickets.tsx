@@ -24,10 +24,11 @@ import {
 } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { useLocation } from 'wouter';
 import { 
   AlertCircle, Clock, Filter, MessageSquare, Search, User, Info, Ticket, 
   CheckCircle2, AlertTriangle, HelpCircle, XCircle, Phone, Mail, 
-  MessageCircleQuestion, ExternalLink, Globe, Send, X, Plus
+  MessageCircleQuestion, ExternalLink, Globe, Send, X, Plus, ArrowLeft
 } from 'lucide-react';
 
 // Mock data structure until API is implemented
@@ -655,6 +656,7 @@ export default function SupportTicketsPage() {
     category: 'all'
   });
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   
   // Real API query for support tickets
   const { data: tickets = [], isLoading } = useQuery({
@@ -698,9 +700,18 @@ export default function SupportTicketsPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Support Tickets</h1>
-          <p className="text-muted-foreground">Manage and track your support requests</p>
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setLocation("/")}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Support Tickets</h1>
+            <p className="text-muted-foreground">Manage and track your support requests</p>
+          </div>
         </div>
         <div className="flex space-x-2">
           <a 
