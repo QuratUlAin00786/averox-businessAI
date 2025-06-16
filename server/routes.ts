@@ -3027,6 +3027,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Confirm payment and activate subscription
+  app.post('/api/confirm-payment', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { paymentIntentId } = req.body;
+      
+      if (!paymentIntentId) {
+        return res.status(400).json({ 
+          error: "Invalid input", 
+          details: "Payment Intent ID is required" 
+        });
+      }
+
+      // Retrieve the payment intent from Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status !== 'succeeded') {
+        return res.status(400).json({ 
+          error: "Payment not completed", 
+          details: "Payment must be successful before confirming subscription" 
+        });
+      }
+
+      // Get metadata from payment intent
+      const packageId = parseInt(paymentIntent.metadata.packageId);
+      const userId = parseInt(paymentIntent.metadata.userId);
+      
+      if (!packageId || !userId || userId !== req.user.id) {
+        return res.status(400).json({ 
+          error: "Invalid payment", 
+          details: "Payment metadata does not match current user" 
+        });
+      }
+
+      // Find the pending subscription and activate it
+      const userSubscriptions = await storage.listUserSubscriptions();
+      const pendingSubscription = userSubscriptions.find(sub => 
+        sub.userId === userId && 
+        sub.packageId === packageId && 
+        sub.status === 'Pending' &&
+        sub.stripeSubscriptionId === paymentIntentId
+      );
+
+      if (!pendingSubscription) {
+        return res.status(404).json({ 
+          error: "Subscription not found", 
+          details: "No pending subscription found for this payment" 
+        });
+      }
+
+      // Activate the subscription
+      const updatedSubscription = await storage.updateUserSubscription(pendingSubscription.id, {
+        status: 'Active',
+        stripeSubscriptionId: paymentIntentId,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+      });
+
+      res.json({
+        success: true,
+        message: 'Subscription activated successfully',
+        subscription: updatedSubscription
+      });
+
+    } catch (error: any) {
+      console.error('Payment confirmation error:', error);
+      res.status(500).json({ 
+        error: "Payment Confirmation Error", 
+        message: error.message || "Failed to confirm payment"
+      });
+    }
+  });
+
   app.post('/api/webhook', async (req: Request, res: Response) => {
     const signature = req.headers['stripe-signature'] as string;
     

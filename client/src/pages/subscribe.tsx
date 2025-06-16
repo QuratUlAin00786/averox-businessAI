@@ -19,6 +19,98 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
 }
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
+const StripePaymentForm = () => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [location, navigate] = useLocation();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!stripe || !elements) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/subscriptions?success=true`,
+        },
+        redirect: 'if_required',
+      });
+
+      if (error) {
+        console.error('Stripe payment error:', error);
+        toast({
+          title: "Payment Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        console.log('Payment succeeded:', paymentIntent);
+        
+        // Confirm payment on backend
+        try {
+          const confirmResponse = await apiRequest("POST", "/api/confirm-payment", {
+            paymentIntentId: paymentIntent.id
+          });
+          
+          if (confirmResponse.ok) {
+            toast({
+              title: "Payment Successful",
+              description: "Your subscription has been activated!",
+            });
+            navigate('/subscriptions?success=true');
+          } else {
+            throw new Error('Failed to confirm payment');
+          }
+        } catch (confirmError: any) {
+          console.error('Payment confirmation error:', confirmError);
+          toast({
+            title: "Payment Confirmation Error",
+            description: confirmError.message || "Payment succeeded but subscription activation failed. Please contact support.",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (err: any) {
+      console.error('Payment process error:', err);
+      toast({
+        title: "Payment Error",
+        description: err.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <PaymentElement />
+      <Button 
+        type="submit" 
+        disabled={!stripe || isSubmitting} 
+        className="w-full"
+      >
+        {isSubmitting ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            Processing Payment...
+          </>
+        ) : (
+          'Complete Payment'
+        )}
+      </Button>
+    </form>
+  );
+};
+
 const SubscribeForm = ({ packageId }: { packageId: number }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -26,117 +118,6 @@ const SubscribeForm = ({ packageId }: { packageId: number }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'stripe' | 'paypal' | 'google'>('stripe');
   const [location, navigate] = useLocation();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      if (selectedPaymentMethod === 'stripe') {
-        if (!stripe || !elements) {
-          return;
-        }
-
-        const { error, paymentIntent } = await stripe.confirmPayment({
-          elements,
-          confirmParams: {
-            return_url: `${window.location.origin}/subscriptions?success=true`,
-          },
-          redirect: 'if_required',
-        });
-
-        if (error) {
-          toast({
-            title: "Payment Failed",
-            description: error.message,
-            variant: "destructive",
-          });
-          setIsSubmitting(false);
-        } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-          // Confirm payment on backend
-          try {
-            const confirmResponse = await apiRequest("POST", "/api/confirm-payment", {
-              paymentIntentId: paymentIntent.id
-            });
-            
-            if (confirmResponse.ok) {
-              toast({
-                title: "Payment Successful",
-                description: "Your subscription has been activated!",
-              });
-              navigate('/subscriptions?success=true');
-            } else {
-              throw new Error('Failed to confirm payment');
-            }
-          } catch (confirmError: any) {
-            toast({
-              title: "Payment Confirmation Error",
-              description: confirmError.message || "Payment succeeded but subscription activation failed. Please contact support.",
-              variant: "destructive",
-            });
-          }
-          setIsSubmitting(false);
-        }
-      } else if (selectedPaymentMethod === 'paypal') {
-        // PayPal payment processing
-        try {
-          const response = await apiRequest("POST", "/api/create-subscription", {
-            packageId,
-            paymentMethod: 'paypal'
-          });
-          const data = await response.json();
-          
-          if (data.success) {
-            toast({
-              title: "Subscription Created",
-              description: "Your subscription has been activated with PayPal!",
-            });
-            navigate('/subscriptions?success=true');
-          } else {
-            throw new Error(data.message || 'PayPal payment failed');
-          }
-        } catch (error: any) {
-          toast({
-            title: "PayPal Payment Failed",
-            description: error.message || "Failed to process PayPal payment",
-            variant: "destructive",
-          });
-        }
-      } else if (selectedPaymentMethod === 'google') {
-        // Google Pay processing
-        try {
-          const response = await apiRequest("POST", "/api/create-subscription", {
-            packageId,
-            paymentMethod: 'google-pay'
-          });
-          const data = await response.json();
-          
-          if (data.success) {
-            toast({
-              title: "Subscription Created",
-              description: "Your subscription has been activated with Google Pay!",
-            });
-            navigate('/subscriptions?success=true');
-          } else {
-            throw new Error(data.message || 'Google Pay payment failed');
-          }
-        } catch (error: any) {
-          toast({
-            title: "Google Pay Payment Failed",
-            description: error.message || "Failed to process Google Pay payment",
-            variant: "destructive",
-          });
-        }
-      }
-    } catch (err: any) {
-      toast({
-        title: "Payment Error",
-        description: err.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-    }
-  };
 
   const paymentMethods = [
     {
@@ -414,7 +395,7 @@ export default function Subscribe() {
             </div>
             
             <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <SubscribeForm packageId={packageId as number} />
+              <StripePaymentForm />
             </Elements>
           </CardContent>
         </Card>
