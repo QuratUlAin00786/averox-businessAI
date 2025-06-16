@@ -144,6 +144,7 @@ Changelog:
 - June 16, 2025. Fixed multiple button functionalities:
   - Training help buttons: "Learn More", "Watch Now", "Read Docs" now functional
   - Email editor bullet point formatting now preserves line breaks correctly
+  - Fixed authentication security vulnerability by disabling auto-login bypass
 
 ## User Preferences
 
