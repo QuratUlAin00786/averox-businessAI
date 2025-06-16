@@ -344,20 +344,28 @@ export default function Subscribe() {
       const selectedRadio = document.querySelector('input[name="paymentMethod"]:checked') as HTMLInputElement;
       const selectedPaymentMethod = selectedRadio?.value || 'stripe';
       
+      console.log('Selected payment method:', selectedPaymentMethod);
+      
       // Create subscription with selected payment method
       const response = await apiRequest("POST", "/api/create-subscription", { 
         packageId: packageId,
         paymentMethod: selectedPaymentMethod
       });
       
+      console.log('API Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error("Failed to create subscription");
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error || "Failed to create subscription");
       }
       
       const data = await response.json();
+      console.log('API Response data:', data);
       
       if (selectedPaymentMethod === 'stripe' && data.clientSecret) {
         // Set client secret to show payment form for Stripe
+        console.log('Setting client secret for Stripe payment');
         setClientSecret(data.clientSecret);
         toast({
           title: "Payment Setup Complete",
@@ -374,6 +382,7 @@ export default function Subscribe() {
         throw new Error(data.message || "Failed to create subscription");
       }
     } catch (error: any) {
+      console.error('Subscription error:', error);
       toast({
         title: "Error",
         description: error.message || "Could not create subscription",
@@ -385,8 +394,8 @@ export default function Subscribe() {
   };
 
   // Show payment method selection first, then payment form if needed
-  if (clientSecret && packageDetails.stripePriceId) {
-    // Show Stripe payment form for packages with Stripe integration
+  if (clientSecret) {
+    // Show Stripe payment form when client secret is available
     return (
       <div className="container max-w-xl py-12">
         <Card>
