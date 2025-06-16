@@ -316,7 +316,14 @@ export default function Subscribe() {
   }
 
   const handleConfirmSubscription = async () => {
-    if (!user?.id || !packageId) return;
+    console.log('=== handleConfirmSubscription called ===');
+    console.log('User ID:', user?.id);
+    console.log('Package ID:', packageId);
+    
+    if (!user?.id || !packageId) {
+      console.error('Missing user ID or package ID');
+      return;
+    }
     
     setIsProcessing(true);
     
@@ -326,6 +333,7 @@ export default function Subscribe() {
       const selectedPaymentMethod = selectedRadio?.value || 'stripe';
       
       console.log('Selected payment method:', selectedPaymentMethod);
+      console.log('Creating subscription with data:', { packageId, paymentMethod: selectedPaymentMethod });
       
       // Create subscription with selected payment method
       const response = await apiRequest("POST", "/api/create-subscription", { 
@@ -334,10 +342,11 @@ export default function Subscribe() {
       });
       
       console.log('API Response status:', response.status);
+      console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('API Error:', errorData);
+        console.error('API Error response:', errorData);
         throw new Error(errorData.error || "Failed to create subscription");
       }
       
@@ -346,7 +355,7 @@ export default function Subscribe() {
       
       if (selectedPaymentMethod === 'stripe' && data.clientSecret) {
         // Set client secret to show payment form for Stripe
-        console.log('Setting client secret for Stripe payment');
+        console.log('Setting client secret for Stripe payment:', data.clientSecret);
         setClientSecret(data.clientSecret);
         toast({
           title: "Payment Setup Complete",

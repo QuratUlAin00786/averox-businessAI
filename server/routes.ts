@@ -2897,16 +2897,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle different payment methods
       if (paymentMethod === 'stripe') {
+        console.log('=== Creating Stripe Payment Intent ===');
+        console.log('Package:', package_);
+        console.log('User ID:', userId);
+        console.log('Package ID:', packageId);
+        
         // Create a payment intent for Credit/Debit Card payments
         const amount = parseFloat(package_.price);
+        console.log('Parsed amount:', amount);
         
         if (isNaN(amount) || amount <= 0) {
+          console.error('Invalid amount:', amount);
           return res.status(400).json({ 
             error: "Invalid package price", 
             details: "Package price must be a positive number" 
           });
         }
 
+        console.log('Creating Stripe payment intent with amount:', Math.round(amount * 100), 'cents');
+        
         const paymentIntent = await stripe.paymentIntents.create({
           amount: Math.round(amount * 100), // Convert to cents
           currency: "usd",
@@ -2916,6 +2925,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             packageName: package_.name
           }
         });
+        
+        console.log('Payment intent created:', paymentIntent.id);
+        console.log('Client secret:', paymentIntent.client_secret);
 
         // Create user subscription in our database as pending
         const currentDate = new Date();
