@@ -37,11 +37,12 @@ const SubscribeForm = ({ packageId }: { packageId: number }) => {
           return;
         }
 
-        const { error } = await stripe.confirmPayment({
+        const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
           confirmParams: {
             return_url: `${window.location.origin}/subscriptions?success=true`,
           },
+          redirect: 'if_required',
         });
 
         if (error) {
@@ -51,8 +52,31 @@ const SubscribeForm = ({ packageId }: { packageId: number }) => {
             variant: "destructive",
           });
           setIsSubmitting(false);
+        } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+          // Confirm payment on backend
+          try {
+            const confirmResponse = await apiRequest("POST", "/api/confirm-payment", {
+              paymentIntentId: paymentIntent.id
+            });
+            
+            if (confirmResponse.ok) {
+              toast({
+                title: "Payment Successful",
+                description: "Your subscription has been activated!",
+              });
+              navigate('/subscriptions?success=true');
+            } else {
+              throw new Error('Failed to confirm payment');
+            }
+          } catch (confirmError: any) {
+            toast({
+              title: "Payment Confirmation Error",
+              description: confirmError.message || "Payment succeeded but subscription activation failed. Please contact support.",
+              variant: "destructive",
+            });
+          }
+          setIsSubmitting(false);
         }
-        // Success case will be handled by the return_url redirect
       } else if (selectedPaymentMethod === 'paypal') {
         // PayPal payment processing
         try {
@@ -336,7 +360,7 @@ export default function Subscribe() {
         // Set client secret to show payment form for Stripe
         setClientSecret(data.clientSecret);
         toast({
-          title: "Payment Required",
+          title: "Payment Setup Complete",
           description: "Please complete your payment below to activate your subscription.",
         });
       } else if (data.success) {

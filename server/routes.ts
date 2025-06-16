@@ -1168,6 +1168,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment confirmation endpoint for Stripe payments
+  app.post('/api/confirm-payment', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { paymentIntentId } = req.body;
+      
+      if (!paymentIntentId) {
+        return res.status(400).json({ error: "Payment intent ID required" });
+      }
+
+      // Retrieve the payment intent from Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status === 'succeeded') {
+        // Find and update the subscription
+        const subscriptions = await storage.getUserSubscriptions(req.user.id);
+        const pendingSubscription = subscriptions.find(sub => 
+          sub.stripeSubscriptionId === paymentIntentId && sub.status === 'Pending'
+        );
+
+        if (pendingSubscription) {
+          // Update subscription to Active
+          await storage.updateUserSubscription(pendingSubscription.id, {
+            status: 'Active',
+            stripeSubscriptionId: paymentIntentId
+          });
+
+          res.json({
+            success: true,
+            message: 'Payment confirmed and subscription activated',
+            status: 'Active'
+          });
+        } else {
+          res.status(404).json({ error: "Subscription not found" });
+        }
+      } else {
+        res.status(400).json({ 
+          error: "Payment not completed", 
+          status: paymentIntent.status 
+        });
+      }
+    } catch (error: any) {
+      res.status(500).json({ 
+        error: "Payment confirmation failed", 
+        message: error.message
+      });
+    }
+  });
+
   // Special endpoint to make the current user an admin (for demo purposes only)
   app.post('/api/make-admin', async (req: Request, res: Response) => {
     try {
@@ -2844,51 +2896,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Handle different payment methods
-      if (paymentMethod === 'stripe' && package_.stripePriceId) {
-        // Use Stripe for packages with price IDs
-        let customerId = user.stripeCustomerId;
+      if (paymentMethod === 'stripe') {
+        // Create a payment intent for Credit/Debit Card payments
+        const amount = parseFloat(package_.price);
         
-        // Create a Stripe customer if user doesn't have one
-        if (!customerId) {
-          const customer = await stripe.customers.create({
-            email: user.email,
-            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+        if (isNaN(amount) || amount <= 0) {
+          return res.status(400).json({ 
+            error: "Invalid package price", 
+            details: "Package price must be a positive number" 
           });
-          
-          customerId = customer.id;
-          await storage.updateStripeCustomerId(userId, customerId);
         }
 
-        // Create a subscription
-        const subscription = await stripe.subscriptions.create({
-          customer: customerId,
-          items: [{ price: package_.stripePriceId }],
-          payment_behavior: 'default_incomplete',
-          expand: ['latest_invoice.payment_intent'],
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: Math.round(amount * 100), // Convert to cents
+          currency: "usd",
+          metadata: {
+            packageId: packageId.toString(),
+            userId: userId.toString(),
+            packageName: package_.name
+          }
         });
 
-        // Create user subscription in our database
+        // Create user subscription in our database as pending
+        const currentDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1); // Default to 1 month subscription
+
         const userSubscription = await storage.createUserSubscription({
           userId,
           packageId,
-          stripeSubscriptionId: subscription.id,
+          stripeSubscriptionId: paymentIntent.id, // Store payment intent ID temporarily
           status: 'Pending',
-          startDate: new Date(),
-          endDate: null,
-          currentPeriodStart: null,
-          currentPeriodEnd: null,
+          startDate: currentDate,
+          endDate: endDate,
+          currentPeriodStart: currentDate,
+          currentPeriodEnd: endDate,
           canceledAt: null,
           trialEndsAt: null
         });
 
-        // Return the client secret
-        const invoice = subscription.latest_invoice as any;
-        const clientSecret = invoice?.payment_intent?.client_secret;
-
         res.json({
-          clientSecret,
-          subscriptionId: subscription.id,
-          userSubscriptionId: userSubscription.id
+          clientSecret: paymentIntent.client_secret,
+          paymentIntentId: paymentIntent.id,
+          userSubscriptionId: userSubscription.id,
+          requiresPayment: true
         });
       } else if (paymentMethod === 'paypal') {
         // Handle PayPal payment method
