@@ -25,17 +25,36 @@ const StripePaymentForm = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [location, navigate] = useLocation();
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check if Stripe and Elements are ready
+  useEffect(() => {
+    if (stripe && elements) {
+      setIsLoading(false);
+      console.log('Stripe Elements are ready');
+    }
+  }, [stripe, elements]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('=== Stripe Payment Form Submit ===');
+    console.log('Stripe available:', !!stripe);
+    console.log('Elements available:', !!elements);
     
     if (!stripe || !elements) {
+      console.error('Stripe or Elements not ready');
+      toast({
+        title: "Payment Error",
+        description: "Payment form is not ready. Please refresh and try again.",
+        variant: "destructive",
+      });
       return;
     }
     
     setIsSubmitting(true);
 
     try {
+      console.log('Confirming payment with Stripe...');
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -43,6 +62,8 @@ const StripePaymentForm = () => {
         },
         redirect: 'if_required',
       });
+
+      console.log('Stripe confirmation result:', { error, paymentIntent });
 
       if (error) {
         console.error('Stripe payment error:', error);
@@ -56,9 +77,12 @@ const StripePaymentForm = () => {
         
         // Confirm payment on backend
         try {
+          console.log('Confirming payment on backend with ID:', paymentIntent.id);
           const confirmResponse = await apiRequest("POST", "/api/confirm-payment", {
             paymentIntentId: paymentIntent.id
           });
+          
+          console.log('Backend confirmation response status:', confirmResponse.status);
           
           if (confirmResponse.ok) {
             toast({
@@ -67,7 +91,9 @@ const StripePaymentForm = () => {
             });
             navigate('/subscriptions?success=true');
           } else {
-            throw new Error('Failed to confirm payment');
+            const errorData = await confirmResponse.json();
+            console.error('Backend confirmation error:', errorData);
+            throw new Error(errorData.error || 'Failed to confirm payment');
           }
         } catch (confirmError: any) {
           console.error('Payment confirmation error:', confirmError);
@@ -90,12 +116,30 @@ const StripePaymentForm = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-16 bg-gray-100 rounded animate-pulse"></div>
+        <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
+      <div className="min-h-[60px]">
+        <PaymentElement 
+          options={{
+            layout: 'tabs',
+            business: {
+              name: 'Averox Business AI'
+            }
+          }}
+        />
+      </div>
       <Button 
         type="submit" 
-        disabled={!stripe || isSubmitting} 
+        disabled={!stripe || !elements || isSubmitting} 
         className="w-full"
       >
         {isSubmitting ? (
@@ -319,9 +363,15 @@ export default function Subscribe() {
     console.log('=== handleConfirmSubscription called ===');
     console.log('User ID:', user?.id);
     console.log('Package ID:', packageId);
+    console.log('Package Details:', packageDetails);
     
     if (!user?.id || !packageId) {
-      console.error('Missing user ID or package ID');
+      console.error('Missing user ID or package ID', { userId: user?.id, packageId });
+      toast({
+        title: "Error",
+        description: "Missing user or package information. Please refresh and try again.",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -352,11 +402,14 @@ export default function Subscribe() {
       
       const data = await response.json();
       console.log('API Response data:', data);
+      console.log('Client secret received:', data.clientSecret);
+      console.log('Setting clientSecret state...');
       
       if (selectedPaymentMethod === 'stripe' && data.clientSecret) {
         // Set client secret to show payment form for Stripe
         console.log('Setting client secret for Stripe payment:', data.clientSecret);
         setClientSecret(data.clientSecret);
+        console.log('Client secret state updated');
         toast({
           title: "Payment Setup Complete",
           description: "Please complete your payment below to activate your subscription.",
@@ -369,6 +422,7 @@ export default function Subscribe() {
         });
         navigate('/subscriptions?success=true');
       } else {
+        console.error('Unexpected response format:', data);
         throw new Error(data.message || "Failed to create subscription");
       }
     } catch (error: any) {
@@ -384,7 +438,7 @@ export default function Subscribe() {
   };
 
   // Show payment method selection first, then payment form if needed
-  if (clientSecret) {
+  if (clientSecret && packageDetails) {
     // Show Stripe payment form when client secret is available
     return (
       <div className="container max-w-xl py-12">
@@ -396,6 +450,9 @@ export default function Subscribe() {
                 ${packageDetails.price}/{packageDetails.interval}
               </div>
             </CardTitle>
+            <CardDescription>
+              Enter your card details below to complete your subscription to {packageDetails.name}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="mb-6 space-y-2">
@@ -403,9 +460,19 @@ export default function Subscribe() {
               <p className="text-sm text-muted-foreground">{packageDetails.description}</p>
             </div>
             
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <StripePaymentForm />
-            </Elements>
+            {stripePromise && (
+              <Elements 
+                stripe={stripePromise} 
+                options={{ 
+                  clientSecret,
+                  appearance: {
+                    theme: 'stripe',
+                  }
+                }}
+              >
+                <StripePaymentForm />
+              </Elements>
+            )}
           </CardContent>
         </Card>
       </div>
