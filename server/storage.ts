@@ -66,6 +66,7 @@ export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   listUsers(): Promise<User[]>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
@@ -798,6 +799,15 @@ export class MemStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | undefined> {
     for (const user of this.users.values()) {
       if (user.username === username) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    for (const user of this.users.values()) {
+      if (user.email === email) {
         return user;
       }
     }
@@ -3424,6 +3434,16 @@ export class DatabaseStorage implements IStorage {
       return user;
     } catch (error) {
       console.error('Database error in getUserByUsername:', error);
+      return undefined;
+    }
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      return user;
+    } catch (error) {
+      console.error('Database error in getUserByEmail:', error);
       return undefined;
     }
   }
