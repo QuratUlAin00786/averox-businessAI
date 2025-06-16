@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
+import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { setupAuth, hashPassword } from "./auth";
 import { registerPermissionRoutes } from "./permission-routes";
 import { addPermissionsToMemStorage, addPermissionsToDatabaseStorage } from "./permissions-manager";
@@ -3188,6 +3189,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Webhook error:', error.message);
       res.status(400).json({ error: error.message });
     }
+  });
+
+  // PayPal Integration Routes
+  app.get("/api/paypal/setup", async (req, res) => {
+    await loadPaypalDefault(req, res);
+  });
+
+  app.post("/api/paypal/order", async (req, res) => {
+    // Request body should contain: { intent, amount, currency }
+    await createPaypalOrder(req, res);
+  });
+
+  app.post("/api/paypal/order/:orderID/capture", async (req, res) => {
+    await capturePaypalOrder(req, res);
   });
 
   // Social Media Integrations Routes
