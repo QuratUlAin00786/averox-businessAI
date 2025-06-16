@@ -9,6 +9,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { SubscriptionPackage } from '@shared/schema';
+import { useAuth } from '@/hooks/use-auth';
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
@@ -87,6 +88,7 @@ export default function Subscribe() {
   const [packageId, setPackageId] = useState<number | null>(null);
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const params = new URLSearchParams(window.location.search);
   const packageIdParam = params.get('packageId');
 
@@ -121,8 +123,22 @@ export default function Subscribe() {
       
       setPackageId(pkgId);
       
+      // Wait for user to be loaded before creating subscription
+      if (!user?.id) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to subscribe to a package",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
+      
       // Create PaymentIntent as soon as the page loads
-      apiRequest("POST", "/api/create-subscription", { packageId: pkgId })
+      apiRequest("POST", "/api/create-subscription", { 
+        packageId: pkgId, 
+        userId: user.id 
+      })
         .then((res) => {
           if (!res.ok) {
             throw new Error("Failed to create subscription");
@@ -130,7 +146,17 @@ export default function Subscribe() {
           return res.json();
         })
         .then((data) => {
-          setClientSecret(data.clientSecret);
+          if (data.success) {
+            // Direct subscription created successfully
+            toast({
+              title: "Subscription Created",
+              description: "Your subscription has been activated successfully!",
+            });
+            navigate('/subscriptions?success=true');
+          } else if (data.clientSecret) {
+            // Stripe payment required
+            setClientSecret(data.clientSecret);
+          }
         })
         .catch((error) => {
           toast({
