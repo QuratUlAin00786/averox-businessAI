@@ -84,6 +84,8 @@ function Router() {
       
       <Route path="/landing" component={LandingPage} />
       
+      <Route path="/home" component={LandingPage} />
+      
       <ProtectedRoute path="/" component={() => (
         <Layout>
           <Dashboard />
