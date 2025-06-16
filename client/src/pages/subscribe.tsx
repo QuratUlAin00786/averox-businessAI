@@ -110,10 +110,16 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!stripe || !elements) return;
+    if (!stripe || !elements) {
+      console.error('Stripe or Elements not loaded');
+      return;
+    }
 
     setIsLoading(true);
+    
     try {
+      console.log('Starting payment confirmation...');
+      
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -122,24 +128,66 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
         redirect: 'if_required',
       });
 
+      console.log('Payment confirmation result:', { error, paymentIntent });
+
       if (error) {
+        console.error('Payment failed:', error);
         toast({
           title: "Payment Failed",
-          description: error.message,
+          description: error.message || "Payment could not be processed.",
           variant: "destructive",
         });
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      } else if (paymentIntent) {
+        console.log('Payment intent status:', paymentIntent.status);
+        
+        if (paymentIntent.status === 'succeeded') {
+          console.log('Payment succeeded!');
+          toast({
+            title: "Payment Successful!",
+            description: "Your subscription has been activated.",
+          });
+          
+          // Navigate to dashboard after short delay
+          setTimeout(() => {
+            setLocation('/dashboard?subscription=success');
+          }, 1000);
+          
+        } else if (paymentIntent.status === 'requires_action') {
+          console.log('Payment requires additional action - this should be handled by Stripe automatically');
+          // Stripe handles 3D Secure automatically, so we should not reach here in most cases
+          
+        } else if (paymentIntent.status === 'processing') {
+          console.log('Payment is processing...');
+          toast({
+            title: "Payment Processing",
+            description: "Your payment is being processed. You will be redirected shortly.",
+          });
+          
+          // For processing payments, redirect after a delay
+          setTimeout(() => {
+            setLocation('/dashboard?subscription=pending');
+          }, 2000);
+          
+        } else {
+          console.log('Unexpected payment status:', paymentIntent.status);
+          toast({
+            title: "Payment Status Unknown",
+            description: `Payment status: ${paymentIntent.status}. Please check your account.`,
+          });
+        }
+      } else {
+        console.error('No payment intent or error returned');
         toast({
-          title: "Payment Successful!",
-          description: "Your subscription has been activated.",
+          title: "Payment Error",
+          description: "No response received from payment processor.",
+          variant: "destructive",
         });
-        setLocation('/dashboard?subscription=success');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment error:', error);
       toast({
         title: "Payment Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.message || "An unexpected error occurred.",
         variant: "destructive",
       });
     } finally {
