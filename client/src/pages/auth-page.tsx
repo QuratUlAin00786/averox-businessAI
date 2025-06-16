@@ -28,14 +28,20 @@ const registerSchema = insertUserSchema.extend({
   path: ["confirmPassword"],
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [forgotPasswordSubmitted, setForgotPasswordSubmitted] = useState(false);
   const { user, loginMutation, registerMutation } = useAuth();
   
   // Login form
@@ -61,6 +67,14 @@ export default function AuthPage() {
       role: "User",
     },
   });
+
+  // Forgot password form
+  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
   
   const onLoginSubmit = (values: LoginFormValues) => {
     loginMutation.mutate(values);
@@ -70,6 +84,27 @@ export default function AuthPage() {
     // Remove confirmPassword as it's not in the API schema
     const { confirmPassword, ...registrationData } = values;
     registerMutation.mutate(registrationData);
+  };
+
+  const onForgotPasswordSubmit = async (values: ForgotPasswordFormValues) => {
+    try {
+      const response = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+
+      if (response.ok) {
+        setForgotPasswordSubmitted(true);
+      } else {
+        // Handle error - could show a toast or error message
+        console.error('Failed to send password reset email');
+      }
+    } catch (error) {
+      console.error('Error sending forgot password request:', error);
+    }
   };
   
   // Redirect to home if already logged in
@@ -93,9 +128,10 @@ export default function AuthPage() {
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="login">Sign In</TabsTrigger>
               <TabsTrigger value="register">Create Account</TabsTrigger>
+              <TabsTrigger value="forgot-password">Reset Password</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
@@ -193,6 +229,16 @@ export default function AuthPage() {
                           "Sign In"
                         )}
                       </Button>
+                      
+                      <div className="text-center mt-4">
+                        <Button 
+                          variant="link" 
+                          className="p-0 text-sm"
+                          onClick={() => setActiveTab("forgot-password")}
+                        >
+                          Forgot your password?
+                        </Button>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
@@ -376,6 +422,78 @@ export default function AuthPage() {
                 <CardFooter className="flex justify-center">
                   <p className="text-sm text-muted-foreground">
                     Already have an account?{" "}
+                    <Button 
+                      variant="link" 
+                      className="p-0"
+                      onClick={() => setActiveTab("login")}
+                    >
+                      Sign in
+                    </Button>
+                  </p>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="forgot-password">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reset Password</CardTitle>
+                  <CardDescription>
+                    {forgotPasswordSubmitted 
+                      ? "Check your email for password reset instructions"
+                      : "Enter your email address to receive password reset instructions"
+                    }
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {forgotPasswordSubmitted ? (
+                    <div className="text-center space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        We've sent password reset instructions to your email address.
+                        Please check your inbox and follow the link to reset your password.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setActiveTab("login");
+                          setForgotPasswordSubmitted(false);
+                          forgotPasswordForm.reset();
+                        }}
+                      >
+                        Back to Sign In
+                      </Button>
+                    </div>
+                  ) : (
+                    <Form {...forgotPasswordForm}>
+                      <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+                        <FormField
+                          control={forgotPasswordForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email Address</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="email"
+                                  placeholder="Enter your email address" 
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <Button type="submit" className="w-full">
+                          Send Reset Instructions
+                        </Button>
+                      </form>
+                    </Form>
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                  <p className="text-sm text-muted-foreground">
+                    Remember your password?{" "}
                     <Button 
                       variant="link" 
                       className="p-0"

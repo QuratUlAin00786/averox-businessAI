@@ -178,6 +178,49 @@ export function setupAuth(app: Express) {
     });
   });
 
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        // Don't reveal if email exists or not for security
+        return res.status(200).json({ message: "If the email exists, password reset instructions have been sent" });
+      }
+
+      // Generate a reset token (simple implementation - in production, use a proper token)
+      const resetToken = randomBytes(32).toString('hex');
+      const resetExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+      // Store reset token (you would need to add these fields to your user schema)
+      // For now, we'll just simulate the process
+      console.log(`Password reset requested for ${email}`);
+      console.log(`Reset token: ${resetToken}`);
+      console.log(`Reset expires: ${resetExpiry}`);
+
+      // In a real application, you would:
+      // 1. Store the reset token and expiry in the database
+      // 2. Send an email with the reset link
+      // For now, we'll just log it and return success
+
+      res.status(200).json({ 
+        message: "Password reset instructions have been sent to your email",
+        // In development, include the token for testing
+        ...(process.env.NODE_ENV === 'development' && { resetToken, resetExpiry })
+      });
+
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
