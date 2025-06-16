@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useRoute } from 'wouter';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -101,7 +101,7 @@ const plans: Plan[] = [
   }
 ];
 
-const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
+const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () => void; clientSecret: string }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -120,12 +120,22 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
     try {
       console.log('Starting payment...');
       
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/dashboard?subscription=success`,
-        },
-        redirect: 'if_required',
+      // Get card element
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error('Card element not found');
+      }
+      
+      // Confirm payment using CardElement
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+        }
+      });
+
+      console.log('Payment result:', { 
+        error: error ? { type: error.type, message: error.message } : null,
+        paymentIntent: paymentIntent ? { id: paymentIntent.id, status: paymentIntent.status } : null
       });
 
       if (error) {
@@ -135,7 +145,6 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
           description: error.message || "Payment could not be processed.",
           variant: "destructive",
         });
-        setIsLoading(false);
       } else {
         console.log('Payment succeeded!');
         toast({
@@ -155,6 +164,7 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };

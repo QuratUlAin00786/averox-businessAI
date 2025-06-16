@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Payment Test</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .form-row { margin: 20px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        #card-element { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #5469d4; color: white; padding: 12px 24px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .error { color: #e74c3c; margin-top: 10px; }
+        .success { color: #27ae60; margin-top: 10px; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Stripe Payment Test</h1>
+    
+    <div class="form-row">
+        <label>Test Card: 4242 4242 4242 4242</label>
+        <label>Expiry: Any future date (12/28)</label>
+        <label>CVC: Any 3 digits (123)</label>
+    </div>
+    
+    <form id="payment-form">
+        <div class="form-row">
+            <label for="card-element">Credit or debit card</label>
+            <div id="card-element"></div>
+            <div id="card-errors" class="error"></div>
+        </div>
+        
+        <button id="submit-button" type="submit">Pay $59.00</button>
+        
+        <div id="payment-result" class="success"></div>
+    </form>
+    
+    <div id="console-log" class="log">
+        <strong>Console Log:</strong><br>
+    </div>
+
+    <script>
+        const log = document.getElementById('console-log');
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}<br>`;
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+
+        addLog('Initializing Stripe...');
+        
+        // Get Stripe public key from environment
+        const stripe = Stripe('pk_test_51PxPDtAQh4Rvl2xdBWMl2VVpBcqy43peMJkDg6WBDsYWCQ4yDnIrIhKWGNJWPUnJMHLcuNgKBGCqfIIGHAQCJfRa00oTlKLW5k');
+        const elements = stripe.elements();
+        
+        addLog('Creating card element...');
+        const cardElement = elements.create('card');
+        cardElement.mount('#card-element');
+        
+        cardElement.on('change', ({error}) => {
+            const displayError = document.getElementById('card-errors');
+            if (error) {
+                displayError.textContent = error.message;
+                addLog(`Card validation error: ${error.message}`);
+            } else {
+                displayError.textContent = '';
+                addLog('Card details valid');
+            }
+        });
+        
+        const form = document.getElementById('payment-form');
+        const submitButton = document.getElementById('submit-button');
+        
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+            
+            addLog('Starting payment process...');
+            
+            try {
+                // Step 1: Create payment intent
+                addLog('Creating payment intent...');
+                const response = await fetch('/api/create-payment-intent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: 59,
+                        planId: 2,
+                        planName: 'Professional'
+                    }),
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+                
+                const { clientSecret } = await response.json();
+                addLog(`Payment intent created: ${clientSecret.substring(0, 20)}...`);
+                
+                // Step 2: Confirm payment
+                addLog('Confirming payment...');
+                const result = await stripe.confirmCardPayment(clientSecret, {
+                    payment_method: {
+                        card: cardElement,
+                    }
+                });
+                
+                addLog(`Payment result: ${JSON.stringify({
+                    error: result.error ? { type: result.error.type, message: result.error.message } : null,
+                    paymentIntent: result.paymentIntent ? { 
+                        id: result.paymentIntent.id, 
+                        status: result.paymentIntent.status 
+                    } : null
+                })}`);
+                
+                if (result.error) {
+                    addLog(`Payment failed: ${result.error.message}`);
+                    document.getElementById('payment-result').innerHTML = `<div class="error">Payment failed: ${result.error.message}</div>`;
+                } else {
+                    addLog(`Payment succeeded! Status: ${result.paymentIntent.status}`);
+                    document.getElementById('payment-result').innerHTML = `<div class="success">Payment successful! Payment ID: ${result.paymentIntent.id}</div>`;
+                }
+                
+            } catch (error) {
+                addLog(`Error: ${error.message}`);
+                document.getElementById('payment-result').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Pay $59.00';
+            }
+        });
+        
+        addLog('Payment form ready');
+    </script>
+</body>
+</html>
