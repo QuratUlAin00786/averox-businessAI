@@ -33,6 +33,7 @@ import {
   Settings
 } from "lucide-react";
 import { SiPaypal, SiGooglepay, SiStripe, SiVisa, SiMastercard, SiAmericanexpress } from "react-icons/si";
+import AveroxLogo from "@/assets/AveroxLogo";
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -373,11 +374,12 @@ export default function LandingPage() {
             <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0">
               🚀 Now Available - Revolutionary Business AI
             </Badge>
+            
+            <div className="mb-6">
+              <AveroxLogo height={80} showBusinessAI={true} className="mb-4" />
+            </div>
+            
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Averox Business AI
-              </span>
-              <br />
               <span className="text-3xl md:text-5xl">Beats Every Competitor</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto">
