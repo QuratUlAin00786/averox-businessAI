@@ -316,52 +316,38 @@ export default function Subscribe() {
     setIsProcessing(true);
     
     try {
-      // Check if this package requires Stripe payment
-      if (packageDetails.stripePriceId) {
-        // Create Stripe subscription and get client secret
-        const response = await apiRequest("POST", "/api/create-subscription", { 
-          packageId: packageId, 
-          userId: user.id 
+      // Get selected payment method from radio buttons
+      const selectedRadio = document.querySelector('input[name="paymentMethod"]:checked') as HTMLInputElement;
+      const selectedPaymentMethod = selectedRadio?.value || 'stripe';
+      
+      // Create subscription with selected payment method
+      const response = await apiRequest("POST", "/api/create-subscription", { 
+        packageId: packageId,
+        paymentMethod: selectedPaymentMethod
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create subscription");
+      }
+      
+      const data = await response.json();
+      
+      if (selectedPaymentMethod === 'stripe' && data.clientSecret) {
+        // Set client secret to show payment form for Stripe
+        setClientSecret(data.clientSecret);
+        toast({
+          title: "Payment Required",
+          description: "Please complete your payment below to activate your subscription.",
         });
-        
-        if (!response.ok) {
-          throw new Error("Failed to create subscription");
-        }
-        
-        const data = await response.json();
-        
-        if (data.clientSecret) {
-          // Set client secret to show payment form
-          setClientSecret(data.clientSecret);
-          toast({
-            title: "Payment Required",
-            description: "Please complete your payment below to activate your subscription.",
-          });
-        } else {
-          throw new Error(data.message || "Failed to create subscription");
-        }
+      } else if (data.success) {
+        // Direct subscription or PayPal/Google Pay success
+        toast({
+          title: "Subscription Activated",
+          description: data.message || "Your subscription has been created successfully!",
+        });
+        navigate('/subscriptions?success=true');
       } else {
-        // Direct subscription without payment processing
-        const response = await apiRequest("POST", "/api/create-subscription", { 
-          packageId: packageId, 
-          userId: user.id 
-        });
-        
-        if (!response.ok) {
-          throw new Error("Failed to create subscription");
-        }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          toast({
-            title: "Subscription Activated",
-            description: "Your subscription has been created successfully!",
-          });
-          navigate('/subscriptions?success=true');
-        } else {
-          throw new Error(data.message || "Failed to create subscription");
-        }
+        throw new Error(data.message || "Failed to create subscription");
       }
     } catch (error: any) {
       toast({
@@ -374,8 +360,9 @@ export default function Subscribe() {
     }
   };
 
-  // Show Stripe payment form if clientSecret is available
-  if (clientSecret) {
+  // Show payment method selection first, then payment form if needed
+  if (clientSecret && packageDetails.stripePriceId) {
+    // Show Stripe payment form for packages with Stripe integration
     return (
       <div className="container max-w-xl py-12">
         <Card>
@@ -461,42 +448,40 @@ export default function Subscribe() {
             </div>
           </div>
 
-          {/* Payment Method Section */}
-          {packageDetails.stripePriceId && (
-            <div className="border rounded-lg p-4 bg-gray-50">
-              <h4 className="font-medium mb-3">Select Payment Method</h4>
-              <div className="space-y-3">
-                <div className="grid gap-3">
-                  <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
-                    <input type="radio" name="paymentMethod" value="stripe" defaultChecked className="text-blue-600" />
-                    <CreditCard className="h-5 w-5" />
-                    <div>
-                      <div className="font-medium text-sm">Credit/Debit Card</div>
-                      <div className="text-xs text-gray-500">Pay securely with your credit or debit card</div>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
-                    <input type="radio" name="paymentMethod" value="paypal" className="text-blue-600" />
-                    <SiPaypal className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <div className="font-medium text-sm">PayPal</div>
-                      <div className="text-xs text-gray-500">Pay with your PayPal account</div>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
-                    <input type="radio" name="paymentMethod" value="google" className="text-blue-600" />
-                    <SiGoogle className="h-5 w-5 text-blue-500" />
-                    <div>
-                      <div className="font-medium text-sm">Google Pay</div>
-                      <div className="text-xs text-gray-500">Pay quickly with Google Pay</div>
-                    </div>
-                  </label>
-                </div>
+          {/* Payment Method Section - Always show for all packages */}
+          <div className="border rounded-lg p-4 bg-gray-50">
+            <h4 className="font-medium mb-3">Select Payment Method</h4>
+            <div className="space-y-3">
+              <div className="grid gap-3">
+                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
+                  <input type="radio" name="paymentMethod" value="stripe" defaultChecked className="text-blue-600" />
+                  <CreditCard className="h-5 w-5" />
+                  <div>
+                    <div className="font-medium text-sm">Credit/Debit Card</div>
+                    <div className="text-xs text-gray-500">Pay securely with your credit or debit card</div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
+                  <input type="radio" name="paymentMethod" value="paypal" className="text-blue-600" />
+                  <SiPaypal className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <div className="font-medium text-sm">PayPal</div>
+                    <div className="text-xs text-gray-500">Pay with your PayPal account</div>
+                  </div>
+                </label>
+                
+                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
+                  <input type="radio" name="paymentMethod" value="google" className="text-blue-600" />
+                  <SiGoogle className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <div className="font-medium text-sm">Google Pay</div>
+                    <div className="text-xs text-gray-500">Pay quickly with Google Pay</div>
+                  </div>
+                </label>
               </div>
             </div>
-          )}
+          </div>
 
           {packageDetails.features && (
             <div>
