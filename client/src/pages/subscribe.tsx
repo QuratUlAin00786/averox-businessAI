@@ -426,6 +426,14 @@ export default function Subscribe() {
           description: data.message || "Your subscription has been created successfully!",
         });
         navigate('/subscriptions?success=true');
+      } else if (data.clientSecret) {
+        // This handles the case where clientSecret is returned but selectedPaymentMethod might not be 'stripe'
+        console.log('Received client secret, setting up payment form:', data.clientSecret);
+        setClientSecret(data.clientSecret);
+        toast({
+          title: "Payment Setup Complete",
+          description: "Please complete your payment below to activate your subscription.",
+        });
       } else {
         console.error('Unexpected response format:', data);
         throw new Error(data.message || "Failed to create subscription");
