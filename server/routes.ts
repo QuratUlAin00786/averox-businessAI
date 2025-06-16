@@ -2800,60 +2800,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Subscription package not found" });
       }
 
-      if (!package_.stripePriceId) {
-        return res.status(400).json({ 
-          error: "Invalid package", 
-          details: "This package is not configured for online payment" 
-        });
-      }
-
-      let customerId = user.stripeCustomerId;
-      
-      // Create a Stripe customer if user doesn't have one
-      if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: user.email,
-          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
-        });
+      // Check if package has Stripe integration
+      if (package_.stripePriceId) {
+        // Use Stripe for packages with price IDs
+        let customerId = user.stripeCustomerId;
         
-        customerId = customer.id;
-        await storage.updateStripeCustomerId(userId, customerId);
+        // Create a Stripe customer if user doesn't have one
+        if (!customerId) {
+          const customer = await stripe.customers.create({
+            email: user.email,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+          });
+          
+          customerId = customer.id;
+          await storage.updateStripeCustomerId(userId, customerId);
+        }
+
+        // Create a subscription
+        const subscription = await stripe.subscriptions.create({
+          customer: customerId,
+          items: [{ price: package_.stripePriceId }],
+          payment_behavior: 'default_incomplete',
+          expand: ['latest_invoice.payment_intent'],
+        });
+
+        // Create user subscription in our database
+        const userSubscription = await storage.createUserSubscription({
+          userId,
+          packageId,
+          stripeSubscriptionId: subscription.id,
+          status: 'Pending',
+          startDate: new Date(),
+          endDate: null,
+          currentPeriodStart: null,
+          currentPeriodEnd: null,
+          canceledAt: null,
+          trialEndsAt: null
+        });
+
+        // Return the client secret
+        const invoice = subscription.latest_invoice as any;
+        const clientSecret = invoice?.payment_intent?.client_secret;
+
+        res.json({
+          clientSecret,
+          subscriptionId: subscription.id,
+          userSubscriptionId: userSubscription.id
+        });
+      } else {
+        // Create direct subscription for packages without Stripe integration
+        const currentDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1); // Default to 1 month subscription
+
+        const userSubscription = await storage.createUserSubscription({
+          userId,
+          packageId,
+          stripeSubscriptionId: null,
+          status: 'Active',
+          startDate: currentDate,
+          endDate: endDate,
+          currentPeriodStart: currentDate,
+          currentPeriodEnd: endDate,
+          canceledAt: null,
+          trialEndsAt: null
+        });
+
+        res.json({
+          success: true,
+          message: 'Subscription created successfully',
+          userSubscriptionId: userSubscription.id,
+          status: 'Active'
+        });
       }
-
-      // Create a subscription
-      const subscription = await stripe.subscriptions.create({
-        customer: customerId,
-        items: [{ price: package_.stripePriceId }],
-        payment_behavior: 'default_incomplete',
-        expand: ['latest_invoice.payment_intent'],
-      });
-
-      // Create user subscription in our database
-      const userSubscription = await storage.createUserSubscription({
-        userId,
-        packageId,
-        stripeSubscriptionId: subscription.id,
-        status: 'Pending',
-        startDate: new Date(),
-        endDate: null,
-        currentPeriodStart: null,
-        currentPeriodEnd: null,
-        canceledAt: null,
-        trialEndsAt: null
-      });
-
-      // Return the client secret
-      const invoice = subscription.latest_invoice as any;
-      const clientSecret = invoice?.payment_intent?.client_secret;
-
-      res.json({
-        clientSecret,
-        subscriptionId: subscription.id,
-        userSubscriptionId: userSubscription.id
-      });
     } catch (error: any) {
       res.status(500).json({ 
-        error: "Stripe Error", 
+        error: "Subscription Error", 
         message: error.message
       });
     }

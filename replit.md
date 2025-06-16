@@ -145,6 +145,8 @@ Changelog:
   - Training help buttons: "Learn More", "Watch Now", "Read Docs" now functional
   - Email editor bullet point formatting now preserves line breaks correctly
   - Fixed authentication security vulnerability by disabling auto-login bypass
+  - Added complete forgot password functionality with email reset system
+  - Resolved login authentication issue - system now properly accepts correct credentials
 
 ## User Preferences
 
