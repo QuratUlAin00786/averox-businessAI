@@ -168,6 +168,12 @@ function Router() {
         </Layout>
       )} />
       
+      <ProtectedRoute path="/subscribe/:id" component={() => (
+        <Layout>
+          <Subscribe />
+        </Layout>
+      )} />
+      
       <ProtectedRoute path="/settings" component={() => (
         <Layout>
           <Settings />
