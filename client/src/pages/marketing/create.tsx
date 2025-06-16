@@ -112,12 +112,21 @@ export default function CreateCampaignPage() {
         
         range.insertNode(fragment);
         
-        // Position cursor at the end
+        // Position cursor at the end - find the last inserted node
         const newRange = document.createRange();
-        newRange.setStartAfter(fragment);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
+        const lastChild = fragment.lastChild || fragment;
+        if (lastChild && lastChild.parentNode) {
+          newRange.setStartAfter(lastChild);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        } else {
+          // Fallback: position at end of editor content
+          newRange.selectNodeContents(editor);
+          newRange.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
       } else {
         // Just insert bullet at cursor position
         const bulletText = '• ';
