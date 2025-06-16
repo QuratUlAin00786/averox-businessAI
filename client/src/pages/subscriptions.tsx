@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, CheckCircle } from "lucide-react";
 import { SubscriptionPackage } from "@shared/schema";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -38,6 +38,21 @@ export default function SubscriptionsPage() {
       // Sort by display order
       [...data].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
   });
+
+  // Fetch user's current subscriptions
+  const { data: userSubscriptions, isLoading: subscriptionsLoading } = useQuery({
+    queryKey: ['/api/user-subscriptions'],
+    enabled: !!user?.id,
+  });
+
+  // Get current active subscription
+  const activeSubscription = userSubscriptions?.find((sub: any) => 
+    sub.status === 'Active' && sub.userId === user?.id
+  );
+
+  // Get the package details for the active subscription
+  const activePackage = activeSubscription ? 
+    packages?.find(pkg => pkg.id === activeSubscription.packageId) : null;
   
   const handleSubscribe = async (packageId: number) => {
     setIsSubmitting(true);
@@ -75,12 +90,70 @@ export default function SubscriptionsPage() {
     <div className="container max-w-6xl py-8">
       <div className="flex flex-col gap-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-3">Choose Your Plan</h1>
+          <h1 className="text-3xl font-bold mb-3">
+            {activeSubscription ? 'Your Subscription' : 'Choose Your Plan'}
+          </h1>
           <p className="text-muted-foreground max-w-3xl mx-auto">
-            Select the subscription that best fits your business needs.
-            All plans include core CRM features, with additional capabilities in higher tiers.
+            {activeSubscription 
+              ? 'Manage your current subscription and explore upgrade options.'
+              : 'Select the subscription that best fits your business needs. All plans include core CRM features, with additional capabilities in higher tiers.'
+            }
           </p>
         </div>
+
+        {/* Current Subscription Status */}
+        {activeSubscription && activePackage && (
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-green-800">Current Plan: {activePackage.name}</CardTitle>
+                    <CardDescription className="text-green-600">
+                      Active until {new Date(activeSubscription.endDate).toLocaleDateString()}
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-green-800">${activePackage.price}</div>
+                  <div className="text-sm text-green-600">per {activePackage.interval}</div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <div className="font-medium text-green-800">Users</div>
+                  <div className="text-green-600">{activePackage.maxUsers} users</div>
+                </div>
+                <div>
+                  <div className="font-medium text-green-800">Contacts</div>
+                  <div className="text-green-600">{activePackage.maxContacts.toLocaleString()} contacts</div>
+                </div>
+                <div>
+                  <div className="font-medium text-green-800">Storage</div>
+                  <div className="text-green-600">{activePackage.maxStorage} GB</div>
+                </div>
+                <div>
+                  <div className="font-medium text-green-800">Status</div>
+                  <div className="text-green-600 font-medium">{activeSubscription.status}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeSubscription && (
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-3">Upgrade Your Plan</h2>
+            <p className="text-muted-foreground max-w-3xl mx-auto">
+              Explore our other plans to get more features and capabilities for your business.
+            </p>
+          </div>
+        )}
         
         {isLoading ? (
           <div className="flex justify-center my-20">
