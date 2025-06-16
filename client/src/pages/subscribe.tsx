@@ -2,9 +2,9 @@ import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-
 import { loadStripe } from '@stripe/stripe-js';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Check } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -86,6 +86,7 @@ const SubscribeForm = ({ packageId }: { packageId: number }) => {
 export default function Subscribe() {
   const [clientSecret, setClientSecret] = useState("");
   const [packageId, setPackageId] = useState<number | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -134,38 +135,8 @@ export default function Subscribe() {
         return;
       }
       
-      // Create PaymentIntent as soon as the page loads
-      apiRequest("POST", "/api/create-subscription", { 
-        packageId: pkgId, 
-        userId: user.id 
-      })
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error("Failed to create subscription");
-          }
-          return res.json();
-        })
-        .then((data) => {
-          if (data.success) {
-            // Direct subscription created successfully
-            toast({
-              title: "Subscription Created",
-              description: "Your subscription has been activated successfully!",
-            });
-            navigate('/subscriptions?success=true');
-          } else if (data.clientSecret) {
-            // Stripe payment required
-            setClientSecret(data.clientSecret);
-          }
-        })
-        .catch((error) => {
-          toast({
-            title: "Error",
-            description: error.message || "Could not initialize payment",
-            variant: "destructive",
-          });
-          navigate('/subscriptions');
-        });
+      // Don't auto-create subscription, just load package details for confirmation
+      // Package details will be fetched via the query below
     } else {
       toast({
         title: "No Package Selected",
@@ -185,37 +156,151 @@ export default function Subscribe() {
     );
   }
 
-  if (!clientSecret) {
+  const handleConfirmSubscription = async () => {
+    if (!user?.id || !packageId) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      const response = await apiRequest("POST", "/api/create-subscription", { 
+        packageId: packageId, 
+        userId: user.id 
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create subscription");
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: "Subscription Activated",
+          description: "Your subscription has been created successfully!",
+        });
+        navigate('/subscriptions?success=true');
+      } else if (data.clientSecret) {
+        // Stripe payment required - show Stripe elements
+        setClientSecret(data.clientSecret);
+      } else {
+        throw new Error(data.message || "Failed to create subscription");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Could not create subscription",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Show Stripe payment form if clientSecret is available
+  if (clientSecret) {
     return (
       <div className="container max-w-xl py-12">
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center">
+              <span>Complete Your Payment</span>
+              <div className="text-sm font-normal bg-primary/10 text-primary px-3 py-1 rounded-full">
+                ${packageDetails.price}/{packageDetails.interval}
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-6 space-y-2">
+              <h3 className="font-medium">{packageDetails.name}</h3>
+              <p className="text-sm text-muted-foreground">{packageDetails.description}</p>
+            </div>
+            
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <SubscribeForm packageId={packageId as number} />
+            </Elements>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // Make SURE to wrap the form in <Elements> which provides the stripe context.
+  // Show subscription confirmation
   return (
     <div className="container max-w-xl py-12">
       <Card>
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
-            <span>Complete Your Subscription</span>
+            <span>Confirm Your Subscription</span>
             <div className="text-sm font-normal bg-primary/10 text-primary px-3 py-1 rounded-full">
               ${packageDetails.price}/{packageDetails.interval}
             </div>
           </CardTitle>
+          <CardDescription>
+            Review your subscription details and confirm to activate your plan.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="mb-6 space-y-2">
-            <h3 className="font-medium">{packageDetails.name}</h3>
-            <p className="text-sm text-muted-foreground">{packageDetails.description}</p>
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="font-semibold text-lg mb-2">{packageDetails.name}</h3>
+            <p className="text-muted-foreground mb-4">{packageDetails.description}</p>
+            
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Users:</span>
+                <span className="ml-2">{packageDetails.maxUsers} users</span>
+              </div>
+              <div>
+                <span className="font-medium">Contacts:</span>
+                <span className="ml-2">{packageDetails.maxContacts.toLocaleString()} contacts</span>
+              </div>
+              <div>
+                <span className="font-medium">Storage:</span>
+                <span className="ml-2">{packageDetails.maxStorage} GB</span>
+              </div>
+              <div>
+                <span className="font-medium">Billing:</span>
+                <span className="ml-2">Monthly</span>
+              </div>
+            </div>
           </div>
-          
-          <Elements stripe={stripePromise} options={{ clientSecret }}>
-            <SubscribeForm packageId={packageId as number} />
-          </Elements>
+
+          {packageDetails.features && (
+            <div>
+              <h4 className="font-medium mb-3">Features Included:</h4>
+              <ul className="space-y-2">
+                {(Array.isArray(packageDetails.features) ? packageDetails.features : JSON.parse(packageDetails.features)).map((feature: string, index: number) => (
+                  <li key={index} className="flex items-center text-sm">
+                    <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/subscriptions')}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmSubscription}
+              disabled={isProcessing}
+              className="flex-1"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Creating...
+                </>
+              ) : (
+                'Confirm Subscription'
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

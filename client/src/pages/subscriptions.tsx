@@ -55,11 +55,35 @@ export default function SubscriptionsPage() {
     packages?.find(pkg => pkg.id === activeSubscription.packageId) : null;
   
   const handleSubscribe = async (packageId: number) => {
+    if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to subscribe to a package",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
+    // Check if user already has this subscription
+    const existingSubscription = userSubscriptions?.find((sub: any) => 
+      sub.packageId === packageId && sub.status === 'Active' && sub.userId === user.id
+    );
+
+    if (existingSubscription) {
+      toast({
+        title: "Already Subscribed",
+        description: "You already have an active subscription to this plan.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setSelectedPackage(packages?.find(p => p.id === packageId) || null);
     
     try {
-      // Navigate to subscribe page with package ID
+      // Navigate to subscribe page with package ID for confirmation
       navigate(`/subscribe?packageId=${packageId}`);
     } catch (error: any) {
       toast({
