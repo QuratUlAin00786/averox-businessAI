@@ -257,7 +257,6 @@ export const MemStorageSocialMediaIntegrations = {
       endDate: campaign.endDate || null,
       ownerId: campaign.ownerId || null,
       content: campaign.content || null,
-      targetAudience: campaign.targetAudience || null,
       metrics: campaign.metrics || null,
       isActive: campaign.isActive === undefined ? true : campaign.isActive
     };
