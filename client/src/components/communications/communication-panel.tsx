@@ -25,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CustomCallDialog } from "@/components/ui/custom-call-dialog";
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -687,106 +688,22 @@ export function CommunicationPanel({ contactId, contactType, contactName = '', e
         </DialogContent>
       </Dialog>
       
-      {/* Phone call dialog */}
-      <Dialog open={isCallDialogOpen} onOpenChange={(open) => {
-        // Only allow closing the dialog when the call is completed
-        if (!open && callStatus !== 'completed') {
-          // If trying to close an active call, treat it as rejecting/ending the call
-          if (callStatus === 'incoming') {
-            handleRejectCall();
-          } else if (callStatus === 'ongoing') {
-            handleEndCall();
-          }
-        } else {
-          setIsCallDialogOpen(open);
-        }
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="text-center">
-            <div className="flex justify-center mb-2">
-              {callStatus === 'incoming' && <PhoneIncoming className="h-8 w-8 text-blue-600 animate-pulse" />}
-              {callStatus === 'ongoing' && <PhoneCall className="h-8 w-8 text-green-600" />}
-              {callStatus === 'completed' && <PhoneOff className="h-8 w-8 text-red-600" />}
-            </div>
-            <DialogTitle className="text-xl">
-              {callStatus === 'incoming' && "Incoming Call"}
-              {callStatus === 'ongoing' && "On Call"}
-              {callStatus === 'completed' && "Call Ended"}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="flex flex-col items-center py-6 space-y-4">
-            <Avatar className="h-24 w-24">
-              <AvatarFallback className="text-3xl bg-blue-100 text-blue-700">
-                {firstName?.[0]}{lastName?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="text-center">
-              <h3 className="text-xl font-medium">{contactName || 'Unknown Contact'}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{phoneStr}</p>
-              
-              {callStatus === 'ongoing' && (
-                <p className="text-sm text-green-600 mt-2 animate-pulse">
-                  Call in progress...
-                </p>
-              )}
-              
-              {callStatus === 'completed' && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Call has ended
-                </p>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex justify-center gap-4 mt-4">
-            {callStatus === 'incoming' && (
-              <>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="rounded-full w-14 h-14 bg-red-100 hover:bg-red-200 border-red-200"
-                  onClick={handleRejectCall}
-                >
-                  <PhoneOff className="h-6 w-6 text-red-600" />
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="rounded-full w-14 h-14 bg-green-100 hover:bg-green-200 border-green-200"
-                  onClick={handleAcceptCall}
-                >
-                  <PhoneCall className="h-6 w-6 text-green-600" />
-                </Button>
-              </>
-            )}
-            
-            {callStatus === 'ongoing' && (
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="rounded-full w-14 h-14 bg-red-100 hover:bg-red-200 border-red-200"
-                onClick={handleEndCall}
-              >
-                <PhoneOff className="h-6 w-6 text-red-600" />
-              </Button>
-            )}
-            
-            {callStatus === 'completed' && (
-              <Button
-                onClick={() => {
-                  setIsCallDialogOpen(false);
-                  setCallStatus(null);
-                }}
-              >
-                Close
-              </Button>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Custom Phone call dialog */}
+      <CustomCallDialog
+        isOpen={isCallDialogOpen}
+        onClose={() => {
+          setIsCallDialogOpen(false);
+          setCallStatus(null);
+        }}
+        callStatus={callStatus}
+        contactName={contactName || 'Unknown Contact'}
+        phoneNumber={phoneStr}
+        firstName={firstName}
+        lastName={lastName}
+        onAcceptCall={handleAcceptCall}
+        onRejectCall={handleRejectCall}
+        onEndCall={handleEndCall}
+      />
     </>
   );
 }
