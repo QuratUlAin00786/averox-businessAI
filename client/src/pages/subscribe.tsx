@@ -145,7 +145,7 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
           description: error.message || "Payment could not be processed.",
           variant: "destructive",
         });
-      } else {
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         console.log('Payment succeeded!');
         toast({
           title: "Payment Successful!",
@@ -155,6 +155,13 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
         setTimeout(() => {
           setLocation('/dashboard?subscription=success');
         }, 1000);
+      } else {
+        console.log('Payment status:', paymentIntent?.status);
+        toast({
+          title: "Payment Processing",
+          description: `Payment status: ${paymentIntent?.status || 'unknown'}`,
+          variant: "destructive",
+        });
       }
       
     } catch (error: any) {
