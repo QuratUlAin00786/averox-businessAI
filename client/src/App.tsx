@@ -501,25 +501,8 @@ function Router() {
 
 // Auto-login component for development/testing
 function AutoLogin() {
-  const { user, loginMutation } = useAuth();
-  
-  useEffect(() => {
-    // Only attempt login if there's no user already and mutation isn't in progress
-    if (!user && !loginMutation.isPending && !loginMutation.isSuccess) {
-      // Use a timeout to prevent render loops
-      const timer = setTimeout(() => {
-        console.log("Auto-login attempted with admin/password");
-        loginMutation.mutate({ 
-          username: "admin", 
-          password: "password" 
-        });
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [user, loginMutation.isPending, loginMutation.isSuccess]);
-  
-  return null; // This component doesn't render anything
+  // Auto-login disabled for security - users must login manually
+  return null;
 }
 
 function App() {

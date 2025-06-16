@@ -141,6 +141,9 @@ The application supports multiple deployment configurations:
 
 Changelog:
 - June 13, 2025. Initial setup
+- June 16, 2025. Fixed multiple button functionalities:
+  - Training help buttons: "Learn More", "Watch Now", "Read Docs" now functional
+  - Email editor bullet point formatting now preserves line breaks correctly
 
 ## User Preferences
 
