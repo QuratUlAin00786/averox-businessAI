@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stripe Payment Test</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <div id="payment-element"></div>
+    <button id="submit-btn" disabled>Pay $59</button>
+    
+    <script>
+        const stripe = Stripe('pk_test_51OkJLGAQh4Rvl2xdrE2dxnJvfA7K1L6QcpJVOLQpCJNhA8gWZeJ1R3tJjAqJVQFhYqUOyZrqz8qE7F2vfJD3Mj8000X7gVxqZz');
+        
+        async function testPayment() {
+            try {
+                // Create payment intent
+                const response = await fetch('/api/create-payment-intent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: 59, planId: 2, planName: 'Professional' })
+                });
+                
+                const { clientSecret } = await response.json();
+                console.log('Client secret received:', clientSecret);
+                
+                // Create elements
+                const elements = stripe.elements({ clientSecret });
+                const paymentElement = elements.create('payment');
+                paymentElement.mount('#payment-element');
+                
+                // Enable submit button
+                document.getElementById('submit-btn').disabled = false;
+                
+                // Handle form submission
+                document.getElementById('submit-btn').onclick = async () => {
+                    console.log('Starting payment...');
+                    const { error, paymentIntent } = await stripe.confirmPayment({
+                        elements,
+                        confirmParams: {
+                            return_url: window.location.origin + '/dashboard'
+                        },
+                        redirect: 'if_required'
+                    });
+                    
+                    console.log('Payment result:', { error, paymentIntent });
+                    
+                    if (error) {
+                        console.error('Payment failed:', error);
+                    } else if (paymentIntent) {
+                        console.log('Payment status:', paymentIntent.status);
+                        if (paymentIntent.status === 'succeeded') {
+                            alert('Payment succeeded!');
+                        }
+                    }
+                };
+                
+            } catch (error) {
+                console.error('Setup error:', error);
+            }
+        }
+        
+        testPayment();
+    </script>
+</body>
+</html>

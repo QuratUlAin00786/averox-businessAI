@@ -119,6 +119,34 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
     
     try {
       console.log('Starting payment confirmation...');
+      console.log('Stripe instance:', stripe);
+      console.log('Elements instance:', elements);
+      
+      // Check if elements is properly initialized
+      if (!elements) {
+        console.error('Elements not initialized');
+        toast({
+          title: "Payment Error",
+          description: "Payment form not properly loaded. Please refresh and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // First submit the elements to validate payment details
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        console.error('Elements submit error:', submitError);
+        toast({
+          title: "Form Error",
+          description: submitError.message || "Please complete all payment details.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('Elements submitted successfully, confirming payment...');
       
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
@@ -128,7 +156,10 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
         redirect: 'if_required',
       });
 
-      console.log('Payment confirmation result:', { error, paymentIntent });
+      console.log('Payment confirmation result:', { 
+        error: error ? { message: error.message, type: error.type } : null, 
+        paymentIntent: paymentIntent ? { id: paymentIntent.id, status: paymentIntent.status } : null 
+      });
 
       if (error) {
         console.error('Payment failed:', error);
@@ -137,7 +168,11 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
           description: error.message || "Payment could not be processed.",
           variant: "destructive",
         });
-      } else if (paymentIntent) {
+        setIsLoading(false);
+        return;
+      } 
+      
+      if (paymentIntent) {
         console.log('Payment intent status:', paymentIntent.status);
         
         if (paymentIntent.status === 'succeeded') {
@@ -268,6 +303,18 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
               {/* Stripe Payment Form */}
               <div>
                 <h3 className="font-medium mb-3">Credit or Debit Card</h3>
+                
+                {/* Test Card Information */}
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="text-sm font-medium text-blue-900 mb-2">Test Card Information</h4>
+                  <div className="text-xs text-blue-700 space-y-1">
+                    <div><strong>Card Number:</strong> 4242 4242 4242 4242</div>
+                    <div><strong>Expiry:</strong> Any future date (e.g., 12/34)</div>
+                    <div><strong>CVC:</strong> Any 3 digits (e.g., 123)</div>
+                    <div><strong>ZIP:</strong> Any 5 digits (e.g., 12345)</div>
+                  </div>
+                </div>
+                
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <PaymentElement />
                   <Button 
