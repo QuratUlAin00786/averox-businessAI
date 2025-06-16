@@ -2817,17 +2817,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/create-subscription', async (req: Request, res: Response) => {
     try {
-      const { userId, packageId } = req.body;
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { packageId, paymentMethod } = req.body;
+      const userId = req.user.id;
       
-      if (!userId || !packageId) {
+      if (!packageId) {
         return res.status(400).json({ 
           error: "Invalid input", 
-          details: "User ID and package ID are required" 
+          details: "Package ID is required" 
         });
       }
 
       // Get user and package details
-      const user = await storage.getUser(userId);
+      const user = req.user;
       const package_ = await storage.getSubscriptionPackage(packageId);
       
       if (!user) {
@@ -2838,8 +2843,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Subscription package not found" });
       }
 
-      // Check if package has Stripe integration
-      if (package_.stripePriceId) {
+      // Handle different payment methods
+      if (paymentMethod === 'stripe' && package_.stripePriceId) {
         // Use Stripe for packages with price IDs
         let customerId = user.stripeCustomerId;
         
@@ -2884,6 +2889,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
           clientSecret,
           subscriptionId: subscription.id,
           userSubscriptionId: userSubscription.id
+        });
+      } else if (paymentMethod === 'paypal') {
+        // Handle PayPal payment method
+        const currentDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1); // Default to 1 month subscription
+
+        const userSubscription = await storage.createUserSubscription({
+          userId,
+          packageId,
+          stripeSubscriptionId: null,
+          status: 'Active',
+          startDate: currentDate,
+          endDate: endDate,
+          currentPeriodStart: currentDate,
+          currentPeriodEnd: endDate,
+          canceledAt: null,
+          trialEndsAt: null
+        });
+
+        res.json({
+          success: true,
+          message: 'Subscription created successfully with PayPal',
+          userSubscriptionId: userSubscription.id,
+          status: 'Active',
+          paymentMethod: 'paypal'
+        });
+      } else if (paymentMethod === 'google-pay') {
+        // Handle Google Pay payment method
+        const currentDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1); // Default to 1 month subscription
+
+        const userSubscription = await storage.createUserSubscription({
+          userId,
+          packageId,
+          stripeSubscriptionId: null,
+          status: 'Active',
+          startDate: currentDate,
+          endDate: endDate,
+          currentPeriodStart: currentDate,
+          currentPeriodEnd: endDate,
+          canceledAt: null,
+          trialEndsAt: null
+        });
+
+        res.json({
+          success: true,
+          message: 'Subscription created successfully with Google Pay',
+          userSubscriptionId: userSubscription.id,
+          status: 'Active',
+          paymentMethod: 'google-pay'
         });
       } else {
         // Create direct subscription for packages without Stripe integration

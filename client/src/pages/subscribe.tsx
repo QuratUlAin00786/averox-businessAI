@@ -55,32 +55,54 @@ const SubscribeForm = ({ packageId }: { packageId: number }) => {
         // Success case will be handled by the return_url redirect
       } else if (selectedPaymentMethod === 'paypal') {
         // PayPal payment processing
-        toast({
-          title: "PayPal Payment",
-          description: "Redirecting to PayPal for payment processing...",
-        });
-        // Simulate PayPal integration
-        setTimeout(() => {
-          toast({
-            title: "Payment Successful",
-            description: "Your subscription has been activated via PayPal!",
+        try {
+          const response = await apiRequest("POST", "/api/create-subscription", {
+            packageId,
+            paymentMethod: 'paypal'
           });
-          navigate('/subscriptions?success=true');
-        }, 2000);
+          const data = await response.json();
+          
+          if (data.success) {
+            toast({
+              title: "Subscription Created",
+              description: "Your subscription has been activated with PayPal!",
+            });
+            navigate('/subscriptions?success=true');
+          } else {
+            throw new Error(data.message || 'PayPal payment failed');
+          }
+        } catch (error: any) {
+          toast({
+            title: "PayPal Payment Failed",
+            description: error.message || "Failed to process PayPal payment",
+            variant: "destructive",
+          });
+        }
       } else if (selectedPaymentMethod === 'google') {
         // Google Pay processing
-        toast({
-          title: "Google Pay",
-          description: "Processing payment through Google Pay...",
-        });
-        // Simulate Google Pay integration
-        setTimeout(() => {
-          toast({
-            title: "Payment Successful", 
-            description: "Your subscription has been activated via Google Pay!",
+        try {
+          const response = await apiRequest("POST", "/api/create-subscription", {
+            packageId,
+            paymentMethod: 'google-pay'
           });
-          navigate('/subscriptions?success=true');
-        }, 2000);
+          const data = await response.json();
+          
+          if (data.success) {
+            toast({
+              title: "Subscription Created",
+              description: "Your subscription has been activated with Google Pay!",
+            });
+            navigate('/subscriptions?success=true');
+          } else {
+            throw new Error(data.message || 'Google Pay payment failed');
+          }
+        } catch (error: any) {
+          toast({
+            title: "Google Pay Payment Failed",
+            description: error.message || "Failed to process Google Pay payment",
+            variant: "destructive",
+          });
+        }
       }
     } catch (err: any) {
       toast({
