@@ -27,8 +27,12 @@ import {
   BarChart3,
   Cog,
   Smartphone,
-  LogIn
+  LogIn,
+  CreditCard,
+  DollarSign,
+  Settings
 } from "lucide-react";
+import { SiPaypal, SiGooglepay, SiStripe, SiVisa, SiMastercard, SiAmericanexpress } from "react-icons/si";
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -615,6 +619,249 @@ export default function LandingPage() {
                 </Button>
               </Card>
             ))}
+          </div>
+
+          {/* Payment Methods Section */}
+          <div className="mt-16 bg-white rounded-2xl p-8 shadow-lg border">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                <CreditCard className="inline-block mr-2 h-6 w-6" />
+                Secure Payment Options
+              </h3>
+              <p className="text-gray-600">Choose from multiple payment methods with enterprise-grade security</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+              {/* Credit/Debit Cards */}
+              <div className="text-center">
+                <div className="bg-blue-50 rounded-lg p-6 mb-4">
+                  <CreditCard className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                  <h4 className="font-bold text-lg mb-2">Credit & Debit Cards</h4>
+                  <div className="flex justify-center gap-3 mb-3">
+                    <SiVisa className="h-8 w-8 text-blue-600" />
+                    <SiMastercard className="h-8 w-8 text-red-500" />
+                    <SiAmericanexpress className="h-8 w-8 text-blue-700" />
+                  </div>
+                  <p className="text-sm text-gray-600">Secure payment processing powered by Stripe</p>
+                </div>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>256-bit SSL encryption</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>PCI DSS compliant</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Instant processing</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* PayPal */}
+              <div className="text-center">
+                <div className="bg-yellow-50 rounded-lg p-6 mb-4">
+                  <div className="bg-white rounded-lg p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <SiPaypal className="h-10 w-10 text-blue-600" />
+                  </div>
+                  <h4 className="font-bold text-lg mb-2">PayPal</h4>
+                  <p className="text-sm text-gray-600">Pay securely with your PayPal account</p>
+                </div>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Buyer protection</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>No card details needed</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Global acceptance</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Google Pay */}
+              <div className="text-center">
+                <div className="bg-green-50 rounded-lg p-6 mb-4">
+                  <div className="bg-white rounded-lg p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <SiGooglepay className="h-10 w-10 text-green-600" />
+                  </div>
+                  <h4 className="font-bold text-lg mb-2">Google Pay</h4>
+                  <p className="text-sm text-gray-600">Quick and secure mobile payments</p>
+                </div>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>One-tap checkout</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Biometric security</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Mobile optimized</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Security Features */}
+            <div className="bg-gray-50 rounded-lg p-6 mb-8">
+              <div className="text-center mb-4">
+                <Shield className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                <h4 className="font-bold text-lg">Enterprise Security</h4>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="text-center">
+                  <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
+                  <span>SSL Encrypted</span>
+                </div>
+                <div className="text-center">
+                  <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
+                  <span>PCI Compliant</span>
+                </div>
+                <div className="text-center">
+                  <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
+                  <span>Fraud Protection</span>
+                </div>
+                <div className="text-center">
+                  <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
+                  <span>24/7 Monitoring</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Subscription Management Settings */}
+          <div className="mt-12 bg-white rounded-2xl p-8 shadow-lg border">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                <Settings className="inline-block mr-2 h-6 w-6" />
+                Subscription Management
+              </h3>
+              <p className="text-gray-600">Complete control over your subscription with flexible options</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Billing Flexibility */}
+              <Card className="p-6 text-center border-2 hover:border-blue-200 transition-colors">
+                <div className="bg-blue-100 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-blue-600" />
+                </div>
+                <h4 className="font-bold mb-3">Flexible Billing</h4>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Monthly or annual billing</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Prorate plan changes</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Usage-based add-ons</span>
+                  </li>
+                </ul>
+              </Card>
+
+              {/* Easy Upgrades */}
+              <Card className="p-6 text-center border-2 hover:border-green-200 transition-colors">
+                <div className="bg-green-100 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-green-600" />
+                </div>
+                <h4 className="font-bold mb-3">Easy Upgrades</h4>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Instant plan upgrades</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Add users on-demand</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Feature unlocks</span>
+                  </li>
+                </ul>
+              </Card>
+
+              {/* Cancel Anytime */}
+              <Card className="p-6 text-center border-2 hover:border-purple-200 transition-colors">
+                <div className="bg-purple-100 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                  <Shield className="h-6 w-6 text-purple-600" />
+                </div>
+                <h4 className="font-bold mb-3">Cancel Anytime</h4>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>No cancellation fees</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Data export included</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>30-day grace period</span>
+                  </li>
+                </ul>
+              </Card>
+
+              {/* Support */}
+              <Card className="p-6 text-center border-2 hover:border-orange-200 transition-colors">
+                <div className="bg-orange-100 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                  <MessageSquare className="h-6 w-6 text-orange-600" />
+                </div>
+                <h4 className="font-bold mb-3">24/7 Support</h4>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Live chat support</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Billing assistance</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Account management</span>
+                  </li>
+                </ul>
+              </Card>
+            </div>
+
+            {/* Money-back Guarantee */}
+            <div className="mt-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 text-center">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Shield className="h-8 w-8 text-green-600" />
+                <h4 className="text-xl font-bold text-gray-900">30-Day Money-Back Guarantee</h4>
+              </div>
+              <p className="text-gray-600 mb-4">
+                Not satisfied? Get a full refund within 30 days of your subscription, no questions asked.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600">
+                <span className="flex items-center gap-1">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Full refund within 30 days
+                </span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  Keep your data exports
+                </span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  No hidden charges
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="text-center mt-12">
