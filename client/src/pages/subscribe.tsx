@@ -255,7 +255,21 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
                 </div>
                 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <PaymentElement />
+                  <div className="p-3 border border-gray-300 rounded-lg bg-white">
+                    <CardElement 
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: '#424770',
+                            '::placeholder': {
+                              color: '#aab7c4',
+                            },
+                          },
+                        },
+                      }}
+                    />
+                  </div>
                   <Button 
                     type="submit" 
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
@@ -395,13 +409,13 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
   if (showCheckout && clientSecret && selectedPlan) {
     return (
       <Elements 
-        stripe={stripePromise} 
-        options={{ clientSecret }}
+        stripe={stripePromise}
         key={clientSecret}
       >
         <CheckoutForm 
           plan={selectedPlan} 
           onBack={() => setShowCheckout(false)}
+          clientSecret={clientSecret}
         />
       </Elements>
     );
