@@ -79,54 +79,68 @@ export default function CreateCampaignPage() {
       
       // If there's selected text, replace it with bullet format
       if (!range.collapsed) {
-        const selectedText = range.toString();
+        // Get the selected content including HTML structure
+        const container = document.createElement('div');
+        container.appendChild(range.cloneContents());
         
-        // Split the selected text by line breaks to handle multiple lines
-        const lines = selectedText.split(/\r?\n/);
+        // Get plain text but preserve line structure
+        const selectedHTML = container.innerHTML;
+        const selectedText = container.textContent || container.innerText || '';
         
-        // Create bullet points for each line, preserving empty lines
-        const bulletLines = lines.map(line => {
-          if (line.trim() === '') {
-            return ''; // Keep empty lines as empty
+        // Split by actual line breaks or <br> tags
+        let lines = [];
+        if (selectedHTML.includes('<br>') || selectedHTML.includes('<div>')) {
+          // Handle HTML line breaks
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = selectedHTML;
+          const textNodes = tempDiv.childNodes;
+          
+          let currentLine = '';
+          for (let i = 0; i < textNodes.length; i++) {
+            const node = textNodes[i];
+            if (node.nodeType === Node.TEXT_NODE) {
+              currentLine += node.textContent;
+            } else if (node.nodeName === 'BR' || node.nodeName === 'DIV') {
+              lines.push(currentLine);
+              currentLine = '';
+              if (node.nodeName === 'DIV' && node.textContent) {
+                currentLine = node.textContent;
+              }
+            }
           }
-          return `• ${line.trim()}`;
-        });
+          if (currentLine) {
+            lines.push(currentLine);
+          }
+        } else {
+          // Handle plain text line breaks
+          lines = selectedText.split(/\r?\n/);
+        }
         
-        // Join with line breaks
-        const bulletText = bulletLines.join('\n');
+        // Create bullet points for each line
+        const bulletHTML = lines.map(line => {
+          const trimmedLine = line.trim();
+          if (trimmedLine === '') {
+            return '<br>';
+          }
+          return `• ${trimmedLine}`;
+        }).join('<br>');
         
+        // Replace the selected content
         range.deleteContents();
         
-        // Create a document fragment to preserve line breaks
-        const fragment = document.createDocumentFragment();
-        const bulletParts = bulletText.split('\n');
+        // Insert the new bullet content as HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = bulletHTML;
         
-        bulletParts.forEach((part, index) => {
-          if (index > 0) {
-            fragment.appendChild(document.createElement('br'));
-          }
-          if (part) {
-            fragment.appendChild(document.createTextNode(part));
-          }
-        });
-        
-        range.insertNode(fragment);
-        
-        // Position cursor at the end - find the last inserted node
-        const newRange = document.createRange();
-        const lastChild = fragment.lastChild || fragment;
-        if (lastChild && lastChild.parentNode) {
-          newRange.setStartAfter(lastChild);
-          newRange.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(newRange);
-        } else {
-          // Fallback: position at end of editor content
-          newRange.selectNodeContents(editor);
-          newRange.collapse(false);
-          selection.removeAllRanges();
-          selection.addRange(newRange);
+        // Insert each child node
+        while (tempDiv.firstChild) {
+          range.insertNode(tempDiv.firstChild);
         }
+        
+        // Position cursor at the end
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
       } else {
         // Just insert bullet at cursor position
         const bulletText = '• ';
