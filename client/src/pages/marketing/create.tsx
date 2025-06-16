@@ -80,15 +80,41 @@ export default function CreateCampaignPage() {
       // If there's selected text, replace it with bullet format
       if (!range.collapsed) {
         const selectedText = range.toString();
-        const bulletText = `• ${selectedText}`;
+        
+        // Split the selected text by line breaks to handle multiple lines
+        const lines = selectedText.split(/\r?\n/);
+        
+        // Create bullet points for each line, preserving empty lines
+        const bulletLines = lines.map(line => {
+          if (line.trim() === '') {
+            return ''; // Keep empty lines as empty
+          }
+          return `• ${line.trim()}`;
+        });
+        
+        // Join with line breaks
+        const bulletText = bulletLines.join('\n');
+        
         range.deleteContents();
         
-        const textNode = document.createTextNode(bulletText);
-        range.insertNode(textNode);
+        // Create a document fragment to preserve line breaks
+        const fragment = document.createDocumentFragment();
+        const bulletParts = bulletText.split('\n');
+        
+        bulletParts.forEach((part, index) => {
+          if (index > 0) {
+            fragment.appendChild(document.createElement('br'));
+          }
+          if (part) {
+            fragment.appendChild(document.createTextNode(part));
+          }
+        });
+        
+        range.insertNode(fragment);
         
         // Position cursor at the end
         const newRange = document.createRange();
-        newRange.setStartAfter(textNode);
+        newRange.setStartAfter(fragment);
         newRange.collapse(true);
         selection.removeAllRanges();
         selection.addRange(newRange);
