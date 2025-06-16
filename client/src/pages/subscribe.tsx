@@ -439,13 +439,40 @@ export default function Subscribe() {
             </div>
           </div>
 
-          {/* Payment Method Section for Stripe Packages */}
-          {packageDetails.stripePriceId && clientSecret && (
+          {/* Payment Method Section */}
+          {packageDetails.stripePriceId && (
             <div className="border rounded-lg p-4 bg-gray-50">
-              <h4 className="font-medium mb-3">Payment Method</h4>
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <SubscribeForm packageId={packageId} />
-              </Elements>
+              <h4 className="font-medium mb-3">Select Payment Method</h4>
+              <div className="space-y-3">
+                <div className="grid gap-3">
+                  <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
+                    <input type="radio" name="paymentMethod" value="stripe" defaultChecked className="text-blue-600" />
+                    <CreditCard className="h-5 w-5" />
+                    <div>
+                      <div className="font-medium text-sm">Credit/Debit Card</div>
+                      <div className="text-xs text-gray-500">Pay securely with your credit or debit card</div>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
+                    <input type="radio" name="paymentMethod" value="paypal" className="text-blue-600" />
+                    <SiPaypal className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <div className="font-medium text-sm">PayPal</div>
+                      <div className="text-xs text-gray-500">Pay with your PayPal account</div>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
+                    <input type="radio" name="paymentMethod" value="google" className="text-blue-600" />
+                    <SiGoogle className="h-5 w-5 text-blue-500" />
+                    <div>
+                      <div className="font-medium text-sm">Google Pay</div>
+                      <div className="text-xs text-gray-500">Pay quickly with Google Pay</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
             </div>
           )}
 
