@@ -275,10 +275,7 @@ export default function Subscribe() {
                   <div className="text-blue-700">
                     {packageDetails.stripePriceId ? 
                       "Payment will be processed securely through Stripe. You'll be redirected to complete payment after confirmation." :
-                      <div>
-                        <div className="font-medium mb-1">Direct Subscription - No Credit Card Required</div>
-                        <div>This is a direct subscription that will be activated immediately upon confirmation. No payment processing or credit card information is needed for this plan.</div>
-                      </div>
+                      "Direct Subscription - No Credit Card Required. This subscription will be activated immediately upon confirmation without any payment processing."
                     }
                   </div>
                 </div>
