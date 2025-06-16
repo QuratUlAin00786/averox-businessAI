@@ -162,28 +162,52 @@ export default function Subscribe() {
     setIsProcessing(true);
     
     try {
-      const response = await apiRequest("POST", "/api/create-subscription", { 
-        packageId: packageId, 
-        userId: user.id 
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to create subscription");
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        toast({
-          title: "Subscription Activated",
-          description: "Your subscription has been created successfully!",
+      // Check if this package requires Stripe payment
+      if (packageDetails.stripePriceId) {
+        // Create Stripe subscription and get client secret
+        const response = await apiRequest("POST", "/api/create-subscription", { 
+          packageId: packageId, 
+          userId: user.id 
         });
-        navigate('/subscriptions?success=true');
-      } else if (data.clientSecret) {
-        // Stripe payment required - show Stripe elements
-        setClientSecret(data.clientSecret);
+        
+        if (!response.ok) {
+          throw new Error("Failed to create subscription");
+        }
+        
+        const data = await response.json();
+        
+        if (data.clientSecret) {
+          // Set client secret to show payment form
+          setClientSecret(data.clientSecret);
+          toast({
+            title: "Payment Required",
+            description: "Please complete your payment below to activate your subscription.",
+          });
+        } else {
+          throw new Error(data.message || "Failed to create subscription");
+        }
       } else {
-        throw new Error(data.message || "Failed to create subscription");
+        // Direct subscription without payment processing
+        const response = await apiRequest("POST", "/api/create-subscription", { 
+          packageId: packageId, 
+          userId: user.id 
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to create subscription");
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          toast({
+            title: "Subscription Activated",
+            description: "Your subscription has been created successfully!",
+          });
+          navigate('/subscriptions?success=true');
+        } else {
+          throw new Error(data.message || "Failed to create subscription");
+        }
       }
     } catch (error: any) {
       toast({
@@ -274,7 +298,7 @@ export default function Subscribe() {
                   <div className="font-medium text-blue-800 mb-1">Payment Information</div>
                   <div className="text-blue-700">
                     {packageDetails.stripePriceId ? 
-                      "Payment will be processed securely through Stripe. You'll be redirected to complete payment after confirmation." :
+                      "Payment will be processed securely through Stripe. Enter your payment details below to complete the subscription." :
                       "Direct Subscription - No Credit Card Required. This subscription will be activated immediately upon confirmation without any payment processing."
                     }
                   </div>
@@ -282,6 +306,16 @@ export default function Subscribe() {
               </div>
             </div>
           </div>
+
+          {/* Payment Method Section for Stripe Packages */}
+          {packageDetails.stripePriceId && clientSecret && (
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <h4 className="font-medium mb-3">Payment Method</h4>
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <SubscribeForm packageId={packageId} />
+              </Elements>
+            </div>
+          )}
 
           {packageDetails.features && (
             <div>
@@ -305,20 +339,40 @@ export default function Subscribe() {
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleConfirmSubscription}
-              disabled={isProcessing}
-              className="flex-1"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Creating...
-                </>
-              ) : (
-                'Confirm Subscription'
-              )}
-            </Button>
+            {/* Only show confirm button for non-Stripe packages */}
+            {!packageDetails.stripePriceId && (
+              <Button 
+                onClick={handleConfirmSubscription}
+                disabled={isProcessing}
+                className="flex-1"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Creating...
+                  </>
+                ) : (
+                  'Confirm Subscription'
+                )}
+              </Button>
+            )}
+            {/* For Stripe packages, show "Setup Payment" button if no client secret yet */}
+            {packageDetails.stripePriceId && !clientSecret && (
+              <Button 
+                onClick={handleConfirmSubscription}
+                disabled={isProcessing}
+                className="flex-1"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Setting up...
+                  </>
+                ) : (
+                  'Setup Payment'
+                )}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
