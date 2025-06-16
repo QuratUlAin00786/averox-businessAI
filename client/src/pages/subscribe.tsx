@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { SubscriptionPackage } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
+import PayPalButton from '@/components/PayPalButton';
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
@@ -236,16 +237,29 @@ const SubscribeForm = ({ packageId }: { packageId: number }) => {
         </div>
       )}
 
-      {/* PayPal Information */}
+      {/* PayPal Payment */}
       {selectedPaymentMethod === 'paypal' && (
-        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-center space-x-2 mb-2">
-            <SiPaypal className="h-5 w-5 text-blue-600" />
-            <span className="font-medium text-blue-800">PayPal Payment</span>
-          </div>
-          <p className="text-sm text-blue-700">
-            You will be redirected to PayPal to complete your payment securely.
-          </p>
+        <div className="space-y-3">
+          <h4 className="font-medium text-sm">PayPal Payment</h4>
+          <PayPalButton
+            amount="99.00"
+            currency="USD"
+            intent="CAPTURE"
+            onSuccess={() => {
+              toast({
+                title: "Payment Successful",
+                description: "Your subscription has been activated!",
+              });
+              navigate('/subscriptions?success=true');
+            }}
+            onError={(error) => {
+              toast({
+                title: "Payment Failed",
+                description: error,
+                variant: "destructive",
+              });
+            }}
+          />
         </div>
       )}
 
@@ -272,15 +286,24 @@ const SubscribeForm = ({ packageId }: { packageId: number }) => {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button 
-          type="submit" 
-          disabled={(!stripe && selectedPaymentMethod === 'stripe') || isSubmitting}
-        >
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {selectedPaymentMethod === 'stripe' && 'Pay with Card'}
-          {selectedPaymentMethod === 'paypal' && 'Pay with PayPal'}
-          {selectedPaymentMethod === 'google' && 'Pay with Google'}
-        </Button>
+        {selectedPaymentMethod === 'stripe' && (
+          <Button 
+            type="submit" 
+            disabled={!stripe || !elements || isSubmitting}
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Pay with Card
+          </Button>
+        )}
+        {selectedPaymentMethod === 'google' && (
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Pay with Google
+          </Button>
+        )}
       </div>
     </form>
   );
