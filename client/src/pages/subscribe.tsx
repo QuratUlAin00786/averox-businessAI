@@ -288,6 +288,11 @@ const SubscribeForm = ({ packageId }: { packageId: number }) => {
 
 export default function Subscribe() {
   const [clientSecret, setClientSecret] = useState("");
+  
+  // Debug state changes
+  useEffect(() => {
+    console.log('Client Secret state changed:', clientSecret);
+  }, [clientSecret]);
   const [packageId, setPackageId] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [, navigate] = useLocation();
