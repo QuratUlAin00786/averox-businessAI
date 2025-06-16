@@ -505,40 +505,21 @@ export default function Subscribe() {
             >
               Cancel
             </Button>
-            {/* Only show confirm button for non-Stripe packages */}
-            {!packageDetails.stripePriceId && (
-              <Button 
-                onClick={handleConfirmSubscription}
-                disabled={isProcessing}
-                className="flex-1"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Creating...
-                  </>
-                ) : (
-                  'Confirm Subscription'
-                )}
-              </Button>
-            )}
-            {/* For Stripe packages, show "Setup Payment" button if no client secret yet */}
-            {packageDetails.stripePriceId && !clientSecret && (
-              <Button 
-                onClick={handleConfirmSubscription}
-                disabled={isProcessing}
-                className="flex-1"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Setting up...
-                  </>
-                ) : (
-                  'Setup Payment'
-                )}
-              </Button>
-            )}
+            {/* Always show subscription button - let backend handle payment method logic */}
+            <Button 
+              onClick={handleConfirmSubscription}
+              disabled={isProcessing}
+              className="flex-1"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Processing...
+                </>
+              ) : (
+                'Subscribe Now'
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
