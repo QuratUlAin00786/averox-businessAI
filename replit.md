@@ -154,6 +154,9 @@ Changelog:
   - Enhanced payment system with user-triggered initialization instead of automatic loading
   - Fixed Stripe Elements lifecycle management to prevent prop change warnings
   - Improved error handling with detailed payment failure messages
+  - Restored Averox logo with Business AI description to landing page hero section
+  - Partially fixed payment form by switching from PaymentElement to CardElement approach
+  - Payment backend confirmed working (payment intent creation successful), frontend processing partially resolved
 
 ## User Preferences
 
