@@ -86,6 +86,10 @@ function Router() {
       
       <Route path="/home" component={LandingPage} />
       
+      <Route path="/subscribe/:planId">
+        {(params: { planId: string }) => <Subscribe planId={parseInt(params.planId)} />}
+      </Route>
+      
       <ProtectedRoute path="/" component={() => (
         <Layout>
           <Dashboard />

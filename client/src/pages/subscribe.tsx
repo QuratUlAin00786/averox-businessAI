@@ -1,654 +1,394 @@
-import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Check, CreditCard } from 'lucide-react';
-import { SiGoogle, SiPaypal } from 'react-icons/si';
-import { apiRequest } from '@/lib/queryClient';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
-import { SubscriptionPackage } from '@shared/schema';
-import { useAuth } from '@/hooks/use-auth';
+import { apiRequest } from '@/lib/queryClient';
+import { Check, CreditCard, Shield, ArrowLeft, Loader2 } from 'lucide-react';
 import PayPalButton from '@/components/PayPalButton';
 
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
 }
+
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
-const StripePaymentForm = () => {
+interface SubscribeProps {
+  planId: number;
+}
+
+interface Plan {
+  id: number;
+  name: string;
+  price: string;
+  interval: string;
+  description: string;
+  features: string[];
+  highlighted?: boolean;
+}
+
+const plans: Plan[] = [
+  {
+    id: 1,
+    name: "Starter",
+    price: "29",
+    interval: "month",
+    description: "Perfect for small teams getting started",
+    features: [
+      "Up to 5 users",
+      "500 contacts",
+      "Basic CRM features",
+      "Email integration",
+      "Mobile app access",
+      "Basic reporting",
+      "24/7 chat support"
+    ]
+  },
+  {
+    id: 2,
+    name: "Professional",
+    price: "59",
+    interval: "month",
+    description: "Advanced features for growing businesses",
+    highlighted: true,
+    features: [
+      "Up to 25 users",
+      "5,000 contacts",
+      "Advanced AI features",
+      "Marketing automation",
+      "Sales forecasting",
+      "Custom workflows",
+      "API access",
+      "Phone support"
+    ]
+  },
+  {
+    id: 3,
+    name: "Enterprise",
+    price: "99",
+    interval: "month",
+    description: "Complete solution with manufacturing",
+    features: [
+      "Unlimited users",
+      "Unlimited contacts",
+      "Full Manufacturing Suite",
+      "Advanced AI & Analytics",
+      "White-label options",
+      "Custom integrations",
+      "Dedicated account manager",
+      "SLA guarantee"
+    ]
+  },
+  {
+    id: 4,
+    name: "Ultimate",
+    price: "199",
+    interval: "month",
+    description: "Ultimate Business AI with everything",
+    features: [
+      "Everything in Enterprise",
+      "Multi-company management",
+      "Advanced compliance tools",
+      "Custom AI training",
+      "On-premise deployment",
+      "Implementation specialist",
+      "Priority feature requests"
+    ]
+  }
+];
+
+const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [location, navigate] = useLocation();
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Check if Stripe and Elements are ready
-  useEffect(() => {
-    if (stripe && elements) {
-      setIsLoading(false);
-      console.log('Stripe Elements are ready');
-    }
-  }, [stripe, elements]);
+  const [, setLocation] = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('=== Stripe Payment Form Submit ===');
-    console.log('Stripe available:', !!stripe);
-    console.log('Elements available:', !!elements);
-    
-    if (!stripe || !elements) {
-      console.error('Stripe or Elements not ready');
-      toast({
-        title: "Payment Error",
-        description: "Payment form is not ready. Please refresh and try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
+    if (!stripe || !elements) return;
 
+    setIsLoading(true);
     try {
-      console.log('Confirming payment with Stripe...');
-      const { error, paymentIntent } = await stripe.confirmPayment({
+      const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/subscriptions?success=true`,
+          return_url: `${window.location.origin}/dashboard?subscription=success`,
         },
-        redirect: 'if_required',
       });
 
-      console.log('Stripe confirmation result:', { error, paymentIntent });
-
       if (error) {
-        console.error('Stripe payment error:', error);
         toast({
           title: "Payment Failed",
           description: error.message,
           variant: "destructive",
         });
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        console.log('Payment succeeded:', paymentIntent);
-        
-        // Confirm payment on backend
-        try {
-          console.log('Confirming payment on backend with ID:', paymentIntent.id);
-          const confirmResponse = await apiRequest("POST", "/api/confirm-payment", {
-            paymentIntentId: paymentIntent.id
-          });
-          
-          console.log('Backend confirmation response status:', confirmResponse.status);
-          
-          if (confirmResponse.ok) {
-            toast({
-              title: "Payment Successful",
-              description: "Your subscription has been activated!",
-            });
-            navigate('/subscriptions?success=true');
-          } else {
-            const errorData = await confirmResponse.json();
-            console.error('Backend confirmation error:', errorData);
-            throw new Error(errorData.error || 'Failed to confirm payment');
-          }
-        } catch (confirmError: any) {
-          console.error('Payment confirmation error:', confirmError);
-          toast({
-            title: "Payment Confirmation Error",
-            description: confirmError.message || "Payment succeeded but subscription activation failed. Please contact support.",
-            variant: "destructive",
-          });
-        }
       }
-    } catch (err: any) {
-      console.error('Payment process error:', err);
+    } catch (error) {
       toast({
         title: "Payment Error",
-        description: err.message || "An unexpected error occurred",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-16 bg-gray-100 rounded animate-pulse"></div>
-        <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="min-h-[60px]">
-        <PaymentElement 
-          options={{
-            layout: 'tabs',
-            business: {
-              name: 'Averox Business AI'
-            }
-          }}
-        />
-      </div>
-      <Button 
-        type="submit" 
-        disabled={!stripe || !elements || isSubmitting} 
-        className="w-full"
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            Processing Payment...
-          </>
-        ) : (
-          'Complete Payment'
-        )}
-      </Button>
-    </form>
-  );
-};
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <Button 
+            variant="ghost" 
+            onClick={onBack}
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Plan Selection
+          </Button>
+          <h1 className="text-3xl font-bold text-gray-900">Complete Your Purchase</h1>
+          <p className="text-gray-600 mt-2">Secure checkout powered by Stripe and PayPal</p>
+        </div>
 
-const SubscribeForm = ({ packageId }: { packageId: number }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'stripe' | 'paypal' | 'google'>('stripe');
-  const [location, navigate] = useLocation();
-
-  const paymentMethods = [
-    {
-      id: 'stripe',
-      name: 'Credit/Debit Card',
-      icon: <CreditCard className="h-5 w-5" />,
-      description: 'Pay securely with your credit or debit card'
-    },
-    {
-      id: 'paypal',
-      name: 'PayPal',
-      icon: <SiPaypal className="h-5 w-5 text-blue-600" />,
-      description: 'Pay with your PayPal account'
-    },
-    {
-      id: 'google',
-      name: 'Google Pay',
-      icon: <SiGoogle className="h-5 w-5 text-blue-500" />,
-      description: 'Pay quickly with Google Pay'
-    }
-  ];
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Payment Method Selection */}
-      <div className="space-y-3">
-        <h4 className="font-medium text-sm">Select Payment Method</h4>
-        <div className="grid gap-3">
-          {paymentMethods.map((method) => (
-            <label
-              key={method.id}
-              className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all ${
-                selectedPaymentMethod === method.id
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <input
-                type="radio"
-                name="paymentMethod"
-                value={method.id}
-                checked={selectedPaymentMethod === method.id}
-                onChange={(e) => setSelectedPaymentMethod(e.target.value as any)}
-                className="sr-only"
-              />
-              <div className="flex items-center space-x-3 flex-1">
-                {method.icon}
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Plan Summary */}
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-start">
                 <div>
-                  <div className="font-medium text-sm">{method.name}</div>
-                  <div className="text-xs text-gray-500">{method.description}</div>
+                  <h3 className="font-medium text-lg">{plan.name} Plan</h3>
+                  <p className="text-gray-600 text-sm">{plan.description}</p>
                 </div>
-              </div>
-              <div className={`w-4 h-4 rounded-full border-2 ${
-                selectedPaymentMethod === method.id
-                  ? 'border-blue-500 bg-blue-500'
-                  : 'border-gray-300'
-              }`}>
-                {selectedPaymentMethod === method.id && (
-                  <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
+                {plan.highlighted && (
+                  <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                    Most Popular
+                  </Badge>
                 )}
               </div>
-            </label>
-          ))}
-        </div>
-      </div>
 
-      {/* Stripe Payment Element */}
-      {selectedPaymentMethod === 'stripe' && (
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm">Card Details</h4>
-          <PaymentElement />
-        </div>
-      )}
+              <Separator />
 
-      {/* PayPal Payment */}
-      {selectedPaymentMethod === 'paypal' && (
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm">PayPal Payment</h4>
-          <PayPalButton
-            amount="99.00"
-            currency="USD"
-            intent="CAPTURE"
-            onSuccess={() => {
-              toast({
-                title: "Payment Successful",
-                description: "Your subscription has been activated!",
-              });
-              navigate('/subscriptions?success=true');
-            }}
-            onError={(error) => {
-              toast({
-                title: "Payment Failed",
-                description: error,
-                variant: "destructive",
-              });
-            }}
-          />
-        </div>
-      )}
+              <div className="space-y-2">
+                <h4 className="font-medium text-gray-900">Included Features:</h4>
+                <ul className="space-y-1">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-center text-sm text-gray-600">
+                      <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-      {/* Google Pay Information */}
-      {selectedPaymentMethod === 'google' && (
-        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-          <div className="flex items-center space-x-2 mb-2">
-            <SiGoogle className="h-5 w-5 text-green-600" />
-            <span className="font-medium text-green-800">Google Pay</span>
+              <Separator />
+
+              <div className="flex justify-between items-center text-lg font-semibold">
+                <span>Total</span>
+                <span>${plan.price}/{plan.interval}</span>
+              </div>
+
+              <div className="text-xs text-gray-500">
+                <Shield className="inline h-3 w-3 mr-1" />
+                Secure payment • Cancel anytime • 30-day money-back guarantee
+              </div>
+            </div>
+          </Card>
+
+          {/* Payment Methods */}
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">
+              <CreditCard className="inline mr-2 h-5 w-5" />
+              Payment Method
+            </h2>
+
+            <div className="space-y-6">
+              {/* Stripe Payment Form */}
+              <div>
+                <h3 className="font-medium mb-3">Credit or Debit Card</h3>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <PaymentElement />
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    disabled={!stripe || isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      `Pay $${plan.price}/${plan.interval}`
+                    )}
+                  </Button>
+                </form>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-gray-500">Or pay with</span>
+                </div>
+              </div>
+
+              {/* PayPal Payment */}
+              <div>
+                <h3 className="font-medium mb-3">PayPal</h3>
+                <PayPalButton
+                  amount={plan.price}
+                  currency="USD"
+                  intent="subscription"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 text-xs text-gray-500 space-y-1">
+              <p>• Your subscription will automatically renew each {plan.interval}</p>
+              <p>• You can cancel or change your plan anytime from your account settings</p>
+              <p>• All payments are secured with 256-bit SSL encryption</p>
+            </div>
+          </Card>
+        </div>
+
+        {/* Security Badges */}
+        <div className="mt-8 text-center">
+          <div className="flex justify-center items-center space-x-6 text-gray-400">
+            <div className="flex items-center">
+              <Shield className="h-5 w-5 mr-1" />
+              <span className="text-xs">SSL Secured</span>
+            </div>
+            <div className="flex items-center">
+              <CreditCard className="h-5 w-5 mr-1" />
+              <span className="text-xs">PCI Compliant</span>
+            </div>
+            <div className="text-xs">30-Day Money Back Guarantee</div>
           </div>
-          <p className="text-sm text-green-700">
-            Pay quickly and securely using your Google Pay account.
-          </p>
         </div>
-      )}
-
-      <div className="flex justify-between">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => navigate('/subscriptions')}
-          disabled={isSubmitting}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        {selectedPaymentMethod === 'stripe' && (
-          <Button 
-            type="submit" 
-            disabled={!stripe || !elements || isSubmitting}
-          >
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Pay with Card
-          </Button>
-        )}
-        {selectedPaymentMethod === 'google' && (
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-          >
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Pay with Google
-          </Button>
-        )}
       </div>
-    </form>
+    </div>
   );
 };
 
-export default function Subscribe() {
+export default function Subscribe({ planId }: SubscribeProps) {
   const [clientSecret, setClientSecret] = useState("");
-  
-  // Debug state changes
-  useEffect(() => {
-    console.log('Client Secret state changed:', clientSecret);
-  }, [clientSecret]);
-  const [packageId, setPackageId] = useState<number | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [, navigate] = useLocation();
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const params = new URLSearchParams(window.location.search);
-  const packageIdParam = params.get('packageId');
-
-  // Fetch package details
-  const { data: packageDetails, isLoading: packageLoading } = useQuery({
-    queryKey: ['/api/subscription-packages', packageIdParam],
-    queryFn: async () => {
-      if (!packageIdParam) return null;
-      
-      const response = await fetch(`/api/subscription-packages/${packageIdParam}`);
-      if (!response.ok) {
-        throw new Error('Package not found');
-      }
-      return response.json();
-    },
-    enabled: !!packageIdParam,
-  });
 
   useEffect(() => {
-    if (packageIdParam) {
-      const pkgId = parseInt(packageIdParam, 10);
-      
-      if (isNaN(pkgId)) {
-        toast({
-          title: "Invalid Package",
-          description: "The selected package is invalid",
-          variant: "destructive",
-        });
-        navigate('/subscriptions');
-        return;
-      }
-      
-      setPackageId(pkgId);
-      
-      // Wait for user to be loaded before creating subscription
-      if (!user?.id) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to subscribe to a package",
-          variant: "destructive",
-        });
-        navigate('/auth');
-        return;
-      }
-      
-      // Don't auto-create subscription, just load package details for confirmation
-      // Package details will be fetched via the query below
-    } else {
-      toast({
-        title: "No Package Selected",
-        description: "Please select a subscription package first",
-      });
-      navigate('/subscriptions');
-    }
-  }, [packageIdParam, toast, navigate]);
-
-  if (packageLoading || !packageDetails) {
-    return (
-      <div className="container max-w-xl py-12">
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </div>
-    );
-  }
-
-  const handleConfirmSubscription = async () => {
-    console.log('=== handleConfirmSubscription called ===');
-    console.log('User ID:', user?.id);
-    console.log('Package ID:', packageId);
-    console.log('Package Details:', packageDetails);
-    
-    if (!user?.id || !packageId) {
-      console.error('Missing user ID or package ID', { userId: user?.id, packageId });
-      toast({
-        title: "Error",
-        description: "Missing user or package information. Please refresh and try again.",
-        variant: "destructive",
-      });
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) {
+      setLocation('/landing');
       return;
     }
-    
-    setIsProcessing(true);
-    
+    setSelectedPlan(plan);
+  }, [planId, setLocation]);
+
+  const initializePayment = async (plan: Plan) => {
     try {
-      // Get selected payment method from radio buttons
-      const selectedRadio = document.querySelector('input[name="paymentMethod"]:checked') as HTMLInputElement;
-      const selectedPaymentMethod = selectedRadio?.value || 'stripe';
-      
-      console.log('Selected payment method:', selectedPaymentMethod);
-      console.log('Creating subscription with data:', { packageId, paymentMethod: selectedPaymentMethod });
-      
-      // Create subscription with selected payment method
-      const response = await apiRequest("POST", "/api/create-subscription", { 
-        packageId: packageId,
-        paymentMethod: selectedPaymentMethod
+      const response = await apiRequest("POST", "/api/create-payment-intent", {
+        amount: parseFloat(plan.price),
+        planId: plan.id,
+        planName: plan.name
       });
-      
-      console.log('API Response status:', response.status);
-      console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error response:', errorData);
-        throw new Error(errorData.error || "Failed to create subscription");
-      }
-      
       const data = await response.json();
-      console.log('API Response data:', data);
-      console.log('Client secret received:', data.clientSecret);
-      console.log('Setting clientSecret state...');
       
-      if (selectedPaymentMethod === 'stripe' && data.clientSecret) {
-        // Set client secret to show payment form for Stripe
-        console.log('Setting client secret for Stripe payment:', data.clientSecret);
+      if (data.clientSecret) {
         setClientSecret(data.clientSecret);
-        console.log('Client secret state updated');
-        toast({
-          title: "Payment Setup Complete",
-          description: "Please complete your payment below to activate your subscription.",
-        });
-      } else if (data.success) {
-        // Direct subscription or PayPal/Google Pay success
-        toast({
-          title: "Subscription Activated",
-          description: data.message || "Your subscription has been created successfully!",
-        });
-        navigate('/subscriptions?success=true');
-      } else if (data.clientSecret) {
-        // This handles the case where clientSecret is returned but selectedPaymentMethod might not be 'stripe'
-        console.log('Received client secret, setting up payment form:', data.clientSecret);
-        setClientSecret(data.clientSecret);
-        toast({
-          title: "Payment Setup Complete",
-          description: "Please complete your payment below to activate your subscription.",
-        });
+        setShowCheckout(true);
       } else {
-        console.error('Unexpected response format:', data);
-        throw new Error(data.message || "Failed to create subscription");
+        throw new Error('Failed to initialize payment');
       }
-    } catch (error: any) {
-      console.error('Subscription error:', error);
+    } catch (error) {
       toast({
-        title: "Error",
-        description: error.message || "Could not create subscription",
+        title: "Payment Initialization Failed",
+        description: "Unable to set up payment. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
-  // Show payment method selection first, then payment form if needed
-  if (clientSecret && packageDetails) {
-    // Show Stripe payment form when client secret is available
+  if (!selectedPlan) {
+    return <div>Loading...</div>;
+  }
+
+  if (showCheckout && clientSecret) {
     return (
-      <div className="container max-w-xl py-12">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-              <span>Complete Your Payment</span>
-              <div className="text-sm font-normal bg-primary/10 text-primary px-3 py-1 rounded-full">
-                ${packageDetails.price}/{packageDetails.interval}
-              </div>
-            </CardTitle>
-            <CardDescription>
-              Enter your card details below to complete your subscription to {packageDetails.name}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-6 space-y-2">
-              <h3 className="font-medium">{packageDetails.name}</h3>
-              <p className="text-sm text-muted-foreground">{packageDetails.description}</p>
-            </div>
-            
-            {stripePromise && (
-              <Elements 
-                stripe={stripePromise} 
-                options={{ 
-                  clientSecret,
-                  appearance: {
-                    theme: 'stripe',
-                  }
-                }}
-              >
-                <StripePaymentForm />
-              </Elements>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <Elements stripe={stripePromise} options={{ clientSecret }}>
+        <CheckoutForm 
+          plan={selectedPlan} 
+          onBack={() => setShowCheckout(false)}
+        />
+      </Elements>
     );
   }
 
-  // Show subscription confirmation
   return (
-    <div className="container max-w-xl py-12">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            <span>Confirm Your Subscription</span>
-            <div className="text-sm font-normal bg-primary/10 text-primary px-3 py-1 rounded-full">
-              ${packageDetails.price}/{packageDetails.interval}
-            </div>
-          </CardTitle>
-          <CardDescription>
-            Review your subscription details and confirm to activate your plan.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <h3 className="font-semibold text-lg mb-2">{packageDetails.name}</h3>
-            <p className="text-muted-foreground mb-4">{packageDetails.description}</p>
-            
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium">Users:</span>
-                <span className="ml-2">{packageDetails.maxUsers} users</span>
-              </div>
-              <div>
-                <span className="font-medium">Contacts:</span>
-                <span className="ml-2">{packageDetails.maxContacts.toLocaleString()} contacts</span>
-              </div>
-              <div>
-                <span className="font-medium">Storage:</span>
-                <span className="ml-2">{packageDetails.maxStorage} GB</span>
-              </div>
-              <div>
-                <span className="font-medium">Billing:</span>
-                <span className="ml-2">Monthly</span>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="mb-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => setLocation('/landing')}
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Plans
+          </Button>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            You've Selected the {selectedPlan.name} Plan
+          </h1>
+          <p className="text-gray-600">
+            Perfect choice! Let's get you set up with your new subscription.
+          </p>
+        </div>
 
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-start gap-2">
-                <div className="text-blue-600 mt-1">
-                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="text-sm">
-                  <div className="font-medium text-blue-800 mb-1">Payment Information</div>
-                  <div className="text-blue-700">
-                    {packageDetails.stripePriceId ? 
-                      "Payment will be processed securely through Stripe. Enter your payment details below to complete the subscription." :
-                      "Direct Subscription - No Credit Card Required. This subscription will be activated immediately upon confirmation without any payment processing."
-                    }
-                  </div>
-                </div>
-              </div>
+        <Card className="p-8">
+          <div className="text-center mb-6">
+            <div className="text-4xl font-bold text-gray-900 mb-2">
+              ${selectedPlan.price}
+              <span className="text-lg font-normal text-gray-600">/{selectedPlan.interval}</span>
             </div>
+            <p className="text-gray-600">{selectedPlan.description}</p>
+            {selectedPlan.highlighted && (
+              <Badge className="mt-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                Most Popular Choice
+              </Badge>
+            )}
           </div>
 
-          {/* Payment Method Section - Always show for all packages */}
-          <div className="border rounded-lg p-4 bg-gray-50">
-            <h4 className="font-medium mb-3">Select Payment Method</h4>
-            <div className="space-y-3">
-              <div className="grid gap-3">
-                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
-                  <input type="radio" name="paymentMethod" value="stripe" defaultChecked className="text-blue-600" />
-                  <CreditCard className="h-5 w-5" />
-                  <div>
-                    <div className="font-medium text-sm">Credit/Debit Card</div>
-                    <div className="text-xs text-gray-500">Pay securely with your credit or debit card</div>
-                  </div>
-                </label>
-                
-                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
-                  <input type="radio" name="paymentMethod" value="paypal" className="text-blue-600" />
-                  <SiPaypal className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <div className="font-medium text-sm">PayPal</div>
-                    <div className="text-xs text-gray-500">Pay with your PayPal account</div>
-                  </div>
-                </label>
-                
-                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer bg-white hover:border-blue-300">
-                  <input type="radio" name="paymentMethod" value="google" className="text-blue-600" />
-                  <SiGoogle className="h-5 w-5 text-blue-500" />
-                  <div>
-                    <div className="font-medium text-sm">Google Pay</div>
-                    <div className="text-xs text-gray-500">Pay quickly with Google Pay</div>
-                  </div>
-                </label>
+          <div className="space-y-3 mb-8">
+            {selectedPlan.features.map((feature, index) => (
+              <div key={index} className="flex items-center text-gray-600">
+                <Check className="h-4 w-4 text-green-500 mr-3 flex-shrink-0" />
+                {feature}
               </div>
-            </div>
+            ))}
           </div>
 
-          {packageDetails.features && (
-            <div>
-              <h4 className="font-medium mb-3">Features Included:</h4>
-              <ul className="space-y-2">
-                {(Array.isArray(packageDetails.features) ? packageDetails.features : JSON.parse(packageDetails.features)).map((feature: string, index: number) => (
-                  <li key={index} className="flex items-center text-sm">
-                    <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <Button
+            onClick={() => initializePayment(selectedPlan)}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 text-lg"
+          >
+            Continue to Payment
+          </Button>
 
-          <div className="flex gap-3 pt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/subscriptions')}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            {/* Always show subscription button - let backend handle payment method logic */}
-            <Button 
-              onClick={handleConfirmSubscription}
-              disabled={isProcessing}
-              className="flex-1"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Processing...
-                </>
-              ) : (
-                'Subscribe Now'
-              )}
-            </Button>
+          <div className="mt-4 text-xs text-gray-500">
+            <Shield className="inline h-3 w-3 mr-1" />
+            Secure checkout • Cancel anytime • 30-day money-back guarantee
           </div>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -46,6 +46,10 @@ export default function LandingPage() {
     setLocation('/setup');
   };
 
+  const handlePayNow = (planId: number) => {
+    setLocation(`/subscribe/${planId}`);
+  };
+
   const handleBookDemo = () => {
     // In a real implementation, this would open a calendar booking widget
     window.open('mailto:sales@averox.com?subject=Demo Request&body=I would like to schedule a demo of Averox Business AI', '_blank');
@@ -608,14 +612,14 @@ export default function LandingPage() {
                 </ul>
 
                 <Button 
-                  onClick={handleStartTrial}
+                  onClick={index === 0 ? handleStartTrial : () => handlePayNow(index + 1)}
                   className={`w-full ${plan.highlighted 
                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white' 
                     : 'border border-gray-300 hover:bg-gray-50'
                   }`}
                   variant={plan.highlighted ? 'default' : 'outline'}
                 >
-                  Start {plan.trialDays}-Day Trial
+                  {index === 0 ? `Start ${plan.trialDays}-Day Trial` : 'Pay Now'}
                 </Button>
               </Card>
             ))}
