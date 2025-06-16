@@ -309,7 +309,8 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
       });
       
       if (!response.ok) {
-        throw new Error(`Payment setup failed: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Payment setup failed: ${response.status} - ${errorText}`);
       }
       
       const data = await response.json();
@@ -317,16 +318,20 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
       if (data.clientSecret) {
         setClientSecret(data.clientSecret);
         setShowCheckout(true);
+        // Success - no error toast needed
       } else {
-        throw new Error('No client secret received');
+        throw new Error('No client secret received from payment processor');
       }
     } catch (error) {
+      // Only show error toast for actual failures
       console.error('Payment initialization error:', error);
-      toast({
-        title: "Payment Setup Failed",
-        description: "Unable to initialize payment. Please try again.",
-        variant: "destructive",
-      });
+      if (error instanceof Error) {
+        toast({
+          title: "Payment Setup Failed",
+          description: error.message || "Unable to initialize payment. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
