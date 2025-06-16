@@ -118,47 +118,14 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
     setIsLoading(true);
     
     try {
-      console.log('Starting payment confirmation...');
-      console.log('Stripe instance:', stripe);
-      console.log('Elements instance:', elements);
+      console.log('Starting payment...');
       
-      // Check if elements is properly initialized
-      if (!elements) {
-        console.error('Elements not initialized');
-        toast({
-          title: "Payment Error",
-          description: "Payment form not properly loaded. Please refresh and try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // First submit the elements to validate payment details
-      const { error: submitError } = await elements.submit();
-      if (submitError) {
-        console.error('Elements submit error:', submitError);
-        toast({
-          title: "Form Error",
-          description: submitError.message || "Please complete all payment details.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log('Elements submitted successfully, confirming payment...');
-      
-      const { error, paymentIntent } = await stripe.confirmPayment({
+      const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/dashboard?subscription=success`,
         },
         redirect: 'if_required',
-      });
-
-      console.log('Payment confirmation result:', { 
-        error: error ? { message: error.message, type: error.type } : null, 
-        paymentIntent: paymentIntent ? { id: paymentIntent.id, status: paymentIntent.status } : null 
       });
 
       if (error) {
@@ -169,63 +136,25 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
           variant: "destructive",
         });
         setIsLoading(false);
-        return;
-      } 
-      
-      if (paymentIntent) {
-        console.log('Payment intent status:', paymentIntent.status);
-        
-        if (paymentIntent.status === 'succeeded') {
-          console.log('Payment succeeded!');
-          toast({
-            title: "Payment Successful!",
-            description: "Your subscription has been activated.",
-          });
-          
-          // Navigate to dashboard after short delay
-          setTimeout(() => {
-            setLocation('/dashboard?subscription=success');
-          }, 1000);
-          
-        } else if (paymentIntent.status === 'requires_action') {
-          console.log('Payment requires additional action - this should be handled by Stripe automatically');
-          // Stripe handles 3D Secure automatically, so we should not reach here in most cases
-          
-        } else if (paymentIntent.status === 'processing') {
-          console.log('Payment is processing...');
-          toast({
-            title: "Payment Processing",
-            description: "Your payment is being processed. You will be redirected shortly.",
-          });
-          
-          // For processing payments, redirect after a delay
-          setTimeout(() => {
-            setLocation('/dashboard?subscription=pending');
-          }, 2000);
-          
-        } else {
-          console.log('Unexpected payment status:', paymentIntent.status);
-          toast({
-            title: "Payment Status Unknown",
-            description: `Payment status: ${paymentIntent.status}. Please check your account.`,
-          });
-        }
       } else {
-        console.error('No payment intent or error returned');
+        console.log('Payment succeeded!');
         toast({
-          title: "Payment Error",
-          description: "No response received from payment processor.",
-          variant: "destructive",
+          title: "Payment Successful!",
+          description: "Your subscription has been activated.",
         });
+        
+        setTimeout(() => {
+          setLocation('/dashboard?subscription=success');
+        }, 1000);
       }
+      
     } catch (error: any) {
       console.error('Payment error:', error);
       toast({
         title: "Payment Error",
-        description: error.message || "An unexpected error occurred.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
