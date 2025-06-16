@@ -290,11 +290,17 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
   const [clientSecret, setClientSecret] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [match, params] = useRoute('/subscribe/:id');
 
   const initializePayment = async (plan: Plan) => {
+    if (isInitializing || clientSecret) {
+      return; // Prevent duplicate initialization
+    }
+    
+    setIsInitializing(true);
     try {
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
@@ -332,6 +338,8 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
           variant: "destructive",
         });
       }
+    } finally {
+      setIsInitializing(false);
     }
   };
 
@@ -344,18 +352,19 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
       return;
     }
     setSelectedPlan(plan);
-    
-    // Automatically initialize payment for the selected plan
-    initializePayment(plan);
   }, [params?.id, propPlanId, setLocation]);
 
   if (!selectedPlan) {
     return <div>Loading...</div>;
   }
 
-  if (showCheckout && clientSecret) {
+  if (showCheckout && clientSecret && selectedPlan) {
     return (
-      <Elements stripe={stripePromise} options={{ clientSecret }}>
+      <Elements 
+        stripe={stripePromise} 
+        options={{ clientSecret }}
+        key={clientSecret}
+      >
         <CheckoutForm 
           plan={selectedPlan} 
           onBack={() => setShowCheckout(false)}

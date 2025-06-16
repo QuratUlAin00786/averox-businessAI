@@ -149,6 +149,11 @@ Changelog:
   - Resolved login authentication issue - system now properly accepts correct credentials
   - Enhanced subscription system with proper confirmation flow and payment method information
   - Added current subscription status display and prevented duplicate subscriptions
+  - Fixed payment page routing and URL parameter extraction for plan selection
+  - Resolved false "Payment Setup Failed" error notifications by implementing proper initialization flow
+  - Enhanced payment system with user-triggered initialization instead of automatic loading
+  - Fixed Stripe Elements lifecycle management to prevent prop change warnings
+  - Improved error handling with detailed payment failure messages
 
 ## User Preferences
 
