@@ -170,13 +170,13 @@ function Router() {
       
       <ProtectedRoute path="/subscribe" component={() => (
         <Layout>
-          <Subscribe />
+          <Subscribe planId={1} />
         </Layout>
       )} />
       
-      <ProtectedRoute path="/subscribe/:id" component={() => (
+      <ProtectedRoute path="/subscribe/:id" component={({ params }: { params: { id: string } }) => (
         <Layout>
-          <Subscribe />
+          <Subscribe planId={parseInt(params.id)} />
         </Layout>
       )} />
       

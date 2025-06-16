@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, useRoute } from 'wouter';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Card } from '@/components/ui/card';
@@ -18,7 +18,7 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 interface SubscribeProps {
-  planId: number;
+  planId?: number;
 }
 
 interface Plan {
@@ -114,11 +114,12 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
 
     setIsLoading(true);
     try {
-      const { error } = await stripe.confirmPayment({
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/dashboard?subscription=success`,
         },
+        redirect: 'if_required',
       });
 
       if (error) {
@@ -127,8 +128,15 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
           description: error.message,
           variant: "destructive",
         });
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        toast({
+          title: "Payment Successful!",
+          description: "Your subscription has been activated.",
+        });
+        setLocation('/dashboard?subscription=success');
       }
     } catch (error) {
+      console.error('Payment error:', error);
       toast({
         title: "Payment Error",
         description: "An unexpected error occurred. Please try again.",
@@ -278,41 +286,59 @@ const CheckoutForm = ({ plan, onBack }: { plan: Plan; onBack: () => void }) => {
   );
 };
 
-export default function Subscribe({ planId }: SubscribeProps) {
+export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
   const [clientSecret, setClientSecret] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [match, params] = useRoute('/subscribe/:id');
 
   useEffect(() => {
+    // Get planId from URL params or props
+    const planId = params?.id ? parseInt(params.id) : propPlanId || 1;
     const plan = plans.find(p => p.id === planId);
     if (!plan) {
       setLocation('/landing');
       return;
     }
     setSelectedPlan(plan);
-  }, [planId, setLocation]);
+    
+    // Automatically initialize payment for the selected plan
+    initializePayment(plan);
+  }, [params?.id, propPlanId, setLocation]);
 
   const initializePayment = async (plan: Plan) => {
     try {
-      const response = await apiRequest("POST", "/api/create-payment-intent", {
-        amount: parseFloat(plan.price),
-        planId: plan.id,
-        planName: plan.name
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: parseFloat(plan.price),
+          planId: plan.id,
+          planName: plan.name
+        }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`Payment setup failed: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data.clientSecret) {
         setClientSecret(data.clientSecret);
         setShowCheckout(true);
       } else {
-        throw new Error('Failed to initialize payment');
+        throw new Error('No client secret received');
       }
     } catch (error) {
+      console.error('Payment initialization error:', error);
       toast({
-        title: "Payment Initialization Failed",
-        description: "Unable to set up payment. Please try again.",
+        title: "Payment Setup Failed",
+        description: "Unable to initialize payment. Please try again.",
         variant: "destructive",
       });
     }
