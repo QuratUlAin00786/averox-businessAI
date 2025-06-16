@@ -2832,7 +2832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe Integration Routes
   app.post('/api/create-payment-intent', async (req: Request, res: Response) => {
     try {
-      const { amount } = req.body;
+      const { amount, planId, planName } = req.body;
       const numericAmount = parseFloat(amount);
       
       // Handle zero amount invoices gracefully
@@ -2851,9 +2851,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      const metadata: any = {
+        amount: numericAmount.toString(),
+        type: 'subscription'
+      };
+
+      if (planId) {
+        metadata.planId = planId.toString();
+      }
+      if (planName) {
+        metadata.planName = planName;
+      }
+
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(numericAmount * 100), // Convert to cents
         currency: "usd",
+        metadata,
+        description: planName ? `Subscription to ${planName} Plan` : 'Subscription Payment'
       });
       
       res.json({ 
