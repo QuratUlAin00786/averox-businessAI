@@ -294,20 +294,6 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
   const { toast } = useToast();
   const [match, params] = useRoute('/subscribe/:id');
 
-  useEffect(() => {
-    // Get planId from URL params or props
-    const planId = params?.id ? parseInt(params.id) : propPlanId || 1;
-    const plan = plans.find(p => p.id === planId);
-    if (!plan) {
-      setLocation('/landing');
-      return;
-    }
-    setSelectedPlan(plan);
-    
-    // Automatically initialize payment for the selected plan
-    initializePayment(plan);
-  }, [params?.id, propPlanId, setLocation]);
-
   const initializePayment = async (plan: Plan) => {
     try {
       const response = await fetch('/api/create-payment-intent', {
@@ -343,6 +329,20 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
       });
     }
   };
+
+  useEffect(() => {
+    // Get planId from URL params or props
+    const planId = params?.id ? parseInt(params.id) : propPlanId || 1;
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) {
+      setLocation('/landing');
+      return;
+    }
+    setSelectedPlan(plan);
+    
+    // Automatically initialize payment for the selected plan
+    initializePayment(plan);
+  }, [params?.id, propPlanId, setLocation]);
 
   if (!selectedPlan) {
     return <div>Loading...</div>;
