@@ -94,6 +94,43 @@ export default function SubscriptionsPage() {
       setIsSubmitting(false);
     }
   };
+
+  const handleUnsubscribe = async () => {
+    if (!user?.id || !activeSubscription) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch(`/api/cancel-subscription/${activeSubscription.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel subscription');
+      }
+
+      toast({
+        title: "Subscription Canceled",
+        description: "Your subscription has been successfully canceled. You'll continue to have access until the end of your current billing period.",
+      });
+
+      // Refresh subscriptions data
+      window.location.reload();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel subscription. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   // Get feature list as array
   const getFeatures = (pkg: SubscriptionPackage) => {
@@ -167,6 +204,23 @@ export default function SubscriptionsPage() {
                 </div>
               </div>
             </CardContent>
+            <CardFooter>
+              <Button 
+                variant="destructive" 
+                onClick={handleUnsubscribe}
+                disabled={isSubmitting}
+                className="w-full"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Canceling...
+                  </>
+                ) : (
+                  'Cancel Subscription'
+                )}
+              </Button>
+            </CardFooter>
           </Card>
         )}
 

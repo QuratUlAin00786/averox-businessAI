@@ -2682,6 +2682,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/cancel-subscription/:id', async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const subscriptionId = parseInt(req.params.id);
+      const subscription = await storage.getUserSubscription(subscriptionId);
+      
+      if (!subscription) {
+        return res.status(404).json({ error: "Subscription not found" });
+      }
+
+      // Verify user owns this subscription
+      if (subscription.userId !== req.user?.id) {
+        return res.status(403).json({ error: "Unauthorized to cancel this subscription" });
+      }
+
+      // Update subscription status to canceled
+      const updatedSubscription = await storage.updateUserSubscription(subscriptionId, {
+        status: 'Canceled',
+        canceledAt: new Date()
+      });
+
+      if (!updatedSubscription) {
+        return res.status(500).json({ error: "Failed to cancel subscription" });
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Subscription canceled successfully",
+        subscription: updatedSubscription
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
   app.post('/api/user-subscriptions', async (req: Request, res: Response) => {
     try {
       const subscriptionData = insertUserSubscriptionSchema.parse(req.body);
