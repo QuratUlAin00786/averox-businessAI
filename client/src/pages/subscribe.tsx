@@ -162,7 +162,7 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
         });
         
         setTimeout(() => {
-          setLocation('/dashboard?subscription=success');
+          setLocation('/?subscription=success');
         }, 1000);
       } else {
         console.log('Payment status:', paymentIntent?.status);
@@ -331,7 +331,7 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
                       description: "Your subscription has been activated via PayPal.",
                     });
                     setTimeout(() => {
-                      setLocation('/dashboard?subscription=success');
+                      setLocation('/?subscription=success');
                     }, 1000);
                   }}
                   onError={(error) => {
