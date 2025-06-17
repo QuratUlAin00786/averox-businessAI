@@ -335,9 +335,10 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
               </div>
 
               {/* PayPal Payment */}
-              <div>
+              <div key={`paypal-section-${Date.now()}`}>
                 <h3 className="font-medium mb-3">PayPal</h3>
                 <PayPalButton
+                  key={`paypal-${plan.id}-${Date.now()}`}
                   amount={plan.price}
                   currency="USD"
                   intent="CAPTURE"

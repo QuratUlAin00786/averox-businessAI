@@ -13,19 +13,32 @@ export default function PayPalButton({
 }: PayPalButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  // Force cleanup of any existing PayPal scripts
+  // Force cleanup of any existing PayPal scripts and elements
   useEffect(() => {
-    // Remove any existing PayPal scripts
-    const scripts = document.querySelectorAll('script[src*="paypal"]');
+    // Remove ALL PayPal scripts
+    const scripts = document.querySelectorAll('script[src*="paypal"], script[src*="sandbox.paypal"]');
     scripts.forEach(script => script.remove());
     
-    // Remove any PayPal elements
-    const paypalElements = document.querySelectorAll('[id*="paypal"], [class*="paypal"]');
+    // Remove all PayPal SDK elements and containers
+    const paypalElements = document.querySelectorAll('[id*="paypal"], [class*="paypal"], [data-paypal], .paypal-buttons, .paypal-button-container');
     paypalElements.forEach(element => {
       if (element.id !== 'paypal-button-component') {
         element.remove();
       }
     });
+
+    // Clear any PayPal globals
+    if (typeof window !== 'undefined') {
+      delete (window as any).paypal;
+      delete (window as any).PAYPAL;
+    }
+
+    // Force garbage collection
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && (window as any).gc) {
+        (window as any).gc();
+      }
+    }, 100);
   }, []);
 
   const handlePayPalClick = async () => {
@@ -72,10 +85,29 @@ export default function PayPalButton({
   };
 
   return (
-    <div key="paypal-button-component" id="paypal-button-component">
+    <div 
+      key={`paypal-button-${Date.now()}`} 
+      id="paypal-button-component" 
+      style={{ minHeight: '48px', position: 'relative', zIndex: 999 }}
+      data-testid="custom-paypal-button"
+    >
+      <style>{`
+        /* Force hide any PayPal SDK elements */
+        [class*="paypal"]:not([data-testid="custom-paypal-button"]),
+        [id*="paypal"]:not(#paypal-button-component),
+        .paypal-buttons,
+        .paypal-button-container,
+        [data-paypal-button] {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+        }
+      `}</style>
       <button
         onClick={handlePayPalClick}
         disabled={isLoading}
+        data-testid="custom-paypal-button"
         className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
       >
         {isLoading ? (
