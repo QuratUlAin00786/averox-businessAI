@@ -123,18 +123,45 @@ export default function PayPalButton({
       const setupResponse = await fetch("/paypal/setup");
       const setupData = await setupResponse.json();
       
-      // For development mode, create a mock PayPal button
+      // For development mode, redirect to actual PayPal checkout
       if (setupData.clientToken === "development-paypal-client-token") {
-        const onClick = () => {
-          // Show payment confirmation dialog
-          const confirmed = window.confirm("Demo PayPal Payment\n\nThis would process a $29/month subscription payment.\n\nClick OK to simulate successful payment.");
-          
-          if (confirmed) {
-            // Simulate successful payment
-            onApprove({ orderId: "DEMO_ORDER_" + Date.now() });
-          } else {
-            // Simulate cancelled payment
-            onCancel({ reason: "user_cancelled" });
+        const onClick = async () => {
+          try {
+            // Create a real PayPal order
+            const orderResponse = await fetch("/paypal/order", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                amount: amount,
+                currency: currency,
+                intent: intent,
+              }),
+            });
+            
+            const orderData = await orderResponse.json();
+            
+            if (orderData.id) {
+              // Check if this is a demo order or real PayPal order
+              if (orderData.links && orderData.links.length > 0) {
+                // Real PayPal order with approval links
+                const approveLink = orderData.links.find((link: any) => link.rel === "approve");
+                if (approveLink) {
+                  window.location.href = approveLink.href;
+                } else {
+                  // Fallback to sandbox checkout
+                  window.location.href = `https://www.sandbox.paypal.com/checkoutnow?token=${orderData.id}`;
+                }
+              } else {
+                // Demo order - redirect to sandbox PayPal for testing
+                window.location.href = `https://www.sandbox.paypal.com/checkoutnow?token=${orderData.id}`;
+              }
+            } else {
+              console.error("Failed to create PayPal order:", orderData);
+              onError({ error: "Failed to create PayPal order" });
+            }
+          } catch (error) {
+            console.error("PayPal checkout error:", error);
+            onError({ error: "PayPal checkout failed" });
           }
         };
 

@@ -102,10 +102,10 @@ export async function createPaypalOrder(req: Request, res: Response) {
         .json({ error: "Invalid intent. Intent is required." });
     }
 
-    // Return demo order for development when credentials not available
+    // For development/testing, create demo orders that redirect to sandbox PayPal
     if (!hasCredentials || !ordersController) {
       const demoOrder = {
-        id: "DEMO_ORDER_" + Date.now() + "_" + Math.random().toString(36).substring(7),
+        id: "DEMO_" + Date.now() + "_" + Math.random().toString(36).substring(7),
         status: "CREATED",
         intent: intent,
         purchase_units: [
@@ -116,6 +116,13 @@ export async function createPaypalOrder(req: Request, res: Response) {
             },
           },
         ],
+        links: [
+          {
+            href: `https://www.sandbox.paypal.com/checkoutnow?token=${demoOrder.id}&return_url=${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:3000'}/paypal/return&cancel_url=${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:3000'}/paypal/cancel`,
+            rel: "approve",
+            method: "REDIRECT"
+          }
+        ]
       };
       return res.status(201).json(demoOrder);
     }

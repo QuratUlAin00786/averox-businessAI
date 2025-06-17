@@ -3233,6 +3233,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await capturePaypalOrder(req, res);
   });
 
+  // PayPal return URLs
+  app.get("/paypal/return", async (req, res) => {
+    const { token, PayerID } = req.query;
+    
+    if (token && PayerID) {
+      // Capture the payment
+      try {
+        const captureResponse = await fetch(`${req.protocol}://${req.get('host')}/paypal/order/${token}/capture`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const captureData = await captureResponse.json();
+        
+        if (captureData.status === 'COMPLETED') {
+          // Redirect to success page
+          res.redirect('/?payment=success&provider=paypal');
+        } else {
+          // Redirect to error page
+          res.redirect('/?payment=error&provider=paypal');
+        }
+      } catch (error) {
+        console.error('PayPal capture error:', error);
+        res.redirect('/?payment=error&provider=paypal');
+      }
+    } else {
+      res.redirect('/?payment=cancelled&provider=paypal');
+    }
+  });
+
+  app.get("/paypal/cancel", async (req, res) => {
+    // User cancelled PayPal payment
+    res.redirect('/?payment=cancelled&provider=paypal');
+  });
+
   // Social Media Integrations Routes
   app.get('/api/social-integrations', async (req: Request, res: Response) => {
     try {
