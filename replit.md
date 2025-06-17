@@ -169,6 +169,7 @@ Changelog:
   - Fixed bullet point formatting inconsistency between development and deployment environments by implementing proper HTML list structures
   - Fixed numbering button functionality to create proper numbered list items instead of single lines for selected text
   - Simplified text parsing logic for more reliable numbering functionality across all environments
+  - Fixed image button functionality with complete file upload and insertion system for email editor
 
 ## User Preferences
 
