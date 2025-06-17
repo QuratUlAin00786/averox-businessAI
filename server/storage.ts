@@ -3562,28 +3562,36 @@ export class DatabaseStorage implements IStorage {
     try {
       const allContacts = await db.select().from(contacts);
       
-      // Helper function to decrypt a field
-      const decryptField = async (fieldValue: string | null | undefined): Promise<string | null> => {
-        if (!fieldValue || typeof fieldValue !== 'string' || !fieldValue.includes('"encrypted"')) {
-          return fieldValue || null;
-        }
-        
-        try {
-          const encryptedData = JSON.parse(fieldValue);
-          if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
-            const { decrypt } = await import('../utils/encryption');
-            return await decrypt(encryptedData.encrypted, encryptedData.iv, encryptedData.keyId);
-          }
-        } catch (e) {
-          console.warn('Failed to decrypt field:', e);
-        }
-        
-        return fieldValue || null;
-      };
+      // Import CryptoSphere for decryption
+      const { cryptoSphere } = await import('./utils/cryptosphere');
       
       // Decrypt sensitive fields for each contact
       const decryptedContacts = await Promise.all(allContacts.map(async (contact) => {
         const decryptedContact = { ...contact };
+        
+        // Helper function to decrypt a field
+        const decryptField = async (fieldValue: string | null | undefined, fieldName: string): Promise<string | null> => {
+          if (!fieldValue || typeof fieldValue !== 'string' || !fieldValue.includes('"encrypted"')) {
+            return fieldValue || null;
+          }
+          
+          try {
+            const encryptedData = JSON.parse(fieldValue);
+            if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
+              const decryptResult = await cryptoSphere.decrypt({
+                encrypted: encryptedData.encrypted,
+                iv: encryptedData.iv,
+                keyId: encryptedData.keyId
+              });
+              console.log(`[Decryption] Successfully decrypted ${fieldName} for contact ${contact.id}: ${decryptResult.decrypted}`);
+              return decryptResult.decrypted;
+            }
+          } catch (e) {
+            console.warn(`Failed to decrypt ${fieldName} field for contact ${contact.id}:`, e);
+          }
+          
+          return fieldValue || null;
+        };
         
         // Decrypt sensitive fields
         decryptedContact.email = await decryptField(contact.email, 'email');
@@ -3594,7 +3602,7 @@ export class DatabaseStorage implements IStorage {
         return decryptedContact;
       }));
       
-      console.log('[Contacts] Successfully decrypted', decryptedContacts.length, 'contacts');
+      console.log('[Contacts] Successfully processed', decryptedContacts.length, 'contacts with decryption');
       return decryptedContacts;
     } catch (error) {
       console.error("Error retrieving contacts:", error);
