@@ -190,8 +190,13 @@ export default function CreateCampaignPage() {
   };
 
   const handleNumberedList = () => {
+    alert('Numbering button clicked - function is being called');
+    
     const editor = editorRef.current;
-    if (!editor) return;
+    if (!editor) {
+      alert('Editor not found');
+      return;
+    }
     
     editor.focus();
     
