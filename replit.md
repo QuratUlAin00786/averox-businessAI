@@ -179,6 +179,7 @@ Changelog:
   - Improved numbering logic to properly extract text from div, p, and li elements for separate list items
   - Enhanced HTML structure detection to handle contentEditable div elements correctly
   - Added comprehensive debugging and fallback options for reliable numbering functionality
+  - Fixed numbering button functionality to properly convert selected text into numbered list items instead of inserting default placeholder text
 
 ## User Preferences
 
