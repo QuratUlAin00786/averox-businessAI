@@ -26,8 +26,8 @@ const testClientSecret = "EJ2gR8nVkM3zQ9bF7hL6yX1cT5oK4sN8wP2jE3iA9bC6dR4mQ7uY1e
 const clientId = PAYPAL_CLIENT_ID || testClientId;
 const clientSecret = PAYPAL_CLIENT_SECRET || testClientSecret;
 
-// Check if credentials are available
-const hasCredentials = Boolean(clientId && clientSecret);
+// Check if real credentials are available (not test credentials)
+const hasCredentials = Boolean(PAYPAL_CLIENT_ID && PAYPAL_CLIENT_SECRET);
 
 let client: Client | null = null;
 let ordersController: OrdersController | null = null;
