@@ -3525,68 +3525,31 @@ export class DatabaseStorage implements IStorage {
       const [contact] = await db.select().from(contacts).where(eq(contacts.id, id));
       if (!contact) return undefined;
       
+      // Helper function to decrypt a field
+      const decryptField = async (fieldValue: string | null | undefined): Promise<string | null> => {
+        if (!fieldValue || typeof fieldValue !== 'string' || !fieldValue.includes('"encrypted"')) {
+          return fieldValue || null;
+        }
+        
+        try {
+          const encryptedData = JSON.parse(fieldValue);
+          if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
+            const { decrypt } = await import('../utils/encryption');
+            return await decrypt(encryptedData.encrypted, encryptedData.iv, encryptedData.keyId);
+          }
+        } catch (e) {
+          console.warn('Failed to decrypt field:', e);
+        }
+        
+        return fieldValue || null;
+      };
+      
       // Decrypt sensitive fields for the contact
       const decryptedContact = { ...contact };
-      
-      // Decrypt email if it's encrypted
-      if (contact.email && typeof contact.email === 'string' && contact.email.includes('"encrypted"')) {
-        try {
-          const encryptedData = JSON.parse(contact.email);
-          if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
-            const cryptoSphere = (global as any).cryptoSphere;
-            if (cryptoSphere) {
-              decryptedContact.email = cryptoSphere.decrypt(encryptedData);
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to decrypt email for contact', contact.id, e);
-        }
-      }
-      
-      // Decrypt phone if it's encrypted
-      if (contact.phone && typeof contact.phone === 'string' && contact.phone.includes('"encrypted"')) {
-        try {
-          const encryptedData = JSON.parse(contact.phone);
-          if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
-            const cryptoSphere = (global as any).cryptoSphere;
-            if (cryptoSphere) {
-              decryptedContact.phone = cryptoSphere.decrypt(encryptedData);
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to decrypt phone for contact', contact.id, e);
-        }
-      }
-      
-      // Decrypt address if it's encrypted
-      if (contact.address && typeof contact.address === 'string' && contact.address.includes('"encrypted"')) {
-        try {
-          const encryptedData = JSON.parse(contact.address);
-          if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
-            const cryptoSphere = (global as any).cryptoSphere;
-            if (cryptoSphere) {
-              decryptedContact.address = cryptoSphere.decrypt(encryptedData);
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to decrypt address for contact', contact.id, e);
-        }
-      }
-      
-      // Decrypt notes if it's encrypted
-      if (contact.notes && typeof contact.notes === 'string' && contact.notes.includes('"encrypted"')) {
-        try {
-          const encryptedData = JSON.parse(contact.notes);
-          if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
-            const cryptoSphere = (global as any).cryptoSphere;
-            if (cryptoSphere) {
-              decryptedContact.notes = cryptoSphere.decrypt(encryptedData);
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to decrypt notes for contact', contact.id, e);
-        }
-      }
+      decryptedContact.email = await decryptField(contact.email);
+      decryptedContact.phone = await decryptField(contact.phone);
+      decryptedContact.address = await decryptField(contact.address);
+      decryptedContact.notes = await decryptField(contact.notes);
       
       return decryptedContact;
     } catch (error) {
@@ -3599,73 +3562,37 @@ export class DatabaseStorage implements IStorage {
     try {
       const allContacts = await db.select().from(contacts);
       
+      // Helper function to decrypt a field
+      const decryptField = async (fieldValue: string | null | undefined): Promise<string | null> => {
+        if (!fieldValue || typeof fieldValue !== 'string' || !fieldValue.includes('"encrypted"')) {
+          return fieldValue || null;
+        }
+        
+        try {
+          const encryptedData = JSON.parse(fieldValue);
+          if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
+            const { decrypt } = await import('../utils/encryption');
+            return await decrypt(encryptedData.encrypted, encryptedData.iv, encryptedData.keyId);
+          }
+        } catch (e) {
+          console.warn('Failed to decrypt field:', e);
+        }
+        
+        return fieldValue || null;
+      };
+      
       // Decrypt sensitive fields for each contact
-      const decryptedContacts = allContacts.map(contact => {
+      const decryptedContacts = await Promise.all(allContacts.map(async (contact) => {
         const decryptedContact = { ...contact };
         
-        // Decrypt email if it's encrypted
-        if (contact.email && typeof contact.email === 'string' && contact.email.includes('"encrypted"')) {
-          try {
-            const encryptedData = JSON.parse(contact.email);
-            if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
-              // Use CryptoSphere to decrypt
-              const cryptoSphere = (global as any).cryptoSphere;
-              if (cryptoSphere) {
-                decryptedContact.email = cryptoSphere.decrypt(encryptedData);
-              }
-            }
-          } catch (e) {
-            console.warn('Failed to decrypt email for contact', contact.id, e);
-          }
-        }
-        
-        // Decrypt phone if it's encrypted
-        if (contact.phone && typeof contact.phone === 'string' && contact.phone.includes('"encrypted"')) {
-          try {
-            const encryptedData = JSON.parse(contact.phone);
-            if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
-              const cryptoSphere = (global as any).cryptoSphere;
-              if (cryptoSphere) {
-                decryptedContact.phone = cryptoSphere.decrypt(encryptedData);
-              }
-            }
-          } catch (e) {
-            console.warn('Failed to decrypt phone for contact', contact.id, e);
-          }
-        }
-        
-        // Decrypt address if it's encrypted
-        if (contact.address && typeof contact.address === 'string' && contact.address.includes('"encrypted"')) {
-          try {
-            const encryptedData = JSON.parse(contact.address);
-            if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
-              const cryptoSphere = (global as any).cryptoSphere;
-              if (cryptoSphere) {
-                decryptedContact.address = cryptoSphere.decrypt(encryptedData);
-              }
-            }
-          } catch (e) {
-            console.warn('Failed to decrypt address for contact', contact.id, e);
-          }
-        }
-        
-        // Decrypt notes if it's encrypted
-        if (contact.notes && typeof contact.notes === 'string' && contact.notes.includes('"encrypted"')) {
-          try {
-            const encryptedData = JSON.parse(contact.notes);
-            if (encryptedData.encrypted && encryptedData.iv && encryptedData.keyId) {
-              const cryptoSphere = (global as any).cryptoSphere;
-              if (cryptoSphere) {
-                decryptedContact.notes = cryptoSphere.decrypt(encryptedData);
-              }
-            }
-          } catch (e) {
-            console.warn('Failed to decrypt notes for contact', contact.id, e);
-          }
-        }
+        // Decrypt sensitive fields
+        decryptedContact.email = await decryptField(contact.email, 'email');
+        decryptedContact.phone = await decryptField(contact.phone, 'phone');
+        decryptedContact.address = await decryptField(contact.address, 'address');
+        decryptedContact.notes = await decryptField(contact.notes, 'notes');
         
         return decryptedContact;
-      });
+      }));
       
       console.log('[Contacts] Successfully decrypted', decryptedContacts.length, 'contacts');
       return decryptedContacts;

@@ -163,6 +163,8 @@ Changelog:
   - PayPal button now shows clear "unavailable - contact support" message instead of SDK errors
   - Implemented full PayPal checkout flow ready for when credentials are provided
   - Fixed ERR_INIT_SDK_CLIENT_TOKEN_INVALID error by handling missing credentials properly
+  - Fixed "Continue to Payment" button error with comprehensive error handling and loading states
+  - Resolved email decryption issue in contacts display where encrypted data was shown instead of decrypted values
 
 ## User Preferences
 
