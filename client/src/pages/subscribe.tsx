@@ -109,6 +109,29 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
   const [isLoading, setIsLoading] = useState(false);
   const [cardError, setCardError] = useState<string | null>(null);
 
+  // Add error boundary to prevent browser error popups
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      event.preventDefault();
+      console.log('Caught error:', event.error);
+      return true;
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      event.preventDefault();
+      console.log('Caught unhandled rejection:', event.reason);
+      return true;
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   const handleCardChange = (event: any) => {
     if (event.error) {
       setCardError(event.error.message);
@@ -135,20 +158,51 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent form submission if already processing
+    if (isLoading) {
+      return;
+    }
+
     if (!stripe || !elements) {
-      console.error('Stripe or Elements not loaded');
+      toast({
+        title: "Payment System Loading",
+        description: "Please wait for the payment system to load completely.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsLoading(true);
+    setCardError(null);
     
     try {
-      console.log('Starting payment...');
+      console.log('Starting payment with client secret:', clientSecret?.substring(0, 20) + '...');
+      
+      // Validate client secret
+      if (!clientSecret) {
+        throw new Error('Payment not properly initialized. Please try again.');
+      }
       
       // Get card element
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) {
-        throw new Error('Card element not found');
+        throw new Error('Payment form not ready. Please refresh the page.');
+      }
+
+      // Validate card element is ready
+      try {
+        // Attempt to create payment method to validate card
+        const { error: methodError } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: cardElement,
+        });
+        
+        if (methodError) {
+          throw new Error(methodError.message || 'Please check your card information.');
+        }
+      } catch (validationError: any) {
+        throw new Error(validationError.message || 'Please complete all card information fields.');
       }
       
       // Confirm payment using CardElement
@@ -165,6 +219,7 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
 
       if (error) {
         console.error('Payment failed:', error);
+        setCardError(error.message || 'Payment failed');
         toast({
           title: "Payment Failed",
           description: error.message || "Payment could not be processed.",
@@ -179,21 +234,22 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
         
         setTimeout(() => {
           setLocation('/?subscription=success');
-        }, 1000);
+        }, 1500);
       } else {
         console.log('Payment status:', paymentIntent?.status);
         toast({
           title: "Payment Processing",
-          description: `Payment status: ${paymentIntent?.status || 'unknown'}`,
-          variant: "destructive",
+          description: `Payment status: ${paymentIntent?.status || 'processing'}`,
         });
       }
       
     } catch (error: any) {
       console.error('Payment error:', error);
+      const errorMessage = error?.message || "An unexpected error occurred. Please try again.";
+      setCardError(errorMessage);
       toast({
         title: "Payment Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -389,42 +445,61 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
     
     setIsInitializing(true);
     try {
+      // Validate plan data
+      if (!plan || !plan.price || !plan.id) {
+        throw new Error('Invalid plan selected');
+      }
+
+      const amount = parseFloat(plan.price);
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error('Invalid plan amount');
+      }
+
+      console.log('Initializing payment for plan:', { id: plan.id, name: plan.name, amount });
+
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: parseFloat(plan.price),
+          amount: amount,
           planId: plan.id,
           planName: plan.name
         }),
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Payment setup failed: ${response.status} - ${errorText}`);
+        let errorMessage = `Payment setup failed (${response.status})`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
+      console.log('Payment intent response:', { hasClientSecret: !!data.clientSecret });
       
       if (data.clientSecret) {
         setClientSecret(data.clientSecret);
         setShowCheckout(true);
-        // Success - no error toast needed
+        console.log('Payment initialization successful');
       } else {
         throw new Error('No client secret received from payment processor');
       }
     } catch (error) {
-      // Only show error toast for actual failures
       console.error('Payment initialization error:', error);
-      if (error instanceof Error) {
-        toast({
-          title: "Payment Setup Failed",
-          description: error.message || "Unable to initialize payment. Please try again.",
-          variant: "destructive",
-        });
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Unable to initialize payment. Please try again.';
+      
+      toast({
+        title: "Payment Setup Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsInitializing(false);
     }
@@ -505,9 +580,17 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
 
           <Button
             onClick={() => initializePayment(selectedPlan)}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 text-lg"
+            disabled={isInitializing}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 text-lg"
           >
-            Continue to Payment
+            {isInitializing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Setting up payment...
+              </>
+            ) : (
+              'Continue to Payment'
+            )}
           </Button>
 
           <div className="mt-4 text-xs text-gray-500">
