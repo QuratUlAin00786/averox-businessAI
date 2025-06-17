@@ -191,13 +191,19 @@ export default function CreateCampaignPage() {
 
   const handleNumberedList = () => {
     const editor = editorRef.current;
-    if (!editor) return;
+    if (!editor) {
+      console.warn('Editor ref not available for numbering');
+      return;
+    }
     
+    // Ensure editor is focused and ready
     editor.focus();
     
-    const selection = window.getSelection();
-    
-    if (selection && selection.rangeCount > 0) {
+    // Add small delay to ensure focus is set
+    setTimeout(() => {
+      const selection = window.getSelection();
+      
+      if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
       // If there's selected text, replace it with numbered format
@@ -210,32 +216,46 @@ export default function CreateCampaignPage() {
         const selectedHTML = container.innerHTML;
         const selectedText = container.textContent || container.innerText || '';
         
-        // Use simple text-based approach for more reliable results
+        // Enhanced text processing for reliable numbering
         let lines = [];
         
-        // Get plain text and split intelligently
-        if (selectedText.includes('\n')) {
-          // Text already has line breaks
-          lines = selectedText.split('\n').filter(line => line.trim() !== '');
-        } else if (selectedText.includes('.') && selectedText.length > 50) {
-          // Split by sentences for longer text
-          lines = selectedText.split(/\.\s+/)
-            .map(line => line.trim())
-            .filter(line => line !== '')
-            .map((line, index, arr) => {
-              if (index < arr.length - 1 && !line.endsWith('.')) {
-                return line + '.';
-              }
-              return line;
-            });
-        } else if (selectedText.includes(',') && selectedText.length > 30) {
-          // Split by commas for comma-separated items
-          lines = selectedText.split(',')
-            .map(line => line.trim())
-            .filter(line => line !== '');
+        if (!selectedText || selectedText.trim() === '') {
+          lines = ['New numbered item'];
         } else {
-          // Single item - create one numbered list item
-          lines = [selectedText.trim()];
+          // Clean the text first
+          const cleanText = selectedText.trim();
+          
+          // Check for existing line breaks (from HTML br tags or actual newlines)
+          if (cleanText.includes('\n') || selectedHTML.includes('<br>') || selectedHTML.includes('<div>') || selectedHTML.includes('<p>')) {
+            // Split by various line break patterns
+            lines = cleanText.split(/\n|<br\s*\/?>/i)
+              .map(line => line.replace(/<[^>]*>/g, '').trim()) // Remove HTML tags
+              .filter(line => line !== '');
+          } else if (cleanText.length > 50 && cleanText.includes('.')) {
+            // Split longer text by sentences
+            lines = cleanText.split(/\.\s+/)
+              .map(line => line.trim())
+              .filter(line => line !== '')
+              .map(line => line.endsWith('.') ? line : line + '.');
+          } else if (cleanText.includes(',') && cleanText.length > 20) {
+            // Split by commas for lists
+            lines = cleanText.split(',')
+              .map(line => line.trim())
+              .filter(line => line !== '');
+          } else if (cleanText.includes(';')) {
+            // Split by semicolons
+            lines = cleanText.split(';')
+              .map(line => line.trim())
+              .filter(line => line !== '');
+          } else {
+            // Single item
+            lines = [cleanText];
+          }
+          
+          // Ensure we have at least one item
+          if (lines.length === 0) {
+            lines = ['New numbered item'];
+          }
         }
         
         // Create proper HTML ordered list structure
@@ -269,22 +289,33 @@ export default function CreateCampaignPage() {
         // Insert a new numbered list item at cursor position
         const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
         
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = listHTML;
-        
-        const listElement = tempDiv.firstChild;
-        if (listElement) {
-          range.insertNode(listElement);
+        try {
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = listHTML;
           
-          // Position cursor inside the new list item
-          const listItem = (listElement as Element).querySelector('li');
-          if (listItem) {
-            const newRange = document.createRange();
-            newRange.selectNodeContents(listItem);
-            newRange.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(newRange);
+          const listElement = tempDiv.firstChild as HTMLElement;
+          if (listElement) {
+            range.insertNode(listElement);
+            
+            // Add a line break after the list for better editing
+            const br = document.createElement('br');
+            range.insertNode(br);
+            
+            // Position cursor inside the new list item
+            const listItem = listElement.querySelector('li');
+            if (listItem) {
+              const newRange = document.createRange();
+              newRange.selectNodeContents(listItem);
+              newRange.collapse(false);
+              selection.removeAllRanges();
+              selection.addRange(newRange);
+            }
           }
+        } catch (error) {
+          console.warn('Error inserting numbered list at cursor:', error);
+          // Fallback: append to end
+          const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
+          editor.innerHTML = editor.innerHTML + '<br>' + listHTML;
         }
       }
     } else {
