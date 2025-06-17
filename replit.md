@@ -173,6 +173,8 @@ Changelog:
   - Enhanced image functionality for deployment reliability with cross-browser compatibility and robust error handling
   - Fixed text alignment button functionality (left, center, right) with intelligent block element detection and selection handling
   - Fixed page refresh navigation issues in Manufacturing modules by replacing window.location.href with proper client-side routing
+  - Reordered Manufacturing routes in App.tsx for proper route matching (most specific routes first)
+  - Enhanced sidebar Manufacturing submenu visibility logic to show on all Manufacturing sub-pages
 
 ## User Preferences
 

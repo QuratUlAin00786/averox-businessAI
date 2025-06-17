@@ -476,9 +476,9 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/manufacturing" component={() => (
+      <ProtectedRoute path="/manufacturing/:parentPath/:childPath" component={({ params }: { params: { parentPath: string, childPath: string } }) => (
         <Layout>
-          <Manufacturing />
+          <Manufacturing subPath={`${params.parentPath}/${params.childPath}`} />
         </Layout>
       )} />
       
@@ -488,9 +488,9 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/manufacturing/:parentPath/:childPath" component={({ params }: { params: { parentPath: string, childPath: string } }) => (
+      <ProtectedRoute path="/manufacturing" component={() => (
         <Layout>
-          <Manufacturing subPath={`${params.parentPath}/${params.childPath}`} />
+          <Manufacturing />
         </Layout>
       )} />
       

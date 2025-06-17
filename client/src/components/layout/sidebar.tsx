@@ -254,7 +254,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
             <div className="px-2 space-y-1">
               {renderNavItems(getBusinessItems())}
               {/* Add Manufacturing submenu items after Manufacturing menu item */}
-              {isActive('/manufacturing') && getManufacturingItems().length > 0 && (
+              {(location.startsWith('/manufacturing') || isActive('/manufacturing')) && getManufacturingItems().length > 0 && (
                 <div className="mt-1 border-l-2 border-primary pl-2">
                   {renderNavItems(getManufacturingItems())}
                 </div>
