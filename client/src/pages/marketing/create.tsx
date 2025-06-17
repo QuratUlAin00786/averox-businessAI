@@ -245,7 +245,10 @@ export default function CreateCampaignPage() {
           .map(line => `<li style="margin-bottom: 4px;">${line.trim()}</li>`)
           .join('');
         
-        const numberedHTML = `<ol style="margin: 8px 0; padding-left: 20px;">${listItems}</ol>`;
+        // If no valid lines found, use the original selected text as single item
+        const finalListItems = listItems || `<li style="margin-bottom: 4px;">${selectedText.trim()}</li>`;
+        
+        const numberedHTML = `<ol style="margin: 8px 0; padding-left: 20px;">${finalListItems}</ol>`;
         
         // Replace the selected content
         range.deleteContents();
