@@ -155,7 +155,7 @@ export default function CreateCampaignPage() {
           range.insertNode(listElement);
           
           // Position cursor inside the new list item
-          const listItem = listElement.querySelector('li');
+          const listItem = (listElement as Element).querySelector('li');
           if (listItem) {
             const newRange = document.createRange();
             newRange.selectNodeContents(listItem);
@@ -277,7 +277,7 @@ export default function CreateCampaignPage() {
           range.insertNode(listElement);
           
           // Position cursor inside the new list item
-          const listItem = listElement.querySelector('li');
+          const listItem = (listElement as Element).querySelector('li');
           if (listItem) {
             const newRange = document.createRange();
             newRange.selectNodeContents(listItem);
