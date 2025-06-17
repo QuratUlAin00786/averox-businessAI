@@ -117,6 +117,22 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
     }
   };
 
+  // Listen for PayPal success events
+  useEffect(() => {
+    const handlePayPalSuccess = (event: CustomEvent) => {
+      toast({
+        title: "Payment Successful!",
+        description: "Your subscription has been activated via PayPal.",
+      });
+    };
+
+    window.addEventListener('paypal-success', handlePayPalSuccess as EventListener);
+    
+    return () => {
+      window.removeEventListener('paypal-success', handlePayPalSuccess as EventListener);
+    };
+  }, [toast]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) {
@@ -325,22 +341,6 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
                   amount={plan.price}
                   currency="USD"
                   intent="subscription"
-                  onSuccess={() => {
-                    toast({
-                      title: "Payment Successful!",
-                      description: "Your subscription has been activated via PayPal.",
-                    });
-                    setTimeout(() => {
-                      setLocation('/?subscription=success');
-                    }, 1000);
-                  }}
-                  onError={(error) => {
-                    toast({
-                      title: "PayPal Payment Failed",
-                      description: error,
-                      variant: "destructive",
-                    });
-                  }}
                 />
               </div>
             </div>
