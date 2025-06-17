@@ -180,6 +180,7 @@ Changelog:
   - Enhanced HTML structure detection to handle contentEditable div elements correctly
   - Added comprehensive debugging and fallback options for reliable numbering functionality
   - Fixed numbering button functionality to properly convert selected text into numbered list items instead of inserting default placeholder text
+  - Fixed link button functionality in email editor with proper URL prompts and link creation for both selected text and new links
 
 ## User Preferences
 

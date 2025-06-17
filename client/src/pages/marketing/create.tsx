@@ -499,6 +499,74 @@ export default function CreateCampaignPage() {
     setEditorContent(editor.innerHTML);
   };
 
+  const handleLink = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    
+    editor.focus();
+    
+    const selection = window.getSelection();
+    
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      
+      // If there's selected text, make it a link
+      if (!range.collapsed) {
+        const selectedText = range.toString();
+        
+        // Prompt for URL
+        const url = prompt('Enter the URL:', 'https://');
+        
+        if (url && url.trim()) {
+          // Create link element
+          const link = document.createElement('a');
+          link.href = url.trim();
+          link.textContent = selectedText;
+          link.style.color = '#3b82f6';
+          link.style.textDecoration = 'underline';
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          
+          // Replace selected content with link
+          range.deleteContents();
+          range.insertNode(link);
+          
+          // Position cursor after the link
+          const newRange = document.createRange();
+          newRange.setStartAfter(link);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      } else {
+        // No selection - create a new link
+        const url = prompt('Enter the URL:', 'https://');
+        const linkText = prompt('Enter the link text:', 'Click here');
+        
+        if (url && url.trim() && linkText && linkText.trim()) {
+          const link = document.createElement('a');
+          link.href = url.trim();
+          link.textContent = linkText.trim();
+          link.style.color = '#3b82f6';
+          link.style.textDecoration = 'underline';
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          
+          range.insertNode(link);
+          
+          // Position cursor after the link
+          const newRange = document.createRange();
+          newRange.setStartAfter(link);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      }
+    }
+    
+    setEditorContent(editor.innerHTML);
+  };
+
   const handleCancel = () => {
     // Navigate back to marketing page
     setLocation("/marketing");
@@ -679,7 +747,7 @@ export default function CreateCampaignPage() {
                             <Button variant="outline" size="icon" onClick={handleItalic}>
                               <Italic className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" onClick={handleLink}>
                               <Link2 className="h-4 w-4" />
                             </Button>
                             <Separator orientation="vertical" className="h-6" />
