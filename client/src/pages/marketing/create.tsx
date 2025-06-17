@@ -190,21 +190,27 @@ export default function CreateCampaignPage() {
   };
 
   const handleNumberedList = () => {
+    console.log('Numbering button clicked');
+    
     const editor = editorRef.current;
     if (!editor) {
-      console.warn('Editor ref not available for numbering');
+      console.error('Editor ref not available for numbering');
       return;
     }
     
-    // Ensure editor is focused and ready
+    console.log('Editor found, focusing...');
     editor.focus();
     
     const selection = window.getSelection();
+    console.log('Selection:', selection, 'Range count:', selection?.rangeCount);
+    
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
       // If there's selected text, replace it with numbered format
       if (!range.collapsed) {
+        console.log('Selected text found, processing...');
+        
         // Get the selected content including HTML structure
         const container = document.createElement('div');
         container.appendChild(range.cloneContents());
@@ -212,6 +218,9 @@ export default function CreateCampaignPage() {
         // Get plain text but preserve line structure
         const selectedHTML = container.innerHTML;
         const selectedText = container.textContent || container.innerText || '';
+        
+        console.log('Selected HTML:', selectedHTML);
+        console.log('Selected text:', selectedText);
         
         // Enhanced text processing for reliable numbering
         let lines = [];
@@ -255,6 +264,8 @@ export default function CreateCampaignPage() {
           }
         }
         
+        console.log('Processed lines:', lines);
+        
         // Create proper HTML ordered list structure
         const listItems = lines
           .filter(line => line.trim() !== '')
@@ -263,8 +274,11 @@ export default function CreateCampaignPage() {
         
         const numberedHTML = `<ol style="margin: 8px 0; padding-left: 20px;">${listItems}</ol>`;
         
+        console.log('Generated numbered HTML:', numberedHTML);
+        
         // Replace the selected content
         range.deleteContents();
+        console.log('Selected content deleted');
         
         // Insert the new numbered content as HTML
         const tempDiv = document.createElement('div');
@@ -274,6 +288,7 @@ export default function CreateCampaignPage() {
         const listElement = tempDiv.firstChild;
         if (listElement) {
           range.insertNode(listElement);
+          console.log('List element inserted');
           
           // Position cursor at the end of the list
           const newRange = document.createRange();
@@ -281,9 +296,13 @@ export default function CreateCampaignPage() {
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
+          console.log('Cursor positioned after list');
+        } else {
+          console.error('Failed to create list element');
         }
       } else {
         // Insert a new numbered list item at cursor position
+        console.log('No selected text, inserting new list at cursor');
         const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
         
         try {
@@ -293,6 +312,7 @@ export default function CreateCampaignPage() {
           const listElement = tempDiv.firstChild as HTMLElement;
           if (listElement) {
             range.insertNode(listElement);
+            console.log('List inserted at cursor position');
             
             // Add a line break after the list for better editing
             const br = document.createElement('br');
@@ -306,35 +326,47 @@ export default function CreateCampaignPage() {
               newRange.collapse(false);
               selection.removeAllRanges();
               selection.addRange(newRange);
+              console.log('Cursor positioned inside list item');
             }
           }
         } catch (error) {
           console.warn('Error inserting numbered list at cursor:', error);
           // Fallback: append to end
           editor.innerHTML = editor.innerHTML + '<br>' + listHTML;
+          console.log('Used fallback method - appended to end');
         }
       }
     } else {
       // Fallback: add at the end if no selection
+      console.log('No selection, adding to end');
       const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
       
       if (!editor.innerHTML || editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
+        console.log('Empty editor, setting HTML');
         editor.innerHTML = listHTML;
       } else {
+        console.log('Appending to existing content');
         editor.innerHTML = editor.innerHTML + '<br>' + listHTML;
       }
       
       // Position cursor at the end
-      const range = document.createRange();
-      range.selectNodeContents(editor);
-      range.collapse(false);
-      if (selection) {
-        selection.removeAllRanges();
-        selection.addRange(range);
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        console.log('Cursor positioned');
+      } catch (error) {
+        console.error('Error positioning cursor:', error);
       }
     }
     
+    console.log('Updating editor content');
     setEditorContent(editor.innerHTML);
+    console.log('Numbering function complete');
   };
 
   const handleImageInsert = () => {
