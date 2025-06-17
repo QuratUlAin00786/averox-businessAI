@@ -30,7 +30,7 @@ export default function PayPalButton({
   currency,
   intent,
 }: PayPalButtonProps) {
-  const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
+  const [isConfigured, setIsConfigured] = useState<boolean | null>(true);
   const createOrder = async () => {
     const orderPayload = {
       amount: amount,
