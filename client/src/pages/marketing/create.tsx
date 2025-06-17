@@ -195,33 +195,68 @@ export default function CreateCampaignPage() {
     
     editor.focus();
     
-    // Simple approach: always insert a numbered list
-    const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">Item 1</li><li style="margin-bottom: 4px;">Item 2</li><li style="margin-bottom: 4px;">Item 3</li></ol><br>`;
-    
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
-      // If text is selected, replace it
+      // If text is selected, convert it to numbered list
       if (!range.collapsed) {
-        range.deleteContents();
+        const selectedText = range.toString().trim();
+        
+        if (selectedText) {
+          // Split the selected text into lines/items
+          let items = [];
+          
+          if (selectedText.includes('\n')) {
+            items = selectedText.split('\n').map(item => item.trim()).filter(item => item);
+          } else {
+            // If no line breaks, treat as single item
+            items = [selectedText];
+          }
+          
+          // Create numbered list with the selected text
+          const listItems = items.map(item => `<li style="margin-bottom: 4px;">${item}</li>`).join('');
+          const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;">${listItems}</ol>`;
+          
+          // Replace selected text with numbered list
+          range.deleteContents();
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = listHTML;
+          const fragment = document.createDocumentFragment();
+          while (tempDiv.firstChild) {
+            fragment.appendChild(tempDiv.firstChild);
+          }
+          range.insertNode(fragment);
+        } else {
+          // Empty selection, insert default list
+          const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New item</li></ol>`;
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = listHTML;
+          const fragment = document.createDocumentFragment();
+          while (tempDiv.firstChild) {
+            fragment.appendChild(tempDiv.firstChild);
+          }
+          range.insertNode(fragment);
+        }
+      } else {
+        // No selection, insert default numbered list at cursor
+        const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New item</li></ol>`;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = listHTML;
+        const fragment = document.createDocumentFragment();
+        while (tempDiv.firstChild) {
+          fragment.appendChild(tempDiv.firstChild);
+        }
+        range.insertNode(fragment);
       }
-      
-      // Insert the numbered list
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = listHTML;
-      const fragment = document.createDocumentFragment();
-      while (tempDiv.firstChild) {
-        fragment.appendChild(tempDiv.firstChild);
-      }
-      range.insertNode(fragment);
       
       // Move cursor to end
       range.collapse(false);
       selection.removeAllRanges();
       selection.addRange(range);
     } else {
-      // No selection - append to end
+      // No selection range, append to end
+      const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New item</li></ol><br>`;
       editor.innerHTML += listHTML;
     }
     
