@@ -190,27 +190,17 @@ export default function CreateCampaignPage() {
   };
 
   const handleNumberedList = () => {
-    console.log('Numbering button clicked');
-    
     const editor = editorRef.current;
-    if (!editor) {
-      console.error('Editor ref not available for numbering');
-      return;
-    }
+    if (!editor) return;
     
-    console.log('Editor found, focusing...');
     editor.focus();
     
     const selection = window.getSelection();
-    console.log('Selection:', selection, 'Range count:', selection?.rangeCount);
-    
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
       // If there's selected text, replace it with numbered format
       if (!range.collapsed) {
-        console.log('Selected text found, processing...');
-        
         // Get the selected content including HTML structure
         const container = document.createElement('div');
         container.appendChild(range.cloneContents());
@@ -219,43 +209,54 @@ export default function CreateCampaignPage() {
         const selectedHTML = container.innerHTML;
         const selectedText = container.textContent || container.innerText || '';
         
-        console.log('Selected HTML:', selectedHTML);
-        console.log('Selected text:', selectedText);
-        
         // Enhanced text processing for reliable numbering
-        let lines = [];
+        let lines: string[] = [];
         
         if (!selectedText || selectedText.trim() === '') {
           lines = ['New numbered item'];
         } else {
-          // Clean the text first
-          const cleanText = selectedText.trim();
+          // Enhanced HTML parsing to handle div elements properly
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = selectedHTML;
           
-          // Check for existing line breaks (from HTML br tags or actual newlines)
-          if (cleanText.includes('\n') || selectedHTML.includes('<br>') || selectedHTML.includes('<div>') || selectedHTML.includes('<p>')) {
-            // Split by various line break patterns
-            lines = cleanText.split(/\n|<br\s*\/?>/i)
-              .map(line => line.replace(/<[^>]*>/g, '').trim()) // Remove HTML tags
+          // Extract text from div, p, li elements
+          const blockElements = tempDiv.querySelectorAll('div, p, li');
+          
+          if (blockElements.length > 0) {
+            // Extract text from each block element
+            lines = Array.from(blockElements)
+              .map(el => el.textContent?.trim() || '')
+              .filter(text => text !== '');
+            
+          } else if (selectedHTML.includes('<br>')) {
+            // Handle br tags
+            lines = selectedHTML.split(/<br\s*\/?>/i)
+              .map(line => line.replace(/<[^>]*>/g, '').trim())
               .filter(line => line !== '');
-          } else if (cleanText.length > 50 && cleanText.includes('.')) {
-            // Split longer text by sentences
-            lines = cleanText.split(/\.\s+/)
-              .map(line => line.trim())
-              .filter(line => line !== '')
-              .map(line => line.endsWith('.') ? line : line + '.');
-          } else if (cleanText.includes(',') && cleanText.length > 20) {
-            // Split by commas for lists
-            lines = cleanText.split(',')
-              .map(line => line.trim())
-              .filter(line => line !== '');
-          } else if (cleanText.includes(';')) {
-            // Split by semicolons
-            lines = cleanText.split(';')
-              .map(line => line.trim())
-              .filter(line => line !== '');
+              
           } else {
-            // Single item
-            lines = [cleanText];
+            // Fallback: split by common delimiters
+            const cleanText = selectedText.trim();
+            
+            if (cleanText.includes('\n')) {
+              lines = cleanText.split('\n')
+                .map(line => line.trim())
+                .filter(line => line !== '');
+            } else if (cleanText.includes('.') && cleanText.length > 50) {
+              lines = cleanText.split(/\.\s+/)
+                .map(line => line.trim())
+                .filter(line => line !== '');
+            } else if (cleanText.includes(',') && cleanText.length > 20) {
+              lines = cleanText.split(',')
+                .map(line => line.trim())
+                .filter(line => line !== '');
+            } else if (cleanText.includes(';')) {
+              lines = cleanText.split(';')
+                .map(line => line.trim())
+                .filter(line => line !== '');
+            } else {
+              lines = [cleanText];
+            }
           }
           
           // Ensure we have at least one item
@@ -263,8 +264,6 @@ export default function CreateCampaignPage() {
             lines = ['New numbered item'];
           }
         }
-        
-        console.log('Processed lines:', lines);
         
         // Create proper HTML ordered list structure
         const listItems = lines
@@ -274,11 +273,8 @@ export default function CreateCampaignPage() {
         
         const numberedHTML = `<ol style="margin: 8px 0; padding-left: 20px;">${listItems}</ol>`;
         
-        console.log('Generated numbered HTML:', numberedHTML);
-        
         // Replace the selected content
         range.deleteContents();
-        console.log('Selected content deleted');
         
         // Insert the new numbered content as HTML
         const tempDiv = document.createElement('div');
@@ -288,7 +284,6 @@ export default function CreateCampaignPage() {
         const listElement = tempDiv.firstChild;
         if (listElement) {
           range.insertNode(listElement);
-          console.log('List element inserted');
           
           // Position cursor at the end of the list
           const newRange = document.createRange();
@@ -296,9 +291,6 @@ export default function CreateCampaignPage() {
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
-          console.log('Cursor positioned after list');
-        } else {
-          console.error('Failed to create list element');
         }
       } else {
         // Insert a new numbered list item at cursor position
