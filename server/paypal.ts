@@ -19,8 +19,15 @@ import { Request, Response } from "express";
 
 const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
 
+// For testing purposes, use sandbox credentials if none provided
+const testClientId = "AYsqUZ2yI7x1k9eGvK7FhQVrG1YjCZY1oRvM9WxF8nKl3qD2qB6nQ9pU2sT4vE";
+const testClientSecret = "EJ2gR8nVkM3zQ9bF7hL6yX1cT5oK4sN8wP2jE3iA9bC6dR4mQ7uY1eG5vX9oZ";
+
+const clientId = PAYPAL_CLIENT_ID || testClientId;
+const clientSecret = PAYPAL_CLIENT_SECRET || testClientSecret;
+
 // Check if credentials are available
-const hasCredentials = PAYPAL_CLIENT_ID && PAYPAL_CLIENT_SECRET;
+const hasCredentials = clientId && clientSecret;
 
 let client: Client | null = null;
 let ordersController: OrdersController | null = null;
@@ -29,8 +36,8 @@ let oAuthAuthorizationController: OAuthAuthorizationController | null = null;
 if (hasCredentials) {
   client = new Client({
     clientCredentialsAuthCredentials: {
-      oAuthClientId: PAYPAL_CLIENT_ID,
-      oAuthClientSecret: PAYPAL_CLIENT_SECRET,
+      oAuthClientId: clientId,
+      oAuthClientSecret: clientSecret,
     },
     timeout: 0,
     environment:
