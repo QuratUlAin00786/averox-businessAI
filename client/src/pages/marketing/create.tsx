@@ -199,10 +199,15 @@ export default function CreateCampaignPage() {
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
+      console.log('Range collapsed:', range.collapsed);
+      console.log('Selected text:', range.toString());
+      
       // If there's selected text, replace it with numbered format
       if (!range.collapsed) {
         // Get the selected text content
         const selectedText = range.toString();
+        
+        console.log('Processing selected text:', selectedText);
         
         if (selectedText && selectedText.trim() !== '') {
           // Split the selected text into lines/items
