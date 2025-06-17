@@ -171,6 +171,7 @@ Changelog:
   - Simplified text parsing logic for more reliable numbering functionality across all environments
   - Fixed image button functionality with complete file upload and insertion system for email editor
   - Enhanced image functionality for deployment reliability with cross-browser compatibility and robust error handling
+  - Fixed text alignment button functionality (left, center, right) with intelligent block element detection and selection handling
 
 ## User Preferences
 

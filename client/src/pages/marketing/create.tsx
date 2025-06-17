@@ -437,6 +437,67 @@ export default function CreateCampaignPage() {
     }
   };
 
+  const handleTextAlign = (alignment: 'left' | 'center' | 'right') => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.focus();
+
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      
+      if (!range.collapsed) {
+        // Text is selected - wrap it in a div with alignment
+        const selectedContent = range.extractContents();
+        const alignDiv = document.createElement('div');
+        alignDiv.style.textAlign = alignment;
+        alignDiv.appendChild(selectedContent);
+        
+        range.insertNode(alignDiv);
+        
+        // Select the aligned content
+        const newRange = document.createRange();
+        newRange.selectNodeContents(alignDiv);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      } else {
+        // No selection - find current block element and align it
+        let currentElement: Node | null = range.startContainer;
+        
+        // Find the parent block element
+        while (currentElement && currentElement !== editor) {
+          if (currentElement.nodeType === Node.ELEMENT_NODE) {
+            const element = currentElement as HTMLElement;
+            if (element.tagName && ['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(element.tagName)) {
+              element.style.textAlign = alignment;
+              break;
+            }
+          }
+          currentElement = currentElement.parentNode as Node | null;
+        }
+        
+        // If no block element found, create one
+        if (currentElement === editor) {
+          const alignDiv = document.createElement('div');
+          alignDiv.style.textAlign = alignment;
+          alignDiv.innerHTML = 'Aligned text';
+          
+          range.insertNode(alignDiv);
+          
+          // Position cursor inside the div
+          const newRange = document.createRange();
+          newRange.selectNodeContents(alignDiv);
+          newRange.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      }
+    }
+    
+    setEditorContent(editor.innerHTML);
+  };
+
   const handleCancel = () => {
     // Navigate back to marketing page
     setLocation("/marketing");
@@ -628,13 +689,13 @@ export default function CreateCampaignPage() {
                               <ListOrdered className="h-4 w-4" />
                             </Button>
                             <Separator orientation="vertical" className="h-6" />
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" onClick={() => handleTextAlign('left')}>
                               <AlignLeft className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" onClick={() => handleTextAlign('center')}>
                               <AlignCenter className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" onClick={() => handleTextAlign('right')}>
                               <AlignRight className="h-4 w-4" />
                             </Button>
                             <Separator orientation="vertical" className="h-6" />
