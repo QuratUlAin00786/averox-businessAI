@@ -223,19 +223,46 @@ export default function CreateCampaignPage() {
             if (node.nodeType === Node.TEXT_NODE) {
               currentLine += node.textContent;
             } else if (node.nodeName === 'BR' || node.nodeName === 'DIV') {
-              lines.push(currentLine);
+              if (currentLine.trim()) {
+                lines.push(currentLine.trim());
+              }
               currentLine = '';
               if (node.nodeName === 'DIV' && node.textContent) {
                 currentLine = node.textContent;
               }
             }
           }
-          if (currentLine) {
-            lines.push(currentLine);
+          if (currentLine.trim()) {
+            lines.push(currentLine.trim());
           }
         } else {
-          // Handle plain text line breaks
-          lines = selectedText.split(/\r?\n/);
+          // For selected text without HTML breaks, intelligently split into items
+          const plainLines = selectedText.split(/\r?\n/).filter(line => line.trim());
+          
+          if (plainLines.length > 1) {
+            // Multiple lines already exist
+            lines = plainLines;
+          } else if (selectedText.includes('.') && selectedText.length > 50) {
+            // Split by sentences for longer text
+            lines = selectedText.split(/\.\s+/)
+              .map(line => line.trim())
+              .filter(line => line)
+              .map((line, index, arr) => {
+                // Add period back except for last item if it doesn't end with punctuation
+                if (index < arr.length - 1 && !line.match(/[.!?]$/)) {
+                  return line + '.';
+                }
+                return line;
+              });
+          } else if (selectedText.includes(',') && selectedText.length > 30) {
+            // Split by commas for lists
+            lines = selectedText.split(',')
+              .map(line => line.trim())
+              .filter(line => line);
+          } else {
+            // Single item - create one numbered list item
+            lines = [selectedText.trim()];
+          }
         }
         
         // Create proper HTML ordered list structure
