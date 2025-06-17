@@ -107,6 +107,15 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
+  const [cardError, setCardError] = useState<string | null>(null);
+
+  const handleCardChange = (event: any) => {
+    if (event.error) {
+      setCardError(event.error.message);
+    } else {
+      setCardError(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,8 +271,9 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
                 </div>
                 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="p-3 border border-gray-300 rounded-lg bg-white">
+                  <div className={`p-3 border rounded-lg bg-white ${cardError ? 'border-red-500' : 'border-gray-300'}`}>
                     <CardElement 
+                      onChange={handleCardChange}
                       options={{
                         style: {
                           base: {
@@ -277,6 +287,11 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
                       }}
                     />
                   </div>
+                  {cardError && (
+                    <div className="text-red-600 text-sm mt-2 p-2 bg-red-50 rounded border border-red-200">
+                      {cardError}
+                    </div>
+                  )}
                   <Button 
                     type="submit" 
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
