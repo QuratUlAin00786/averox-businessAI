@@ -34,6 +34,7 @@ export default function CreateCampaignPage() {
   const [campaignType, setCampaignType] = useState<string>("email");
   const [editorContent, setEditorContent] = useState<string>("");
   const editorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const proceedToStep = (nextStep: number) => {
     setStep(nextStep);
@@ -309,6 +310,74 @@ export default function CreateCampaignPage() {
     setEditorContent(editor.innerHTML);
   };
 
+  const handleImageInsert = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check if it's an image file
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+
+    // Create a FileReader to convert image to base64
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageDataUrl = e.target?.result as string;
+      insertImageIntoEditor(imageDataUrl, file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const insertImageIntoEditor = (src: string, altText: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.focus();
+
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      
+      // Create image element
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = altText;
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.margin = '8px 0';
+      img.style.display = 'block';
+      
+      // Insert image at cursor position
+      range.deleteContents();
+      range.insertNode(img);
+      
+      // Move cursor after the image
+      const newRange = document.createRange();
+      newRange.setStartAfter(img);
+      newRange.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+    } else {
+      // No selection - append to end
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = altText;
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.margin = '8px 0';
+      img.style.display = 'block';
+      
+      editor.appendChild(img);
+    }
+    
+    setEditorContent(editor.innerHTML);
+  };
+
   const handleCancel = () => {
     // Navigate back to marketing page
     setLocation("/marketing");
@@ -510,7 +579,7 @@ export default function CreateCampaignPage() {
                               <AlignRight className="h-4 w-4" />
                             </Button>
                             <Separator orientation="vertical" className="h-6" />
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" onClick={handleImageInsert}>
                               <Image className="h-4 w-4" />
                             </Button>
                           </div>
@@ -544,6 +613,15 @@ export default function CreateCampaignPage() {
                               data-placeholder="Start typing your email content here..."
                             />
                           </div>
+                          
+                          {/* Hidden file input for image uploads */}
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            style={{ display: 'none' }}
+                          />
                         </div>
                       </TabsContent>
 
