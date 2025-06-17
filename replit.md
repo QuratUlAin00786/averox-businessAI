@@ -168,6 +168,7 @@ Changelog:
   - Fixed decryption for all sensitive contact fields (email, phone, address, notes) using correct CryptoSphere integration
   - Fixed bullet point formatting inconsistency between development and deployment environments by implementing proper HTML list structures
   - Fixed numbering button functionality to create proper numbered list items instead of single lines for selected text
+  - Simplified text parsing logic for more reliable numbering functionality across all environments
 
 ## User Preferences
 

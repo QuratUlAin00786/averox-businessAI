@@ -209,60 +209,32 @@ export default function CreateCampaignPage() {
         const selectedHTML = container.innerHTML;
         const selectedText = container.textContent || container.innerText || '';
         
-        // Split by actual line breaks or <br> tags
+        // Use simple text-based approach for more reliable results
         let lines = [];
-        if (selectedHTML.includes('<br>') || selectedHTML.includes('<div>')) {
-          // Handle HTML line breaks
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = selectedHTML;
-          const textNodes = tempDiv.childNodes;
-          
-          let currentLine = '';
-          for (let i = 0; i < textNodes.length; i++) {
-            const node = textNodes[i];
-            if (node.nodeType === Node.TEXT_NODE) {
-              currentLine += node.textContent;
-            } else if (node.nodeName === 'BR' || node.nodeName === 'DIV') {
-              if (currentLine.trim()) {
-                lines.push(currentLine.trim());
+        
+        // Get plain text and split intelligently
+        if (selectedText.includes('\n')) {
+          // Text already has line breaks
+          lines = selectedText.split('\n').filter(line => line.trim() !== '');
+        } else if (selectedText.includes('.') && selectedText.length > 50) {
+          // Split by sentences for longer text
+          lines = selectedText.split(/\.\s+/)
+            .map(line => line.trim())
+            .filter(line => line !== '')
+            .map((line, index, arr) => {
+              if (index < arr.length - 1 && !line.endsWith('.')) {
+                return line + '.';
               }
-              currentLine = '';
-              if (node.nodeName === 'DIV' && node.textContent) {
-                currentLine = node.textContent;
-              }
-            }
-          }
-          if (currentLine.trim()) {
-            lines.push(currentLine.trim());
-          }
+              return line;
+            });
+        } else if (selectedText.includes(',') && selectedText.length > 30) {
+          // Split by commas for comma-separated items
+          lines = selectedText.split(',')
+            .map(line => line.trim())
+            .filter(line => line !== '');
         } else {
-          // For selected text without HTML breaks, intelligently split into items
-          const plainLines = selectedText.split(/\r?\n/).filter(line => line.trim());
-          
-          if (plainLines.length > 1) {
-            // Multiple lines already exist
-            lines = plainLines;
-          } else if (selectedText.includes('.') && selectedText.length > 50) {
-            // Split by sentences for longer text
-            lines = selectedText.split(/\.\s+/)
-              .map(line => line.trim())
-              .filter(line => line)
-              .map((line, index, arr) => {
-                // Add period back except for last item if it doesn't end with punctuation
-                if (index < arr.length - 1 && !line.match(/[.!?]$/)) {
-                  return line + '.';
-                }
-                return line;
-              });
-          } else if (selectedText.includes(',') && selectedText.length > 30) {
-            // Split by commas for lists
-            lines = selectedText.split(',')
-              .map(line => line.trim())
-              .filter(line => line);
-          } else {
-            // Single item - create one numbered list item
-            lines = [selectedText.trim()];
-          }
+          // Single item - create one numbered list item
+          lines = [selectedText.trim()];
         }
         
         // Create proper HTML ordered list structure
