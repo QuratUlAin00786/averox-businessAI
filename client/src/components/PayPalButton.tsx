@@ -99,17 +99,9 @@ export default function PayPalButton({
         
         setIsConfigured(true);
         
-        if (!(window as any).paypal) {
-          const script = document.createElement("script");
-          script.src = import.meta.env.PROD
-            ? "https://www.paypal.com/web-sdk/v6/core"
-            : "https://www.sandbox.paypal.com/web-sdk/v6/core";
-          script.async = true;
-          script.onload = () => initPayPal();
-          document.body.appendChild(script);
-        } else {
-          await initPayPal();
-        }
+        // Directly initialize our custom PayPal flow without loading the SDK
+        // since we're using our own redirect-based approach
+        initPayPal();
       } catch (e) {
         console.error("Failed to load PayPal SDK", e);
         setIsConfigured(false);
@@ -165,19 +157,22 @@ export default function PayPalButton({
           }
         };
 
-        const paypalButton = document.getElementById("paypal-button");
-        if (paypalButton) {
-          paypalButton.style.backgroundColor = "#0070ba";
-          paypalButton.style.color = "white";
-          paypalButton.style.border = "none";
-          paypalButton.style.borderRadius = "4px";
-          paypalButton.style.padding = "12px 24px";
-          paypalButton.style.fontSize = "16px";
-          paypalButton.style.fontWeight = "bold";
-          paypalButton.style.cursor = "pointer";
-          paypalButton.textContent = "Pay with PayPal";
-          paypalButton.addEventListener("click", onClick);
-        }
+        // Wait a bit for the DOM element to be ready
+        setTimeout(() => {
+          const paypalButton = document.getElementById("paypal-button");
+          if (paypalButton) {
+            paypalButton.style.backgroundColor = "#0070ba";
+            paypalButton.style.color = "white";
+            paypalButton.style.border = "none";
+            paypalButton.style.borderRadius = "4px";
+            paypalButton.style.padding = "12px 24px";
+            paypalButton.style.fontSize = "16px";
+            paypalButton.style.fontWeight = "bold";
+            paypalButton.style.cursor = "pointer";
+            paypalButton.textContent = "Pay with PayPal";
+            paypalButton.addEventListener("click", onClick);
+          }
+        }, 100);
         return;
       }
 
