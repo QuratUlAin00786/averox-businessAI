@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useLocation } from 'wouter';
 import ManufacturingIndex from './Manufacturing/index';
 import MaterialsManagement from './Manufacturing/MaterialsManagement';
 import ProductionManagement from './Manufacturing/ProductionManagement';
@@ -18,6 +19,8 @@ type ManufacturingProps = {
 };
 
 export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
+  const [, setLocation] = useLocation();
+
   // Default render the index page if no subpath
   if (!subPath) {
     return <ManufacturingIndex />;
@@ -100,7 +103,7 @@ export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
   
   // Add manufacturing analytics route - redirect to reports for analytics
   if (subPath === 'analytics') {
-    window.location.href = '/reports';
+    setLocation('/reports');
     return null;
   }
   

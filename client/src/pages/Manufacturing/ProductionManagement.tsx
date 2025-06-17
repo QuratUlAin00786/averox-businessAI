@@ -19,7 +19,7 @@ type ProductionFeature = {
 };
 
 export default function ProductionManagement() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   
   // Check if we're on a specific sub-page
   if (location === '/manufacturing/production/production-lines') {
@@ -33,12 +33,12 @@ export default function ProductionManagement() {
   if (location === '/manufacturing/production/bom') {
     const handleAddNew = () => {
       // Navigate to the full BOM management page which has the create dialog
-      window.location.href = '/manufacturing/boms';
+      setLocation('/manufacturing/boms');
     };
     
     const handleViewDetails = (bomId: number) => {
       // Navigate to the full BOM management page with the selected BOM
-      window.location.href = `/manufacturing/boms?id=${bomId}`;
+      setLocation(`/manufacturing/boms?id=${bomId}`);
     };
     
     return <BillOfMaterialsList onAddNew={handleAddNew} onViewDetails={handleViewDetails} />;

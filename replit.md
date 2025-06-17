@@ -172,6 +172,7 @@ Changelog:
   - Fixed image button functionality with complete file upload and insertion system for email editor
   - Enhanced image functionality for deployment reliability with cross-browser compatibility and robust error handling
   - Fixed text alignment button functionality (left, center, right) with intelligent block element detection and selection handling
+  - Fixed page refresh navigation issues in Manufacturing modules by replacing window.location.href with proper client-side routing
 
 ## User Preferences
 

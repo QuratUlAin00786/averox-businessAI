@@ -18,8 +18,8 @@ export default function ManufacturingIndex() {
   
   const handleModuleClick = (path: string) => {
     console.log('Manufacturing module clicked:', path);
-    // Force page navigation to ensure routing works
-    window.location.href = path;
+    // Use client-side navigation to prevent page refresh
+    setLocation(path);
   };
 
   const modules: ManufacturingModule[] = [
