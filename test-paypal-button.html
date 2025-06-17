@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PayPal Button Test</title>
+</head>
+<body>
+    <h1>PayPal Button Test</h1>
+    
+    <paypal-button id="paypal-button">Loading PayPal...</paypal-button>
+    
+    <script>
+        console.log('Testing PayPal button functionality...');
+        
+        // Simulate the PayPal button initialization
+        setTimeout(() => {
+            const paypalButton = document.getElementById("paypal-button");
+            if (paypalButton) {
+                paypalButton.style.backgroundColor = "#0070ba";
+                paypalButton.style.color = "white";
+                paypalButton.style.border = "none";
+                paypalButton.style.borderRadius = "4px";
+                paypalButton.style.padding = "12px 24px";
+                paypalButton.style.fontSize = "16px";
+                paypalButton.style.fontWeight = "bold";
+                paypalButton.style.cursor = "pointer";
+                paypalButton.textContent = "Pay with PayPal";
+                
+                const onClick = async () => {
+                    console.log('PayPal button clicked!');
+                    
+                    try {
+                        const orderResponse = await fetch("/paypal/order", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                amount: "29",
+                                currency: "USD",
+                                intent: "CAPTURE",
+                            }),
+                        });
+                        
+                        const orderData = await orderResponse.json();
+                        console.log('Order created:', orderData);
+                        
+                        if (orderData.id) {
+                            if (orderData.links && orderData.links.length > 0) {
+                                const approveLink = orderData.links.find((link) => link.rel === "approve");
+                                if (approveLink) {
+                                    console.log('Redirecting to:', approveLink.href);
+                                    window.location.href = approveLink.href;
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('PayPal checkout error:', error);
+                    }
+                };
+                
+                paypalButton.addEventListener("click", onClick);
+                console.log('PayPal button initialized successfully');
+            } else {
+                console.error('PayPal button element not found');
+            }
+        }, 100);
+    </script>
+</body>
+</html>

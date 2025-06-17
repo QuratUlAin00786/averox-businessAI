@@ -340,7 +340,7 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
                 <PayPalButton
                   amount={plan.price}
                   currency="USD"
-                  intent="subscription"
+                  intent="CAPTURE"
                 />
               </div>
             </div>
