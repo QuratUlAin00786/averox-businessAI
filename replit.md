@@ -164,7 +164,8 @@ Changelog:
   - Implemented full PayPal checkout flow ready for when credentials are provided
   - Fixed ERR_INIT_SDK_CLIENT_TOKEN_INVALID error by handling missing credentials properly
   - Fixed "Continue to Payment" button error with comprehensive error handling and loading states
-  - Resolved email decryption issue in contacts display where encrypted data was shown instead of decrypted values
+  - Successfully resolved email decryption issue in contacts display - API now returns properly decrypted email values
+  - Fixed decryption for all sensitive contact fields (email, phone, address, notes) using correct CryptoSphere integration
 
 ## User Preferences
 
