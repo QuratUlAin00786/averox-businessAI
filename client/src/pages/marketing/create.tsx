@@ -503,33 +503,42 @@ export default function CreateCampaignPage() {
     const editor = editorRef.current;
     if (!editor) return;
     
-    editor.focus();
-    
+    // Store selection before focusing to prevent loss
     const selection = window.getSelection();
+    let storedRange: Range | null = null;
+    let selectedText = '';
     
     if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      
+      storedRange = selection.getRangeAt(0).cloneRange();
+      selectedText = storedRange.toString();
+    }
+    
+    editor.focus();
+    
+    // Restore selection if it was lost
+    if (storedRange && selection) {
+      selection.removeAllRanges();
+      selection.addRange(storedRange);
+    }
+    
+    if (storedRange) {
       // If there's selected text, make it a link
-      if (!range.collapsed) {
-        const selectedText = range.toString();
-        
+      if (!storedRange.collapsed && selectedText.trim()) {
         // Prompt for URL
-        const url = prompt('Enter the URL:', 'https://');
+        const url = prompt('Enter the URL:', 'https://www.example.com');
         
-        if (url && url.trim()) {
+        if (url && url.trim() && url !== 'https://www.example.com') {
           // Create link element
           const link = document.createElement('a');
           link.href = url.trim();
           link.textContent = selectedText;
-          link.style.color = '#3b82f6';
-          link.style.textDecoration = 'underline';
+          link.style.cssText = 'color: #3b82f6; text-decoration: underline;';
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
           
           // Replace selected content with link
-          range.deleteContents();
-          range.insertNode(link);
+          storedRange.deleteContents();
+          storedRange.insertNode(link);
           
           // Position cursor after the link
           const newRange = document.createRange();
@@ -537,22 +546,23 @@ export default function CreateCampaignPage() {
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
+          
+          setEditorContent(editor.innerHTML);
         }
       } else {
         // No selection - create a new link
-        const url = prompt('Enter the URL:', 'https://');
+        const url = prompt('Enter the URL:', 'https://www.example.com');
         const linkText = prompt('Enter the link text:', 'Click here');
         
-        if (url && url.trim() && linkText && linkText.trim()) {
+        if (url && url.trim() && url !== 'https://www.example.com' && linkText && linkText.trim()) {
           const link = document.createElement('a');
           link.href = url.trim();
           link.textContent = linkText.trim();
-          link.style.color = '#3b82f6';
-          link.style.textDecoration = 'underline';
+          link.style.cssText = 'color: #3b82f6; text-decoration: underline;';
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
           
-          range.insertNode(link);
+          storedRange.insertNode(link);
           
           // Position cursor after the link
           const newRange = document.createRange();
@@ -560,11 +570,11 @@ export default function CreateCampaignPage() {
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
+          
+          setEditorContent(editor.innerHTML);
         }
       }
     }
-    
-    setEditorContent(editor.innerHTML);
   };
 
   const handleCancel = () => {
