@@ -199,11 +199,8 @@ export default function CreateCampaignPage() {
     // Ensure editor is focused and ready
     editor.focus();
     
-    // Add small delay to ensure focus is set
-    setTimeout(() => {
-      const selection = window.getSelection();
-      
-      if (selection && selection.rangeCount > 0) {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
       // If there's selected text, replace it with numbered format
@@ -314,7 +311,6 @@ export default function CreateCampaignPage() {
         } catch (error) {
           console.warn('Error inserting numbered list at cursor:', error);
           // Fallback: append to end
-          const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
           editor.innerHTML = editor.innerHTML + '<br>' + listHTML;
         }
       }
@@ -329,10 +325,10 @@ export default function CreateCampaignPage() {
       }
       
       // Position cursor at the end
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
       if (selection) {
-        const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
         selection.removeAllRanges();
         selection.addRange(range);
       }
