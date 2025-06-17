@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface PayPalButtonProps {
   amount: string;
@@ -16,7 +17,9 @@ export default function PayPalButton({
   onSuccess,
   onError,
 }: PayPalButtonProps) {
+  const [isLoading, setIsLoading] = useState(false);
   const handlePayPalPayment = async () => {
+    setIsLoading(true);
     try {
       // Create PayPal order
       const orderPayload = {
@@ -65,6 +68,8 @@ export default function PayPalButton({
       if (onError) {
         onError((error as Error).message);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -73,8 +78,16 @@ export default function PayPalButton({
       onClick={handlePayPalPayment}
       className="w-full bg-[#0070ba] hover:bg-[#005ea6] text-white font-medium py-2 px-4 rounded"
       type="button"
+      disabled={isLoading}
     >
-      Pay with PayPal
+      {isLoading ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Processing...
+        </>
+      ) : (
+        "Pay with PayPal"
+      )}
     </Button>
   );
 }

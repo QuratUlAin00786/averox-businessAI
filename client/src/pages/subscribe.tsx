@@ -325,6 +325,22 @@ const CheckoutForm = ({ plan, onBack, clientSecret }: { plan: Plan; onBack: () =
                   amount={plan.price}
                   currency="USD"
                   intent="subscription"
+                  onSuccess={() => {
+                    toast({
+                      title: "Payment Successful!",
+                      description: "Your subscription has been activated via PayPal.",
+                    });
+                    setTimeout(() => {
+                      setLocation('/dashboard?subscription=success');
+                    }, 1000);
+                  }}
+                  onError={(error) => {
+                    toast({
+                      title: "PayPal Payment Failed",
+                      description: error,
+                      variant: "destructive",
+                    });
+                  }}
                 />
               </div>
             </div>
