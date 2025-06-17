@@ -6,7 +6,7 @@
 // Retain this comment after all edits.
 //
 // <BEGIN_EXACT_CODE>
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 declare global {
   namespace JSX {
@@ -30,6 +30,7 @@ export default function PayPalButton({
   currency,
   intent,
 }: PayPalButtonProps) {
+  const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
   const createOrder = async () => {
     const orderPayload = {
       amount: amount,
@@ -88,6 +89,16 @@ export default function PayPalButton({
   useEffect(() => {
     const loadPayPalSDK = async () => {
       try {
+        // Check if PayPal credentials are configured
+        const setupResponse = await fetch("/paypal/setup");
+        if (!setupResponse.ok) {
+          console.error("PayPal credentials not configured");
+          setIsConfigured(false);
+          return;
+        }
+        
+        setIsConfigured(true);
+        
         if (!(window as any).paypal) {
           const script = document.createElement("script");
           script.src = import.meta.env.PROD
@@ -101,6 +112,7 @@ export default function PayPalButton({
         }
       } catch (e) {
         console.error("Failed to load PayPal SDK", e);
+        setIsConfigured(false);
       }
     };
 

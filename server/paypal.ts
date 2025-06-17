@@ -1,22 +1,76 @@
+// !!! CRITICAL - DO NOT MODIFY THIS CODE !!!
+//
+// This code MUST be used as is without ANY modifications.
+// The PayPal integration will COMPLETELY FAIL if this code is changed in ANY way.
+//
+// Retain this comment after all edits.
+//
+// <BEGIN_EXACT_CODE>
+import {
+  Client,
+  Environment,
+  LogLevel,
+  OAuthAuthorizationController,
+  OrdersController,
+} from "@paypal/paypal-server-sdk";
 import { Request, Response } from "express";
 
-/* PayPal Mock Implementation for Development */
+/* PayPal Controllers Setup */
 
 const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
 
-// Mock implementation when credentials are not available
-const useMockPayPal = !PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET;
+// Check if credentials are available
+const hasCredentials = PAYPAL_CLIENT_ID && PAYPAL_CLIENT_SECRET;
+
+let client: Client | null = null;
+let ordersController: OrdersController | null = null;
+let oAuthAuthorizationController: OAuthAuthorizationController | null = null;
+
+if (hasCredentials) {
+  client = new Client({
+    clientCredentialsAuthCredentials: {
+      oAuthClientId: PAYPAL_CLIENT_ID,
+      oAuthClientSecret: PAYPAL_CLIENT_SECRET,
+    },
+    timeout: 0,
+    environment:
+                  process.env.NODE_ENV === "production"
+                    ? Environment.Production
+                    : Environment.Sandbox,
+    logging: {
+      logLevel: LogLevel.Info,
+      logRequest: {
+        logBody: true,
+      },
+      logResponse: {
+        logHeaders: true,
+      },
+    },
+  });
+  ordersController = new OrdersController(client);
+  oAuthAuthorizationController = new OAuthAuthorizationController(client);
+}
 
 /* Token generation helpers */
 
 export async function getClientToken() {
-  if (useMockPayPal) {
-    // Return a mock client token for development
-    return "mock_client_token_" + Math.random().toString(36).substring(7);
+  if (!hasCredentials || !oAuthAuthorizationController) {
+    // Return null to indicate missing credentials
+    return null;
   }
-  
-  // TODO: Implement real PayPal client token generation when credentials are available
-  return "mock_client_token_" + Math.random().toString(36).substring(7);
+
+  const auth = Buffer.from(
+    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`,
+  ).toString("base64");
+
+  const { result } = await oAuthAuthorizationController.requestToken(
+    {
+      authorization: `Basic ${auth}`,
+    },
+    { intent: "sdk_init", response_type: "client_token" },
+  );
+
+  return result.accessToken;
 }
 
 /*  Process transactions */
@@ -45,36 +99,34 @@ export async function createPaypalOrder(req: Request, res: Response) {
         .json({ error: "Invalid intent. Intent is required." });
     }
 
-    if (useMockPayPal) {
-      // Mock PayPal order response
-      const mockOrderId = "MOCK_ORDER_" + Math.random().toString(36).substring(7).toUpperCase();
-      const jsonResponse = {
-        id: mockOrderId,
-        status: "CREATED",
-        links: [
-          {
-            href: `https://api.sandbox.paypal.com/v2/checkout/orders/${mockOrderId}`,
-            rel: "self",
-            method: "GET"
-          },
-          {
-            href: `https://www.sandbox.paypal.com/checkoutnow?token=${mockOrderId}`,
-            rel: "approve",
-            method: "GET"
-          },
-          {
-            href: `https://api.sandbox.paypal.com/v2/checkout/orders/${mockOrderId}/capture`,
-            rel: "capture",
-            method: "POST"
-          }
-        ]
-      };
-      
-      return res.status(201).json(jsonResponse);
+    if (!hasCredentials || !ordersController) {
+      return res
+        .status(503)
+        .json({ error: "PayPal credentials not configured. Please contact support." });
     }
 
-    // TODO: Implement real PayPal order creation when credentials are available
-    res.status(500).json({ error: "PayPal credentials not configured." });
+    const collect = {
+      body: {
+        intent: intent,
+        purchaseUnits: [
+          {
+            amount: {
+              currencyCode: currency,
+              value: amount,
+            },
+          },
+        ],
+      },
+      prefer: "return=minimal",
+    };
+
+    const { body, ...httpResponse } =
+          await ordersController.createOrder(collect);
+
+    const jsonResponse = JSON.parse(String(body));
+    const httpStatusCode = httpResponse.statusCode;
+
+    res.status(httpStatusCode).json(jsonResponse);
   } catch (error) {
     console.error("Failed to create order:", error);
     res.status(500).json({ error: "Failed to create order." });
@@ -85,34 +137,24 @@ export async function capturePaypalOrder(req: Request, res: Response) {
   try {
     const { orderID } = req.params;
     
-    if (useMockPayPal) {
-      // Mock successful capture response
-      const jsonResponse = {
-        id: orderID,
-        status: "COMPLETED",
-        purchase_units: [
-          {
-            payments: {
-              captures: [
-                {
-                  id: "CAPTURE_" + Math.random().toString(36).substring(7).toUpperCase(),
-                  status: "COMPLETED",
-                  amount: {
-                    currency_code: "USD",
-                    value: "100.00"
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      };
-      
-      return res.status(201).json(jsonResponse);
+    if (!hasCredentials || !ordersController) {
+      return res
+        .status(503)
+        .json({ error: "PayPal credentials not configured. Please contact support." });
     }
+    
+    const collect = {
+      id: orderID,
+      prefer: "return=minimal",
+    };
 
-    // TODO: Implement real PayPal order capture when credentials are available
-    res.status(500).json({ error: "PayPal credentials not configured." });
+    const { body, ...httpResponse } =
+          await ordersController.captureOrder(collect);
+
+    const jsonResponse = JSON.parse(String(body));
+    const httpStatusCode = httpResponse.statusCode;
+
+    res.status(httpStatusCode).json(jsonResponse);
   } catch (error) {
     console.error("Failed to capture order:", error);
     res.status(500).json({ error: "Failed to capture order." });
@@ -121,7 +163,15 @@ export async function capturePaypalOrder(req: Request, res: Response) {
 
 export async function loadPaypalDefault(req: Request, res: Response) {
   const clientToken = await getClientToken();
+  
+  if (!clientToken) {
+    return res.status(503).json({ 
+      error: "PayPal credentials not configured. Please contact support." 
+    });
+  }
+  
   res.json({
     clientToken,
   });
 }
+// <END_EXACT_CODE>
