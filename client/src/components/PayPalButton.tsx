@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface PayPalButtonProps {
   amount: string;
@@ -12,6 +12,21 @@ export default function PayPalButton({
   intent,
 }: PayPalButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+
+  // Force cleanup of any existing PayPal scripts
+  useEffect(() => {
+    // Remove any existing PayPal scripts
+    const scripts = document.querySelectorAll('script[src*="paypal"]');
+    scripts.forEach(script => script.remove());
+    
+    // Remove any PayPal elements
+    const paypalElements = document.querySelectorAll('[id*="paypal"], [class*="paypal"]');
+    paypalElements.forEach(element => {
+      if (element.id !== 'paypal-button-component') {
+        element.remove();
+      }
+    });
+  }, []);
 
   const handlePayPalClick = async () => {
     if (isLoading) return;
@@ -57,24 +72,26 @@ export default function PayPalButton({
   };
 
   return (
-    <button
-      onClick={handlePayPalClick}
-      disabled={isLoading}
-      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-    >
-      {isLoading ? (
-        <div className="flex items-center">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-          Processing...
-        </div>
-      ) : (
-        <div className="flex items-center">
-          <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a.75.75 0 0 1 .592.75c0 4.422-3.578 8-8 8s-8-3.578-8-8 3.578-8 8-8c1.78 0 3.42.582 4.747 1.563a.75.75 0 0 1-.339 1.437 6.5 6.5 0 1 0 2.25 4.25.75.75 0 0 1 .75-.75z"/>
-          </svg>
-          Pay with PayPal
-        </div>
-      )}
-    </button>
+    <div key="paypal-button-component" id="paypal-button-component">
+      <button
+        onClick={handlePayPalClick}
+        disabled={isLoading}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+      >
+        {isLoading ? (
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            Processing...
+          </div>
+        ) : (
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a.75.75 0 0 1 .592.75c0 4.422-3.578 8-8 8s-8-3.578-8-8 3.578-8 8-8c1.78 0 3.42.582 4.747 1.563a.75.75 0 0 1-.339 1.437 6.5 6.5 0 1 0 2.25 4.25.75.75 0 0 1 .75-.75z"/>
+            </svg>
+            Pay with PayPal
+          </div>
+        )}
+      </button>
+    </div>
   );
 }
