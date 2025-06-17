@@ -120,22 +120,51 @@ export default function PayPalButton({
   }, []);
   const initPayPal = async () => {
     try {
-      const clientToken: string = await fetch("/paypal/setup")
-        .then((res) => res.json())
-        .then((data) => {
-          return data.clientToken;
-        });
+      const setupResponse = await fetch("/paypal/setup");
+      const setupData = await setupResponse.json();
+      
+      // For development mode, create a mock PayPal button
+      if (setupData.clientToken === "development-paypal-client-token") {
+        const onClick = () => {
+          // Show payment confirmation dialog
+          const confirmed = window.confirm("Demo PayPal Payment\n\nThis would process a $29/month subscription payment.\n\nClick OK to simulate successful payment.");
+          
+          if (confirmed) {
+            // Simulate successful payment
+            onApprove({ orderId: "DEMO_ORDER_" + Date.now() });
+          } else {
+            // Simulate cancelled payment
+            onCancel({ reason: "user_cancelled" });
+          }
+        };
+
+        const paypalButton = document.getElementById("paypal-button");
+        if (paypalButton) {
+          paypalButton.style.backgroundColor = "#0070ba";
+          paypalButton.style.color = "white";
+          paypalButton.style.border = "none";
+          paypalButton.style.borderRadius = "4px";
+          paypalButton.style.padding = "12px 24px";
+          paypalButton.style.fontSize = "16px";
+          paypalButton.style.fontWeight = "bold";
+          paypalButton.style.cursor = "pointer";
+          paypalButton.textContent = "Pay with PayPal";
+          paypalButton.addEventListener("click", onClick);
+        }
+        return;
+      }
+
+      // Real PayPal SDK initialization for production
       const sdkInstance = await (window as any).paypal.createInstance({
-        clientToken,
+        clientToken: setupData.clientToken,
         components: ["paypal-payments"],
       });
 
-      const paypalCheckout =
-            sdkInstance.createPayPalOneTimePaymentSession({
-              onApprove,
-              onCancel,
-              onError,
-            });
+      const paypalCheckout = sdkInstance.createPayPalOneTimePaymentSession({
+        onApprove,
+        onCancel,
+        onError,
+      });
 
       const onClick = async () => {
         try {
@@ -150,7 +179,6 @@ export default function PayPalButton({
       };
 
       const paypalButton = document.getElementById("paypal-button");
-
       if (paypalButton) {
         paypalButton.addEventListener("click", onClick);
       }
