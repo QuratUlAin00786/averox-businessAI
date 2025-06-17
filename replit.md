@@ -166,6 +166,7 @@ Changelog:
   - Fixed "Continue to Payment" button error with comprehensive error handling and loading states
   - Successfully resolved email decryption issue in contacts display - API now returns properly decrypted email values
   - Fixed decryption for all sensitive contact fields (email, phone, address, notes) using correct CryptoSphere integration
+  - Fixed bullet point formatting inconsistency between development and deployment environments by implementing proper HTML list structures
 
 ## User Preferences
 
