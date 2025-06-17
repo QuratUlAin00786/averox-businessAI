@@ -193,126 +193,57 @@ export default function CreateCampaignPage() {
     const editor = editorRef.current;
     if (!editor) return;
     
-    editor.focus();
-    
     const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
+    if (!selection || selection.rangeCount === 0) return;
+    
+    const range = selection.getRangeAt(0);
+    
+    // If there's selected text, convert it to numbered list
+    if (!range.collapsed) {
+      const selectedText = range.toString().trim();
       
-      console.log('Range collapsed:', range.collapsed);
-      console.log('Selected text:', range.toString());
-      
-      // If there's selected text, replace it with numbered format
-      if (!range.collapsed) {
-        // Get the selected text content
-        const selectedText = range.toString();
+      if (selectedText) {
+        // Delete the selected content
+        range.deleteContents();
         
-        console.log('Processing selected text:', selectedText);
+        // Create the list element
+        const ol = document.createElement('ol');
+        ol.style.margin = '8px 0';
+        ol.style.paddingLeft = '20px';
         
-        if (selectedText && selectedText.trim() !== '') {
-          // Split the selected text into lines/items
-          let lines = [];
-          
-          // Handle different types of line breaks
-          if (selectedText.includes('\n')) {
-            lines = selectedText.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '');
-          } else if (selectedText.includes('\t')) {
-            lines = selectedText.split('\t').map(line => line.trim()).filter(line => line !== '');
-          } else {
-            // Single line of text
-            lines = [selectedText.trim()];
-          }
-          
-          // Ensure we have at least one item
-          if (lines.length === 0) {
-            lines = ['New numbered item'];
-          }
-          
-          // Create proper HTML list structure for numbered list
-          const listItems = lines.map(line => `<li style="margin-bottom: 4px;">${line}</li>`).join('');
-          const numberedHTML = `<ol style="margin: 8px 0; padding-left: 20px;">${listItems}</ol>`;
-          
-          // Replace the selected content
-          range.deleteContents();
-          
-          // Insert the new numbered content as HTML
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = numberedHTML;
-          
-          // Insert the HTML list
-          const listElement = tempDiv.firstChild;
-          if (listElement) {
-            range.insertNode(listElement);
-            
-            // Position cursor at the end of the list
-            const newRange = document.createRange();
-            newRange.setStartAfter(listElement);
-            newRange.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(newRange);
-          }
-        } else {
-          // Selected area is empty, insert default list
-          const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
-          
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = listHTML;
-          
-          const listElement = tempDiv.firstChild;
-          if (listElement) {
-            range.insertNode(listElement);
-            
-            // Position cursor inside the new list item
-            const listItem = (listElement as Element).querySelector('li');
-            if (listItem) {
-              const newRange = document.createRange();
-              newRange.selectNodeContents(listItem);
-              newRange.collapse(false);
-              selection.removeAllRanges();
-              selection.addRange(newRange);
-            }
-          }
-        }
-      } else {
-        // Insert a new numbered list item at cursor position
-        const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
+        const li = document.createElement('li');
+        li.style.marginBottom = '4px';
+        li.textContent = selectedText;
         
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = listHTML;
+        ol.appendChild(li);
         
-        const listElement = tempDiv.firstChild;
-        if (listElement) {
-          range.insertNode(listElement);
-          
-          // Position cursor inside the new list item
-          const listItem = (listElement as Element).querySelector('li');
-          if (listItem) {
-            const newRange = document.createRange();
-            newRange.selectNodeContents(listItem);
-            newRange.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(newRange);
-          }
-        }
-      }
-    } else {
-      // Fallback: add at the end if no selection
-      const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
-      
-      if (!editor.innerHTML || editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
-        editor.innerHTML = listHTML;
-      } else {
-        editor.innerHTML = editor.innerHTML + '<br>' + listHTML;
-      }
-      
-      // Position cursor at the end
-      if (selection) {
-        const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
+        // Insert the list
+        range.insertNode(ol);
+        
+        // Position cursor after the list
+        range.setStartAfter(ol);
+        range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
       }
+    } else {
+      // No selection - insert at cursor
+      const ol = document.createElement('ol');
+      ol.style.margin = '8px 0';
+      ol.style.paddingLeft = '20px';
+      
+      const li = document.createElement('li');
+      li.style.marginBottom = '4px';
+      li.textContent = 'New numbered item';
+      
+      ol.appendChild(li);
+      range.insertNode(ol);
+      
+      // Position cursor inside the list item
+      range.selectNodeContents(li);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
     }
     
     setEditorContent(editor.innerHTML);
