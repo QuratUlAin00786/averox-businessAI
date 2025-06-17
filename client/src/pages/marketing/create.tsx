@@ -294,7 +294,6 @@ export default function CreateCampaignPage() {
         }
       } else {
         // Insert a new numbered list item at cursor position
-        console.log('No selected text, inserting new list at cursor');
         const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
         
         try {
@@ -304,7 +303,6 @@ export default function CreateCampaignPage() {
           const listElement = tempDiv.firstChild as HTMLElement;
           if (listElement) {
             range.insertNode(listElement);
-            console.log('List inserted at cursor position');
             
             // Add a line break after the list for better editing
             const br = document.createElement('br');
@@ -318,26 +316,20 @@ export default function CreateCampaignPage() {
               newRange.collapse(false);
               selection.removeAllRanges();
               selection.addRange(newRange);
-              console.log('Cursor positioned inside list item');
             }
           }
         } catch (error) {
-          console.warn('Error inserting numbered list at cursor:', error);
           // Fallback: append to end
           editor.innerHTML = editor.innerHTML + '<br>' + listHTML;
-          console.log('Used fallback method - appended to end');
         }
       }
     } else {
       // Fallback: add at the end if no selection
-      console.log('No selection, adding to end');
       const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
       
       if (!editor.innerHTML || editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
-        console.log('Empty editor, setting HTML');
         editor.innerHTML = listHTML;
       } else {
-        console.log('Appending to existing content');
         editor.innerHTML = editor.innerHTML + '<br>' + listHTML;
       }
       
@@ -350,15 +342,12 @@ export default function CreateCampaignPage() {
           selection.removeAllRanges();
           selection.addRange(range);
         }
-        console.log('Cursor positioned');
       } catch (error) {
-        console.error('Error positioning cursor:', error);
+        // Silent fail for cursor positioning
       }
     }
     
-    console.log('Updating editor content');
     setEditorContent(editor.innerHTML);
-    console.log('Numbering function complete');
   };
 
   const handleImageInsert = () => {
