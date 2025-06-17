@@ -175,6 +175,9 @@ Changelog:
   - Fixed page refresh navigation issues in Manufacturing modules by replacing window.location.href with proper client-side routing
   - Reordered Manufacturing routes in App.tsx for proper route matching (most specific routes first)
   - Enhanced sidebar Manufacturing submenu visibility logic to show on all Manufacturing sub-pages
+  - Fixed numbering button functionality in email editor with enhanced text processing and error handling
+  - Improved numbering logic to handle various text formats (line breaks, sentences, comma-separated items)
+  - Added comprehensive error handling and fallback options for reliable numbering functionality
 
 ## User Preferences
 
