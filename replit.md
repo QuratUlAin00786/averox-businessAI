@@ -170,6 +170,7 @@ Changelog:
   - Fixed numbering button functionality to create proper numbered list items instead of single lines for selected text
   - Simplified text parsing logic for more reliable numbering functionality across all environments
   - Fixed image button functionality with complete file upload and insertion system for email editor
+  - Enhanced image functionality for deployment reliability with cross-browser compatibility and robust error handling
 
 ## User Preferences
 

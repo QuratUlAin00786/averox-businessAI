@@ -318,64 +318,123 @@ export default function CreateCampaignPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check if it's an image file
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
+    // Check if it's an image file with multiple validation methods for deployment compatibility
+    const isImageByType = file.type.startsWith('image/');
+    const isImageByExtension = /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(file.name);
+    
+    if (!isImageByType && !isImageByExtension) {
+      alert('Please select an image file (jpg, png, gif, etc.).');
       return;
     }
 
-    // Create a FileReader to convert image to base64
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const imageDataUrl = e.target?.result as string;
-      insertImageIntoEditor(imageDataUrl, file.name);
-    };
-    reader.readAsDataURL(file);
+    // Check file size (max 10MB for deployment compatibility)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      alert('Image file is too large. Please select an image under 10MB.');
+      return;
+    }
+
+    try {
+      // Create a FileReader to convert image to base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imageDataUrl = e.target?.result as string;
+          if (imageDataUrl) {
+            insertImageIntoEditor(imageDataUrl, file.name);
+          }
+        } catch (error) {
+          console.error('Error processing image:', error);
+          alert('Failed to process the image. Please try a different image.');
+        }
+      };
+      reader.onerror = () => {
+        alert('Failed to read the image file. Please try again.');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload the image. Please try again.');
+    }
+
+    // Clear the input value to allow re-selecting the same file
+    event.target.value = '';
   };
 
   const insertImageIntoEditor = (src: string, altText: string) => {
     const editor = editorRef.current;
     if (!editor) return;
 
-    editor.focus();
+    try {
+      // Ensure editor is focused for consistent behavior across browsers
+      editor.focus();
 
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      
-      // Create image element
+      // Create image element with deployment-safe attributes
       const img = document.createElement('img');
       img.src = src;
-      img.alt = altText;
-      img.style.maxWidth = '100%';
-      img.style.height = 'auto';
-      img.style.margin = '8px 0';
-      img.style.display = 'block';
+      img.alt = altText || 'Uploaded image';
       
-      // Insert image at cursor position
-      range.deleteContents();
-      range.insertNode(img);
+      // Set styles for consistent rendering across environments
+      img.style.cssText = `
+        max-width: 100%;
+        height: auto;
+        margin: 8px 0;
+        display: block;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      `;
+
+      // Add loading and error handling for deployment reliability
+      img.onload = () => {
+        console.log('Image loaded successfully in editor');
+      };
+      img.onerror = () => {
+        console.error('Failed to load image in editor');
+        img.alt = 'Failed to load image';
+        img.style.cssText += 'background-color: #f3f4f6; padding: 20px; text-align: center;';
+      };
+
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        try {
+          const range = selection.getRangeAt(0);
+          
+          // Clear any selected content
+          range.deleteContents();
+          
+          // Insert image at cursor position
+          range.insertNode(img);
+          
+          // Add a line break after the image for better editing
+          const br = document.createElement('br');
+          range.insertNode(br);
+          
+          // Move cursor after the image and line break
+          const newRange = document.createRange();
+          newRange.setStartAfter(br);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        } catch (rangeError) {
+          console.warn('Range insertion failed, appending to end:', rangeError);
+          // Fallback to appending at end
+          editor.appendChild(img);
+          editor.appendChild(document.createElement('br'));
+        }
+      } else {
+        // No selection - append to end with line break
+        editor.appendChild(img);
+        editor.appendChild(document.createElement('br'));
+      }
       
-      // Move cursor after the image
-      const newRange = document.createRange();
-      newRange.setStartAfter(img);
-      newRange.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-    } else {
-      // No selection - append to end
-      const img = document.createElement('img');
-      img.src = src;
-      img.alt = altText;
-      img.style.maxWidth = '100%';
-      img.style.height = 'auto';
-      img.style.margin = '8px 0';
-      img.style.display = 'block';
+      // Update editor content state
+      setEditorContent(editor.innerHTML);
       
-      editor.appendChild(img);
+      console.log('Image inserted successfully into editor');
+    } catch (error) {
+      console.error('Error inserting image into editor:', error);
+      alert('Failed to insert image into editor. Please try again.');
     }
-    
-    setEditorContent(editor.innerHTML);
   };
 
   const handleCancel = () => {
