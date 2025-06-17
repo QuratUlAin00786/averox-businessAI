@@ -165,6 +165,25 @@ export default function PayPalButton({
     }
   };
 
+  // Show loading state while checking configuration
+  if (isConfigured === null) {
+    return (
+      <div className="w-full bg-gray-100 text-gray-500 font-medium py-2 px-4 rounded text-center">
+        Loading PayPal...
+      </div>
+    );
+  }
+
+  // Show message when PayPal is not configured
+  if (isConfigured === false) {
+    return (
+      <div className="w-full bg-gray-100 text-gray-600 font-medium py-2 px-4 rounded text-center">
+        PayPal payment unavailable - please contact support
+      </div>
+    );
+  }
+
+  // Show PayPal button when configured
   return <paypal-button id="paypal-button"></paypal-button>;
 }
 // <END_EXACT_CODE>

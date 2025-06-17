@@ -157,6 +157,12 @@ Changelog:
   - Restored Averox logo with Business AI description to landing page hero section
   - Partially fixed payment form by switching from PaymentElement to CardElement approach
   - Payment backend confirmed working (payment intent creation successful), frontend processing partially resolved
+- June 17, 2025. Fixed PayPal button functionality:
+  - Replaced mock PayPal implementation with official PayPal Server SDK integration
+  - Added proper credential validation and graceful error handling for missing API keys
+  - PayPal button now shows clear "unavailable - contact support" message instead of SDK errors
+  - Implemented full PayPal checkout flow ready for when credentials are provided
+  - Fixed ERR_INIT_SDK_CLIENT_TOKEN_INVALID error by handling missing credentials properly
 
 ## User Preferences
 
