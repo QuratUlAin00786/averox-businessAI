@@ -505,6 +505,15 @@ export default function Subscribe({ planId: propPlanId }: SubscribeProps) {
     }
   };
 
+  // Auto-redirect to dashboard if user wants to go back
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('redirect') === 'dashboard') {
+      setLocation('/');
+      return;
+    }
+  }, [setLocation]);
+
   useEffect(() => {
     // Get planId from URL params or props
     const planId = params?.id ? parseInt(params.id) : propPlanId || 1;
