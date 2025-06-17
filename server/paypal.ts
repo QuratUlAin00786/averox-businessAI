@@ -104,8 +104,11 @@ export async function createPaypalOrder(req: Request, res: Response) {
 
     // For development/testing, create demo orders that redirect to sandbox PayPal
     if (!hasCredentials || !ordersController) {
+      const orderId = "DEMO_" + Date.now() + "_" + Math.random().toString(36).substring(7);
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN || 'http://localhost:3000';
+      
       const demoOrder = {
-        id: "DEMO_" + Date.now() + "_" + Math.random().toString(36).substring(7),
+        id: orderId,
         status: "CREATED",
         intent: intent,
         purchase_units: [
@@ -118,7 +121,7 @@ export async function createPaypalOrder(req: Request, res: Response) {
         ],
         links: [
           {
-            href: `https://www.sandbox.paypal.com/checkoutnow?token=${demoOrder.id}&return_url=${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:3000'}/paypal/return&cancel_url=${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:3000'}/paypal/cancel`,
+            href: `https://www.sandbox.paypal.com/checkoutnow?token=${orderId}&return_url=${baseUrl}/paypal/return&cancel_url=${baseUrl}/paypal/cancel`,
             rel: "approve",
             method: "REDIRECT"
           }
