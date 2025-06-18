@@ -53,21 +53,30 @@ export default function CreateCampaignPage() {
     const editor = editorRef.current;
     if (!editor) return;
 
-    const handleLinkClick = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === 'A') {
-        e.preventDefault();
-        const link = target as HTMLAnchorElement;
-        if (link.href) {
-          window.open(link.href, '_blank', 'noopener,noreferrer');
+      
+      // Check if clicked element is a link or inside a link
+      let linkElement = target;
+      while (linkElement && linkElement !== editor) {
+        if (linkElement.tagName === 'A') {
+          e.preventDefault();
+          e.stopPropagation();
+          const link = linkElement as HTMLAnchorElement;
+          if (link.href && link.href !== window.location.href) {
+            window.open(link.href, '_blank', 'noopener,noreferrer');
+          }
+          return;
         }
+        linkElement = linkElement.parentElement as HTMLElement;
       }
     };
 
-    editor.addEventListener('click', handleLinkClick);
+    // Add event listener with capture to intercept before contentEditable handling
+    editor.addEventListener('click', handleClick, true);
     
     return () => {
-      editor.removeEventListener('click', handleLinkClick);
+      editor.removeEventListener('click', handleClick, true);
     };
   }, []);
 
@@ -774,6 +783,17 @@ export default function CreateCampaignPage() {
                               onFocus={(e) => {
                                 const target = e.target as HTMLDivElement;
                                 target.classList.remove('empty');
+                              }}
+                              onMouseDown={(e) => {
+                                const target = e.target as HTMLElement;
+                                if (target.tagName === 'A' && !e.ctrlKey && !e.metaKey) {
+                                  // For regular clicks on links, prevent default editing behavior
+                                  e.preventDefault();
+                                  const link = target as HTMLAnchorElement;
+                                  if (link.href) {
+                                    window.open(link.href, '_blank', 'noopener,noreferrer');
+                                  }
+                                }
                               }}
                               style={{ 
                                 minHeight: '320px',
