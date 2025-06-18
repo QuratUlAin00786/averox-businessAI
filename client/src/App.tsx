@@ -404,29 +404,35 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/marketing/create" component={() => {
-        // Explicit route guard for create page
-        if (window.location.pathname !== '/marketing/create') {
+      <Route path="/marketing*">
+        {(params) => {
+          const pathname = window.location.pathname;
+          
+          // Exact route matching to prevent conflicts
+          if (pathname === '/marketing/create') {
+            return (
+              <ProtectedRoute path="/marketing/create" component={() => (
+                <Layout>
+                  <MarketingCreate />
+                </Layout>
+              )} />
+            );
+          }
+          
+          if (pathname === '/marketing') {
+            return (
+              <ProtectedRoute path="/marketing" component={() => (
+                <Layout>
+                  <Marketing />
+                </Layout>
+              )} />
+            );
+          }
+          
+          // For any other marketing sub-routes, return null to let other routes handle them
           return null;
-        }
-        return (
-          <Layout>
-            <MarketingCreate />
-          </Layout>
-        );
-      }} />
-      
-      <ProtectedRoute path="/marketing" component={() => {
-        // Only render if we're exactly on /marketing, not on sub-routes
-        if (window.location.pathname !== '/marketing') {
-          return null;
-        }
-        return (
-          <Layout>
-            <Marketing />
-          </Layout>
-        );
-      }} />
+        }}
+      </Route>
       
       <ProtectedRoute path="/marketing/campaigns/:id" component={() => (
         <Layout>
