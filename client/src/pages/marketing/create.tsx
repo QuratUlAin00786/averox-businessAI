@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { 
   Mail,
@@ -29,12 +29,45 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function CreateCampaignPage() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [step, setStep] = useState<number>(1);
   const [campaignType, setCampaignType] = useState<string>("email");
   const [editorContent, setEditorContent] = useState<string>("");
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fix refresh navigation issue by ensuring stable route state
+  useEffect(() => {
+    // Log current state for debugging
+    console.log('Current location:', location);
+    console.log('Window pathname:', window.location.pathname);
+    
+    // Override browser refresh behavior to stay on current page
+    const handleBeforeUnload = () => {
+      // Store the current page in session storage
+      sessionStorage.setItem('lastPage', '/marketing/create');
+    };
+    
+    const handleLoad = () => {
+      // Check if we were redirected after refresh
+      const lastPage = sessionStorage.getItem('lastPage');
+      if (lastPage === '/marketing/create' && window.location.pathname !== '/marketing/create') {
+        console.log('Fixing redirect after refresh');
+        window.location.replace('/marketing/create');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('load', handleLoad);
+    
+    // Set session storage on mount
+    sessionStorage.setItem('lastPage', '/marketing/create');
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('load', handleLoad);
+    };
+  }, [location]);
 
   const proceedToStep = (nextStep: number) => {
     setStep(nextStep);
