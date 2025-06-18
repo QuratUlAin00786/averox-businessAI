@@ -36,23 +36,21 @@ export default function CreateCampaignPage() {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Force correct component rendering for this route
+  // Ensure this component renders correctly for refresh navigation
   useEffect(() => {
-    // Ensure this component only renders for the correct route
-    const currentPath = window.location.pathname;
-    if (currentPath !== '/marketing/create') {
-      console.log('Wrong route detected, redirecting to /marketing/create');
-      setLocation('/marketing/create', { replace: true });
-      return;
+    // Force browser URL to match component route
+    if (window.location.pathname !== '/marketing/create') {
+      window.history.replaceState(null, '', '/marketing/create');
     }
     
-    // Add a distinctive identifier to ensure this is the correct component
+    // Set distinctive page identifier
     document.body.setAttribute('data-page', 'marketing-create');
+    document.title = 'Create New Campaign - Averox Business AI';
     
     return () => {
       document.body.removeAttribute('data-page');
     };
-  }, [location, setLocation]);
+  }, []);
 
   const proceedToStep = (nextStep: number) => {
     setStep(nextStep);
