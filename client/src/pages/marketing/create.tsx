@@ -249,46 +249,39 @@ export default function CreateCampaignPage() {
       // We have selected text - convert it to numbered list
       console.log('Selected text:', selectedText);
       
-      // Check if the selected content contains HTML elements (like divs or spans)
+      // Get the HTML content from the selection to preserve structure
       const clonedFragment = range.cloneContents();
       const analyzeDiv = document.createElement('div');
       analyzeDiv.appendChild(clonedFragment);
       
-      // Try to extract text from individual elements first
-      const elements = analyzeDiv.querySelectorAll('div, p, span, li');
+      // Check if we have block-level elements that represent separate lines
+      const blockElements = analyzeDiv.querySelectorAll('div, p, li');
       let textLines: string[] = [];
       
-      if (elements.length > 0) {
-        // Extract text from each element
-        elements.forEach(el => {
+      if (blockElements.length > 0) {
+        // Extract text from each block element
+        blockElements.forEach(el => {
           const text = el.textContent?.trim();
           if (text && text.length > 0) {
             textLines.push(text);
           }
         });
-      }
-      
-      // If no elements found or no text extracted, try splitting by common separators
-      if (textLines.length === 0) {
-        // Try splitting by different separators
-        const separators = ['\n', '\r\n', '\r', '<br>', '<div>', '</div>'];
-        let bestSplit = [selectedText];
+      } else {
+        // No block elements found, check if we have inline elements with line breaks
+        const htmlContent = analyzeDiv.innerHTML;
         
-        for (const sep of separators) {
-          const split = selectedText.split(sep).map(line => line.trim()).filter(line => line.length > 0);
-          if (split.length > bestSplit.length) {
-            bestSplit = split;
-          }
-        }
-        
-        textLines = bestSplit;
-      }
-      
-      // If still only one item, check if it contains spaces and split by words for numbering
-      if (textLines.length === 1 && selectedText.includes(' ')) {
-        const words = selectedText.trim().split(/\s+/);
-        if (words.length > 3) { // Only split if more than 3 words
-          textLines = words;
+        if (htmlContent.includes('<br>') || htmlContent.includes('<div>')) {
+          // Split by HTML line breaks
+          const parts = htmlContent.split(/<br\s*\/?>/i).map(part => {
+            const temp = document.createElement('div');
+            temp.innerHTML = part;
+            return temp.textContent?.trim() || '';
+          }).filter(text => text.length > 0);
+          
+          textLines = parts.length > 0 ? parts : [selectedText];
+        } else {
+          // Plain text - use as single item to preserve data integrity
+          textLines = [selectedText];
         }
       }
       
