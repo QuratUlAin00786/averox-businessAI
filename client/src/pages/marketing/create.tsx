@@ -37,9 +37,6 @@ export default function CreateCampaignPage() {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Use exact route matching to prevent conflicts
-  const isExactRoute = useExactRoute('/marketing/create');
-  
   // Ensure this component renders correctly for refresh navigation
   useEffect(() => {
     // Set distinctive page identifier
@@ -50,11 +47,6 @@ export default function CreateCampaignPage() {
       document.body.removeAttribute('data-page');
     };
   }, []);
-  
-  // Only render if we're on the exact route
-  if (!isExactRoute) {
-    return null;
-  }
 
   const proceedToStep = (nextStep: number) => {
     setStep(nextStep);

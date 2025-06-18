@@ -404,47 +404,38 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/marketing/create" component={() => (
-        <Layout>
-          <MarketingCreate />
-        </Layout>
-      )} />
-      
-      <ProtectedRoute path="/marketing" component={() => (
-        <Layout>
-          <Marketing />
-        </Layout>
-      )} />
-      
-      <ProtectedRoute path="/marketing/campaigns/:id" component={() => (
-        <Layout>
-          <CampaignEdit />
-        </Layout>
-      )} />
-      
-      <ProtectedRoute path="/marketing/campaigns/:id/report" component={() => (
-        <Layout>
-          <CampaignReport />
-        </Layout>
-      )} />
-      
-      <ProtectedRoute path="/marketing/automations/:id/report" component={() => (
-        <Layout>
-          <AutomationReport />
-        </Layout>
-      )} />
-      
-      <ProtectedRoute path="/marketing/automations/:id" component={() => (
-        <Layout>
-          <AutomationEdit />
-        </Layout>
-      )} />
-      
-      <ProtectedRoute path="/marketing/automations" component={() => (
-        <Layout>
-          <MarketingAutomations />
-        </Layout>
-      )} />
+      <Switch>
+        <ProtectedRoute path="/marketing/create" component={() => (
+          <Layout>
+            <MarketingCreate />
+          </Layout>
+        )} />
+        <ProtectedRoute path="/marketing/campaigns/:id" component={() => (
+          <Layout>
+            <CampaignEdit />
+          </Layout>
+        )} />
+        <ProtectedRoute path="/marketing/campaigns/:id/report" component={() => (
+          <Layout>
+            <CampaignReport />
+          </Layout>
+        )} />
+        <ProtectedRoute path="/marketing/automations" component={() => (
+          <Layout>
+            <MarketingAutomations />
+          </Layout>
+        )} />
+        <ProtectedRoute path="/marketing/automations/:id/report" component={() => (
+          <Layout>
+            <AutomationReport />
+          </Layout>
+        )} />
+        <ProtectedRoute path="/marketing" component={() => (
+          <Layout>
+            <Marketing />
+          </Layout>
+        )} />
+      </Switch>
       
       <ProtectedRoute path="/marketing/workflow-builder" component={() => (
         <Layout>
