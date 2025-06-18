@@ -404,18 +404,29 @@ function Router() {
         </Layout>
       )} />
       
-      <Switch>
-        <ProtectedRoute path="/marketing/create" component={() => (
+      <ProtectedRoute path="/marketing/create" component={() => {
+        // Explicit route guard for create page
+        if (window.location.pathname !== '/marketing/create') {
+          return null;
+        }
+        return (
           <Layout>
             <MarketingCreate />
           </Layout>
-        )} />
-        <ProtectedRoute path="/marketing" component={() => (
+        );
+      }} />
+      
+      <ProtectedRoute path="/marketing" component={() => {
+        // Only render if we're exactly on /marketing, not on sub-routes
+        if (window.location.pathname !== '/marketing') {
+          return null;
+        }
+        return (
           <Layout>
             <Marketing />
           </Layout>
-        )} />
-      </Switch>
+        );
+      }} />
       
       <ProtectedRoute path="/marketing/campaigns/:id" component={() => (
         <Layout>
