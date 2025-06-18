@@ -454,78 +454,67 @@ export default function CreateCampaignPage() {
     const editor = editorRef.current;
     if (!editor) return;
     
-    // Store selection before focusing to prevent loss
     const selection = window.getSelection();
-    let storedRange: Range | null = null;
+    if (!selection) return;
+    
+    // Get current selection
     let selectedText = '';
+    let range: Range | null = null;
     
-    if (selection && selection.rangeCount > 0) {
-      storedRange = selection.getRangeAt(0).cloneRange();
-      selectedText = storedRange.toString();
+    if (selection.rangeCount > 0) {
+      range = selection.getRangeAt(0);
+      selectedText = range.toString().trim();
     }
     
-    editor.focus();
-    
-    // Restore selection if it was lost
-    if (storedRange && selection) {
-      selection.removeAllRanges();
-      selection.addRange(storedRange);
-    }
-    
-    if (storedRange) {
-      // If there's selected text, make it a link
-      if (!storedRange.collapsed && selectedText.trim()) {
-        // Prompt for URL
-        const url = prompt('Enter the URL:', 'https://www.example.com');
-        
-        if (url && url.trim() && url !== 'https://www.example.com') {
-          // Create link element
-          const link = document.createElement('a');
-          link.href = url.trim();
-          link.textContent = selectedText;
-          link.style.cssText = 'color: #3b82f6; text-decoration: underline;';
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
-          
-          // Replace selected content with link
-          storedRange.deleteContents();
-          storedRange.insertNode(link);
-          
-          // Position cursor after the link
-          const newRange = document.createRange();
-          newRange.setStartAfter(link);
-          newRange.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(newRange);
-          
-          setEditorContent(editor.innerHTML);
-        }
-      } else {
-        // No selection - create a new link
-        const url = prompt('Enter the URL:', 'https://www.example.com');
-        const linkText = prompt('Enter the link text:', 'Click here');
-        
-        if (url && url.trim() && url !== 'https://www.example.com' && linkText && linkText.trim()) {
-          const link = document.createElement('a');
-          link.href = url.trim();
-          link.textContent = linkText.trim();
-          link.style.cssText = 'color: #3b82f6; text-decoration: underline;';
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
-          
-          storedRange.insertNode(link);
-          
-          // Position cursor after the link
-          const newRange = document.createRange();
-          newRange.setStartAfter(link);
-          newRange.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(newRange);
-          
-          setEditorContent(editor.innerHTML);
-        }
+    if (selectedText) {
+      // Convert selected text to link
+      const url = prompt('Enter the URL:', 'https://');
+      if (!url || url.trim() === '' || url === 'https://') return;
+      
+      // Validate URL format
+      let finalUrl = url.trim();
+      if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+        finalUrl = 'https://' + finalUrl;
       }
+      
+      // Use execCommand for more reliable link creation
+      document.execCommand('createLink', false, finalUrl);
+      
+      // Apply link styling after creation
+      setTimeout(() => {
+        const links = editor.querySelectorAll('a[href="' + finalUrl + '"]');
+        links.forEach(link => {
+          link.style.color = '#3b82f6';
+          link.style.textDecoration = 'underline';
+          link.setAttribute('target', '_blank');
+          link.setAttribute('rel', 'noopener noreferrer');
+        });
+        setEditorContent(editor.innerHTML);
+      }, 10);
+      
+    } else {
+      // No selection - create new link
+      const url = prompt('Enter the URL:', 'https://');
+      const linkText = prompt('Enter the link text:', 'Click here');
+      
+      if (!url || !linkText || url.trim() === '' || url === 'https://' || linkText.trim() === '') return;
+      
+      // Validate URL format
+      let finalUrl = url.trim();
+      if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+        finalUrl = 'https://' + finalUrl;
+      }
+      
+      // Create link HTML and insert
+      const linkHtml = `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: underline;">${linkText.trim()}</a>&nbsp;`;
+      
+      // Use execCommand for reliable insertion
+      document.execCommand('insertHTML', false, linkHtml);
+      setEditorContent(editor.innerHTML);
     }
+    
+    // Keep focus on editor
+    editor.focus();
   };
 
   const handleCancel = () => {
