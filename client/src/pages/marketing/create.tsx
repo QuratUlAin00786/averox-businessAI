@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useExactRoute } from "@/hooks/use-exact-route";
 import { 
   Mail,
   ChevronLeft,
@@ -36,13 +37,11 @@ export default function CreateCampaignPage() {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Use exact route matching to prevent conflicts
+  const isExactRoute = useExactRoute('/marketing/create');
+  
   // Ensure this component renders correctly for refresh navigation
   useEffect(() => {
-    // Force browser URL to match component route
-    if (window.location.pathname !== '/marketing/create') {
-      window.history.replaceState(null, '', '/marketing/create');
-    }
-    
     // Set distinctive page identifier
     document.body.setAttribute('data-page', 'marketing-create');
     document.title = 'Create New Campaign - Averox Business AI';
@@ -51,6 +50,11 @@ export default function CreateCampaignPage() {
       document.body.removeAttribute('data-page');
     };
   }, []);
+  
+  // Only render if we're on the exact route
+  if (!isExactRoute) {
+    return null;
+  }
 
   const proceedToStep = (nextStep: number) => {
     setStep(nextStep);

@@ -404,35 +404,17 @@ function Router() {
         </Layout>
       )} />
       
-      <Route path="/marketing*">
-        {(params) => {
-          const pathname = window.location.pathname;
-          
-          // Exact route matching to prevent conflicts
-          if (pathname === '/marketing/create') {
-            return (
-              <ProtectedRoute path="/marketing/create" component={() => (
-                <Layout>
-                  <MarketingCreate />
-                </Layout>
-              )} />
-            );
-          }
-          
-          if (pathname === '/marketing') {
-            return (
-              <ProtectedRoute path="/marketing" component={() => (
-                <Layout>
-                  <Marketing />
-                </Layout>
-              )} />
-            );
-          }
-          
-          // For any other marketing sub-routes, return null to let other routes handle them
-          return null;
-        }}
-      </Route>
+      <ProtectedRoute path="/marketing/create" component={() => (
+        <Layout>
+          <MarketingCreate />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing" component={() => (
+        <Layout>
+          <Marketing />
+        </Layout>
+      )} />
       
       <ProtectedRoute path="/marketing/campaigns/:id" component={() => (
         <Layout>
