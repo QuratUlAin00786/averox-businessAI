@@ -249,17 +249,18 @@ export default function CreateCampaignPage() {
       // We have selected text - convert it to numbered list
       console.log('Selected text:', selectedText);
       
-      // Get the HTML content from the selection to preserve structure
+      // For numbering, we want to treat selected text as separate lines if they are visually separate
+      // but preserve the exact content without any modification
       const clonedFragment = range.cloneContents();
       const analyzeDiv = document.createElement('div');
       analyzeDiv.appendChild(clonedFragment);
       
-      // Check if we have block-level elements that represent separate lines
-      const blockElements = analyzeDiv.querySelectorAll('div, p, li');
+      // Check if we have actual separate div or p elements (separate lines)
+      const blockElements = analyzeDiv.querySelectorAll('div');
       let textLines: string[] = [];
       
-      if (blockElements.length > 0) {
-        // Extract text from each block element
+      if (blockElements.length > 1) {
+        // We have multiple div elements - treat each as separate line
         blockElements.forEach(el => {
           const text = el.textContent?.trim();
           if (text && text.length > 0) {
@@ -267,22 +268,9 @@ export default function CreateCampaignPage() {
           }
         });
       } else {
-        // No block elements found, check if we have inline elements with line breaks
-        const htmlContent = analyzeDiv.innerHTML;
-        
-        if (htmlContent.includes('<br>') || htmlContent.includes('<div>')) {
-          // Split by HTML line breaks
-          const parts = htmlContent.split(/<br\s*\/?>/i).map(part => {
-            const temp = document.createElement('div');
-            temp.innerHTML = part;
-            return temp.textContent?.trim() || '';
-          }).filter(text => text.length > 0);
-          
-          textLines = parts.length > 0 ? parts : [selectedText];
-        } else {
-          // Plain text - use as single item to preserve data integrity
-          textLines = [selectedText];
-        }
+        // No multiple divs found - preserve the entire selected text as one item
+        // This ensures we don't lose any content or modify the user's input
+        textLines = [selectedText];
       }
       
       console.log('Text lines:', textLines);
