@@ -48,6 +48,29 @@ export default function CreateCampaignPage() {
     };
   }, []);
 
+  // Handle link clicks within contentEditable
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'A') {
+        e.preventDefault();
+        const link = target as HTMLAnchorElement;
+        if (link.href) {
+          window.open(link.href, '_blank', 'noopener,noreferrer');
+        }
+      }
+    };
+
+    editor.addEventListener('click', handleLinkClick);
+    
+    return () => {
+      editor.removeEventListener('click', handleLinkClick);
+    };
+  }, []);
+
   const proceedToStep = (nextStep: number) => {
     setStep(nextStep);
   };
