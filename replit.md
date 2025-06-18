@@ -181,6 +181,12 @@ Changelog:
   - Added comprehensive debugging and fallback options for reliable numbering functionality
   - Fixed numbering button functionality to properly convert selected text into numbered list items instead of inserting default placeholder text
   - Fixed link button functionality in email editor with proper URL prompts and link creation for both selected text and new links
+- June 18, 2025. Successfully resolved link button clickability issue:
+  - Fixed link button to create proper clickable links within contentEditable email editor
+  - Enhanced URL validation with automatic https:// prefix addition
+  - Implemented onMouseDown event handler to enable link clicking in contentEditable context
+  - Links now open in new tabs with proper security attributes (target="_blank", rel="noopener noreferrer")
+  - Maintained all existing editor functionality while enabling proper link interaction
 
 ## User Preferences
 
