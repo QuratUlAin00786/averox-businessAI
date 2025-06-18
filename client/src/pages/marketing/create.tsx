@@ -517,8 +517,8 @@ export default function CreateCampaignPage() {
   };
 
   const handleCancel = () => {
-    // Navigate back to marketing page
-    setLocation("/marketing");
+    // Explicitly navigate to marketing page, replacing current history entry
+    setLocation("/marketing", { replace: true });
   };
 
   return (
