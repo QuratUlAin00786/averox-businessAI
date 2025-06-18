@@ -404,15 +404,15 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/marketing" component={() => (
-        <Layout>
-          <Marketing />
-        </Layout>
-      )} />
-      
       <ProtectedRoute path="/marketing/create" component={() => (
         <Layout>
           <MarketingCreate />
+        </Layout>
+      )} />
+      
+      <ProtectedRoute path="/marketing" component={() => (
+        <Layout>
+          <Marketing />
         </Layout>
       )} />
       
