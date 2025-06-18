@@ -36,38 +36,23 @@ export default function CreateCampaignPage() {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fix refresh navigation issue by ensuring stable route state
+  // Force correct component rendering for this route
   useEffect(() => {
-    // Log current state for debugging
-    console.log('Current location:', location);
-    console.log('Window pathname:', window.location.pathname);
+    // Ensure this component only renders for the correct route
+    const currentPath = window.location.pathname;
+    if (currentPath !== '/marketing/create') {
+      console.log('Wrong route detected, redirecting to /marketing/create');
+      setLocation('/marketing/create', { replace: true });
+      return;
+    }
     
-    // Override browser refresh behavior to stay on current page
-    const handleBeforeUnload = () => {
-      // Store the current page in session storage
-      sessionStorage.setItem('lastPage', '/marketing/create');
-    };
-    
-    const handleLoad = () => {
-      // Check if we were redirected after refresh
-      const lastPage = sessionStorage.getItem('lastPage');
-      if (lastPage === '/marketing/create' && window.location.pathname !== '/marketing/create') {
-        console.log('Fixing redirect after refresh');
-        window.location.replace('/marketing/create');
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('load', handleLoad);
-    
-    // Set session storage on mount
-    sessionStorage.setItem('lastPage', '/marketing/create');
+    // Add a distinctive identifier to ensure this is the correct component
+    document.body.setAttribute('data-page', 'marketing-create');
     
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('load', handleLoad);
+      document.body.removeAttribute('data-page');
     };
-  }, [location]);
+  }, [location, setLocation]);
 
   const proceedToStep = (nextStep: number) => {
     setStep(nextStep);
@@ -554,8 +539,15 @@ export default function CreateCampaignPage() {
     setLocation("/marketing", { replace: true });
   };
 
+  // Prevent rendering wrong component - explicit route validation
+  if (window.location.pathname !== '/marketing/create') {
+    console.log('Route mismatch detected, forcing correct route');
+    window.history.replaceState(null, '', '/marketing/create');
+    return null; // Don't render anything until route is correct
+  }
+
   return (
-    <div className="p-6">
+    <div className="p-6" data-page="create-campaign">
       <div className="flex items-center mb-6">
         <Button variant="ghost" className="mr-2" onClick={handleCancel}>
           <ChevronLeft className="h-4 w-4 mr-1" />

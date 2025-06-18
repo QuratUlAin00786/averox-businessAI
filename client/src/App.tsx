@@ -404,11 +404,17 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/marketing/create" component={() => (
-        <Layout>
-          <MarketingCreate />
-        </Layout>
-      )} />
+      <ProtectedRoute path="/marketing/create" component={() => {
+        // Force correct component for this exact route
+        if (window.location.pathname === '/marketing/create') {
+          return (
+            <Layout>
+              <MarketingCreate />
+            </Layout>
+          );
+        }
+        return null;
+      }} />
       
       <ProtectedRoute path="/marketing" component={() => (
         <Layout>
