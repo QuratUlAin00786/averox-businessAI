@@ -240,103 +240,72 @@ export default function CreateCampaignPage() {
     editor.focus();
     
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
+    if (!selection) return;
     
-    const range = selection.getRangeAt(0);
-    const selectedText = range.toString();
+    // Create a range if none exists
+    let range: Range;
+    if (selection.rangeCount === 0) {
+      range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      selection.addRange(range);
+    } else {
+      range = selection.getRangeAt(0);
+    }
     
-    // Check if we have selected text
-    if (selectedText.trim()) {
-      // Extract text content more intelligently
-      let textToProcess = selectedText.trim();
+    const selectedText = selection.toString().trim();
+    
+    if (selectedText) {
+      // Process selected text into numbered list
+      const lines = selectedText.split('\n').map(line => line.trim()).filter(line => line);
       
-      // If the selected text contains HTML elements, extract text from them
-      if (range.commonAncestorContainer.nodeType !== Node.TEXT_NODE) {
-        const tempDiv = document.createElement('div');
-        tempDiv.appendChild(range.cloneContents());
-        
-        // Extract text from various HTML elements
-        const elements = tempDiv.querySelectorAll('div, p, li, span');
-        const textParts: string[] = [];
-        
-        if (elements.length > 0) {
-          elements.forEach(el => {
-            const text = el.textContent?.trim();
-            if (text) textParts.push(text);
-          });
-        }
-        
-        // If no elements found, use the plain text
-        if (textParts.length === 0) {
-          const plainText = tempDiv.textContent?.trim();
-          if (plainText) textParts.push(plainText);
-        }
-        
-        textToProcess = textParts.join('\n');
+      if (lines.length === 0) {
+        lines.push(selectedText);
       }
       
-      // Split into lines and filter empty ones
-      const textLines = textToProcess.split(/\n+/).filter(line => line.trim());
+      const listHTML = `<ol style="margin:8px 0;padding-left:20px;">${lines.map(line => `<li>${line}</li>`).join('')}</ol>`;
       
-      // If no valid lines, use the original selected text as single item
-      const finalLines = textLines.length > 0 ? textLines : [selectedText.trim()];
-      
-      // Create numbered list HTML with proper styling
-      const listItems = finalLines
-        .map(line => `<li style="margin-bottom: 4px;">${line.trim()}</li>`)
-        .join('');
-      
-      const numberedListHTML = `<ol style="margin: 8px 0; padding-left: 20px;">${listItems}</ol>`;
-      
-      // Replace selection with numbered list
+      // Delete selected content and insert list
       range.deleteContents();
-      
-      const fragment = document.createRange().createContextualFragment(numberedListHTML);
+      const div = document.createElement('div');
+      div.innerHTML = listHTML;
+      const fragment = document.createDocumentFragment();
+      while (div.firstChild) {
+        fragment.appendChild(div.firstChild);
+      }
       range.insertNode(fragment);
       
-      // Move cursor after the inserted list
+      // Move cursor after the list
       range.collapse(false);
-      selection?.removeAllRanges();
-      selection?.addRange(range);
+      selection.removeAllRanges();
+      selection.addRange(range);
       
-      // Update editor content
-      setEditorContent(editor.innerHTML);
     } else {
-      // No selection - insert new numbered list at cursor position
-      const numberedListHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
+      // No selection - insert new numbered list
+      const listHTML = `<ol style="margin:8px 0;padding-left:20px;"><li>Item 1</li></ol>`;
       
-      // Handle insertion based on current cursor position
-      if (range.collapsed) {
-        const fragment = document.createRange().createContextualFragment(numberedListHTML);
-        range.insertNode(fragment);
-        
-        // Place cursor inside the list item for immediate editing
-        const newListItem = fragment.querySelector('li');
-        if (newListItem) {
-          const newRange = document.createRange();
-          newRange.selectNodeContents(newListItem);
-          newRange.collapse(false);
-          selection?.removeAllRanges();
-          selection?.addRange(newRange);
-        }
-      } else {
-        // Fallback: add at the end if range is not collapsed
-        if (!editor.innerHTML || editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
-          editor.innerHTML = numberedListHTML;
-        } else {
-          editor.innerHTML = editor.innerHTML + '<br>' + numberedListHTML;
-        }
-        
-        // Position cursor at the end
-        const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
+      const div = document.createElement('div');
+      div.innerHTML = listHTML;
+      const fragment = document.createDocumentFragment();
+      while (div.firstChild) {
+        fragment.appendChild(div.firstChild);
       }
       
-      setEditorContent(editor.innerHTML);
+      range.insertNode(fragment);
+      
+      // Place cursor inside the list item
+      const listItem = editor.querySelector('ol:last-of-type li:last-child');
+      if (listItem) {
+        const newRange = document.createRange();
+        newRange.selectNodeContents(listItem);
+        newRange.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
     }
+    
+    // Update editor content
+    setEditorContent(editor.innerHTML);
   };
 
   const handleImageInsert = () => {
