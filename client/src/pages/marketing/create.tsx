@@ -193,71 +193,50 @@ export default function CreateCampaignPage() {
     const editor = editorRef.current;
     if (!editor) return;
     
-    editor.focus();
-    
+    // Store selection before focusing to prevent loss
     const selection = window.getSelection();
+    let storedRange: Range | null = null;
+    let selectedText = '';
     
     if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      
+      storedRange = selection.getRangeAt(0).cloneRange();
+      selectedText = storedRange.toString();
+    }
+    
+    editor.focus();
+    
+    // Restore selection if it was lost
+    if (storedRange && selection) {
+      selection.removeAllRanges();
+      selection.addRange(storedRange);
+    }
+    
+    if (storedRange) {
       // If there's selected text, replace it with numbered format
-      if (!range.collapsed) {
-        // Get the selected content including HTML structure
-        const container = document.createElement('div');
-        container.appendChild(range.cloneContents());
+      if (!storedRange.collapsed && selectedText.trim()) {
+        // Split text into lines (treat each line as a separate list item)
+        const lines = selectedText.split(/\r?\n/).filter(line => line.trim() !== '');
         
-        // Get plain text but preserve line structure
-        const selectedHTML = container.innerHTML;
-        const selectedText = container.textContent || container.innerText || '';
+        // If no line breaks, treat as single line
+        const textLines = lines.length > 0 ? lines : [selectedText.trim()];
         
-        // Split by actual line breaks or <br> tags
-        let lines = [];
-        if (selectedHTML.includes('<br>') || selectedHTML.includes('<div>')) {
-          // Handle HTML line breaks
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = selectedHTML;
-          const textNodes = tempDiv.childNodes;
-          
-          let currentLine = '';
-          for (let i = 0; i < textNodes.length; i++) {
-            const node = textNodes[i];
-            if (node.nodeType === Node.TEXT_NODE) {
-              currentLine += node.textContent;
-            } else if (node.nodeName === 'BR' || node.nodeName === 'DIV') {
-              lines.push(currentLine);
-              currentLine = '';
-              if (node.nodeName === 'DIV' && node.textContent) {
-                currentLine = node.textContent;
-              }
-            }
-          }
-          if (currentLine) {
-            lines.push(currentLine);
-          }
-        } else {
-          // Handle plain text line breaks
-          lines = selectedText.split(/\r?\n/);
-        }
-        
-        // Create proper HTML list structure for numbered list
-        const listItems = lines
-          .filter(line => line.trim() !== '')
+        // Create list items
+        const listItems = textLines
           .map(line => `<li style="margin-bottom: 4px;">${line.trim()}</li>`)
           .join('');
         
         const numberedHTML = `<ol style="margin: 8px 0; padding-left: 20px;">${listItems}</ol>`;
         
-        // Replace the selected content
-        range.deleteContents();
+        // Replace selected content with numbered list
+        storedRange.deleteContents();
         
         // Insert the new numbered content as HTML
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = numberedHTML;
         
-        // Insert the HTML list
         const listElement = tempDiv.firstChild;
         if (listElement) {
-          range.insertNode(listElement);
+          storedRange.insertNode(listElement);
           
           // Position cursor at the end of the list
           const newRange = document.createRange();
@@ -265,9 +244,11 @@ export default function CreateCampaignPage() {
           newRange.collapse(true);
           selection.removeAllRanges();
           selection.addRange(newRange);
+          
+          setEditorContent(editor.innerHTML);
         }
       } else {
-        // Insert a new list item at cursor position
+        // No selection - create a new numbered list
         const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
         
         const tempDiv = document.createElement('div');
@@ -275,7 +256,7 @@ export default function CreateCampaignPage() {
         
         const listElement = tempDiv.firstChild;
         if (listElement) {
-          range.insertNode(listElement);
+          storedRange.insertNode(listElement);
           
           // Position cursor inside the new list item
           const listItem = (listElement as Element).querySelector('li');
@@ -286,29 +267,11 @@ export default function CreateCampaignPage() {
             selection.removeAllRanges();
             selection.addRange(newRange);
           }
+          
+          setEditorContent(editor.innerHTML);
         }
       }
-    } else {
-      // Fallback: add at the end if no selection
-      const listHTML = `<ol style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px;">New numbered item</li></ol>`;
-      
-      if (!editor.innerHTML || editor.innerHTML.trim() === '' || editor.innerHTML === '<br>') {
-        editor.innerHTML = listHTML;
-      } else {
-        editor.innerHTML = editor.innerHTML + '<br>' + listHTML;
-      }
-      
-      // Position cursor at the end
-      if (selection) {
-        const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
     }
-    
-    setEditorContent(editor.innerHTML);
   };
 
   const handleImageInsert = () => {
