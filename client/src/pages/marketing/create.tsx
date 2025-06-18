@@ -86,20 +86,73 @@ export default function CreateCampaignPage() {
 
   const insertFormatting = (command: string) => {
     const editor = editorRef.current;
-    if (editor) {
-      editor.focus();
-      
-      // Ensure there's a selection or cursor position
+    if (!editor) return;
+    
+    editor.focus();
+    
+    try {
+      // Primary method: execCommand (works in most environments)
       const selection = window.getSelection();
-      if (selection && selection.rangeCount === 0) {
+      if (!selection) return;
+      
+      if (selection.rangeCount === 0) {
         const range = document.createRange();
         range.selectNodeContents(editor);
         range.collapse(false);
         selection.addRange(range);
       }
       
-      document.execCommand(command, false, '');
-      setEditorContent(editor.innerHTML);
+      // Try execCommand first
+      if (document.execCommand && typeof document.execCommand === 'function') {
+        const success = document.execCommand(command, false, '');
+        if (success) {
+          setEditorContent(editor.innerHTML);
+          return;
+        }
+      }
+      
+      // Fallback for deployment environments where execCommand might be deprecated
+      const range = selection.getRangeAt(0);
+      const selectedText = range.toString();
+      
+      if (selectedText) {
+        let element: HTMLElement;
+        if (command === 'bold') {
+          element = document.createElement('strong');
+        } else if (command === 'italic') {
+          element = document.createElement('em');
+        } else {
+          return; // Unsupported command
+        }
+        
+        element.textContent = selectedText;
+        range.deleteContents();
+        range.insertNode(element);
+        
+        // Move cursor after the inserted element
+        range.setStartAfter(element);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        setEditorContent(editor.innerHTML);
+      }
+    } catch (error) {
+      console.warn(`Formatting command ${command} failed:`, error);
+      // Final fallback: direct DOM manipulation
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const selectedText = range.toString();
+        if (selectedText) {
+          const tagName = command === 'bold' ? 'b' : command === 'italic' ? 'i' : 'span';
+          const wrapper = document.createElement(tagName);
+          wrapper.textContent = selectedText;
+          range.deleteContents();
+          range.insertNode(wrapper);
+          setEditorContent(editor.innerHTML);
+        }
+      }
     }
   };
 
@@ -497,15 +550,41 @@ export default function CreateCampaignPage() {
 
     editor.focus();
 
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
+    try {
+      // Primary method: try execCommand for alignment (widely supported)
+      const commandMap = {
+        'left': 'justifyLeft',
+        'center': 'justifyCenter',
+        'right': 'justifyRight'
+      };
+      
+      const command = commandMap[alignment];
+      if (document.execCommand && typeof document.execCommand === 'function') {
+        const success = document.execCommand(command, false, '');
+        if (success) {
+          setEditorContent(editor.innerHTML);
+          return;
+        }
+      }
+
+      // Fallback method: direct DOM manipulation for deployment reliability
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        // No selection - create one at cursor position
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        selection?.addRange(range);
+      }
+
+      const range = selection?.getRangeAt(0);
+      if (!range) return;
       
       if (!range.collapsed) {
         // Text is selected - wrap it in a div with alignment
         const selectedContent = range.extractContents();
         const alignDiv = document.createElement('div');
-        alignDiv.style.textAlign = alignment;
+        alignDiv.setAttribute('style', `text-align: ${alignment}; margin: 4px 0;`);
         alignDiv.appendChild(selectedContent);
         
         range.insertNode(alignDiv);
@@ -513,8 +592,8 @@ export default function CreateCampaignPage() {
         // Select the aligned content
         const newRange = document.createRange();
         newRange.selectNodeContents(alignDiv);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
+        selection?.removeAllRanges();
+        selection?.addRange(newRange);
       } else {
         // No selection - find current block element and align it
         let currentElement: Node | null = range.startContainer;
@@ -523,8 +602,8 @@ export default function CreateCampaignPage() {
         while (currentElement && currentElement !== editor) {
           if (currentElement.nodeType === Node.ELEMENT_NODE) {
             const element = currentElement as HTMLElement;
-            if (element.tagName && ['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(element.tagName)) {
-              element.style.textAlign = alignment;
+            if (element.tagName && ['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'OL', 'UL', 'LI'].includes(element.tagName)) {
+              element.setAttribute('style', (element.getAttribute('style') || '') + `; text-align: ${alignment};`);
               break;
             }
           }
@@ -534,7 +613,7 @@ export default function CreateCampaignPage() {
         // If no block element found, create one
         if (currentElement === editor) {
           const alignDiv = document.createElement('div');
-          alignDiv.style.textAlign = alignment;
+          alignDiv.setAttribute('style', `text-align: ${alignment}; margin: 4px 0;`);
           alignDiv.innerHTML = 'Aligned text';
           
           range.insertNode(alignDiv);
@@ -543,13 +622,26 @@ export default function CreateCampaignPage() {
           const newRange = document.createRange();
           newRange.selectNodeContents(alignDiv);
           newRange.collapse(false);
-          selection.removeAllRanges();
-          selection.addRange(newRange);
+          selection?.removeAllRanges();
+          selection?.addRange(newRange);
         }
       }
+      
+      setEditorContent(editor.innerHTML);
+    } catch (error) {
+      console.warn(`Text alignment ${alignment} failed:`, error);
+      // Final fallback: apply style directly to editor
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const wrapper = document.createElement('div');
+        wrapper.setAttribute('style', `text-align: ${alignment}; margin: 4px 0;`);
+        wrapper.innerHTML = range.toString() || 'Aligned content';
+        range.deleteContents();
+        range.insertNode(wrapper);
+        setEditorContent(editor.innerHTML);
+      }
     }
-    
-    setEditorContent(editor.innerHTML);
   };
 
   const handleLink = () => {
