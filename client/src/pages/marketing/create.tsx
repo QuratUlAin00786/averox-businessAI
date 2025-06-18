@@ -249,27 +249,63 @@ export default function CreateCampaignPage() {
       // We have selected text - convert it to numbered list
       console.log('Selected text:', selectedText);
       
-      // For numbering, we want to treat selected text as separate lines if they are visually separate
-      // but preserve the exact content without any modification
+      // For numbering, we need to capture ALL content including text nodes and elements
       const clonedFragment = range.cloneContents();
       const analyzeDiv = document.createElement('div');
       analyzeDiv.appendChild(clonedFragment);
       
-      // Check if we have actual separate div or p elements (separate lines)
-      const blockElements = analyzeDiv.querySelectorAll('div');
       let textLines: string[] = [];
       
-      if (blockElements.length > 1) {
-        // We have multiple div elements - treat each as separate line
-        blockElements.forEach(el => {
-          const text = el.textContent?.trim();
+      // Get all child nodes (including text nodes and elements)
+      const childNodes = Array.from(analyzeDiv.childNodes);
+      
+      if (childNodes.length > 1) {
+        // Multiple nodes - extract text from each one
+        childNodes.forEach(node => {
+          let text = '';
+          if (node.nodeType === Node.TEXT_NODE) {
+            text = node.textContent?.trim() || '';
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            text = (node as Element).textContent?.trim() || '';
+          }
+          
           if (text && text.length > 0) {
             textLines.push(text);
           }
         });
-      } else {
-        // No multiple divs found - preserve the entire selected text as one item
-        // This ensures we don't lose any content or modify the user's input
+      } else if (childNodes.length === 1) {
+        // Single node - check if it contains divs or other elements
+        const singleNode = childNodes[0];
+        if (singleNode.nodeType === Node.ELEMENT_NODE) {
+          const element = singleNode as Element;
+          const innerDivs = element.querySelectorAll('div');
+          
+          if (innerDivs.length > 0) {
+            // Has internal divs - extract from each
+            innerDivs.forEach(div => {
+              const text = div.textContent?.trim();
+              if (text && text.length > 0) {
+                textLines.push(text);
+              }
+            });
+          } else {
+            // No internal structure - use the whole text
+            const text = element.textContent?.trim();
+            if (text && text.length > 0) {
+              textLines.push(text);
+            }
+          }
+        } else {
+          // Text node - use as single item
+          const text = singleNode.textContent?.trim();
+          if (text && text.length > 0) {
+            textLines.push(text);
+          }
+        }
+      }
+      
+      // Fallback - if no lines extracted, use the original selected text
+      if (textLines.length === 0) {
         textLines = [selectedText];
       }
       
