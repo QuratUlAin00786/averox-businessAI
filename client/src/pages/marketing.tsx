@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { 
   Mail, 
   Users,
-
+  ChevronLeft,
   PieChart, 
   Link as LinkIcon, 
   Clock, 
@@ -139,12 +139,18 @@ export default function Marketing() {
   return (
     <div className="p-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Marketing</h1>
-          <p className="text-muted-foreground">Manage campaigns, automations, and track performance</p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center">
+          <Button variant="ghost" className="mr-2" onClick={() => setLocation("/")}>
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Marketing</h1>
+            <p className="text-muted-foreground">Manage campaigns, automations, and track performance</p>
+          </div>
         </div>
-        <div className="mt-4 md:mt-0 space-x-2">
+        <div className="space-x-2">
           <Button variant="outline" onClick={() => setLocation("/marketing/automations")}>
             <Zap className="h-4 w-4 mr-2" />
             Automations
