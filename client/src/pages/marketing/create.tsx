@@ -249,12 +249,47 @@ export default function CreateCampaignPage() {
       // We have selected text - convert it to numbered list
       console.log('Selected text:', selectedText);
       
-      // Split the selected text by lines or treat as single item
-      let textLines = selectedText.split(/[\r\n]+/).map(line => line.trim()).filter(line => line.length > 0);
+      // Check if the selected content contains HTML elements (like divs or spans)
+      const clonedFragment = range.cloneContents();
+      const analyzeDiv = document.createElement('div');
+      analyzeDiv.appendChild(clonedFragment);
       
-      // If no lines after splitting, use the whole text as one item
+      // Try to extract text from individual elements first
+      const elements = analyzeDiv.querySelectorAll('div, p, span, li');
+      let textLines: string[] = [];
+      
+      if (elements.length > 0) {
+        // Extract text from each element
+        elements.forEach(el => {
+          const text = el.textContent?.trim();
+          if (text && text.length > 0) {
+            textLines.push(text);
+          }
+        });
+      }
+      
+      // If no elements found or no text extracted, try splitting by common separators
       if (textLines.length === 0) {
-        textLines = [selectedText];
+        // Try splitting by different separators
+        const separators = ['\n', '\r\n', '\r', '<br>', '<div>', '</div>'];
+        let bestSplit = [selectedText];
+        
+        for (const sep of separators) {
+          const split = selectedText.split(sep).map(line => line.trim()).filter(line => line.length > 0);
+          if (split.length > bestSplit.length) {
+            bestSplit = split;
+          }
+        }
+        
+        textLines = bestSplit;
+      }
+      
+      // If still only one item, check if it contains spaces and split by words for numbering
+      if (textLines.length === 1 && selectedText.includes(' ')) {
+        const words = selectedText.trim().split(/\s+/);
+        if (words.length > 3) { // Only split if more than 3 words
+          textLines = words;
+        }
       }
       
       console.log('Text lines:', textLines);
@@ -268,14 +303,14 @@ export default function CreateCampaignPage() {
       // Replace the selected text with the numbered list
       range.deleteContents();
       
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = numberedListHTML;
-      const fragment = document.createDocumentFragment();
-      while (tempDiv.firstChild) {
-        fragment.appendChild(tempDiv.firstChild);
+      const listDiv = document.createElement('div');
+      listDiv.innerHTML = numberedListHTML;
+      const insertFragment = document.createDocumentFragment();
+      while (listDiv.firstChild) {
+        insertFragment.appendChild(listDiv.firstChild);
       }
       
-      range.insertNode(fragment);
+      range.insertNode(insertFragment);
       
       // Position cursor after the inserted list
       range.collapse(false);
