@@ -193,6 +193,9 @@ Changelog:
   - Implemented data integrity protection to prevent content modification during numbering
   - Button now properly converts selected text into numbered lists while maintaining exact user input
   - Resolved issue where text was being incorrectly split or truncated during list conversion
+  - Completely fixed content capture to handle ALL child nodes including text nodes and elements
+  - Numbering now works correctly for any amount of content (4 lines, 100 lines, etc.) with accurate numbering
+  - Final solution captures all content without losing any lines or data during list conversion
 
 ## User Preferences
 
