@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # BusinessAI-vs-code
 =======
 # AVEROX CRM System
@@ -140,3 +141,6 @@ API endpoints follow RESTful conventions and are organized by domain:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 >>>>>>> 3532c97 (Improve containerization by adding setup scripts and configuration)
+=======
+
+>>>>>>> 415ba034891d583a12e51cd1f8e47b022a2b6298
