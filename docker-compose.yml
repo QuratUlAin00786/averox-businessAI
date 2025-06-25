@@ -40,11 +40,21 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:-crmpassword}
       PGDATABASE: ${POSTGRES_DB:-crmdb}
       PGHOST: postgres
+      CREATE_DEMO_ACCOUNTS: ${CREATE_DEMO_ACCOUNTS:-true}
+      # Add any additional environment variables here
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
     ports:
       - "5000:5000"
     networks:
       - crm-network
     restart: always
+    volumes:
+      - ./server:/app/server:ro
+      - ./shared:/app/shared:ro
+      - ./node_modules:/app/node_modules
+      - ./scripts:/app/scripts:ro
 
   # Client
   client:
@@ -59,6 +69,8 @@ services:
     networks:
       - crm-network
     restart: always
+    volumes:
+      - ./client:/app/client:ro
 
 networks:
   crm-network:
