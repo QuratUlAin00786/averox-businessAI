@@ -30,8 +30,8 @@ function getNumEnv(key: string, defaultValue: number): number {
 
 // Server configuration
 const serverConfig = {
-  port: getNumEnv('PORT', 3000),
-  host: getEnv('HOST', '0.0.0.0'),
+  port: getNumEnv('PORT', 5000),
+  host: getEnv('HOST', 'localhost'),
   isProduction: getEnv('NODE_ENV', 'development') === 'production',
   isDevelopment: getEnv('NODE_ENV', 'development') === 'development',
 };

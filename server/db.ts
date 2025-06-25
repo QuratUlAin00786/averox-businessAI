@@ -1,13 +1,34 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
+//import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 import { decryptConnectionString } from './utils/encryption';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+import { Pool } from 'pg';
 
+
+//npm uninstall @neondatabase/serverless for local database
+
+//npm install pg for lacal database
+
+
+// Clear any existing DATABASE_URL
+delete process.env.DATABASE_URL;
+
+
+
+// Force reload .env
+dotenv.config({ 
+  path: path.resolve(process.cwd(), '.env'),
+  override: true 
+});
+
+console.log('Forced reload DATABASE_URL:', process.env.DATABASE_URL);
 // Configure Neon WebSocket with error handling
-neonConfig.webSocketConstructor = ws;
-neonConfig.pipelineConnect = false;
-neonConfig.useSecureWebSocket = true;
+//neonConfig.webSocketConstructor = ws;
+//neonConfig.pipelineConnect = false;
+//neonConfig.useSecureWebSocket = true;
 
 // Check for database URL
 if (!process.env.DATABASE_URL) {
@@ -21,6 +42,15 @@ if (!process.env.DATABASE_URL) {
 const USE_ENCRYPTED_CONNECTION = process.env.USE_ENCRYPTED_CONNECTION === 'true';
 const DATABASE_URL_IV = process.env.DATABASE_URL_IV || '';
 
+
+// Add this at the top of your db.ts file
+console.log('🔍 Environment Debug:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DB_HOST:', process.env.DB_HOST);
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('DB_USER:', process.env.DB_USER);
+console.log('DATABASE_URL:', process.env.DATABASE_URL);
+console.log('All DB vars:', Object.keys(process.env).filter(key => key.includes('DB')));
 /**
  * Get database connection string - either decrypt it or use it directly
  * @returns Promise resolving to the connection string

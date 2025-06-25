@@ -1,0 +1,36 @@
+Resetting database...
+Truncating table: social_messages
+Truncating table: social_integrations
+Truncating table: lead_sources
+Truncating table: social_campaigns
+Truncating table: activities
+Truncating table: events
+Truncating table: tasks
+Truncating table: opportunities
+Truncating table: leads
+Truncating table: contacts
+Truncating table: accounts
+Table api_keys does not exist, skipping.
+Table communications does not exist, skipping.
+Deleting non-admin users
+Database reset completed successfully
+Seeding accounts...
+Successfully seeded 10 accounts
+Seeding contacts...
+Successfully seeded 10 contacts
+Seeding leads...
+Successfully seeded 10 leads
+Seeding opportunities...
+Successfully seeded 10 opportunities
+Seeding tasks...
+Successfully seeded 10 tasks
+Seeding events...
+Successfully seeded 10 events
+Seeding activities...
+Successfully seeded 10 activities
+Seeding social integrations...
+Successfully seeded 7 social integrations
+Seeding lead sources...
+Successfully seeded 10 lead sources
+Seeding social campaigns...
+Database reset and seed failed: column "target_audience" of relation "social_campaigns" does not exist

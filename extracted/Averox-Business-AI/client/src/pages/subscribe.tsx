@@ -16,7 +16,7 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
 }
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-
+console.log("Stripe Key:", import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 const SubscribeForm = ({ packageId }: { packageId: number }) => {
   const stripe = useStripe();
   const elements = useElements();

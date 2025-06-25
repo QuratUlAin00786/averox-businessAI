@@ -1,17 +1,33 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
+import pg from 'pg';
+import 'dotenv/config';
+//import OpenAI from 'openai';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import initDatabase from "../scripts/init-database";
 import { resetAndSeedDatabase } from "../scripts/reset-and-seed-database";
 import { encryptSensitiveData, decryptSensitiveData } from "./middleware/encryption-middleware";
-import dotenv from 'dotenv';
-
+//import dotenv from 'dotenv';
+console.log('OPENAI_API_KEY:', !!process.env.OPENAI_API_KEY); 
 // Load environment variables from .env file
-dotenv.config();
+//dotenv.config();
+// Database connection for session storage
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL
+});
 
 // Check if the --reset-db flag was passed
 const resetDb = process.argv.includes('--reset-db');
+const SESSION_SECRET = process.env.SESSION_SECRET || 'averox-crypto-sphere-secure-session';
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
+// Debug: Check if environment variables are loaded
+console.log('Environment check:');
+console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'Found' : 'Missing');
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Found' : 'Missing');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -88,14 +104,12 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  const port = 5001;
+
+
+  app.listen(5001, 'localhost', () => {
+  console.log('🚀 Simple server running on http://localhost:'+port);
+});
 
   // Add global error handlers to prevent crashes
   process.on('uncaughtException', (error) => {

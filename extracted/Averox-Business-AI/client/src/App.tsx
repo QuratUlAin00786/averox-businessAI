@@ -378,7 +378,7 @@ function Router() {
         </Layout>
       )} />
       
-      <ProtectedRoute path="/marketing/email-template-editor" component={() => (
+      <ProtectedRoute path="/marketing/email-templates" component={() => (
         <Layout>
           <EmailTemplateEditor />
         </Layout>
