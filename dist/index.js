@@ -25952,8 +25952,8 @@ app.use((req, res, next) => {
     }
   }
   const port = 5001;
-  app.listen(5001, "localhost", () => {
-    console.log("\u{1F680} Simple server running on http://localhost:" + port);
+  app.listen(5001, "0.0.0.0", () => {
+    console.log("\u{1F680} Server running at http://104.251.217.237:5001");
   });
   process.on("uncaughtException", (error) => {
     console.error("[Process] Uncaught Exception:", error);

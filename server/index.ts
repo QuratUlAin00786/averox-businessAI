@@ -106,10 +106,10 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   const port = 5001;
 
-
-  app.listen(5001, 'http://104.251.217.237/', () => {
-  console.log('🚀 Simple server running on http://localhost:'+port);
+app.listen(5001, '0.0.0.0', () => {
+  console.log('🚀 Server running at http://104.251.217.237:5001');
 });
+  
 
   // Add global error handlers to prevent crashes
   process.on('uncaughtException', (error) => {
