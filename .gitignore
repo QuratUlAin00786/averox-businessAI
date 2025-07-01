@@ -10,3 +10,4 @@
 /.env.local 
 /attached_assets
 /.env.development.local
+/.env
