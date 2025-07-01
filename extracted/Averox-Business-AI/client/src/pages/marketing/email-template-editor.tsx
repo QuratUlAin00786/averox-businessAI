@@ -359,7 +359,7 @@ export default function EmailTemplateEditor() {
       template.elements.forEach(element => {
         switch (element.type) {
           case 'header':
-            html += `    <h1 style="font-size: ${element.settings.fontSize}; text-align: ${element.settings.textAlign}; color: ${element.settings.color}; padding-top: ${element.settings.paddingTop}; padding-bottom: ${element.settings.paddingBottom};">${element.content.text}</h1>\n`;
+            html += ` <h2> jhbjhbhj</h2>   <h1 style="font-size: ${element.settings.fontSize}; text-align: ${element.settings.textAlign}; color: ${element.settings.color}; padding-top: ${element.settings.paddingTop}; padding-bottom: ${element.settings.paddingBottom};">${element.content.text}</h1>\n`;
             break;
           case 'text':
             html += `    <p style="font-size: ${element.settings.fontSize}; line-height: ${element.settings.lineHeight}; color: ${element.settings.color}; padding-top: ${element.settings.paddingTop}; padding-bottom: ${element.settings.paddingBottom};">${element.content.text}</p>\n`;

@@ -48,6 +48,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     queryKey: ["/api/menu-items"],
     queryFn: async () => {
       try {
+         console.error("Expected an array of menu items but got:", menuItems); 
         const res = await apiRequest("GET", "/api/menu-items");
         return await res.json() as MenuItem[];
       } catch (error) {

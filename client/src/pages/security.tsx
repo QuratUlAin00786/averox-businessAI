@@ -4,7 +4,7 @@ import { EncryptionTester } from '@/components/security/encryption-tester';
 import { DatabaseEncryptionTester } from '@/components/security/database-encryption-tester';
 import { ShieldCheck } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { useLocation } from "wouter";
 export default function SecurityPage() {
   return (
     <div className="container mx-auto py-6">
@@ -68,3 +68,5 @@ export default function SecurityPage() {
     </div>
   );
 }
+
+

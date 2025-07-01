@@ -353,6 +353,8 @@ export default function EmailTemplateEditor() {
 </head>
 <body>
   <div class="container">
+
+  <h2>  no page found</h2>
 `;
 
       // Add elements

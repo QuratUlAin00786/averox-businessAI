@@ -106,7 +106,13 @@ export default function Manufacturing({ subPath }: ManufacturingProps = {}) {
     setLocation('/reports');
     return null;
   }
-  
+  if (subPath === 'analytics') {
+  useEffect(() => {
+    setLocation('/reports');
+  }, [setLocation]);
+
+  return null;
+}
   // Add compliance route
   if (subPath === 'compliance') {
     return <TradeCompliancePage />;

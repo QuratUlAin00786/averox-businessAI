@@ -1,0 +1,1 @@
+import{a as s}from"./index-zYaUkteH.js";async function i(e,n="all"){try{const t=await s("POST","/api/ai/insights",{data:e,type:n});if(typeof t.content=="string")try{return JSON.parse(t.content).insights||[]}catch(r){return console.error("Error parsing AI insights:",r),[]}return[]}catch(t){throw console.error("Failed to generate insights:",t),t}}export{i as generateInsights};

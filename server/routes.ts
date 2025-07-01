@@ -681,7 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch global menu items from database
       const menuItemsQuery = await db.select()
         .from(systemSettings)
-        .where(eq(systemSettings.settingKey, 'menuItems'))
+        .where(eq(systemSettings.settingKey, 'menuItems')) 
         .where(eq(systemSettings.scope, 'global'));
       
       let menuItems = [];
@@ -710,7 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { name: "Marketing", path: '/marketing', icon: "Megaphone", key: null, isVisible: true },
           { name: "Communication Center", path: '/communication-center', icon: "MessageSquare", key: "communicationCenter", isVisible: userSettings.menuVisibility.communicationCenter },
           { name: "Accounting", path: '/accounting', icon: "Calculator", key: "accounting", isVisible: userSettings.menuVisibility.accounting },
-          { name: "Manufacturing", path: '/manufacturing', icon: "Factory", key: null, isVisible: true },
+          { name: "Manufacturing", path: '/manufacturing', icon: "Factory", key: "Manufacturing", isVisible: true },
           { name: "Inventory", path: '/inventory', icon: "PackageOpen", key: "inventory", isVisible: userSettings.menuVisibility.inventory },
           { name: "Support Tickets", path: '/support-tickets', icon: "TicketCheck", key: "supportTickets", isVisible: userSettings.menuVisibility.supportTickets },
           { name: "E-commerce", path: '/ecommerce', icon: "ShoppingCart", key: "ecommerce", isVisible: userSettings.menuVisibility.ecommerce },

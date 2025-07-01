@@ -11,7 +11,7 @@ import { MonthlyCalendar } from "@/components/calendar/monthly-calendar";
 import { EventForm } from "@/components/calendar/event-form";
 import { EventDetail } from "@/components/calendar/event-detail";
 import { useIsMobile } from "@/hooks/use-mobile";
-
+import { Link } from 'wouter';
 export default function Calendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -154,6 +154,8 @@ export default function Calendar() {
   return (
     <div className="container mx-auto py-6 space-y-8">
       <div className="flex items-center gap-4 mb-6">
+
+        
         <Button 
           variant="outline" 
           size="sm"
@@ -177,6 +179,7 @@ export default function Calendar() {
         }
       />
       
+<Link href="/security">Go to Security</Link>
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {isLoading ? (
           <div className="p-8 flex justify-center">
