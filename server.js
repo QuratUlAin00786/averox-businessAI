@@ -1,24 +1,29 @@
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const app = express();
 const port = process.env.PORT || 3000;
-const hostname = '0.0.0.0'; // or 'localhost' if preferred
 
-// Serve static files from 'build' directory
-app.use(express.static(path.join(__dirname, 'build')));
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Route to serve the index.html file
-app.get('/', function (req, res) {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use(express.static(path.join(__dirname, 'dist')));
+//res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+
+
+
+
+
+//app.use(express.static(path.join(__dirname,'build'))); // Serve static files from 'public' directory
+// Home route - plain text
+app.get('/',function (req, res) {
+  res.sendFile(path.join(__dirname,'dist','index.html')); // Serve the index.html file
 });
+// Basic middleware
+//app.use(express.json());
 
-// Start server
+
 app.listen(port, hostname, () => {
-  console.log(`🚀 Server running at http://${hostname}:${port}/`);
+  console.log(`Server running at http://${hostname}:${port}/`);
 });
