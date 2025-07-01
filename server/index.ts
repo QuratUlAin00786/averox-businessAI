@@ -107,7 +107,7 @@ app.use((req, res, next) => {
   const port = 5001;
 
 
-  app.listen(5001, 'localhost', () => {
+  app.listen(5001, 'http://104.251.217.237/', () => {
   console.log('🚀 Simple server running on http://localhost:'+port);
 });
 
